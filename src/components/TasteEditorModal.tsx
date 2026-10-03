@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   loadCustomTastes, 
   saveCustomTastes, 
   resetCustomTastes, 
   CustomTasteMap 
 } from '../services/tasteStorage';
+import { copyToClipboard } from '../services/utils';
 
 interface TasteEditorModalProps {
   isOpen: boolean;
@@ -21,7 +22,8 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
   const [parseError, setParseError] = useState<string | null>(null);
   const [parsedCount, setParsedCount] = useState<number>(0);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedStatus, setCopiedStatus] = useState<'idle' | 'copied' | 'selected'>('idle');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,7 +32,7 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
       setParseError(null);
       setParsedCount(Object.keys(tastes).length);
       setSaveSuccess(false);
-      setCopied(false);
+      setCopiedStatus('idle');
     }
   }, [isOpen]);
 
@@ -64,10 +66,20 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(jsonText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    const success = await copyToClipboard(jsonText);
+    if (success) {
+      setCopiedStatus('copied');
+      setTimeout(() => setCopiedStatus('idle'), 2500);
+    } else {
+      // サンドボックスで execCommand もブロックされた場合の最終安全策: テキスト全選択
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.select();
+      }
+      setCopiedStatus('selected');
+      setTimeout(() => setCopiedStatus('idle'), 3500);
+    }
   };
 
   const handleSave = () => {
@@ -110,7 +122,7 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div 
-        className="w-full max-w-3xl bg-[#141414] border border-white/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[92vh]"
+        className="w-full max-w-3xl bg-[#141414] border border-white/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden h-[85vh] max-h-[750px]"
         onClick={e => e.stopPropagation()}
       >
         {/* ヘッダー */}
@@ -168,13 +180,19 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
             <button
               type="button"
               onClick={handleCopy}
-              className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 flex items-center gap-1 transition-colors cursor-pointer"
+              className={`px-2.5 py-1 rounded-md border flex items-center gap-1 transition-colors cursor-pointer ${
+                copiedStatus === 'copied'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  : copiedStatus === 'selected'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    : 'bg-white/5 hover:bg-white/10 text-gray-300 border-white/10'
+              }`}
               title="クリップボードにJSONをコピー"
             >
               <span className="material-symbols-outlined text-[14px]">
-                {copied ? 'check' : 'content_copy'}
+                {copiedStatus === 'copied' ? 'check' : copiedStatus === 'selected' ? 'select_all' : 'content_copy'}
               </span>
-              {copied ? 'コピー完了' : 'JSONコピー'}
+              {copiedStatus === 'copied' ? 'コピー完了！' : copiedStatus === 'selected' ? '全選択済 (Ctrl+C)' : 'JSONコピー'}
             </button>
           </div>
         </div>
@@ -187,6 +205,7 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
             </div>
           )}
           <textarea
+            ref={textareaRef}
             value={jsonText}
             onChange={handleTextChange}
             spellCheck={false}

@@ -166,3 +166,39 @@ export function createDefaultCut(id: number, narration = '', prompt = '', isSele
     isSelectedForVideo: isSelected
   };
 }
+
+/**
+ * サンドボックス iframe（Permissions Policy で Clipboard API がブロックされている環境）でも
+ * 確実に動作するクリップボードコピー関数（execCommand フォールバック付き）
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  // 1. まず標準の navigator.clipboard を試す
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Permissions policy 等で弾かれた場合は execCommand フォールバックへ進む
+    }
+  }
+
+  // 2. document.execCommand('copy') によるフォールバック
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    textArea.setAttribute('readonly', '');
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    if (successful) return true;
+  } catch (err) {
+    console.error('execCommand copy failed', err);
+  }
+
+  return false;
+}

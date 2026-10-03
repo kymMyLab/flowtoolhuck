@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ProductionMode } from '../types';
 import { loadCustomThemes, saveModeThemes, resetModeThemes, DEFAULT_THEME_MAP } from '../services/themeStorage';
+import { copyToClipboard } from '../services/utils';
 
 interface ThemeEditorModalProps {
   isOpen: boolean;
@@ -54,10 +55,14 @@ export const ThemeEditorModal: React.FC<ThemeEditorModalProps> = ({
     }
   };
 
-  const copyPromptForWebGemini = () => {
+  const copyPromptForWebGemini = async () => {
     const promptText = `YouTube Shorts / TikTok で視聴維持率とクリック率が爆発する「${modeLabel}」のテーマ企画を、1行あたり絵文字つきで10個提案してください。\n1行1テーマで、余計な前置きや番号付け・解説は含めず、テーマ文のみを出力してください。\n例:\n💡 9割が知らない江戸時代の夜のトイレ事情（実は世界一エコだった真実）`;
-    navigator.clipboard.writeText(promptText);
-    alert('📋 WebGemini用プロンプトをクリップボードにコピーしました！\nWebGeminiに貼り付けて出力をそのままここにコピペできます。');
+    const ok = await copyToClipboard(promptText);
+    if (ok) {
+      alert('📋 WebGemini用プロンプトをクリップボードにコピーしました！\nWebGeminiに貼り付けて出力をそのままここにコピペできます。');
+    } else {
+      window.prompt('📋 以下のプロンプトをCtrl+Cでコピーしてください:', promptText);
+    }
   };
 
   return (
