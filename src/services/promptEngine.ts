@@ -1,5 +1,6 @@
 import { GeneratorSettings, GenerationTask } from '../types';
 import { TASTES, STRICT_STYLE_SUFFIX } from '../constants';
+import { resolveTastePrompt } from './tasteStorage';
 import { 
   SHOT_SCALE_REGISTRY, 
   POSE_CONTRAST_RULES, 
@@ -142,7 +143,7 @@ export function buildFinalCinematicPromptAndNegative(
   activeReference?: any
 ): { finalPrompt: string; finalNegative: string; referenceImageMediaIds?: string[] } {
   const { prompt, negativePrompt, styleKey, forbiddenAnachronisms, authenticAttireEn, forbiddenKeywordsEn } = task;
-  const rawStyle = TASTES[styleKey] || '';
+  const rawStyle = resolveTastePrompt(styleKey);
   const isMv = settings.isMvMode || task.isMvMode;
 
   // Layer 1: Master Style Anchor

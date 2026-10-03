@@ -19,6 +19,8 @@ import { ReferenceVault } from './ReferenceVault';
 import { getAllReferenceAssets } from '../services/db';
 import { ThemeEditorModal } from './ThemeEditorModal';
 import { loadCustomThemes, CustomThemeMap } from '../services/themeStorage';
+import { TasteEditorModal } from './TasteEditorModal';
+import { loadCustomTastes, CustomTasteMap } from '../services/tasteStorage';
 
 export { PRODUCTION_MODES };
 
@@ -41,7 +43,9 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
 }) => {
   const [referenceAssets, setReferenceAssets] = useState<ReferenceAsset[]>([]);
   const [customThemes, setCustomThemes] = useState<CustomThemeMap>(() => loadCustomThemes());
+  const [customTastes, setCustomTastes] = useState<CustomTasteMap>(() => loadCustomTastes());
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
+  const [isTasteEditorOpen, setIsTasteEditorOpen] = useState(false);
   const resumeFileRef = useRef<HTMLInputElement | null>(null);
 
   const refreshAssets = async () => {
@@ -255,10 +259,23 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           disabled={isProducing} 
         />
         
+        <div className="flex items-center justify-between mt-1">
+          <label className="text-[11px] font-black text-gray-400 uppercase tracking-wider">画風・テイスト</label>
+          <button
+            type="button"
+            onClick={() => setIsTasteEditorOpen(true)}
+            disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId}
+            className="px-2 py-0.5 text-[10px] rounded-md bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-40"
+            title="画風プロンプト一覧をJSONで直接編集・追加・保存"
+          >
+            <span className="material-symbols-outlined text-[12px]">edit</span>
+            編集・追加 (JSON)
+          </button>
+        </div>
         <FieldDropdown 
-          label="画風・テイスト" 
+          label="" 
           value={settings.productionMode === 'style-matrix' ? '🎨 全画風マトリクス比較（自動）' : (settings.selectedAssetId ? '🎨 参照画像の画風同期中' : settings.taste)} 
-          options={Object.keys(TASTES)} 
+          options={Object.keys(customTastes)} 
           onChange={v => setSettings(s => ({ ...s, taste: v }))} 
           disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId} 
         />
@@ -343,6 +360,18 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           }));
           if (updatedList.length > 0 && !updatedList.includes(settings.theme)) {
             setSettings(s => ({ ...s, theme: updatedList[0], era: updatedList[0] }));
+          }
+        }}
+      />
+
+      <TasteEditorModal
+        isOpen={isTasteEditorOpen}
+        onClose={() => setIsTasteEditorOpen(false)}
+        onTastesUpdated={(updatedTastes) => {
+          setCustomTastes(updatedTastes);
+          const tasteKeys = Object.keys(updatedTastes);
+          if (tasteKeys.length > 0 && !tasteKeys.includes(settings.taste)) {
+            setSettings(s => ({ ...s, taste: tasteKeys[0] }));
           }
         }}
       />

@@ -1,6 +1,7 @@
 import { Flow } from 'flow-sdk';
 import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, SeriesEpisodePlan } from '../types';
 import { IMAGE_MODELS, DEFAULT_ASPECT_RATIO, STRICT_STYLE_SUFFIX, TASTES } from '../constants';
+import { resolveTastePrompt } from './tasteStorage';
 import { safeJsonParse, callWithRetry } from './utils';
 import { 
   getProductionModeConfig, 
@@ -409,7 +410,7 @@ export function buildScriptPrompt(
   productionMode?: string
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
-  const rawStyle = taste ? (TASTES[taste] || taste) : '';
+  const rawStyle = taste ? resolveTastePrompt(taste) : '';
   const isHistorical = checkIsHistorical(era, theme);
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
 
@@ -549,7 +550,7 @@ export async function directShot(
   addLog?: (msg: string, type?: any) => void
 ): Promise<Partial<Cut>> {
   const { cutId, prompt, styleKey } = task;
-  const rawStyle = TASTES[styleKey] || '';
+  const rawStyle = resolveTastePrompt(styleKey);
   const characterGuidance = activeReference 
     ? `Protagonist: ${activeReference.characterDna}. NOTE: Adopt only the character's appearance and distinctive features (face, hair, eyes); DO NOT copy reference pose.` 
     : 'No specific reference asset.';
