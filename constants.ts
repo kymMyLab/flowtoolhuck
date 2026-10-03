@@ -158,6 +158,9 @@ import {
   TELOP_STYLE_REGISTRY,
   TELOP_TRANSITION_REGISTRY,
   TELOP_POSITION_REGISTRY,
+  PRODUCTION_MODES_CONFIG,
+  PRODUCTION_MODES_LIST,
+  getProductionModeConfig,
   resolveImageModel,
   resolveVideoModel,
   resolveCameraWork,
@@ -180,6 +183,9 @@ export {
   TELOP_STYLE_REGISTRY,
   TELOP_TRANSITION_REGISTRY,
   TELOP_POSITION_REGISTRY,
+  PRODUCTION_MODES_CONFIG,
+  PRODUCTION_MODES_LIST,
+  getProductionModeConfig,
   resolveImageModel,
   resolveVideoModel,
   resolveCameraWork,
@@ -189,6 +195,8 @@ export {
   resolveRecommendedTelopStaging,
   resolveRecommendedCameraWorkAndKenBurns
 };
+
+export const PRODUCTION_MODES = PRODUCTION_MODES_LIST;
 
 export const IMAGE_MODELS = IMAGE_MODELS_REGISTRY;
 export const VIDEO_MODELS = VIDEO_MODELS_REGISTRY;

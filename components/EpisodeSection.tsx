@@ -2,36 +2,18 @@ import React from 'react';
 import { Episode, Cut, VideoModelType } from '../types';
 import { PillButton } from './Primitives';
 import { CutCard } from './CutCard';
+import { getProductionModeConfig } from '../config/studioDefinitions';
 
 /**
  * 時代考証・世界観インテリジェンスカード（作品の時代設定と禁止要素を表示）
  */
 export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
   const isMv = !!ep.isMvMode || ep.titleJp.startsWith('🎵') || ep.productionMode === 'mv';
-  const mode = ep.productionMode || (isMv ? 'mv' : 'episodes');
-
-  const cardTitle = mode === 'mv' ? 'Music Video Concept Card'
-    : mode === 'trivia' ? 'Trivia & Science Intelligence Card'
-    : mode === 'quotes' ? 'Mastermind Wisdom Card'
-    : mode === 'folklore' ? 'Occult & Folklore Intelligence Card'
-    : mode === 'craft' ? 'Craftsmanship Spirit Card'
-    : mode === 'style-matrix' ? 'Style Matrix Card'
-    : 'Historical Intelligence Card';
-
-  const cardIcon = mode === 'mv' ? 'headphones'
-    : mode === 'trivia' ? 'lightbulb'
-    : mode === 'quotes' ? 'format_quote'
-    : mode === 'folklore' ? 'psychology'
-    : mode === 'craft' ? 'precision_manufacturing'
-    : mode === 'style-matrix' ? 'palette'
-    : 'history_edu';
-
-  const themeLabel = isMv ? 'シチュエーション'
-    : mode === 'trivia' ? '雑学テーマ'
-    : mode === 'quotes' ? '名言・人物'
-    : mode === 'folklore' ? '怪異・伝説'
-    : mode === 'craft' ? '伝統技術'
-    : 'テーマ';
+  const modeConfig = getProductionModeConfig(ep.productionMode, isMv);
+  const mode = modeConfig.value;
+  const cardTitle = modeConfig.cardTitle;
+  const cardIcon = modeConfig.cardIcon;
+  const themeLabel = modeConfig.themeLabel;
 
   return (
     <div className={`border rounded-2xl p-5 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-500 ${

@@ -11,13 +11,16 @@ import {
   CRAFT_THEMES, 
   TASTES, 
   IMAGE_MODELS, 
-  VIDEO_RATIO_OPTIONS 
+  VIDEO_RATIO_OPTIONS,
+  PRODUCTION_MODES
 } from '../constants';
 import { StudioLogs, LogEntry } from './StudioLogs';
 import { ReferenceVault } from './ReferenceVault';
 import { getAllReferenceAssets } from '../services/db';
 import { ThemeEditorModal } from './ThemeEditorModal';
 import { loadCustomThemes, CustomThemeMap } from '../services/themeStorage';
+
+export { PRODUCTION_MODES };
 
 interface StudioSidebarProps {
   settings: GeneratorSettings;
@@ -32,24 +35,6 @@ interface StudioSidebarProps {
   logs: LogEntry[];
   onAddLog: (msg: string, type?: LogEntry['type']) => void;
 }
-
-export const PRODUCTION_MODES: Array<{
-  value: ProductionMode;
-  label: string;
-  icon: string;
-  badge: string;
-  desc: string;
-  telopNote: string;
-  colorClass: string;
-}> = [
-  { value: 'episodes', label: '🎬 ドラマ連番', icon: 'movie', badge: '映画字幕', desc: '重厚なストーリー連載（映画字幕フェード）', telopNote: '下部中央フェード・台詞没入重視', colorClass: 'border-white/20 bg-white/5 text-gray-200' },
-  { value: 'mv', label: '🎵 音楽MV (12カット)', icon: 'music_note', badge: '全12カット', desc: 'Ado風キネティック対向スルー・ビート同期', telopNote: 'キネティック対向スルー・ネオン枠', colorClass: 'border-purple-500/30 bg-purple-950/40 text-purple-200' },
-  { value: 'trivia', label: '💡 衝撃雑学Shorts', icon: 'lightbulb', badge: 'TikTok特化', desc: '冒頭フック＆オチ（画面中央フラッシュ）', telopNote: '画面中央超特大・ズームバウンス', colorClass: 'border-amber-500/40 bg-amber-950/40 text-amber-200' },
-  { value: 'quotes', label: '📜 偉人の名言・処方箋', icon: 'history_edu', badge: '保存特化', desc: '心に刺さる人生訓（厳粛な縦書き墨文字）', telopNote: '厳粛な縦書き／天吊り・静寂フェード', colorClass: 'border-teal-500/40 bg-teal-950/40 text-teal-200' },
-  { value: 'folklore', label: '👻 怪異・未解決事件', icon: 'visibility', badge: '考察・恐怖', desc: '背筋凍る謎（不穏グリッチ・深紅文字）', telopNote: '不穏グリッチ・深紅ハイライト', colorClass: 'border-rose-900/60 bg-rose-950/50 text-rose-200' },
-  { value: 'craft', label: '🏯 超絶技巧・職人魂', icon: 'handyman', badge: '神業和モダン', desc: '神の手を持つ職人技（凛とした伝統金文字）', telopNote: '凛とした伝統和モダン・金墨文字', colorClass: 'border-yellow-600/40 bg-yellow-950/40 text-yellow-200' },
-  { value: 'style-matrix', label: '🎨 画風比較 (2枚)', icon: 'palette', badge: '自動比較', desc: '同一プロンプトで複数画風を一括検証（2枚固定）', telopNote: '画風比較（動画なし）', colorClass: 'border-pink-500/30 bg-pink-950/40 text-pink-200' }
-];
 
 export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onResumeSeries, activeSeriesManifest, logs, onAddLog

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ConfirmationModal } from './components/Primitives';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
 import { ArchiveDrawer } from './components/ArchiveDrawer';
@@ -36,10 +36,12 @@ export default function App() {
 
   const { episodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
     settings, 
-    logs, 
     addLog, 
     refreshStories
   });
+
+  const episodesRef = useRef(episodes);
+  episodesRef.current = episodes;
 
   const handleDownloadZip = useCallback(async (ep: Episode) => {
     const filename = ep.packageZipFilename || `Episode_${ep.id}_Package.zip`;
@@ -48,7 +50,6 @@ export default function App() {
     // 1. すでに ZIP が生成済みの場合は、即座に savePackageFile をキック！（詳細コンソールログ出力）
     if (ep.packageZipBlobUrl) {
       addLog(`💾 作成済みパッケージ「${filename}」を直接保存中...`, 'process');
-      // ユーザーの直接クリック操作コンテキストが生きている間に window.open を試行
       try {
         window.open(ep.packageZipBlobUrl, '_blank');
       } catch (_) {}
@@ -88,7 +89,7 @@ export default function App() {
     let finalUpdates = { ...updates };
     if (updates.narrationJp !== undefined) {
       const highlights = extractHighlights(updates.narrationJp);
-      const existingTelop = episodes.find(e => e.id === epId)?.cuts.find(c => c.id === cutId)?.telop;
+      const existingTelop = episodesRef.current.find(e => e.id === epId)?.cuts.find(c => c.id === cutId)?.telop;
       finalUpdates.telop = {
         fullText: updates.narrationJp,
         highlights: highlights,
@@ -100,14 +101,17 @@ export default function App() {
     }
     updateCut(epId, cutId, finalUpdates);
     setPreviewingCutData(prev => (prev && prev.epId === epId && prev.cut.id === cutId) ? { ...prev, cut: { ...prev.cut, ...finalUpdates } } : prev);
-  }, [updateCut, episodes]);
+  }, [updateCut]);
 
   useEffect(() => {
     initDB().then(refreshStories);
-    const style = document.createElement('style');
-    style.id = 'studio-core-styles';
-    style.textContent = `@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&family=Outfit:wght@800;900&family=Montserrat:wght@800;900&family=Dela+Gothic+One&display=swap'); .no-wrap-row { display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; scroll-behavior: smooth; } .dark-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; } .dark-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; } @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } .animate-slide-in { animation: slideIn 0.3s ease-out forwards; } @keyframes dropdown-enter { from { opacity: 0; transform: scale(0.95) translateY(-5px); } to { opacity: 1; transform: scale(1) translateY(0); } } .animate-dropdown { animation: dropdown-enter 0.15s ease-out forwards; } .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`;
-    document.head.appendChild(style);
+    const styleId = 'studio-core-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&family=Outfit:wght@800;900&family=Montserrat:wght@800;900&family=Dela+Gothic+One&display=swap'); .no-wrap-row { display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; scroll-behavior: smooth; } .dark-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; } .dark-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; } @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } .animate-slide-in { animation: slideIn 0.3s ease-out forwards; } @keyframes dropdown-enter { from { opacity: 0; transform: scale(0.95) translateY(-5px); } to { opacity: 1; transform: scale(1) translateY(0); } } .animate-dropdown { animation: dropdown-enter 0.15s ease-out forwards; } .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`;
+      document.head.appendChild(style);
+    }
   }, [refreshStories]);
 
   return (

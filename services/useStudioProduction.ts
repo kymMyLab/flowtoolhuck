@@ -28,12 +28,17 @@ import {
   checkIsHistorical,
   PreviousShotInfo
 } from './directorService';
-import { getStoryboardPreset } from './promptEngine';
+import { 
+  getStoryboardPreset, 
+  buildDynamicAntiPreviousNegative, 
+  isMvChorusCut, 
+  MV_ANTI_CAMERA_LOOK_NEGATIVE 
+} from './promptEngine';
 import { LogEntry } from '../components/StudioLogs';
+import { useEpisodeState } from './useEpisodeState';
 
 interface UseStudioProductionProps {
   settings: GeneratorSettings;
-  logs: LogEntry[];
   addLog: (message: string, type?: LogEntry['type']) => void;
   refreshStories: () => Promise<void>;
   onPackageReady?: (data: {
@@ -47,19 +52,33 @@ interface UseStudioProductionProps {
   }) => void;
 }
 
-export function useStudioProduction({ settings, logs, addLog, refreshStories, onPackageReady }: UseStudioProductionProps) {
-  const [episodes, setEpisodes] = useState<Episode[]>([]);
-  const [isProducing, setIsProducing] = useState(false);
-  const [activeSeriesManifest, setActiveSeriesManifest] = useState<SeriesManifest | null>(null);
-  const isAbortedRef = useRef(false);
+export function useStudioProduction({ settings, addLog, refreshStories, onPackageReady }: UseStudioProductionProps) {
+
+  const {
+    episodes,
+    setEpisodes,
+    episodesRef,
+    isProducing,
+    setIsProducing,
+    isAbortedRef,
+    activeSeriesManifest,
+    setActiveSeriesManifest,
+    seriesManifestRef,
+    updateCut,
+    updateEpisode,
+    clearEpisodes,
+    abortProduction
+  } = useEpisodeState(addLog);
+
   const queueRef = useRef<GenerationTask[]>([]);
-  const episodesRef = useRef<Episode[]>([]);
 
-  const logsRef = useRef(logs);
-  logsRef.current = logs;
+  const handleAbort = useCallback(() => {
+    queueRef.current = [];
+    abortProduction();
+  }, [abortProduction]);
 
-  const seriesManifestRef = useRef<SeriesManifest | null>(null);
   const currentAssetRef = useRef<{ name: string; base64: string; mimeType: string } | null>(null);
+
 
   const activeReferenceRef = useRef<{
     mediaId: string;
@@ -69,42 +88,6 @@ export function useStudioProduction({ settings, logs, addLog, refreshStories, on
     eraNegative: string;
   } | null>(null);
 
-  useEffect(() => {
-    episodesRef.current = episodes;
-  }, [episodes]);
-
-  const updateCut = useCallback((epId: number, cutId: number, updates: Partial<Cut>) => {
-    // 1. 即座に episodesRef.current を同期更新（非同期ループ内の競合・古い参照を完全排除）
-    episodesRef.current = episodesRef.current.map(ep =>
-      ep.id === epId
-        ? { ...ep, cuts: ep.cuts.map(c => c.id === cutId ? { ...c, ...updates } : c) }
-        : ep
-    );
-    // 2. React state を更新して UI に即座に反映
-    setEpisodes(prev => prev.map(ep =>
-      ep.id === epId
-        ? { ...ep, cuts: ep.cuts.map(c => c.id === cutId ? { ...c, ...updates } : c) }
-        : ep
-    ));
-  }, []);
-
-  const updateEpisode = useCallback((epId: number, updates: Partial<Episode>) => {
-    // 1. 即座に episodesRef.current を同期更新
-    episodesRef.current = episodesRef.current.map(ep =>
-      ep.id === epId ? { ...ep, ...updates } : ep
-    );
-    // 2. React state を更新
-    setEpisodes(prev => prev.map(ep =>
-      ep.id === epId ? { ...ep, ...updates } : ep
-    ));
-  }, []);
-
-  const abortProduction = useCallback(() => {
-    isAbortedRef.current = true;
-    queueRef.current = [];
-    setIsProducing(false);
-    addLog('🛑 制作プロセスを中断しました。', 'warning');
-  }, [addLog]);
 
   const resumeSeries = useCallback(async (manifest: SeriesManifest, onAssetRestored?: (assetId: number) => void) => {
     seriesManifestRef.current = manifest;
@@ -262,41 +245,42 @@ export function useStudioProduction({ settings, logs, addLog, refreshStories, on
     for (let i = 0; i < tasks.length; i++) {
       if (isAbortedRef.current) break;
       const task = tasks[i];
-      updateCut(task.epId, task.cutId, { isDirecting: true });
-      addLog(`🎬 Ep.${task.epId} C${task.cutId.toString().padStart(2, '0')}: 構図演出・プロンプト最適化中...${previousShotInfo?.scale ? ` (前カット [${previousShotInfo.scale}] の構図をネガティブ除外し対比構図を策定)` : ''}`, 'info');
-
-      const directedUpdates = await directShot(task, settings, activeReferenceRef.current, previousShotInfo, addLog);
-      
       const existingCut = episodesRef.current.find(e => e.id === task.epId)?.cuts.find(c => c.id === task.cutId);
-      const mergedUpdates: Partial<Cut> = {
-        ...directedUpdates,
-        telop: {
-          fullText: existingCut?.telop?.fullText || existingCut?.narrationJp || '',
-          highlights: existingCut?.telop?.highlights || [],
-          style: directedUpdates.telop?.style || existingCut?.telop?.style || 'mv-blur-slide',
-          transition: directedUpdates.telop?.transition || existingCut?.telop?.transition || 'blur-slide-left',
-          position: directedUpdates.telop?.position || existingCut?.telop?.position || 'bottom-left',
-          directorNote: directedUpdates.telop?.directorNote || existingCut?.telop?.directorNote || ''
-        }
-      };
-      updateCut(task.epId, task.cutId, mergedUpdates);
+      
+      const shotScale = existingCut?.shotScale || 'Wide';
+      const cinematicAngle = existingCut?.cinematicAngle || 'Cinematic perspective';
+      const promptEn = existingCut?.promptEn || task.prompt;
+      
+      // 直前カット対比ネガティブをミリ秒計算（AI通信ゼロ）
+      let antiPreviousNegative = buildDynamicAntiPreviousNegative(previousShotInfo);
+      const isAllowedEyeContact = settings.isMvMode && isMvChorusCut(task.cutId);
+      if (settings.isMvMode && !isAllowedEyeContact) {
+        antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${MV_ANTI_CAMERA_LOOK_NEGATIVE}` : MV_ANTI_CAMERA_LOOK_NEGATIVE;
+      }
+
+      updateCut(task.epId, task.cutId, { 
+        isDirecting: false,
+        negativePrompt: antiPreviousNegative
+      });
 
       previousShotInfo = {
-        scale: directedUpdates.shotScale,
-        angle: directedUpdates.cinematicAngle,
-        prompt: directedUpdates.promptEn || task.prompt,
-        tag: directedUpdates.cameraWork,
-        telop: mergedUpdates.telop
+        scale: shotScale,
+        angle: cinematicAngle,
+        prompt: promptEn,
+        tag: existingCut?.cameraWork,
+        telop: existingCut?.telop
       };
 
       preparedTasks.push({
         ...task,
-        prompt: directedUpdates.promptEn || task.prompt,
-        negativePrompt: directedUpdates.negativePrompt
+        prompt: promptEn,
+        negativePrompt: antiPreviousNegative
       });
     }
 
     if (isAbortedRef.current) return;
+
+    addLog(`🎬 全 ${preparedTasks.length} カットの対比構図演出を確定（並列画像生成を開始します）`, 'process');
 
     // ── Phase 2: 画像生成フェーズ（確定したプロンプト＆直前構図ネガティブで並列実行） ──
     queueRef.current = [...preparedTasks];
@@ -782,7 +766,7 @@ Output JSON ONLY:
           const freshEp = episodesRef.current.find(e => e.id === epIndex) || newEpisode;
           if (settings.autoDownload && !isAbortedRef.current) {
             addLog(`📦 第${epIndex}${modeInfo.unit}の完了時自動ダウンロードを開始します...`, 'process');
-            const res = await downloadZip(freshEp, addLog, undefined, logsRef.current);
+            const res = await downloadZip(freshEp, addLog, undefined);
             if (res) {
               updateEpisode(epIndex, {
                 packageZipBlobUrl: res.blobUrl,
@@ -958,10 +942,13 @@ Output JSON ONLY:
             const narration = cutData.narrationJp || cutData.narration || '';
             const plot = cutData.basicPlot || cutData.promptEn || cutData.prompt || '';
             const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
-            const recCw = resolveRecommendedCameraWorkAndKenBurns(j + 1, 'episodes', false, settings.isMangaMode);
-            cut.cameraWork = recCw.id;
-            cut.cameraMotion = recCw.motionPrompt;
-            cut.kenBurnsPreset = recCw.recommendedKenBurns;
+            const preset = getStoryboardPreset(j + 1, false, settings.isMangaMode);
+            cut.shotScale = cutData.shotScale || preset.scale;
+            cut.cinematicAngle = cutData.cinematicAngle || preset.angle;
+            const cwDef = cutData.cameraWork ? resolveCameraWork(cutData.cameraWork) : resolveRecommendedCameraWorkAndKenBurns(j + 1, 'episodes', false, settings.isMangaMode);
+            cut.cameraWork = cwDef.id;
+            cut.cameraMotion = cwDef.motionPrompt;
+            cut.kenBurnsPreset = cwDef.recommendedKenBurns;
             const dramaStaging = resolveRecommendedTelopStaging(j + 1, false, false, undefined, 'episodes');
             Object.assign(cut.telop, dramaStaging);
             
@@ -1025,7 +1012,7 @@ Output JSON ONLY:
 
           const freshEp = episodesRef.current.find(e => e.id === epId)!;
           if (settings.autoDownload && !isAbortedRef.current) {
-            const res = await downloadZip(freshEp, addLog, manifest, logsRef.current);
+            const res = await downloadZip(freshEp, addLog, manifest);
             if (res) {
               updateEpisode(epId, {
                 packageZipBlobUrl: res.blobUrl,
@@ -1073,13 +1060,5 @@ Output JSON ONLY:
     addLog(`🎲 第 ${epId} 話: 全12カットのテロップ演出（動き・配置）を一括再抽選しました！（画像は保持）`, 'success');
   }, [addLog]);
 
-  const clearEpisodes = useCallback(() => {
-    setEpisodes([]);
-    episodesRef.current = [];
-    seriesManifestRef.current = null;
-    setActiveSeriesManifest(null);
-    addLog('🧹 制作データを全消去しました。', 'info');
-  }, [addLog]);
-
-  return { episodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes };
+  return { episodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes };
 }

@@ -14,7 +14,7 @@ interface CutCardProps {
   onRetry?: (type: 'image' | 'video', epId: number, cutId: number) => void;
 }
 
-export const CutCard: React.FC<CutCardProps> = ({ 
+export const CutCard: React.FC<CutCardProps> = React.memo(({ 
   cut, episodeId, isMvMode, onAnimateRequest, onPreviewCut, onUpdateSelection, onUpdateModel, onRetry 
 }) => {
   const imageSrc = cut.imageBase64 ? (cut.imageBase64.startsWith('data:') ? cut.imageBase64 : `data:image/png;base64,${cut.imageBase64}`) : null;
@@ -187,4 +187,4 @@ export const CutCard: React.FC<CutCardProps> = ({
       </div>
     </div>
   );
-};
+});

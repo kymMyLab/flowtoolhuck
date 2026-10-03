@@ -2,6 +2,7 @@ import { Flow } from 'flow-sdk';
 import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, SeriesEpisodePlan } from '../types';
 import { IMAGE_MODELS, DEFAULT_ASPECT_RATIO, STRICT_STYLE_SUFFIX, TASTES } from '../constants';
 import { safeJsonParse, callWithRetry } from './utils';
+import { getProductionModeConfig } from '../config/studioDefinitions';
 
 /**
  * 舞台設定が歴史・時代劇かどうかを判定（時代・テーマ双方から判定）
@@ -395,52 +396,12 @@ export function buildScriptPrompt(
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const rawStyle = taste ? (TASTES[taste] || taste) : '';
   const isHistorical = checkIsHistorical(era, theme);
-  
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
-  const directorRole = effMode === 'trivia'
-    ? "viral YouTube Shorts/TikTok trivia creator and documentary director"
-    : effMode === 'quotes'
-      ? "philosophical essayist, master typographer, and quote archivist"
-      : effMode === 'folklore'
-        ? "investigative mystery storyteller and psychological suspense director"
-        : effMode === 'craft'
-          ? "master artisan documentarian and aesthetic visual poet"
-          : isMvMode
-            ? "world-class music video (MV) director and visual poet"
-            : isMangaMode 
-              ? "world-class comic/manga author and storyboard artist" 
-              : isHistorical
-                ? "world-class historical drama director"
-                : "world-class cinematic drama director";
-    
-  const mangaInstructions = isMangaMode 
-    ? `MANGA/COMIC DIRECTING:
-1. Dynamic Comic Storytelling:
-Design full-bleed, borderless manga artwork filling the entire frame. Include expressive dialogues (Spoken Dialogue), inner thoughts (Monologue), narration, and dramatic onomatopoeia (SFX) smoothly integrated into narrationJp.
-2. Dramatic Comic Compositions:
-Direct each cut with striking manga visual dynamics (epic splash double spreads, intense eye close-ups, dynamic action poses, deep screentone shadows).`
-    : "";
 
-  const mvInstructions = isMvMode
-    ? `MUSIC VIDEO (MV) CONTINUITY & LYRIC DIRECTING:
-1. Seamless Visual Flow in the Same World:
-This is an authentic music video sequence where the visual is a cinematic aesthetic backdrop to a song.
-Maintain a steady, atmospheric, nostalgic, or melancholic mood (e.g. city nightlights, walking through wind-swept fields, neon dusk, subway platform, rain on windows).
-The 12 cuts must form a seamless, cohesive visual universe.
-
-2. AUTHENTIC SONG LYRICS (REAL J-POP / VOCALOID / INDIE ROCK LYRICS):
-CRITICAL: Do NOT write third-person scenery narration (e.g. "ふと立ち止まり振り返れば...").
-Instead, narrationJp MUST be REAL EMOTIONAL SONG LYRICS (楽曲の歌詞そのもの) as if sung by Ado, Yorushika, ZUTOMAYO, YOASOBI, or Vaundy!
-The 12 cuts MUST tell a musical story like a single complete hit song:
-- Cuts 1-3 (Verse A): Quiet restlessness, unvoiced emotions, solitary late night. (e.g., "言えない言葉ばかりが部屋に積もってく", "掠れた声のまま夜を数えてた")
-- Cuts 4-6 (Verse B): Rising tempo, running through the dusk, heartbeats accelerating. (e.g., "曖昧な境界線を塗り潰してゆく", "滲んだ街灯の先へ走り出す")
-- Cuts 7-9 (Chorus / Drop): Emotional climax, powerful punchy lyrical hooks! (e.g., "叫べない夜の向こう側まで連れてって", "息を切らした僕らの居場所はここにある")
-- Cuts 10-12 (Outro / Epilogue): Lingering resonance, quiet dawn, resolved heartbeat. (e.g., "朝焼けが全てを染め直す前に", "風が止んだ空白に君の名前を呼ぶ")
-Each cut's narrationJp must be 15-28 characters, punchy, lyrical, and catchy.
-
-3. Aesthetic Subtitle Highlights:
-For EACH cut, select 1 to 2 key emotional words (which MUST be EXACTLY present in narrationJp, e.g. "夜", "境界線", "息", "朝焼け", "名前") for the highlights array.`
-    : "";
+  const modeConfig = getProductionModeConfig(effMode, isMvMode);
+  const directorRole = modeConfig.getDirectorRole(isMangaMode, isHistorical);
+  const contextTitle = modeConfig.getContextTitle(isMangaMode, isHistorical);
+  const modeInstructions = modeConfig.promptInstructions;
 
   const visualStyleMandate = taste
     ? `VISUAL ART STYLE INTEGRATION:
@@ -452,29 +413,9 @@ MANDATORY VISUAL RULES:
 - NEVER include elements of this art style (e.g., neon, pop, pastel, anime, glowing lights) into forbidden lists!`
     : "";
 
-  const modeInstructions = effMode === 'trivia'
-    ? `VIRAL TRIVIA DIRECTING:
-1. Pacing & Curiosity: Hook in Cut 1-2 with unbelievable curiosity/question. Explain the hidden scientific/historical truth in Cut 3-9. Deliver a mind-blowing punchline/conclusion in Cut 10-12.
-2. Narration: narrationJp MUST be punchy Japanese trivia spoken commentary (18-25 chars per cut, engaging YouTube Shorts rhythm).
-3. Gold Highlights: Highlight critical numbers, shocking facts, and core keywords.`
-    : effMode === 'quotes'
-      ? `PHILOSOPHICAL GREAT QUOTES DIRECTING:
-1. Pacing: Cut 1-3 sets the emotional dilemma/anxiety of life. Cut 4-9 reveals the profound quote and wisdom. Cut 10-12 provides the healing conclusion/prescription to save.
-2. Narration: narrationJp MUST be elegant, dignified, memorable quotes (格調高い名言・超訳処方箋).
-3. Gold Highlights: Highlight the profound keyword that resonates in the heart.`
-      : effMode === 'folklore'
-        ? `FOLKLORE & UNSOLVED MYSTERY DIRECTING:
-1. Pacing: Cut 1-2 introduces the chilling historical incident/creepy lore. Cut 3-9 examines unsettling evidence and bizarre theories. Cut 10-12 poses an eerie open question provoking comments.
-2. Narration: narrationJp MUST be suspenseful, atmospheric commentary evoking curiosity and goosebumps.
-3. Gold Highlights: Highlight chilling evidence, dates, and ominous names.`
-        : effMode === 'craft'
-          ? `SUPREME CRAFTSMAN DIRECTING:
-1. Pacing: Cut 1-2 presents the raw pristine material. Cut 3-9 captures the mesmerizing precision handwork, micro-focus, and extreme dedication. Cut 10-12 reveals the sublime finished masterpiece.
-2. Narration: narrationJp MUST be serene, reverent, and poetic, honoring the craftsman's devotion.
-3. Gold Highlights: Highlight artisan terms, material names, and supreme techniques.`
-          : isMvMode ? mvInstructions : mangaInstructions;
-
-  const contextTitle = effMode === 'trivia' ? "Trivia Shorts Sequence" : effMode === 'quotes' ? "Quotes Shorts Sequence" : effMode === 'folklore' ? "Folklore Mystery Sequence" : effMode === 'craft' ? "Craft Documentary Sequence" : isMvMode ? "Music Video Sequence" : isMangaMode ? "Comic Episode" : isHistorical ? "Historical Drama Episode" : "Drama Episode";
+  const mvCameraMandate = isMvMode
+    ? "CRITICAL MV CAMERA GAZE: Cut 8 (Chorus climax) is the ONLY cut in the entire 12-cut music video where direct eye contact with the camera is permitted for intense emotional resonance. In all other 11 cuts, the subject MUST NOT look at the camera/viewer under any circumstances! Direct the character looking away, into the distance, eyes cast downward in thought, in pure side profile, or seen from behind."
+    : "";
 
   return `You are a ${directorRole} and visual researcher.
 Create a 12-cut ${contextTitle} for Episode ${epId} ("${currentPlan.titleJp}").
@@ -482,6 +423,13 @@ World Theme & Setting: "${worldSetting}".
 ${visualStyleMandate}
 
 ${modeInstructions}
+
+CRITICAL 12-CUT DYNAMIC CINEMATIC CONTRAST & PACING:
+Design all 12 cuts with continuous, professional cinematic pacing and contrasting framing.
+- NEVER use the exact same shot scale, camera angle, or character posture in two consecutive cuts!
+- Dynamically alternate distances: Wide establishing shot -> Intense eye/expression close-up -> Medium profile in motion -> Over-shoulder -> Epic climax splash.
+- Vary character poses: sitting, walking, standing resolute, gazing aside, dynamic action.
+${mvCameraMandate}
 
 ${isMvMode ? 'ATMOSPHERIC & VISUAL HARMONY:' : (isHistorical ? 'STRICT HISTORICAL ACCURACY:' : 'AUTHENTIC SETTING & CULTURAL ACCURACY:')}
 Dynamically analyze the period, setting, and atmosphere implied by "${worldSetting}". Determine authentic aesthetic attire and identify elements that would break the mood and must NEVER appear (NEVER forbid elements of the chosen Visual Art Style).
@@ -503,6 +451,9 @@ Output ONLY valid JSON matching this exact structure:
   "cuts": [
     { 
       "id": 1, 
+      "shotScale": "Wide",
+      "cinematicAngle": "Atmospheric wide establishing view with street-level perspective",
+      "cameraWork": "zoom-in",
       "basicPlot": "Cinematic visual description of the cut in English matching the art style", 
       "narrationJp": "${isMvMode ? '楽曲の歌詞・リリック（1曲の歌として繋がるエモい歌詞20文字前後）' : '重厚なナレーション（日本語）'}",
       "highlights": ["ナレーション内の重要語1", "ナレーション内の重要語2"]

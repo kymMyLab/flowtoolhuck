@@ -379,6 +379,183 @@ export const CRAFT_THEMES = [
   '🍱 曲げわっぱ・杉の板を湯気で曲げる「0.1ミリの指先の記憶」'
 ];
 
+// ── 6.5. 制作モード・プラグイン統合オブジェクト (PRODUCTION_MODES_CONFIG) ─────
+import type { ProductionMode } from '../types';
+
+export interface ProductionModeConfig {
+  value: ProductionMode;
+  label: string;
+  icon: string;
+  badge: string;
+  desc: string;
+  telopNote: string;
+  colorClass: string;
+  cardTitle: string;
+  cardIcon: string;
+  themeLabel: string;
+  unit: string;
+  themes: string[];
+  getDirectorRole: (isManga?: boolean, isHistorical?: boolean) => string;
+  getContextTitle: (isManga?: boolean, isHistorical?: boolean) => string;
+  promptInstructions: string;
+}
+
+export const PRODUCTION_MODES_CONFIG: Record<ProductionMode, ProductionModeConfig> = {
+  episodes: {
+    value: 'episodes',
+    label: '🎬 ドラマ連番',
+    icon: 'movie',
+    badge: '映画字幕',
+    desc: '重厚なストーリー連載（映画字幕フェード）',
+    telopNote: '下部中央フェード・台詞没入重視',
+    colorClass: 'border-white/20 bg-white/5 text-gray-200',
+    cardTitle: 'Historical Intelligence Card',
+    cardIcon: 'history_edu',
+    themeLabel: 'テーマ',
+    unit: '話',
+    themes: [],
+    getDirectorRole: (isManga, isHistorical) => isManga ? 'world-class comic/manga author and storyboard artist' : isHistorical ? 'world-class historical drama director' : 'world-class cinematic drama director',
+    getContextTitle: (isManga, isHistorical) => isManga ? 'Comic Episode' : isHistorical ? 'Historical Drama Episode' : 'Drama Episode',
+    promptInstructions: `CINEMATIC DRAMA DIRECTING:
+1. Pacing & Continuity: Direct each cut with profound narrative progression and cinematic gravitas.
+2. Dialogue & Narration: narrationJp MUST be gripping spoken dialogue or deep cinematic narration (20-30 characters per cut).
+3. Highlights: Highlight 1 to 2 key terms driving emotional weight.`
+  },
+  mv: {
+    value: 'mv',
+    label: '🎵 音楽MV (12カット)',
+    icon: 'music_note',
+    badge: '全12カット',
+    desc: 'Ado風キネティック対向スルー・ビート同期',
+    telopNote: 'キネティック対向スルー・ネオン枠',
+    colorClass: 'border-purple-500/30 bg-purple-950/40 text-purple-200',
+    cardTitle: 'Music Video Concept Card',
+    cardIcon: 'headphones',
+    themeLabel: 'シチュエーション',
+    unit: '曲',
+    themes: MV_THEMES,
+    getDirectorRole: () => 'world-class music video (MV) director and visual poet',
+    getContextTitle: () => 'Music Video Sequence',
+    promptInstructions: `MUSIC VIDEO (MV) CONTINUITY & LYRIC DIRECTING:
+1. Seamless Visual Flow in the Same World:
+This is an authentic music video sequence where the visual is a cinematic aesthetic backdrop to a song. Maintain a steady, atmospheric, nostalgic, or melancholic mood. The 12 cuts must form a seamless, cohesive visual universe.
+2. AUTHENTIC SONG LYRICS:
+CRITICAL: Do NOT write third-person scenery narration. Instead, narrationJp MUST be REAL EMOTIONAL SONG LYRICS as if sung by Ado, Yorushika, ZUTOMAYO, YOASOBI, or Vaundy!
+- Cuts 1-3 (Verse A): Quiet restlessness, unvoiced emotions, solitary late night.
+- Cuts 4-6 (Verse B): Rising tempo, running through the dusk, heartbeats accelerating.
+- Cuts 7-9 (Chorus / Drop): Emotional climax, powerful punchy lyrical hooks!
+- Cuts 10-12 (Outro / Epilogue): Lingering resonance, quiet dawn, resolved heartbeat.
+3. Aesthetic Subtitle Highlights:
+For EACH cut, select 1 to 2 key emotional words (which MUST be EXACTLY present in narrationJp) for the highlights array.`
+  },
+  trivia: {
+    value: 'trivia',
+    label: '💡 衝撃雑学Shorts',
+    icon: 'lightbulb',
+    badge: 'TikTok特化',
+    desc: '冒頭フック＆オチ（画面中央フラッシュ）',
+    telopNote: '画面中央超特大・ズームバウンス',
+    colorClass: 'border-amber-500/40 bg-amber-950/40 text-amber-200',
+    cardTitle: 'Trivia & Science Intelligence Card',
+    cardIcon: 'lightbulb',
+    themeLabel: '雑学テーマ',
+    unit: '本',
+    themes: TRIVIA_THEMES,
+    getDirectorRole: () => 'viral YouTube Shorts/TikTok trivia creator and documentary director',
+    getContextTitle: () => 'Trivia Shorts Sequence',
+    promptInstructions: `VIRAL TRIVIA DIRECTING:
+1. Pacing & Curiosity: Hook in Cut 1-2 with unbelievable curiosity/question. Explain the hidden scientific/historical truth in Cut 3-9. Deliver a mind-blowing punchline/conclusion in Cut 10-12.
+2. Narration: narrationJp MUST be punchy Japanese trivia spoken commentary (18-25 chars per cut, engaging YouTube Shorts rhythm).
+3. Gold Highlights: Highlight critical numbers, shocking facts, and core keywords.`
+  },
+  quotes: {
+    value: 'quotes',
+    label: '📜 偉人の名言・処方箋',
+    icon: 'history_edu',
+    badge: '保存特化',
+    desc: '心に刺さる人生訓（厳粛な縦書き墨文字）',
+    telopNote: '厳粛な縦書き／天吊り・静寂フェード',
+    colorClass: 'border-teal-500/40 bg-teal-950/40 text-teal-200',
+    cardTitle: 'Mastermind Wisdom Card',
+    cardIcon: 'format_quote',
+    themeLabel: '名言・人物',
+    unit: '篇',
+    themes: QUOTES_THEMES,
+    getDirectorRole: () => 'philosophical essayist, master typographer, and quote archivist',
+    getContextTitle: () => 'Quotes Shorts Sequence',
+    promptInstructions: `PHILOSOPHICAL GREAT QUOTES DIRECTING:
+1. Pacing: Cut 1-3 sets the emotional dilemma/anxiety of life. Cut 4-9 reveals the profound quote and wisdom. Cut 10-12 provides the healing conclusion/prescription to save.
+2. Narration: narrationJp MUST be elegant, dignified, memorable quotes (格調高い名言・超訳処方箋).
+3. Gold Highlights: Highlight the profound keyword that resonates in the heart.`
+  },
+  folklore: {
+    value: 'folklore',
+    label: '👻 怪異・未解決事件',
+    icon: 'visibility',
+    badge: '考察・恐怖',
+    desc: '背筋凍る謎（不穏グリッチ・深紅文字）',
+    telopNote: '不穏グリッチ・深紅ハイライト',
+    colorClass: 'border-rose-900/60 bg-rose-950/50 text-rose-200',
+    cardTitle: 'Occult & Folklore Intelligence Card',
+    cardIcon: 'psychology',
+    themeLabel: '怪異・伝説',
+    unit: '話',
+    themes: FOLKLORE_THEMES,
+    getDirectorRole: () => 'investigative mystery storyteller and psychological suspense director',
+    getContextTitle: () => 'Folklore Mystery Sequence',
+    promptInstructions: `FOLKLORE & UNSOLVED MYSTERY DIRECTING:
+1. Pacing: Cut 1-2 introduces the chilling historical incident/creepy lore. Cut 3-9 examines unsettling evidence and bizarre theories. Cut 10-12 poses an eerie open question provoking comments.
+2. Narration: narrationJp MUST be suspenseful, atmospheric commentary evoking curiosity and goosebumps.
+3. Gold Highlights: Highlight chilling evidence, dates, and ominous names.`
+  },
+  craft: {
+    value: 'craft',
+    label: '🏯 超絶技巧・職人魂',
+    icon: 'handyman',
+    badge: '神業和モダン',
+    desc: '神の手を持つ職人技（凛とした伝統金文字）',
+    telopNote: '凛とした伝統和モダン・金墨文字',
+    colorClass: 'border-yellow-600/40 bg-yellow-950/40 text-yellow-200',
+    cardTitle: 'Craftsmanship Spirit Card',
+    cardIcon: 'precision_manufacturing',
+    themeLabel: '伝統技術',
+    unit: '作',
+    themes: CRAFT_THEMES,
+    getDirectorRole: () => 'master artisan documentarian and aesthetic visual poet',
+    getContextTitle: () => 'Craft Documentary Sequence',
+    promptInstructions: `SUPREME CRAFTSMAN DIRECTING:
+1. Pacing: Cut 1-2 presents the raw pristine material. Cut 3-9 captures the mesmerizing precision handwork, micro-focus, and extreme dedication. Cut 10-12 reveals the sublime finished masterpiece.
+2. Narration: narrationJp MUST be serene, reverent, and poetic, honoring the craftsman's devotion.
+3. Gold Highlights: Highlight artisan terms, material names, and supreme techniques.`
+  },
+  'style-matrix': {
+    value: 'style-matrix',
+    label: '🎨 画風比較 (2枚)',
+    icon: 'palette',
+    badge: '自動比較',
+    desc: '同一プロンプトで複数画風を一括検証（2枚固定）',
+    telopNote: '画風比較（動画なし）',
+    colorClass: 'border-pink-500/30 bg-pink-950/40 text-pink-200',
+    cardTitle: 'Style Matrix Card',
+    cardIcon: 'palette',
+    themeLabel: 'テーマ',
+    unit: '組',
+    themes: [],
+    getDirectorRole: () => 'world-class visual artist and art style comparison director',
+    getContextTitle: () => 'Style Matrix Comparison',
+    promptInstructions: `STYLE MATRIX COMPARISON DIRECTING:
+Direct standardized prompt scenes for evaluating identical visual compositions across different art styles.`
+  }
+};
+
+export function getProductionModeConfig(mode?: string, isMvMode?: boolean): ProductionModeConfig {
+  if (isMvMode) return PRODUCTION_MODES_CONFIG.mv;
+  if (!mode || !(mode in PRODUCTION_MODES_CONFIG)) return PRODUCTION_MODES_CONFIG.episodes;
+  return PRODUCTION_MODES_CONFIG[mode as ProductionMode];
+}
+
+export const PRODUCTION_MODES_LIST = Object.values(PRODUCTION_MODES_CONFIG);
+
 // ── 7. 12カット・ストーリー展開プリセット（シネマ・漫画・音楽MV） ────────
 export interface StoryShotPreset {
   scale: string;
