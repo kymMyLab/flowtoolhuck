@@ -2,7 +2,22 @@ import { Flow } from 'flow-sdk';
 import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, SeriesEpisodePlan } from '../types';
 import { IMAGE_MODELS, DEFAULT_ASPECT_RATIO, STRICT_STYLE_SUFFIX, TASTES } from '../constants';
 import { safeJsonParse, callWithRetry } from './utils';
-import { getProductionModeConfig } from '../config/studioDefinitions';
+import { 
+  getProductionModeConfig, 
+  resolveCameraWork, 
+  resolveRecommendedCameraWorkAndKenBurns, 
+  resolveRecommendedTelopStaging 
+} from '../config/studioDefinitions';
+import { 
+  buildDynamicAntiPreviousNegative, 
+  getStoryboardPreset, 
+  buildFinalCinematicPromptAndNegative, 
+  isMvChorusCut,
+  MV_ANTI_CAMERA_LOOK_NEGATIVE,
+  PreviousShotContext 
+} from './promptEngine';
+
+export type { PreviousShotContext as PreviousShotInfo };
 
 /**
  * 舞台設定が歴史・時代劇かどうかを判定（時代・テーマ双方から判定）
@@ -451,9 +466,6 @@ Output ONLY valid JSON matching this exact structure:
   "cuts": [
     { 
       "id": 1, 
-      "shotScale": "Wide",
-      "cinematicAngle": "Atmospheric wide establishing view with street-level perspective",
-      "cameraWork": "zoom-in",
       "basicPlot": "Cinematic visual description of the cut in English matching the art style", 
       "narrationJp": "${isMvMode ? '楽曲の歌詞・リリック（1曲の歌として繋がるエモい歌詞20文字前後）' : '重厚なナレーション（日本語）'}",
       "highlights": ["ナレーション内の重要語1", "ナレーション内の重要語2"]
@@ -462,21 +474,46 @@ Output ONLY valid JSON matching this exact structure:
 }
 `;
 }
-import { 
-  buildDynamicAntiPreviousNegative, 
-  getStoryboardPreset, 
-  buildFinalCinematicPromptAndNegative, 
-  isMvChorusCut,
-  MV_ANTI_CAMERA_LOOK_NEGATIVE,
-  PreviousShotContext 
-} from './promptEngine';
-import { 
-  resolveCameraWork, 
-  resolveRecommendedCameraWorkAndKenBurns, 
-  resolveRecommendedTelopStaging 
-} from '../config/studioDefinitions';
 
-export type { PreviousShotContext as PreviousShotInfo };
+/**
+ * Google Flow Gemini 負荷軽減用: 必要最小限の出力構造に絞った軽量脚本プロンプト（フェイルセーフ用）
+ */
+export function buildCompactScriptPrompt(
+  epId: number, 
+  currentPlan: SeriesEpisodePlan, 
+  country: string, 
+  theme: string, 
+  era?: string, 
+  isMangaMode?: boolean,
+  isMvMode?: boolean,
+  taste?: string,
+  productionMode?: string
+): string {
+  const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
+  const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
+  const modeConfig = getProductionModeConfig(effMode, isMvMode);
+  const contextTitle = modeConfig.getContextTitle(isMangaMode, checkIsHistorical(era, theme));
+
+  return `You are a script director.
+Create a compact 12-cut ${contextTitle} for Episode ${epId} ("${currentPlan.titleJp}").
+Theme & Setting: "${worldSetting}". Art Style: "${taste || 'Cinematic'}".
+Dynamically alternate camera distances (Wide establishing -> Intense close-up -> Medium in motion -> Climax).
+Output ONLY valid JSON:
+{
+  "titleJp": "${currentPlan.titleJp}",
+  "titleEn": "${currentPlan.titleEn}",
+  "summary": "${isMvMode ? '楽曲の世界観（日本語）' : 'あらすじ（日本語）'}",
+  "eraAnalysisJp": "時代背景の解説（日本語）",
+  "authenticAttireEn": "Costume and attire matching ${worldSetting}",
+  "forbiddenKeywordsEn": "modern elements, out of context",
+  "forbiddenAnachronisms": ["不自然な要素"],
+  "coverCatchphraseJp": "惹きつけるキャッチコピー",
+  "highlightWords": ["キーワード"],
+  "cuts": [
+    { "id": 1, "basicPlot": "Visual description in English", "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}", "highlights": ["キーワード"] }
+  ]
+}`;
+}
 
 /**
  * 直前のカットの構図・ポーズ・アングルを排除するための動的ネガティブプロンプト

@@ -24,6 +24,7 @@ import {
   buildGrandDesignPrompt, 
   buildNextEpisodePlanPrompt, 
   buildScriptPrompt,
+  buildCompactScriptPrompt,
   extractHighlights,
   checkIsHistorical,
   PreviousShotInfo
@@ -659,23 +660,32 @@ Output JSON ONLY:
             summary: `${baseRawTitle}の世界観で紡がれる第${epIndex}の映像作品（全12カット）`
           };
 
-          const scriptPrompt = buildScriptPrompt(
+          const fullScriptPrompt = buildScriptPrompt(
             epIndex, curPlan, settings.country, settings.theme, settings.era, false, curMode === 'mv', settings.taste, curMode
           );
 
+          let currentScriptPrompt = fullScriptPrompt;
           let scriptRes;
           try {
             scriptRes = await callWithRetry<any>(
-              () => Flow.generate.text(scriptPrompt),
+              () => Flow.generate.text(currentScriptPrompt),
               (attempt, max, delay, err) => {
                 console.error(`[Script Retry ${attempt}/${max}]`, err);
-                addLog(`⚠️ 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${formatErrorMessage(err)}`, 'warning');
+                if (attempt >= 2) {
+                  // 2回目以降のリトライは軽量コンパクトプロンプトに切り替えてGoogle側の負荷・トークン制限・503を回避
+                  currentScriptPrompt = buildCompactScriptPrompt(
+                    epIndex, curPlan, settings.country, settings.theme, settings.era, false, curMode === 'mv', settings.taste, curMode
+                  );
+                  addLog(`⚠️ 脚本リトライ (${attempt}/${max}): 軽量プロンプトに自動最適化して再試行中...`, 'process');
+                } else {
+                  addLog(`⚠️ 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${formatErrorMessage(err)}`, 'warning');
+                }
               },
               5
             );
           } catch (e: any) {
             const errorMsg = formatErrorMessage(e);
-            console.error(`[Script Failed]`, e, { prompt: scriptPrompt });
+            console.error(`[Script Failed]`, e, { prompt: currentScriptPrompt });
             addLog(`❌ 第${epIndex}${modeInfo.unit}の脚本策定に失敗しました: ${errorMsg}`, 'error');
             continue;
           }
