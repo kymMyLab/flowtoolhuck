@@ -637,21 +637,34 @@ Output JSON ONLY:
       if (curMode in shortsConfigMap) {
         const modeInfo = shortsConfigMap[curMode];
         const totalEpCount = Math.max(1, settings.episodeCount || 1);
-        addLog(`${modeInfo.icon} 【${modeInfo.label}モード】全 ${totalEpCount} ${modeInfo.unit}の制作を開始します！[世界観: ${settings.theme}]`, 'process');
+
+        // 既存エピソードがある場合は上書きせず、末尾に追記（継続追加）する
+        const existingEpisodes = episodesRef.current || [];
+        const existingMaxId = existingEpisodes.length > 0 ? Math.max(...existingEpisodes.map(e => e.id)) : 0;
+        const startEpIndex = existingMaxId + 1;
+        const endEpIndex = existingMaxId + totalEpCount;
+        const isContinuing = existingMaxId > 0;
+
+        if (isContinuing) {
+          addLog(`${modeInfo.icon} 【${modeInfo.label}モード】既存 ${existingMaxId} ${modeInfo.unit}を保持したまま、追加で全 ${totalEpCount} ${modeInfo.unit}（第${startEpIndex}〜${endEpIndex}${modeInfo.unit}）の制作を開始します！[世界観: ${settings.theme}]`, 'process');
+        } else {
+          addLog(`${modeInfo.icon} 【${modeInfo.label}モード】全 ${totalEpCount} ${modeInfo.unit}の制作を開始します！[世界観: ${settings.theme}]`, 'process');
+        }
 
         const baseRawTitle = settings.theme.split('（')[0].replace(/^[^\w\s一-龯]+/, '').trim() || '情景の記録';
         const defaultEnTitle = 'Cinematic Story';
 
-        for (let epIndex = 1; epIndex <= totalEpCount; epIndex++) {
+        for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
+          const currentBatchStep = epIndex - startEpIndex + 1;
           if (isAbortedRef.current) {
-            addLog(`🛑 制作が中断されました（${epIndex - 1}/${totalEpCount}${modeInfo.unit}完了）`, 'warning');
+            addLog(`🛑 制作が中断されました（今回作成: ${currentBatchStep - 1}/${totalEpCount}${modeInfo.unit}完了）`, 'warning');
             break;
           }
 
-          const rawTitle = totalEpCount > 1 ? `${baseRawTitle} Vol.${epIndex}` : baseRawTitle;
-          const currentEnTitle = totalEpCount > 1 ? `${defaultEnTitle} Vol.${epIndex}` : defaultEnTitle;
+          const rawTitle = (endEpIndex > 1) ? `${baseRawTitle} Vol.${epIndex}` : baseRawTitle;
+          const currentEnTitle = (endEpIndex > 1) ? `${defaultEnTitle} Vol.${epIndex}` : defaultEnTitle;
 
-          addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit} / 全${totalEpCount}${modeInfo.unit}】「${rawTitle}」の脚本・演出（12カット）を策定中...`, 'process');
+          addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit} / 今回制作: ${currentBatchStep}曲目（全${totalEpCount}${modeInfo.unit}）】「${rawTitle}」の脚本・演出（12カット）を策定中...`, 'process');
 
           const curPlan = {
             epNumber: epIndex,
