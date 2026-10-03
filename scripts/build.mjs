@@ -52,13 +52,7 @@ async function runBuild() {
     'tailwind.config.js',
     'postcss.config.js',
     'index.html',
-    'App.tsx',
-    'constants.ts',
-    'types.ts',
     'src',
-    'components',
-    'services',
-    'config',
   ];
 
   for (const item of syncItems) {

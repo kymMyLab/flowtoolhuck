@@ -20,5 +20,5 @@
       "flow-sdk": ["./src/flow-sdk-shim.ts"]
     }
   },
-  "include": ["src", "App.tsx", "components", "services", "constants.ts", "types.ts"]
+  "include": ["src"]
 }

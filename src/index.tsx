@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from '../App';
+import App from './App';
 import './style.css';
 
 // Material Symbols フォントの動的注入（Flow Tools iframe内でのアイコン表示を保証）
