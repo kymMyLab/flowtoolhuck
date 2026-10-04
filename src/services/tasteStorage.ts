@@ -1,6 +1,7 @@
 import { TASTES } from '../constants';
 
-const STORAGE_KEY = 'flowtool_custom_tastes_v1';
+const STORAGE_KEY = 'flowtool_custom_tastes_v2';
+const OLD_STORAGE_KEY = 'flowtool_custom_tastes_v1';
 
 export type CustomTasteMap = Record<string, string>;
 
@@ -11,8 +12,18 @@ export const DEFAULT_TASTES: CustomTasteMap = { ...TASTES };
  */
 export function loadCustomTastes(): CustomTasteMap {
   try {
+    // 旧キャッシュが存在すれば自動クリーンアップして新デフォルトへ移行
+    if (localStorage.getItem(OLD_STORAGE_KEY)) {
+      localStorage.removeItem(OLD_STORAGE_KEY);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_TASTES, null, 2));
+      return { ...DEFAULT_TASTES };
+    }
+
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_TASTES };
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_TASTES, null, 2));
+      return { ...DEFAULT_TASTES };
+    }
     const parsed = JSON.parse(raw);
     if (typeof parsed === 'object' && parsed !== null && Object.keys(parsed).length > 0) {
       return parsed;

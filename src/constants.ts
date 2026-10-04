@@ -105,45 +105,32 @@ export const THEME_CATEGORIES: ThemeCategory[] = [
 export const THEMES: string[] = THEME_CATEGORIES.flatMap(c => c.items);
 
 export const TASTES: Record<string, string> = {
-  // 1. 今回完成した超ハイセンス・レトロモダン
-  "🎨 レトロモダン・線画イラスト (Retro-Modern Ligne Claire)":
-    "Sophisticated Japanese retro-modern illustration, vintage ligne claire aesthetic, ultra-clean delicate ink line art, flat matte vintage colors, muted cyan and warm pastel palette, detailed expressive eyes, lush eyelashes, intricate garment details, stylish indie graphic novel artwork",
+  "🧪⚡ ネオ・バーチャル・ポップ (Neo Virtual Pop Anime)":
+    "High-energy anime music video (AMV) aesthetic, virtual pop star style, dynamic composition, ultra-fine delicate ink lines, fragile thin linework, no bold lines, expressive sparkling eyes, intricate character design with diverse hairstyles, iridescent surfaces, vibrant pastel and neon color palette, dramatic chromatic aberration, particle effects, lens flares, polished highly detailed 2D anime finish",
 
-  // 2. 4頭身・パステルボカロMV（アップ・ガジェット）
-  "🧪 4頭身サイバー・パステルポップ (Chibi Pop Lab Anime)":
-    "Japanese vocaloid music video aesthetic illustration, modern stylized pop anime art, bold clean ink line art, flat cel shading with soft pastel tones, high-angle dynamic close-up view, cute 4-heads-tall anime proportions, large expressive stylized eyes, playful mouth with sharp snaggletooth, subtle two-tone pastel hair highlights, futuristic gadget laboratory desk in foreground, sharp clean 2D vector finish",
+  "🎨 レトロモダン・ネオ・ジャポニスム (Retro-Modern Neo-Japonisme)":
+    "Sophisticated Japanese retro-modern illustration, neo-japonisme aesthetic, ultra-clean ultra-fine delicate ink line art, fragile thin linework, no bold lines, highly stylized character design, dramatic dynamic composition with heavy focus on depth of field, rich high-contrast color palette (deep cyan, warm golds, muted reds), intricate gold filigree patterns, subtle matte and glossy textures blended, explosive glitter and particle effects, dramatic volumetric lighting, cinematic lens flares, highly detailed vintage poster art finish, optimized for catchy visual impact",
 
-  // 3. 全身ストリート・ダイナミック（ネオンポップ）
-  "⚡ ボカロMV・ネオンポップ (Vocaloid Neon Pop Anime)":
-    "Japanese vocaloid music video aesthetic illustration, modern pop anime style, bold clean line art, flat cel shading with vibrant pastel tones, chromatic aberration, prism light dispersion, punchy street techwear vibe, dynamic perspective, sharp clean 2D vector finish",
+  "🌃 ネオ・シティポップ・ナイトウォーク (Neo-City Pop Nightwalk Anime)":
+    "Nostalgic modern anime aesthetic, neo-city pop style, ultra-fine delicate ink lines, fragile thin linework, no bold lines, highly detailed character design, dynamic wide-angle composition, atmospheric night city with soft glowing neon pink and cyan lights, rain-slicked reflective pavement, dramatic light reflections, chromatic aberration, subtle warm Lo-Fi film grain texture, cozy emotional atmosphere, polished high-fidelity anime cut finish",
 
-  // 4. 夜景・サイバーパンク
-  "🌃 サイバーナイト・ネオン街 (Cyberpunk Night Street Anime)":
-    "Japanese vocaloid music video aesthetic illustration, modern pop anime style, bold clean line art, flat cel shading, night city rain reflection, vivid glowing neon pink and cyan lights, chromatic aberration, prism lens flare, high-contrast dynamic composition, sharp 2D anime cut",
+  "✨ エモーショナル・シネマティック・スカイ (Emotional Cinematic Sky Anime)":
+    "Breathtaking emotional cinematic anime masterpiece, hyper-detailed anime aesthetic, ultra-fine delicate ink lines, fragile thin linework, no bold lines, dynamic sweeping wide-angle composition, massive towering cumulus clouds, dazzling volumetric god rays, intense lens flares and golden hour light scattering, rich amber and violet gradient sky, delicate wind and floating particles, expressive character design with luminous eyes, high-impact emotional anime movie still finish",
 
-  // 5. 90sシティポップ（Lo-Fi雨夜部屋）
-  "📼 90sシティポップ・Lo-Fi調 (90s City Pop & Lo-Fi Anime)":
-    "90s classic Japanese retro anime aesthetic, vintage city pop music video still, aesthetic bedroom neon lighting, soft glowing purple and cyan backlight, nostalgic warm film grain, moody rainy window atmosphere, VHS tape scanline effect, detailed nostalgic anime cut",
+  "⚔️ ダークファンタジー・重厚陰影 (Dark Chiaroscuro Anime)":
+    "Dark cinematic fantasy anime aesthetic, extreme chiaroscuro lighting, deep shadows, delicate thin linework, intense glowing fiery ember highlights, ominous ruined gothic atmosphere, dynamic sharp armor reflections, hyper-detailed epic illustration",
 
-  // 6. 新海風シネマティック（夕暮れ・巨大積乱雲）
-  "✨ 美麗シネマティック・光と青空 (Luminous Sky & Cinematic Anime)":
-    "Breathtaking luminous cinematic anime aesthetic, ultra vibrant emotional sky, massive dramatic cumulus clouds, dazzling golden hour lens flare, rich purple and amber twilight gradient, atmospheric rim lighting, delicate high-detail digital painting finish",
+  "🖋 白黒劇画・超絶インクマンガ (Intense Monochrome Manga)":
+    "Dramatic monochrome manga aesthetic, aggressive dry ink brush strokes, ultra-fine screentone crosshatching gradients, extreme chiaroscuro contrast, dynamic single splash cut, no panels, gritty realism, high-impact black and white artwork",
 
-  // 7. ダークファンタジー（深紅の炎・キアロスクーロ）
-  "⚔️ ダークファンタジー・重厚陰影 (Dark Chiaroscuro & High-Contrast Anime)":
-    "Dark cinematic fantasy anime aesthetic, extreme chiaroscuro lighting, dramatic deep shadows, intense glowing fiery ember highlights, ominous ruined gothic atmosphere, dynamic sharp armor reflections, hyper-detailed epic illustration",
+  "🏮 ゆる浮世絵・戯画ギャグ調 (Humorous Edo Ukiyo-e Manga)":
+    "Humorous Japanese Ukiyo-e manga style, eccentric Edo pop art, full-bleed edge-to-edge seamless artwork, absolutely NO outer border, NO white margin, NO paper frame, authentic textured washi paper, vintage woodblock printing, delicate thin ink lines, deadpan comedic expressions, quirky stylized body proportions, funny historical genre cut, playful Edo parody finish",
 
-  // 8. 伝統浮世絵（江戸前寿司・屋台）
-  "🏮 京都・江戸 伝統浮世絵木版画 (Traditional Japanese Ukiyo-e)":
-    "Authentic Japanese Ukiyo-e woodblock print aesthetic, traditional Edo period masterpiece, textured washi paper, deep indigo blue and warm vermilion tones, elegant dynamic flowing black ink contours, expressive classical genre artwork",
+  "👑 アール・ヌーヴォー・宮廷エレガンス (Art Nouveau Imperial Elegance)":
+    "Masterpiece Alphonse Mucha inspired Art Nouveau anime illustration, elegant imperial court aesthetics, ultra-fine delicate golden ink contours, fragile thin linework, no bold lines, expressive gorgeous character design, cascading flowing hair, intricate gold filigree and botanical lace motifs gently blended into the background, translucent silk drapery, luminous porcelain skin, soft diffused museum lighting, vibrant amber and emerald palette, seamless full-bleed composition, edge-to-edge artwork, absolutely NO frame, NO borders, NO arch window",
 
-  // 9. 白黒劇画（浪人・見開き1枚絵）
-  "🖋️ 白黒劇画・超絶インクマンガ (Intense Monochrome Manga)":
-    "Dramatic monochrome manga aesthetic, aggressive dry ink brush strokes, intense screentone crosshatching, extreme chiaroscuro contrast, dynamic single splash cut, no panels, gritty realism, high-impact black and white artwork",
-
-  // 10. アール・ヌーヴォー油彩（優美な曲線美・宮廷絵画）
-  "👑 アール・ヌーヴォー油彩・宮廷エレガンス (Art Nouveau Classical Oil Painting)":
-    "Masterpiece fine art classical oil painting, elegant Art Nouveau aesthetic, romantic classical realism, seamless full-bleed composition without frame or borders, flowing organic decorative curves and subtle botanical motifs gently blended into the background, delicate translucent sheer lace and silk drapery, luminous porcelain skin, soft diffused museum lighting, rich muted amber and cyan oil palette, timeless classical masterpiece, absolutely NO decorative frame, NO border, NO window arch, edge-to-edge artwork"
+  "🎴 ネオ・エンブレム・カードアート (Modern High-End Anime Card Art)":
+    "High-end Japanese anime character card art aesthetic, ultra-fine crisp ink line art, fragile thin linework, no bold lines, sharp cel shading with rich dimensional gradient shadows, highly intricate costume and texture details, dynamic low-angle composition with subtle forced foreshortening, dramatic cinematic rim lighting, luminous floating light particles, full-bleed edge-to-edge seamless artwork, polished 2D key visual finish"
 };
 
 import {
