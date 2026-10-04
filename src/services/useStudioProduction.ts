@@ -724,18 +724,21 @@ Output JSON ONLY:
             return cut;
           });
 
-          // 各話固有のお題（サブタイトル）を整形
-          const cleanParsedTitle = (parsed.titleJp || '').replace(/^【.*?】\s*/, '').replace(/^(第\d+話|Vol\.\d+|Track\s*\d+)[:：\s]*/i, '').trim();
-          const cleanTopicJp = cleanParsedTitle && cleanParsedTitle !== baseRawTitle ? cleanParsedTitle : `第${epIndex}の物語`;
-          const displayTitleJp = (endEpIndex > 1 || isContinuing)
-            ? `${modeInfo.icon} 【Vol.${epIndex}】${cleanTopicJp}`
-            : `${modeInfo.icon} ${cleanTopicJp}`;
+          // 各話固有のお題（サブタイトル）を整形（削除による欠番事故を防ぐため、Vol.Xや第X話などの連番は一切入れない）
+          const cleanParsedTitle = (parsed.titleJp || '')
+            .replace(/^【.*?】\s*/, '')
+            .replace(/^(第\d+話|第\d+曲|Vol\.\d+|Track\s*\d+|Episode\s*\d+)[:：\s]*/i, '')
+            .replace(/\s*\(?(Vol\.\d+|第\d+話)\)?\s*$/i, '')
+            .trim();
+          const cleanTopicJp = cleanParsedTitle && cleanParsedTitle !== baseRawTitle ? cleanParsedTitle : `情景の断章`;
+          const displayTitleJp = `${modeInfo.icon} ${cleanTopicJp}`;
 
-          const cleanParsedEn = (parsed.titleEn || '').replace(/^(Vol\.\d+|Track\s*\d+|Episode\s*\d+)[:：\s]*/i, '').trim();
-          const cleanTopicEn = cleanParsedEn && cleanParsedEn !== defaultEnTitle ? cleanParsedEn : `Episode ${epIndex}`;
-          const displayTitleEn = (endEpIndex > 1 || isContinuing)
-            ? `VOL.${epIndex}: ${cleanTopicEn}`
-            : cleanTopicEn;
+          const cleanParsedEn = (parsed.titleEn || '')
+            .replace(/^(Vol\.\d+|Track\s*\d+|Episode\s*\d+)[:：\s]*/i, '')
+            .replace(/\s*\(?(Vol\.\d+|Ep\.\d+)\)?\s*$/i, '')
+            .trim();
+          const cleanTopicEn = cleanParsedEn && cleanParsedEn !== defaultEnTitle ? cleanParsedEn : 'Cinematic Story';
+          const displayTitleEn = cleanTopicEn;
 
           const newEpisode: Episode = {
             id: epIndex, internalId: crypto.randomUUID(),

@@ -525,9 +525,10 @@ Task: Create a captivating, completely unique 12-cut ${contextTitle} for Episode
 Art Style: "${taste || 'Cinematic'}".
 ${avoidSection}
 CRITICAL NAMING RULE FOR "titleJp" AND "titleEn":
-- NEVER output generic placeholder titles like "${currentPlan.titleJp}", "Vol.${epId}", or repeating the theme name.
+- STRICTLY FORBIDDEN: Do NOT include any volume/episode numbers or sequential tags like "Vol.1", "Vol.2", "第1話", "Track 1", or "#1" in "titleJp" or "titleEn". The title must be purely the standalone topic itself without any numbering.
+- NEVER output generic placeholder titles like "${currentPlan.titleJp}" or simply repeating the theme name.
 - You MUST create a brand-new, punchy, curiosity-inducing specific Japanese topic title ("titleJp") tailored exclusively to this episode's distinct topic/angle (around 15-25 Japanese characters, e.g. "極限の兵糧攻め！甲冑の革紐を煮て食った男たち" or "死因第1位は刀傷にあらず！陣中を襲った悪夢の赤痢").
-- Provide a matching specific English title ("titleEn") (e.g. "Siege of Starvation: Men Who Boiled Armor Leather").
+- Provide a matching specific English title ("titleEn") without numbers (e.g. "Siege of Starvation: Men Who Boiled Armor Leather").
 ${isMultiPanel ? 'Direct each cut panel layout freely ("single", "split-2", "split-3", "dynamic-multi") without white borders. Keep panels cleanly divided, spacious, non-overlapping figures.' : 'Dynamically alternate camera distances (Wide -> Close-up -> Medium -> Climax).'}
 Output ONLY valid JSON:
 {
