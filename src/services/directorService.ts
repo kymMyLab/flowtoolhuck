@@ -898,6 +898,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     authenticAttireEn: parsed.authenticAttireEn || '',
     forbiddenKeywordsEn: parsed.forbiddenKeywordsEn || '',
     coverCatchphraseJp: sanitizeForYouTubeSafety(parsed.coverCatchphraseJp || currentPlan.titleJp),
+    coverCatchphraseEn: parsed.coverCatchphraseEn || '',
     highlightWords: parsed.highlightWords || [],
     cuts: normalizedCuts
   };
