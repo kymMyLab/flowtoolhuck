@@ -23,8 +23,7 @@ import {
   buildCharacterScreeningPrompt, 
   buildGrandDesignPrompt, 
   buildNextEpisodePlanPrompt, 
-  buildScriptPrompt,
-  buildCompactScriptPrompt,
+  generateSafeEpisodeScript,
   extractHighlights,
   checkIsHistorical,
   PreviousShotInfo
@@ -544,34 +543,30 @@ Output JSON ONLY:
             summary: `${settings.theme}の世界観で描かれるドラマ`
           });
 
-          const scriptPrompt = buildScriptPrompt(1, generatedPlan as any, settings.country, settings.theme, settings.era, settings.isMangaMode, settings.isMvMode, settings.taste);
-          const scriptRes = await callWithRetry<any>(
-            () => Flow.generate.text(scriptPrompt),
-            (attempt, max, delay, err) => addLog(`⚠️ 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${formatErrorMessage(err)}`, 'warning'),
-            5
-          );
-          const parsed = safeJsonParse<any>(scriptRes.text, { titleJp: generatedPlan.titleJp, titleEn: generatedPlan.titleEn, cuts: [] });
-          sharedScript = {
-            ...parsed,
-            titleJp: parsed.titleJp || generatedPlan.titleJp,
-            titleEn: parsed.titleEn || generatedPlan.titleEn
-          };
+          const scriptResult = await generateSafeEpisodeScript({
+            epId: 1,
+            currentPlan: generatedPlan,
+            country: settings.country,
+            theme: settings.theme,
+            era: settings.era,
+            isMangaMode: settings.isMangaMode,
+            isMvMode: settings.isMvMode,
+            taste: settings.taste,
+            productionMode: 'matrix',
+            isMultiPanel: settings.isMultiPanel,
+            addLog
+          });
+          sharedScript = scriptResult;
           addLog(`✨ テーマに即した共通脚本が完成！『${sharedScript.titleJp}』（全${targetTastes.length}画風へ展開開始）`, 'success');
 
-          const rawCuts = Array.isArray(sharedScript.cuts) ? sharedScript.cuts : (Array.isArray(sharedScript.scenes) ? sharedScript.scenes : []);
-          baseCutsData = Array.from({ length: CUTS_PER_EPISODE }, (_, j) => {
-            const cutData = rawCuts[j] || {};
-            const narration = cutData.narrationJp || cutData.narration || '';
-            const plot = cutData.basicPlot || cutData.promptEn || cutData.prompt || '';
-            const cutHighlights = cutData.highlights || sharedScript.highlightWords || [];
-            return {
-              id: j + 1,
-              narration,
-              plot,
-              isSelected: isCutSelectedForVideo(j, settings.videoRatio),
-              highlights: extractHighlights(narration, cutHighlights)
-            };
-          });
+          baseCutsData = scriptResult.cuts.map((cut, j) => ({
+            id: cut.id,
+            narration: cut.narrationJp,
+            plot: cut.basicPlot,
+            panelLayout: cut.panelLayout,
+            isSelected: isCutSelectedForVideo(j, settings.videoRatio),
+            highlights: extractHighlights(cut.narrationJp, cut.highlights || scriptResult.highlightWords)
+          }));
         }
 
         // 各画風のエピソードカードを並列展開
@@ -675,48 +670,24 @@ Output JSON ONLY:
             summary: `${baseRawTitle}の世界観で紡がれる第${epIndex}の映像作品（全12カット）`
           };
 
-          const fullScriptPrompt = buildScriptPrompt(
-            epIndex, curPlan, settings.country, settings.theme, settings.era, false, curMode === 'mv', settings.taste, curMode, settings.isMultiPanel
-          );
-
-          let currentScriptPrompt = fullScriptPrompt;
-          let scriptRes;
-          try {
-            scriptRes = await callWithRetry<any>(
-              () => Flow.generate.text(currentScriptPrompt),
-              (attempt, max, delay, err) => {
-                console.error(`[Script Retry ${attempt}/${max}]`, err);
-                if (attempt >= 2) {
-                  // 2回目以降のリトライは軽量コンパクトプロンプトに切り替えてGoogle側の負荷・トークン制限・503を回避
-                  currentScriptPrompt = buildCompactScriptPrompt(
-                    epIndex, curPlan, settings.country, settings.theme, settings.era, false, curMode === 'mv', settings.taste, curMode, settings.isMultiPanel
-                  );
-                  addLog(`⚠️ 脚本リトライ (${attempt}/${max}): 軽量プロンプトに自動最適化して再試行中...`, 'process');
-                } else {
-                  addLog(`⚠️ 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${formatErrorMessage(err)}`, 'warning');
-                }
-              },
-              5
-            );
-          } catch (e: any) {
-            const errorMsg = formatErrorMessage(e);
-            console.error(`[Script Failed]`, e, { prompt: currentScriptPrompt });
-            addLog(`❌ 第${epIndex}${modeInfo.unit}の脚本策定に失敗しました: ${errorMsg}`, 'error');
-            continue;
-          }
-
-          const parsed = safeJsonParse<any>(scriptRes.text, {
-            titleJp: rawTitle, titleEn: currentEnTitle, summary: `${rawTitle}の情景`,
-            eraAnalysisJp: '演出構図とテロップ連動。', forbiddenAnachronisms: ['過剰な劇的演出'],
-            authenticAttireEn: 'Cinematic style attire', forbiddenKeywordsEn: 'explosive drama',
-            coverCatchphraseJp: '心揺さぶる一瞬の物語。', highlightWords: ['光'], cuts: []
+          const parsed = await generateSafeEpisodeScript({
+            epId: epIndex,
+            currentPlan: curPlan,
+            country: settings.country,
+            theme: settings.theme,
+            era: settings.era,
+            isMangaMode: false,
+            isMvMode: curMode === 'mv',
+            taste: settings.taste,
+            productionMode: curMode,
+            isMultiPanel: settings.isMultiPanel,
+            addLog
           });
 
-          const rawCuts = Array.isArray(parsed.cuts) ? parsed.cuts : (Array.isArray(parsed.scenes) ? parsed.scenes : []);
           const baseCutsData = Array.from({ length: CUTS_PER_EPISODE }, (_, j) => {
-            const cutData = rawCuts[j] || {};
-            const narration = cutData.narrationJp || cutData.narration || '';
-            const plot = cutData.basicPlot || cutData.promptEn || cutData.prompt || '';
+            const cutData = parsed.cuts[j] || {};
+            const narration = cutData.narrationJp || '';
+            const plot = cutData.basicPlot || '';
             const cutHighlights = cutData.highlights || parsed.highlightWords || [];
             const preset = getStoryboardPreset(j + 1, curMode === 'mv', false);
             const staging = resolveRecommendedTelopStaging(j + 1, curMode === 'mv', false, undefined, curMode);
@@ -948,69 +919,38 @@ Output JSON ONLY:
           addLog(`📖 【第${epId}話】「${currentPlan.titleJp}」の脚本・時代考証をAIに執筆依頼中...`, 'process');
           updateEpisode(epId, { isGenerating: true });
 
-          let currentDramaPrompt = buildScriptPrompt(epId, currentPlan, settings.country, settings.theme, settings.era, settings.isMangaMode, settings.isMvMode, settings.taste, 'episodes', settings.isMultiPanel);
-          let scriptRes;
-          try {
-            scriptRes = await callWithRetry<any>(
-              () => Flow.generate.text(currentDramaPrompt),
-              (attempt, max, delay, err) => {
-                console.error(`[Drama Script Retry ${attempt}/${max}]`, err);
-                if (attempt >= 2) {
-                  currentDramaPrompt = buildCompactScriptPrompt(
-                    epId, currentPlan, settings.country, settings.theme, settings.era, settings.isMangaMode, settings.isMvMode, settings.taste, 'episodes', settings.isMultiPanel
-                  );
-                  addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}): 軽量プロンプトに自動最適化して再試行中...`, 'process');
-                } else {
-                  addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${formatErrorMessage(err)}`, 'warning');
-                }
-              },
-              5
-            );
-          } catch (e: any) {
-            const errorMsg = formatErrorMessage(e);
-            console.error(`[Drama Episode ${epId} Script Failed]`, e, { prompt: currentDramaPrompt });
-            addLog(`⚠️ 第${epId}話の脚本AI生成が混雑のため、基本構成フォールバックで生成を続行します: ${errorMsg}`, 'warning');
-            scriptRes = {
-              text: JSON.stringify({
-                titleJp: currentPlan.titleJp,
-                titleEn: currentPlan.titleEn,
-                summary: currentPlan.summary || `${currentPlan.titleJp}の物語`,
-                eraAnalysisJp: '江戸の町人文化と人情の情景。',
-                cuts: Array.from({ length: CUTS_PER_EPISODE }, (_, cIdx) => ({
-                  id: cIdx + 1,
-                  panelLayout: settings.isMultiPanel ? (cIdx % 2 === 0 ? 'split-2' : 'dynamic-multi') : 'single',
-                  basicPlot: `Cinematic traditional Japanese drama scene, ${settings.theme}, episode ${epId} scene ${cIdx + 1}, authentic historical Edo period atmosphere, high quality visual composition`,
-                  narrationJp: `第${epId}話 場面${cIdx + 1}の情景`
-                }))
-              })
-            };
-          }
+          const sharedScript = await generateSafeEpisodeScript({
+            epId,
+            currentPlan,
+            country: settings.country,
+            theme: settings.theme,
+            era: settings.era,
+            isMangaMode: settings.isMangaMode,
+            isMvMode: settings.isMvMode,
+            taste: settings.taste,
+            productionMode: 'episodes',
+            isMultiPanel: settings.isMultiPanel,
+            addLog
+          });
 
-          const sharedScript: any = safeJsonParse<any>(scriptRes.text, { titleJp: currentPlan.titleJp, titleEn: currentPlan.titleEn, cuts: [] });
           addLog(`✨ 【第${epId}話】脚本＆時代考証が完成！（考証: ${sharedScript.eraAnalysisJp?.slice(0, 24) || '完了'}...）`, 'success');
 
-          const rawCuts = Array.isArray(sharedScript.cuts) ? sharedScript.cuts : (Array.isArray(sharedScript.scenes) ? sharedScript.scenes : (Array.isArray(sharedScript) ? sharedScript : []));
-
           const episodeCuts: Cut[] = Array.from({ length: CUTS_PER_EPISODE }, (_, j) => {
-            const cutData = rawCuts[j] || {};
-            const narration = cutData.narrationJp || cutData.narration || '';
-            const plot = cutData.basicPlot || cutData.promptEn || cutData.prompt || '';
+            const cutData = sharedScript.cuts[j] || {};
+            const narration = cutData.narrationJp || '';
+            const plot = cutData.basicPlot || '';
             const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
             cut.panelLayout = cutData.panelLayout || (settings.isMultiPanel ? 'dynamic-multi' : 'single');
             const preset = getStoryboardPreset(j + 1, false, settings.isMangaMode);
-            cut.shotScale = cutData.shotScale || preset.scale;
-            cut.cinematicAngle = cutData.cinematicAngle || preset.angle;
-            const cwDef = cutData.cameraWork ? resolveCameraWork(cutData.cameraWork) : resolveRecommendedCameraWorkAndKenBurns(j + 1, 'episodes', false, settings.isMangaMode);
+            cut.shotScale = preset.scale;
+            cut.cinematicAngle = preset.angle;
+            const cwDef = resolveRecommendedCameraWorkAndKenBurns(j + 1, 'episodes', false, settings.isMangaMode);
             cut.cameraWork = cwDef.id;
             cut.cameraMotion = cwDef.motionPrompt;
             cut.kenBurnsPreset = cwDef.recommendedKenBurns;
             const dramaStaging = resolveRecommendedTelopStaging(j + 1, false, false, undefined, 'episodes');
             Object.assign(cut.telop, dramaStaging);
-            
-            // AI指定のハイライト、またはエピソード代表キーワード、または漢字熟語自動抽出を適用
-            const cutHighlights = cutData.highlights || sharedScript.highlightWords || [];
-            cut.telop.highlights = extractHighlights(narration, cutHighlights);
-
+            cut.telop.highlights = extractHighlights(narration, cutData.highlights || sharedScript.highlightWords);
             return cut;
           });
 

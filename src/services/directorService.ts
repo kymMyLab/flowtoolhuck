@@ -707,3 +707,139 @@ Output ONLY valid JSON:
     }
   };
 }
+
+export interface GenerateSafeScriptOptions {
+  epId: number;
+  currentPlan: {
+    epNumber?: number;
+    titleJp: string;
+    titleEn: string;
+    summary?: string;
+  };
+  country: string;
+  theme: string;
+  era?: string;
+  isMangaMode?: boolean;
+  isMvMode?: boolean;
+  taste?: string;
+  productionMode?: string;
+  isMultiPanel?: boolean;
+  addLog?: (msg: string, type?: 'info' | 'success' | 'warning' | 'error' | 'process') => void;
+}
+
+export interface SafeScriptResult {
+  titleJp: string;
+  titleEn: string;
+  summary: string;
+  eraAnalysisJp: string;
+  forbiddenAnachronisms: string[];
+  authenticAttireEn: string;
+  forbiddenKeywordsEn: string;
+  coverCatchphraseJp: string;
+  highlightWords: string[];
+  cuts: Array<{
+    id: number;
+    panelLayout?: 'single' | 'split-2' | 'split-3' | 'dynamic-multi';
+    basicPlot: string;
+    narrationJp: string;
+    highlights?: string[];
+  }>;
+}
+
+/**
+ * 全制作モード共通の鉄壁な脚本生成エンジン
+ * - 1回目失敗時: 指数バックオフ
+ * - 2回目以降: 自動で軽量プロンプト（buildCompactScriptPrompt）に縮小して503/タイムアウトを回避
+ * - 最大リトライ失敗時: 世界観に適合した安全構成フォールバックを自動注入し、生成を止めない
+ */
+export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions): Promise<SafeScriptResult> {
+  const {
+    epId, currentPlan, country, theme, era, isMangaMode, isMvMode,
+    taste, productionMode, isMultiPanel, addLog
+  } = opts;
+
+  let currentPrompt = buildScriptPrompt(
+    epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, isMultiPanel
+  );
+
+  let scriptRes: any;
+  try {
+    scriptRes = await callWithRetry<any>(
+      () => Flow.generate.text(currentPrompt),
+      (attempt, max, delay, err) => {
+        console.error(`[Script Retry ${attempt}/${max}]`, err);
+        if (attempt >= 2) {
+          currentPrompt = buildCompactScriptPrompt(
+            epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, isMultiPanel
+          );
+          if (addLog) addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}): 軽量プロンプトに自動最適化して再試行中...`, 'process');
+        } else {
+          const errMsg = err?.message || String(err);
+          if (addLog) addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${errMsg}`, 'warning');
+        }
+      },
+      5
+    );
+  } catch (err: any) {
+    const errMsg = err?.message || String(err);
+    console.error(`[Script Failed for Episode ${epId}]`, err, { prompt: currentPrompt });
+    if (addLog) addLog(`⚠️ 第${epId}話の脚本AI生成が混雑のため、世界観に即した安全構成フォールバックで生成を続行します: ${errMsg}`, 'warning');
+
+    return {
+      titleJp: currentPlan.titleJp,
+      titleEn: currentPlan.titleEn,
+      summary: currentPlan.summary || `${currentPlan.titleJp}の世界観で紡がれる物語`,
+      eraAnalysisJp: '歴史・文化と人情の情景。',
+      forbiddenAnachronisms: ['時代にそぐわない現代物'],
+      authenticAttireEn: 'Authentic costume matching setting',
+      forbiddenKeywordsEn: 'modern items',
+      coverCatchphraseJp: `${currentPlan.titleJp}`,
+      highlightWords: ['光', '風'],
+      cuts: Array.from({ length: 12 }, (_, j) => ({
+        id: j + 1,
+        panelLayout: isMultiPanel ? (j % 2 === 0 ? 'split-2' : 'dynamic-multi') : 'single',
+        basicPlot: `Cinematic high quality visual scene, ${theme}, scene ${j + 1} of ${currentPlan.titleEn}, atmospheric lighting and expressive visual pacing`,
+        narrationJp: isMvMode ? `第${epId}曲 歌詞パート${j + 1}` : `第${epId}話 場面${j + 1}の情景`,
+        highlights: []
+      }))
+    };
+  }
+
+  const parsed = safeJsonParse<any>(scriptRes.text, {
+    titleJp: currentPlan.titleJp,
+    titleEn: currentPlan.titleEn,
+    summary: currentPlan.summary || `${currentPlan.titleJp}の物語`,
+    eraAnalysisJp: '演出構図とテロップ連動。',
+    forbiddenAnachronisms: ['過剰な劇的演出'],
+    authenticAttireEn: 'Cinematic style attire',
+    forbiddenKeywordsEn: 'explosive drama',
+    coverCatchphraseJp: '心揺さぶる一瞬の物語。',
+    highlightWords: ['光'],
+    cuts: []
+  });
+
+  const rawCuts = Array.isArray(parsed.cuts) ? parsed.cuts : (Array.isArray(parsed.scenes) ? parsed.scenes : (Array.isArray(parsed) ? parsed : []));
+  const normalizedCuts = Array.from({ length: 12 }, (_, j) => {
+    const cutData = rawCuts[j] || {};
+    return {
+      id: j + 1,
+      panelLayout: cutData.panelLayout || (isMultiPanel ? (j % 3 === 0 ? 'single' : 'split-2') : 'single'),
+      basicPlot: cutData.basicPlot || cutData.promptEn || cutData.prompt || `Scene ${j + 1} of ${currentPlan.titleEn}`,
+      narrationJp: cutData.narrationJp || cutData.narration || (isMvMode ? `歌詞${j + 1}` : `場面${j + 1}`),
+      highlights: cutData.highlights || parsed.highlightWords || []
+    };
+  });
+
+  return {
+    titleJp: parsed.titleJp || currentPlan.titleJp,
+    titleEn: parsed.titleEn || currentPlan.titleEn,
+    summary: parsed.summary || currentPlan.summary || '',
+    eraAnalysisJp: parsed.eraAnalysisJp || '',
+    forbiddenAnachronisms: parsed.forbiddenAnachronisms || [],
+    authenticAttireEn: parsed.authenticAttireEn || '',
+    forbiddenKeywordsEn: parsed.forbiddenKeywordsEn || '',
+    coverCatchphraseJp: parsed.coverCatchphraseJp || currentPlan.titleJp,
+    highlightWords: parsed.highlightWords || [],
+    cuts: normalizedCuts
+  };
+}
