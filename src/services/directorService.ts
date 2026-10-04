@@ -2,7 +2,7 @@ import { Flow } from 'flow-sdk';
 import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, SeriesEpisodePlan } from '../types';
 import { IMAGE_MODELS, DEFAULT_ASPECT_RATIO, STRICT_STYLE_SUFFIX, TASTES } from '../constants';
 import { resolveTastePrompt } from './tasteStorage';
-import { safeJsonParse, callWithRetry } from './utils';
+import { safeJsonParse, callWithRetry, formatDurationMs } from './utils';
 import { 
   getProductionModeConfig, 
   resolveCameraWork, 
@@ -775,6 +775,8 @@ export interface GenerateSafeScriptOptions {
   productionMode?: string;
   isMultiPanel?: boolean;
   existingTitles?: string[];
+  superBackoff?: boolean;
+  abortCheck?: () => boolean;
   addLog?: (msg: string, type?: 'info' | 'success' | 'warning' | 'error' | 'process') => void;
 }
 
@@ -805,7 +807,7 @@ export interface SafeScriptResult {
 export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions): Promise<SafeScriptResult> {
   const {
     epId, currentPlan, country, theme, era, isMangaMode, isMvMode,
-    taste, productionMode, isMultiPanel, existingTitles, addLog
+    taste, productionMode, isMultiPanel, existingTitles, superBackoff, abortCheck, addLog
   } = opts;
 
   // 初手から無駄な長文指示を削ぎ落とした軽量骨組みプロンプトを使用（1〜2秒で即座に通す）
@@ -817,12 +819,23 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   try {
     scriptRes = await callWithRetry<any>(
       () => Flow.generate.text(scriptPrompt),
-      (attempt, max, delay, err) => {
+      (attempt, max, delay, err, isSuper) => {
         console.error(`[Script Retry ${attempt}/${max}]`, err);
         const errMsg = err?.message || String(err);
-        if (addLog) addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${errMsg}`, 'warning');
+        const waitStr = formatDurationMs(delay);
+        if (addLog) {
+          if (isSuper) {
+            addLog(`🌙 第${epId}話 [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
+          } else {
+            addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${waitStr}後... 理由: ${errMsg}`, 'warning');
+          }
+        }
       },
-      5
+      {
+        maxRetries: 5,
+        superBackoff,
+        abortCheck
+      }
     );
   } catch (err: any) {
     const errMsg = err?.message || String(err);

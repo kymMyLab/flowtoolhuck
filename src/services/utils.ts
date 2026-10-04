@@ -85,25 +85,92 @@ export function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label = '
   ]);
 }
 
+export interface RetryOptions {
+  maxRetries?: number;
+  timeoutMs?: number;
+  timeoutLabel?: string;
+  superBackoff?: boolean;
+  abortCheck?: () => boolean;
+}
+
+/**
+ * ミリ秒を人間が読みやすい「〇〇秒」または「〇〇分間」の文字列に変換
+ */
+export function formatDurationMs(ms: number): string {
+  if (ms >= 60000) {
+    const mins = Math.round(ms / 60000);
+    return `${mins}分間`;
+  }
+  return `${Math.round(ms / 1000)}秒`;
+}
+
+/**
+ * 緊急停止（Abort）を即座に検知可能なスリープ
+ */
+export async function sleepWithAbortCheck(durationMs: number, abortCheck?: () => boolean): Promise<boolean> {
+  const stepMs = 500;
+  let elapsed = 0;
+  while (elapsed < durationMs) {
+    if (abortCheck && abortCheck()) {
+      return false; // 中断された
+    }
+    const wait = Math.min(stepMs, durationMs - elapsed);
+    await new Promise(r => setTimeout(r, wait));
+    elapsed += wait;
+  }
+  return true;
+}
+
 /** 
  * 堅牢な指数バックオフ・リトライ
+ * デフォルト間隔: 5秒、10秒、20秒、40秒、80秒（計5回）
+ * 超指数バックオフ(superBackoff): さらに 10分、20分、30分 を追加（夜間放置完走用・計8回）
  * SAFETY/BLOCKED等の即死エラー時はリトライせず即時スローする
  */
 export async function callWithRetry<T>(
   fn: () => Promise<T>,
-  onRetry?: (attempt: number, maxRetries: number, delayMs: number, err: any) => void,
-  maxRetries = 5,
+  onRetry?: (attempt: number, maxRetries: number, delayMs: number, err: any, isSuperBackoff?: boolean) => void,
+  maxRetriesOrOptions: number | RetryOptions = 5,
   timeoutMs?: number,
-  timeoutLabel = 'API呼び出し'
+  timeoutLabel = 'API呼び出し',
+  superBackoff = false,
+  abortCheck?: () => boolean
 ): Promise<T> {
-  const baseDelayMs = 2000;
-  const factor = 2;
-  const maxDelayMs = 30000;
-  
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+  let maxRetries = 5;
+  let effectiveTimeoutMs = timeoutMs;
+  let effectiveTimeoutLabel = timeoutLabel;
+  let effectiveSuperBackoff = superBackoff;
+  let effectiveAbortCheck = abortCheck;
+
+  if (typeof maxRetriesOrOptions === 'object' && maxRetriesOrOptions !== null) {
+    maxRetries = maxRetriesOrOptions.maxRetries ?? 5;
+    effectiveTimeoutMs = maxRetriesOrOptions.timeoutMs;
+    effectiveTimeoutLabel = maxRetriesOrOptions.timeoutLabel ?? 'API呼び出し';
+    effectiveSuperBackoff = !!maxRetriesOrOptions.superBackoff;
+    effectiveAbortCheck = maxRetriesOrOptions.abortCheck;
+  } else if (typeof maxRetriesOrOptions === 'number') {
+    maxRetries = maxRetriesOrOptions;
+  }
+
+  // デフォルト待機スケジュール: 5s, 10s, 20s, 40s, 80s
+  const standardDelays = [5000, 10000, 20000, 40000, 80000];
+  // 超指数バックオフ用スケジュール: 10分, 20分, 30分
+  const superDelays = [10 * 60 * 1000, 20 * 60 * 1000, 30 * 60 * 1000];
+
+  const delays = effectiveSuperBackoff
+    ? [...standardDelays, ...superDelays]
+    : standardDelays.slice(0, maxRetries);
+
+  const totalMaxAttempts = delays.length;
+
+  for (let attempt = 0; attempt <= totalMaxAttempts; attempt++) {
+    if (effectiveAbortCheck && effectiveAbortCheck()) {
+      throw new Error('処理が中断されました (Aborted)');
+    }
+
     try {
       const p = fn();
-      return timeoutMs ? await withTimeout(p, timeoutMs, timeoutLabel) : await p;
+      return effectiveTimeoutMs ? await withTimeout(p, effectiveTimeoutMs, effectiveTimeoutLabel) : await p;
     } catch (err: any) {
       const msg = formatErrorMessage(err).toUpperCase();
       
@@ -118,14 +185,23 @@ export async function callWithRetry<T>(
         throw err;
       }
 
-      if (attempt === maxRetries) throw err;
+      if (attempt === totalMaxAttempts) throw err;
       
-      const delay = Math.min(maxDelayMs, baseDelayMs * Math.pow(factor, attempt)) + (Math.random() * 1000);
-      const roundedDelay = Math.round(delay);
+      const baseDelay = delays[attempt] ?? 80000;
+      const isSuper = effectiveSuperBackoff && attempt >= standardDelays.length;
+      // ジッター加算（通常は0〜1秒、超バックオフ時は0〜5秒）
+      const jitter = isSuper ? Math.random() * 5000 : Math.random() * 1000;
+      const roundedDelay = Math.round(baseDelay + jitter);
       
-      if (onRetry) onRetry(attempt + 1, maxRetries, roundedDelay, err);
+      if (onRetry) {
+        onRetry(attempt + 1, totalMaxAttempts, roundedDelay, err, isSuper);
+      }
       
-      await new Promise(r => setTimeout(r, roundedDelay));
+      // 中断チェック付きスリープ
+      const completed = await sleepWithAbortCheck(roundedDelay, effectiveAbortCheck);
+      if (!completed) {
+        throw new Error('処理が中断されました (Aborted)');
+      }
     }
   }
   throw new Error('Maximum retries reached');

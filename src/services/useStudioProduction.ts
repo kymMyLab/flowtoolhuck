@@ -13,7 +13,7 @@ import {
   resolveRecommendedTelopStaging,
   resolveRecommendedCameraWorkAndKenBurns
 } from '../constants';
-import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, isCutSelectedForVideo } from './utils';
+import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, isCutSelectedForVideo, formatDurationMs } from './utils';
 import { saveStory, getAllReferenceAssets, saveReferenceAsset } from './db';
 import { downloadZip } from './exportService';
 import { renderFullEpisodeMovie, renderKenBurnsVideo } from './browserVideoService';
@@ -341,8 +341,22 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
           aspectRatio: DEFAULT_ASPECT_RATIO as any, 
           referenceImageMediaIds 
         }),
-        (attempt, max, delay) => addLog(`Retrying Image (attempt ${attempt}/${max}) after ${delay} ms...`, 'warning'),
-        5, 90000
+        (attempt, max, delay, err, isSuper) => {
+          const waitStr = formatDurationMs(delay);
+          const errMsg = formatErrorMessage(err);
+          if (isSuper) {
+            addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
+          } else {
+            addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
+          }
+        },
+        {
+          maxRetries: 5,
+          timeoutMs: 90000,
+          timeoutLabel: '画像生成',
+          superBackoff: settings.superBackoff,
+          abortCheck: () => isAbortedRef.current
+        }
       );
       updateCut(epId, cutId, { 
         imageMediaId: res.mediaId, 
@@ -393,8 +407,22 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
           durationSeconds: modelDef.defaultDuration, 
           aspectRatio: DEFAULT_ASPECT_RATIO as any 
         }),
-        (attempt, max, delay) => addLog(`Retrying Video (attempt ${attempt}/${max}) after ${delay} ms...`, 'warning'),
-        5, 180000, '動画生成'
+        (attempt, max, delay, err, isSuper) => {
+          const waitStr = formatDurationMs(delay);
+          const errMsg = formatErrorMessage(err);
+          if (isSuper) {
+            addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
+          } else {
+            addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
+          }
+        },
+        {
+          maxRetries: 5,
+          timeoutMs: 180000,
+          timeoutLabel: '動画生成',
+          superBackoff: settings.superBackoff,
+          abortCheck: () => isAbortedRef.current
+        }
       );
       const cleanVideoBase64 = res.base64 ? res.base64.replace(/^data:[^;]+;base64,/, '') : '';
       updateCut(epId, cutId, { 
@@ -701,6 +729,8 @@ Output JSON ONLY:
             productionMode: curMode,
             isMultiPanel: settings.isMultiPanel,
             existingTitles,
+            superBackoff: settings.superBackoff,
+            abortCheck: () => isAbortedRef.current,
             addLog
           });
 
@@ -966,6 +996,8 @@ Output JSON ONLY:
             taste: settings.taste,
             productionMode: 'episodes',
             isMultiPanel: settings.isMultiPanel,
+            superBackoff: settings.superBackoff,
+            abortCheck: () => isAbortedRef.current,
             addLog
           });
 

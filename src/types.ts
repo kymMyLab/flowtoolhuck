@@ -143,6 +143,7 @@ export interface GeneratorSettings {
   parallelCount: number;
   autoVideo: boolean;
   autoDownload: boolean;
+  superBackoff?: boolean;
   selectedAssetId?: number;
   isMultiPanel?: boolean;
 }

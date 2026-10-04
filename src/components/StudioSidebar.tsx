@@ -343,6 +343,11 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               <ToggleSwitch label="🎬 動画まで自動完走" checked={settings.autoVideo} onChange={v => setSettings(s => ({ ...s, autoVideo: v }))} />
             )}
             <ToggleSwitch label="📦 完了時自動ダウンロード" checked={settings.autoDownload} onChange={v => setSettings(s => ({ ...s, autoDownload: v }))} />
+            <ToggleSwitch 
+              label="🌙 超指数バックオフ (夜間放置完走)" 
+              checked={!!settings.superBackoff} 
+              onChange={v => setSettings(s => ({ ...s, superBackoff: v }))} 
+            />
           </div>
         </div>
         
