@@ -8,8 +8,8 @@ import {
 import { THEMES } from '../constants';
 import { ProductionMode } from '../types';
 
-const STORAGE_KEY = 'flowtool_custom_themes_v3';
-const OLD_STORAGE_KEYS = ['flowtool_custom_themes_v1', 'flowtool_custom_themes_v2'];
+const STORAGE_KEY = 'flowtool_custom_themes_v4';
+const OLD_STORAGE_KEYS = ['flowtool_custom_themes_v1', 'flowtool_custom_themes_v2', 'flowtool_custom_themes_v3'];
 
 export type CustomThemeMap = Record<string, string[]>;
 
