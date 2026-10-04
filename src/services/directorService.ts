@@ -764,9 +764,8 @@ export interface SafeScriptResult {
 
 /**
  * 全制作モード共通の鉄壁な脚本生成エンジン
- * - 1回目失敗時: 指数バックオフ
- * - 2回目以降: 自動で軽量プロンプト（buildCompactScriptPrompt）に縮小して503/タイムアウトを回避
- * - 最大リトライ失敗時: 世界観に適合した安全構成フォールバックを自動注入し、生成を止めない
+ * 第1段階: タイトル、あらすじ、各Cutの歌詞・基本状況のみを超軽量プロンプトで即座に策定
+ * （※各カットの詳細な作画演出・カメラワーク・直前対比は、画像描画直前に directShot がオンデマンドで生成）
  */
 export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions): Promise<SafeScriptResult> {
   const {
@@ -774,31 +773,25 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     taste, productionMode, isMultiPanel, addLog
   } = opts;
 
-  let currentPrompt = buildScriptPrompt(
+  // 初手から無駄な長文指示を削ぎ落とした軽量骨組みプロンプトを使用（1〜2秒で即座に通す）
+  const scriptPrompt = buildCompactScriptPrompt(
     epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, isMultiPanel
   );
 
   let scriptRes: any;
   try {
     scriptRes = await callWithRetry<any>(
-      () => Flow.generate.text(currentPrompt),
+      () => Flow.generate.text(scriptPrompt),
       (attempt, max, delay, err) => {
         console.error(`[Script Retry ${attempt}/${max}]`, err);
-        if (attempt >= 2) {
-          currentPrompt = buildCompactScriptPrompt(
-            epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, isMultiPanel
-          );
-          if (addLog) addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}): 軽量プロンプトに自動最適化して再試行中...`, 'process');
-        } else {
-          const errMsg = err?.message || String(err);
-          if (addLog) addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${errMsg}`, 'warning');
-        }
+        const errMsg = err?.message || String(err);
+        if (addLog) addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${errMsg}`, 'warning');
       },
       5
     );
   } catch (err: any) {
     const errMsg = err?.message || String(err);
-    console.error(`[Script Failed for Episode ${epId}]`, err, { prompt: currentPrompt });
+    console.error(`[Script Failed for Episode ${epId}]`, err, { prompt: scriptPrompt });
     if (addLog) addLog(`⚠️ 第${epId}話の脚本AI生成が混雑のため、世界観に即した安全構成フォールバックで生成を続行します: ${errMsg}`, 'warning');
 
     return {
