@@ -445,7 +445,7 @@ DO NOT restrict cuts to 4 panels! Freely choose varied layouts according to the 
 
 CRITICAL COMPOSITION & SEPARATION RULES (PREVENT OVERCROWDING & OVERLAPPING):
 1. NO OVERLAPPING OR MERGED CHARACTERS: Each panel must have its own distinct space and focus. NEVER direct multiple instances of the same person stacked or overlapping directly on top of each other!
-2. VISUAL BREATHING ROOM: If one panel features a character (standing or sitting), other panels should focus on environmental details (e.g. swaying silver grass, telephone pole and cables, wide sky, shoes on the ground) or clear separate angles. Keep the composition spacious and uncluttered!
+2. VISUAL BREATHING ROOM: If one panel features a character, other panels should focus on world-appropriate background scenery (matching "${worldSetting}"), contextual architecture, props, atmospheric lighting, or distinct camera perspectives. Keep the composition spacious and uncluttered!
 3. CLEAN PANEL BOUNDARIES: Panels must be clearly divided with defined boundaries. Even if artistic frame-breaking occurs, figures must NEVER intersect or fuse into figures from adjacent panels.
 4. FULL-BLEED ARTWORK: All panels must be full-bleed edge-to-edge artwork. Absolutely NO white outer border, NO blank margins!`
     : "";
