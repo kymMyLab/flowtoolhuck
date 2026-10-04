@@ -948,15 +948,43 @@ Output JSON ONLY:
           addLog(`📖 【第${epId}話】「${currentPlan.titleJp}」の脚本・時代考証をAIに執筆依頼中...`, 'process');
           updateEpisode(epId, { isGenerating: true });
 
-          const scriptPrompt = buildScriptPrompt(epId, currentPlan, settings.country, settings.theme, settings.era, settings.isMangaMode, settings.isMvMode, settings.taste, 'episodes', settings.isMultiPanel);
-          const scriptRes = await callWithRetry<any>(
-            () => Flow.generate.text(scriptPrompt),
-            (attempt, max, delay, err) => {
-              console.error(`[Drama Script Retry ${attempt}/${max}]`, err);
-              addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${formatErrorMessage(err)}`, 'warning');
-            },
-            5
-          );
+          let currentDramaPrompt = buildScriptPrompt(epId, currentPlan, settings.country, settings.theme, settings.era, settings.isMangaMode, settings.isMvMode, settings.taste, 'episodes', settings.isMultiPanel);
+          let scriptRes;
+          try {
+            scriptRes = await callWithRetry<any>(
+              () => Flow.generate.text(currentDramaPrompt),
+              (attempt, max, delay, err) => {
+                console.error(`[Drama Script Retry ${attempt}/${max}]`, err);
+                if (attempt >= 2) {
+                  currentDramaPrompt = buildCompactScriptPrompt(
+                    epId, currentPlan, settings.country, settings.theme, settings.era, settings.isMangaMode, settings.isMvMode, settings.taste, 'episodes', settings.isMultiPanel
+                  );
+                  addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}): 軽量プロンプトに自動最適化して再試行中...`, 'process');
+                } else {
+                  addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${delay}ms後... 理由: ${formatErrorMessage(err)}`, 'warning');
+                }
+              },
+              5
+            );
+          } catch (e: any) {
+            const errorMsg = formatErrorMessage(e);
+            console.error(`[Drama Episode ${epId} Script Failed]`, e, { prompt: currentDramaPrompt });
+            addLog(`⚠️ 第${epId}話の脚本AI生成が混雑のため、基本構成フォールバックで生成を続行します: ${errorMsg}`, 'warning');
+            scriptRes = {
+              text: JSON.stringify({
+                titleJp: currentPlan.titleJp,
+                titleEn: currentPlan.titleEn,
+                summary: currentPlan.summary || `${currentPlan.titleJp}の物語`,
+                eraAnalysisJp: '江戸の町人文化と人情の情景。',
+                cuts: Array.from({ length: CUTS_PER_EPISODE }, (_, cIdx) => ({
+                  id: cIdx + 1,
+                  panelLayout: settings.isMultiPanel ? (cIdx % 2 === 0 ? 'split-2' : 'dynamic-multi') : 'single',
+                  basicPlot: `Cinematic traditional Japanese drama scene, ${settings.theme}, episode ${epId} scene ${cIdx + 1}, authentic historical Edo period atmosphere, high quality visual composition`,
+                  narrationJp: `第${epId}話 場面${cIdx + 1}の情景`
+                }))
+              })
+            };
+          }
 
           const sharedScript: any = safeJsonParse<any>(scriptRes.text, { titleJp: currentPlan.titleJp, titleEn: currentPlan.titleEn, cuts: [] });
           addLog(`✨ 【第${epId}話】脚本＆時代考証が完成！（考証: ${sharedScript.eraAnalysisJp?.slice(0, 24) || '完了'}...）`, 'success');
