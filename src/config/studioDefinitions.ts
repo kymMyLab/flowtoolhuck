@@ -314,13 +314,21 @@ export const POSE_CONTRAST_RULES: Array<{
 ];
 
 // ── 6. 各制作モード用特化テーマ定義 ─────────────────────────────────
-export {
+import {
   MV_THEMES,
   TRIVIA_THEMES,
   QUOTES_THEMES,
   FOLKLORE_THEMES,
   CRAFT_THEMES
 } from './themes';
+
+export {
+  MV_THEMES,
+  TRIVIA_THEMES,
+  QUOTES_THEMES,
+  FOLKLORE_THEMES,
+  CRAFT_THEMES
+};
 // ── 6.5. 制作モード・プラグイン統合オブジェクト (PRODUCTION_MODES_CONFIG) ─────
 import type { ProductionMode } from '../types';
 
