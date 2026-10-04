@@ -230,12 +230,12 @@ export function buildFinalCinematicPromptAndNegative(
     if (rawPanelLayout === 'single') {
       multiPanelPrompt = 'single full-bleed epic splash comic panel, high-impact single composition, seamless edge-to-edge artwork, absolutely NO white outer border, NO margins';
     } else if (rawPanelLayout === 'split-2') {
-      multiPanelPrompt = 'multi-panel manga comic strip composition, dynamic 2-panel split layout with contrasting angles, narrative sequential comic pacing, seamless full-bleed artwork, absolutely NO white outer border, NO margins';
+      multiPanelPrompt = 'multi-panel manga comic strip composition, dynamic 2-panel split layout with contrasting angles, clearly divided non-overlapping panel frames, spacious composition, each panel showing distinct subject without clutter, seamless full-bleed artwork, absolutely NO white outer border, NO margins';
     } else if (rawPanelLayout === 'split-3') {
-      multiPanelPrompt = 'multi-panel manga comic strip composition, dynamic 3-panel sequential comic strip layout with varied perspectives, seamless full-bleed artwork, absolutely NO white outer border, NO margins';
+      multiPanelPrompt = 'multi-panel manga comic strip composition, dynamic 3-panel sequential comic strip layout with varied perspectives, clean distinct panel frames, non-overlapping figures, spacious composition, seamless full-bleed artwork, absolutely NO white outer border, NO margins';
     } else {
       // 4コマ固定ではなく、形も自由に（dynamic-multi / varied layout）
-      multiPanelPrompt = 'multi-panel manga comic strip composition, dynamic split panels with varied angles and shapes, narrative sequential layout, seamless full-bleed artwork, absolutely NO white outer border, NO margins';
+      multiPanelPrompt = 'multi-panel manga comic strip composition, dynamic split panels with varied angles and shapes, clearly separated distinct panel compartments, spacious composition with breathing room, non-overlapping figures, narrative sequential layout, seamless full-bleed artwork, absolutely NO white outer border, NO margins';
     }
   }
 
@@ -264,8 +264,8 @@ export function buildFinalCinematicPromptAndNegative(
     ? `violent action, aggressive shouting, screaming mouth wide open, intense crying, dynamic combat, weapons, explosion, exaggerated action pose, heroic flexing${mvAntiCameraLook}`
     : '';
 
-  const multiPanelBorderNegative = isMultiPanelActive
-    ? 'white outer border, page margins, white paper border, blank border, picture frame, matting, outer canvas border, wide margins, cardboard border'
+  const multiPanelNegative = isMultiPanelActive
+    ? 'white outer border, page margins, white paper border, blank border, picture frame, matting, outer canvas border, wide margins, cardboard border, overlapping characters, stacked people, people sitting on top of each other, merged humans, intersecting figures, duplicate characters overlapping, cluttered characters, confusing anatomy overlapping across panels, figures blending into each other'
     : '';
 
   const negativeLayers: string[] = [
@@ -276,7 +276,7 @@ export function buildFinalCinematicPromptAndNegative(
     sanitizedForbidden,
     illustrationNegative,
     BASELINE_NEGATIVE_TOKENS.antiFrameAndBorder,
-    multiPanelBorderNegative,
+    multiPanelNegative,
     negativePrompt || '', // 直前構図ネガティブ（最重要）
     BASELINE_NEGATIVE_TOKENS.renderingQuality
   ];

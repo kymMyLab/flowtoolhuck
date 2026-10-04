@@ -439,12 +439,15 @@ MANDATORY VISUAL RULES:
 As an expert comic/manga director, dynamically determine the visual panel layout for EACH cut to maximize narrative pacing, emotional drama, or comedic timing!
 DO NOT restrict cuts to 4 panels! Freely choose varied layouts according to the story moment:
 - "single": 1 epic full-bleed splash cut (for emotional climaxes, hero poses, dramatic wide scenery).
-- "split-2": 2 contrasting horizontal or vertical split panels (e.g. action in top/left panel -> reaction in bottom/right panel).
+- "split-2": 2 contrasting horizontal or vertical split panels (e.g. main subject in one panel, scenic environmental detail or props in the other).
 - "split-3": 3 dynamic sequential comic panels depicting rapid cause, action, and surprising outcome.
 - "dynamic-multi": 2-4 varied asymmetrical or diagonal panels (for fast-paced montage, comic strips, or high-energy exchanges).
 
-For EACH cut, assign "panelLayout" ("single" | "split-2" | "split-3" | "dynamic-multi") and incorporate the panel composition directly into "basicPlot".
-MANDATORY: All panels must be full-bleed edge-to-edge artwork. Absolutely NO white outer border, NO blank margins!`
+CRITICAL COMPOSITION & SEPARATION RULES (PREVENT OVERCROWDING & OVERLAPPING):
+1. NO OVERLAPPING OR MERGED CHARACTERS: Each panel must have its own distinct space and focus. NEVER direct multiple instances of the same person stacked or overlapping directly on top of each other!
+2. VISUAL BREATHING ROOM: If one panel features a character (standing or sitting), other panels should focus on environmental details (e.g. swaying silver grass, telephone pole and cables, wide sky, shoes on the ground) or clear separate angles. Keep the composition spacious and uncluttered!
+3. CLEAN PANEL BOUNDARIES: Panels must be clearly divided with defined boundaries. Even if artistic frame-breaking occurs, figures must NEVER intersect or fuse into figures from adjacent panels.
+4. FULL-BLEED ARTWORK: All panels must be full-bleed edge-to-edge artwork. Absolutely NO white outer border, NO blank margins!`
     : "";
 
   return `You are a ${directorRole} and visual researcher.
@@ -515,7 +518,7 @@ export function buildCompactScriptPrompt(
   return `You are a script director.
 Create a compact 12-cut ${contextTitle} for Episode ${epId} ("${currentPlan.titleJp}").
 Theme & Setting: "${worldSetting}". Art Style: "${taste || 'Cinematic'}".
-${isMultiPanel ? 'Direct each cut panel layout freely ("single", "split-2", "split-3", "dynamic-multi") without white borders.' : 'Dynamically alternate camera distances (Wide -> Close-up -> Medium -> Climax).'}
+${isMultiPanel ? 'Direct each cut panel layout freely ("single", "split-2", "split-3", "dynamic-multi") without white borders. Keep panels cleanly divided, spacious, non-overlapping figures.' : 'Dynamically alternate camera distances (Wide -> Close-up -> Medium -> Climax).'}
 Output ONLY valid JSON:
 {
   "titleJp": "${currentPlan.titleJp}",
