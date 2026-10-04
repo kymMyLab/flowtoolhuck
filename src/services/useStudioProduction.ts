@@ -735,7 +735,7 @@ Output JSON ONLY:
           });
 
           const baseCutsData = Array.from({ length: CUTS_PER_EPISODE }, (_, j) => {
-            const cutData = parsed.cuts[j] || {};
+            const cutData = parsed.cuts[j] || {} as any;
             const narration = cutData.narrationJp || '';
             const plot = cutData.basicPlot || '';
             const cutHighlights = cutData.highlights || parsed.highlightWords || [];
@@ -1004,7 +1004,7 @@ Output JSON ONLY:
           addLog(`✨ 【第${epId}話】脚本＆時代考証が完成！（考証: ${sharedScript.eraAnalysisJp?.slice(0, 24) || '完了'}...）`, 'success');
 
           const episodeCuts: Cut[] = Array.from({ length: CUTS_PER_EPISODE }, (_, j) => {
-            const cutData = sharedScript.cuts[j] || {};
+            const cutData = sharedScript.cuts[j] || {} as any;
             const narration = cutData.narrationJp || '';
             const plot = cutData.basicPlot || '';
             const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));

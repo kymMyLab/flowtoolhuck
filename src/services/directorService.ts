@@ -781,6 +781,7 @@ export interface GenerateSafeScriptOptions {
 }
 
 export interface SafeScriptResult {
+  coverCatchphraseEn?: string;
   titleJp: string;
   titleEn: string;
   summary: string;
