@@ -221,12 +221,40 @@ export function buildFinalCinematicPromptAndNegative(
         .join(', ')
     : '';
 
+  // ── マンガ風コマ割り（マルチパネル）動的注入＆競合解消 ──
+  const isMultiPanelActive = !!(settings.isMultiPanel || task.isMultiPanel);
+  const rawPanelLayout = task.panelLayout || 'dynamic-multi';
+
+  let multiPanelPrompt = '';
+  if (isMultiPanelActive) {
+    if (rawPanelLayout === 'single') {
+      multiPanelPrompt = 'single full-bleed epic splash comic panel, high-impact single composition, seamless edge-to-edge artwork, absolutely NO white outer border, NO margins';
+    } else if (rawPanelLayout === 'split-2') {
+      multiPanelPrompt = 'multi-panel manga comic strip composition, dynamic 2-panel split layout with contrasting angles, narrative sequential comic pacing, seamless full-bleed artwork, absolutely NO white outer border, NO margins';
+    } else if (rawPanelLayout === 'split-3') {
+      multiPanelPrompt = 'multi-panel manga comic strip composition, dynamic 3-panel sequential comic strip layout with varied perspectives, seamless full-bleed artwork, absolutely NO white outer border, NO margins';
+    } else {
+      // 4コマ固定ではなく、形も自由に（dynamic-multi / varied layout）
+      multiPanelPrompt = 'multi-panel manga comic strip composition, dynamic split panels with varied angles and shapes, narrative sequential layout, seamless full-bleed artwork, absolutely NO white outer border, NO margins';
+    }
+  }
+
+  // 競合解消: マルチパネル時は既存プロンプトや画風定義から "no panels" や "single splash cut" を自動除去
+  let effectiveMasterPrefix = masterStylePrefix;
+  let effectiveMasterPrompt = masterStylePrompt;
+  let effectivePrompt = prompt;
+  if (isMultiPanelActive && rawPanelLayout !== 'single') {
+    effectiveMasterPrefix = effectiveMasterPrefix.replace(/no panels,?\s*/gi, '').replace(/single splash cut,?\s*/gi, '');
+    effectiveMasterPrompt = effectiveMasterPrompt.replace(/no panels,?\s*/gi, '').replace(/single splash cut,?\s*/gi, '');
+    effectivePrompt = effectivePrompt.replace(/no panels,?\s*/gi, '').replace(/single splash cut,?\s*/gi, '');
+  }
+
   // 白黒スタイル（「🖋️ 白黒劇画」等）が明示的に選ばれている場合以外は、白黒・モノクロ・スクリーントーン化をネガティブで徹底排除
   const isExplicitMonochrome = (styleKey + ' ' + rawStyle).toLowerCase().includes('monochrome') || 
                                (styleKey + ' ' + rawStyle).toLowerCase().includes('白黒') || 
                                (styleKey + ' ' + rawStyle).toLowerCase().includes('black and white');
   const antiMonochromeNegative = !isExplicitMonochrome && !settings.isMangaMode
-    ? 'monochrome, grayscale, black and white, desaturated, colorless, screentone, manga panels'
+    ? (isMultiPanelActive ? 'monochrome, grayscale, black and white, desaturated, colorless' : 'monochrome, grayscale, black and white, desaturated, colorless, screentone, manga panels')
     : '';
 
   // MVモード専用アンチネガティブ（叫び、劇的な怒り、過剰アクション、および非サビ時のカメラ目線の徹底排除）
@@ -234,6 +262,10 @@ export function buildFinalCinematicPromptAndNegative(
 
   const mvAntiDramaticNegative = isMv 
     ? `violent action, aggressive shouting, screaming mouth wide open, intense crying, dynamic combat, weapons, explosion, exaggerated action pose, heroic flexing${mvAntiCameraLook}`
+    : '';
+
+  const multiPanelBorderNegative = isMultiPanelActive
+    ? 'white outer border, page margins, white paper border, blank border, picture frame, matting, outer canvas border, wide margins, cardboard border'
     : '';
 
   const negativeLayers: string[] = [
@@ -244,9 +276,12 @@ export function buildFinalCinematicPromptAndNegative(
     sanitizedForbidden,
     illustrationNegative,
     BASELINE_NEGATIVE_TOKENS.antiFrameAndBorder,
+    multiPanelBorderNegative,
     negativePrompt || '', // 直前構図ネガティブ（最重要）
     BASELINE_NEGATIVE_TOKENS.renderingQuality
   ];
+
+  const panelDirective = multiPanelPrompt ? `[PANEL COMPOSITION: ${multiPanelPrompt}]. ` : '';
 
   if (activeReference) {
     const { styleDna, antiPoseNegative, eraNegative, mediaId } = activeReference;
@@ -254,7 +289,7 @@ export function buildFinalCinematicPromptAndNegative(
     if (eraNegative) negativeLayers.push(eraNegative);
 
     const finalNegative = negativeLayers.filter(Boolean).join(', ');
-    const finalPrompt = `${masterStylePrefix}. ${masterStylePrompt}. [ACTION: ${prompt}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+    const finalPrompt = `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}[ACTION: ${effectivePrompt}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt,
@@ -263,7 +298,7 @@ export function buildFinalCinematicPromptAndNegative(
     };
   } else {
     const finalNegative = negativeLayers.filter(Boolean).join(', ');
-    const finalPrompt = `${masterStylePrefix}. ${masterStylePrompt}. ${cameraContext}. ${prompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+    const finalPrompt = `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${cameraContext}. ${effectivePrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt,

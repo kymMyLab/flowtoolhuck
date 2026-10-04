@@ -173,6 +173,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
       styleKey: styleKey || ep.taste || settings.taste,
       imageModel: settings.imageModel,
       isMvMode: ep.isMvMode,
+      isMultiPanel: settings.isMultiPanel,
+      panelLayout: c.panelLayout,
       storyContext: ep.summary || '',
       eraAnalysis: ep.eraAnalysis,
       forbiddenAnachronisms: ep.forbiddenAnachronisms,
@@ -674,7 +676,7 @@ Output JSON ONLY:
           };
 
           const fullScriptPrompt = buildScriptPrompt(
-            epIndex, curPlan, settings.country, settings.theme, settings.era, false, curMode === 'mv', settings.taste, curMode
+            epIndex, curPlan, settings.country, settings.theme, settings.era, false, curMode === 'mv', settings.taste, curMode, settings.isMultiPanel
           );
 
           let currentScriptPrompt = fullScriptPrompt;
@@ -687,7 +689,7 @@ Output JSON ONLY:
                 if (attempt >= 2) {
                   // 2回目以降のリトライは軽量コンパクトプロンプトに切り替えてGoogle側の負荷・トークン制限・503を回避
                   currentScriptPrompt = buildCompactScriptPrompt(
-                    epIndex, curPlan, settings.country, settings.theme, settings.era, false, curMode === 'mv', settings.taste, curMode
+                    epIndex, curPlan, settings.country, settings.theme, settings.era, false, curMode === 'mv', settings.taste, curMode, settings.isMultiPanel
                   );
                   addLog(`⚠️ 脚本リトライ (${attempt}/${max}): 軽量プロンプトに自動最適化して再試行中...`, 'process');
                 } else {
@@ -722,6 +724,7 @@ Output JSON ONLY:
             const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
             cut.shotScale = preset.scale;
             cut.cinematicAngle = preset.angle;
+            cut.panelLayout = cutData.panelLayout || (settings.isMultiPanel ? 'dynamic-multi' : 'single');
             const recCw = resolveRecommendedCameraWorkAndKenBurns(j + 1, curMode, curMode === 'mv', settings.isMangaMode);
             cut.cameraWork = recCw.id;
             cut.cameraMotion = recCw.motionPrompt;
@@ -945,7 +948,7 @@ Output JSON ONLY:
           addLog(`📖 【第${epId}話】「${currentPlan.titleJp}」の脚本・時代考証をAIに執筆依頼中...`, 'process');
           updateEpisode(epId, { isGenerating: true });
 
-          const scriptPrompt = buildScriptPrompt(epId, currentPlan, settings.country, settings.theme, settings.era, settings.isMangaMode, settings.isMvMode, settings.taste, 'episodes');
+          const scriptPrompt = buildScriptPrompt(epId, currentPlan, settings.country, settings.theme, settings.era, settings.isMangaMode, settings.isMvMode, settings.taste, 'episodes', settings.isMultiPanel);
           const scriptRes = await callWithRetry<any>(
             () => Flow.generate.text(scriptPrompt),
             (attempt, max, delay, err) => {
@@ -965,6 +968,7 @@ Output JSON ONLY:
             const narration = cutData.narrationJp || cutData.narration || '';
             const plot = cutData.basicPlot || cutData.promptEn || cutData.prompt || '';
             const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
+            cut.panelLayout = cutData.panelLayout || (settings.isMultiPanel ? 'dynamic-multi' : 'single');
             const preset = getStoryboardPreset(j + 1, false, settings.isMangaMode);
             cut.shotScale = cutData.shotScale || preset.scale;
             cut.cinematicAngle = cutData.cinematicAngle || preset.angle;

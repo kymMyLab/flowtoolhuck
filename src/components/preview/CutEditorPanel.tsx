@@ -381,6 +381,31 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
             />
           </div>
 
+          <FieldDropdown
+            label="コマ割り構成 (Panel Layout)"
+            value={
+              cut.panelLayout === 'single' ? '🖼️ 1コマ大ゴマ (Single)' :
+              cut.panelLayout === 'split-2' ? '◫ 2コマ分割 (2-Panel)' :
+              cut.panelLayout === 'split-3' ? '☰ 3コマ連続 (3-Panel)' :
+              '▦ 変形マルチコマ (Dynamic Multi)'
+            }
+            options={[
+              '🖼️ 1コマ大ゴマ (Single)',
+              '◫ 2コマ分割 (2-Panel)',
+              '☰ 3コマ連続 (3-Panel)',
+              '▦ 変形マルチコマ (Dynamic Multi)'
+            ]}
+            onChange={l => {
+              const map: Record<string, string> = {
+                '🖼️ 1コマ大ゴマ (Single)': 'single',
+                '◫ 2コマ分割 (2-Panel)': 'split-2',
+                '☰ 3コマ連続 (3-Panel)': 'split-3',
+                '▦ 変形マルチコマ (Dynamic Multi)': 'dynamic-multi'
+              };
+              onUpdateCut({ panelLayout: map[l] || 'dynamic-multi' });
+            }}
+          />
+
           <TextInput label="画像プロンプト (EN)" value={cut.promptEn || ''} onChange={v => onUpdateCut({ promptEn: v })} />
 
           {/* ── 🎨 画像生成インプット解析インスペクター ── */}

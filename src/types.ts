@@ -49,6 +49,7 @@ export interface Cut {
   cinematicAngle?: string;
   cameraWork?: string;
   scenePlot?: string;
+  panelLayout?: 'single' | 'split-2' | 'split-3' | 'dynamic-multi' | string;
   comicPanel?: ComicPanelMeta;
 
   kenBurnsPreset?: KenBurnsPreset; 
@@ -143,6 +144,7 @@ export interface GeneratorSettings {
   autoVideo: boolean;
   autoDownload: boolean;
   selectedAssetId?: number;
+  isMultiPanel?: boolean;
 }
 
 export interface GenerationTask {
@@ -153,6 +155,8 @@ export interface GenerationTask {
   styleKey: string;
   imageModel: string;
   isMvMode?: boolean;
+  isMultiPanel?: boolean;
+  panelLayout?: string;
   eraAnalysis?: string;
   forbiddenAnachronisms?: string[];
   authenticAttireEn?: string;

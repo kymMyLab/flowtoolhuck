@@ -15,7 +15,7 @@ import { extractHighlights } from './services/directorService';
 
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
-    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: '30%', episodeCount: 1, previewCutCount: 3, parallelCount: 2, autoVideo: false, autoDownload: false, isMvMode: false
+    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: '30%', episodeCount: 1, previewCutCount: 3, parallelCount: 2, autoVideo: false, autoDownload: false, isMvMode: false, isMultiPanel: false
   });
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -134,6 +134,8 @@ export default function App() {
                     styleKey: epTaste, 
                     imageModel: settings.imageModel, 
                     isMvMode: epFound?.isMvMode,
+                    isMultiPanel: settings.isMultiPanel,
+                    panelLayout: cutFound.panelLayout,
                     eraAnalysis: epFound?.eraAnalysis, 
                     forbiddenAnachronisms: epFound?.forbiddenAnachronisms,
                     authenticAttireEn: epFound?.authenticAttireEn,
@@ -186,6 +188,8 @@ export default function App() {
                 styleKey: epTaste, 
                 imageModel: model, 
                 isMvMode: ep?.isMvMode,
+                isMultiPanel: settings.isMultiPanel,
+                panelLayout: activeCut.panelLayout,
                 eraAnalysis: ep?.eraAnalysis, 
                 forbiddenAnachronisms: ep?.forbiddenAnachronisms,
                 authenticAttireEn: ep?.authenticAttireEn,

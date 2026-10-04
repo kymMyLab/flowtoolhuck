@@ -407,7 +407,8 @@ export function buildScriptPrompt(
   isMangaMode?: boolean,
   isMvMode?: boolean,
   taste?: string,
-  productionMode?: string
+  productionMode?: string,
+  isMultiPanel?: boolean
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
@@ -433,6 +434,19 @@ MANDATORY VISUAL RULES:
     ? "CRITICAL MV CAMERA GAZE: Cut 8 (Chorus climax) is the ONLY cut in the entire 12-cut music video where direct eye contact with the camera is permitted for intense emotional resonance. In all other 11 cuts, the subject MUST NOT look at the camera/viewer under any circumstances! Direct the character looking away, into the distance, eyes cast downward in thought, in pure side profile, or seen from behind."
     : "";
 
+  const multiPanelMandate = isMultiPanel
+    ? `DYNAMIC MANGA/COMIC PANELING & SEQUENTIAL COMPOSITION (MULTI-PANEL MODE ENABLED):
+As an expert comic/manga director, dynamically determine the visual panel layout for EACH cut to maximize narrative pacing, emotional drama, or comedic timing!
+DO NOT restrict cuts to 4 panels! Freely choose varied layouts according to the story moment:
+- "single": 1 epic full-bleed splash cut (for emotional climaxes, hero poses, dramatic wide scenery).
+- "split-2": 2 contrasting horizontal or vertical split panels (e.g. action in top/left panel -> reaction in bottom/right panel).
+- "split-3": 3 dynamic sequential comic panels depicting rapid cause, action, and surprising outcome.
+- "dynamic-multi": 2-4 varied asymmetrical or diagonal panels (for fast-paced montage, comic strips, or high-energy exchanges).
+
+For EACH cut, assign "panelLayout" ("single" | "split-2" | "split-3" | "dynamic-multi") and incorporate the panel composition directly into "basicPlot".
+MANDATORY: All panels must be full-bleed edge-to-edge artwork. Absolutely NO white outer border, NO blank margins!`
+    : "";
+
   return `You are a ${directorRole} and visual researcher.
 Create a 12-cut ${contextTitle} for Episode ${epId} ("${currentPlan.titleJp}").
 World Theme & Setting: "${worldSetting}".
@@ -446,6 +460,7 @@ Design all 12 cuts with continuous, professional cinematic pacing and contrastin
 - Dynamically alternate distances: Wide establishing shot -> Intense eye/expression close-up -> Medium profile in motion -> Over-shoulder -> Epic climax splash.
 - Vary character poses: sitting, walking, standing resolute, gazing aside, dynamic action.
 ${mvCameraMandate}
+${multiPanelMandate}
 
 ${isMvMode ? 'ATMOSPHERIC & VISUAL HARMONY:' : (isHistorical ? 'STRICT HISTORICAL ACCURACY:' : 'AUTHENTIC SETTING & CULTURAL ACCURACY:')}
 Dynamically analyze the period, setting, and atmosphere implied by "${worldSetting}". Determine authentic aesthetic attire and identify elements that would break the mood and must NEVER appear (NEVER forbid elements of the chosen Visual Art Style).
@@ -467,6 +482,7 @@ Output ONLY valid JSON matching this exact structure:
   "cuts": [
     { 
       "id": 1, 
+      ${isMultiPanel ? '"panelLayout": "split-2",' : ''}
       "basicPlot": "Cinematic visual description of the cut in English matching the art style", 
       "narrationJp": "${isMvMode ? '楽曲の歌詞・リリック（1曲の歌として繋がるエモい歌詞20文字前後）' : '重厚なナレーション（日本語）'}",
       "highlights": ["ナレーション内の重要語1", "ナレーション内の重要語2"]
@@ -488,7 +504,8 @@ export function buildCompactScriptPrompt(
   isMangaMode?: boolean,
   isMvMode?: boolean,
   taste?: string,
-  productionMode?: string
+  productionMode?: string,
+  isMultiPanel?: boolean
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
@@ -498,7 +515,7 @@ export function buildCompactScriptPrompt(
   return `You are a script director.
 Create a compact 12-cut ${contextTitle} for Episode ${epId} ("${currentPlan.titleJp}").
 Theme & Setting: "${worldSetting}". Art Style: "${taste || 'Cinematic'}".
-Dynamically alternate camera distances (Wide establishing -> Intense close-up -> Medium in motion -> Climax).
+${isMultiPanel ? 'Direct each cut panel layout freely ("single", "split-2", "split-3", "dynamic-multi") without white borders.' : 'Dynamically alternate camera distances (Wide -> Close-up -> Medium -> Climax).'}
 Output ONLY valid JSON:
 {
   "titleJp": "${currentPlan.titleJp}",
@@ -511,7 +528,7 @@ Output ONLY valid JSON:
   "coverCatchphraseJp": "惹きつけるキャッチコピー",
   "highlightWords": ["キーワード"],
   "cuts": [
-    { "id": 1, "basicPlot": "Visual description in English", "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}", "highlights": ["キーワード"] }
+    { "id": 1, ${isMultiPanel ? '"panelLayout": "split-2", ' : ''}"basicPlot": "Visual description in English", "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}", "highlights": ["キーワード"] }
   ]
 }`;
 }

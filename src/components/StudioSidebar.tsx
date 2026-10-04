@@ -280,6 +280,28 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId} 
         />
 
+        {/* マンガ風コマ割り（マルチパネル）トグル */}
+        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/25 text-purple-300 transition-all select-none hover:bg-purple-500/15">
+          <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+            <input
+              type="checkbox"
+              checked={!!settings.isMultiPanel}
+              onChange={e => setSettings(s => ({ ...s, isMultiPanel: e.target.checked }))}
+              disabled={isProducing}
+              className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-gray-600 bg-black/50 cursor-pointer accent-purple-500"
+            />
+            <div className="flex flex-col">
+              <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[15px] text-purple-400">auto_stories</span>
+                マンガ風コマ割り (Multi-Panel)
+              </span>
+              <span className="text-[9.5px] text-gray-400 font-normal">
+                AIが1コマ〜変形コマ割りを自由に演出
+              </span>
+            </div>
+          </label>
+        </div>
+
         <SectionLabel>自動化設定</SectionLabel>
         <div className="flex flex-col gap-2.5">
           <FieldDropdown label="画像モデル" value={settings.imageModel} options={IMAGE_MODELS.map(m => m.label)} onChange={v => setSettings(s => ({ ...s, imageModel: v }))} disabled={isProducing} />
