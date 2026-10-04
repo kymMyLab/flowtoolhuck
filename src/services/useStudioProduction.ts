@@ -249,19 +249,32 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
       const task = tasks[i];
       const existingCut = episodesRef.current.find(e => e.id === task.epId)?.cuts.find(c => c.id === task.cutId);
       
-      const shotScale = existingCut?.shotScale || 'Wide';
-      const cinematicAngle = existingCut?.cinematicAngle || 'Cinematic perspective';
-      const promptEn = existingCut?.promptEn || task.prompt;
-      
-      // 直前カット対比ネガティブをミリ秒計算（AI通信ゼロ）
-      let antiPreviousNegative = buildDynamicAntiPreviousNegative(previousShotInfo);
-      const isAllowedEyeContact = settings.isMvMode && isMvChorusCut(task.cutId);
-      if (settings.isMvMode && !isAllowedEyeContact) {
-        antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${MV_ANTI_CAMERA_LOOK_NEGATIVE}` : MV_ANTI_CAMERA_LOOK_NEGATIVE;
-      }
+      updateCut(task.epId, task.cutId, { isDirecting: true });
+      addLog(`🎬 Ep.${task.epId} C${task.cutId.toString().padStart(2, '0')}: 直前構図との対比演出をAIディレクション中...`, 'process');
+
+      // オンデマンド演出AI（directShot）で直前カットとの対比・構図・詳細プロンプトを生成
+      const directResult = await directShot(
+        task,
+        settings,
+        activeReferenceRef.current,
+        previousShotInfo,
+        addLog
+      );
+
+      const shotScale = directResult.shotScale || existingCut?.shotScale || 'Wide';
+      const cinematicAngle = directResult.cinematicAngle || existingCut?.cinematicAngle || 'Cinematic perspective';
+      const promptEn = directResult.promptEn || existingCut?.promptEn || task.prompt;
+      const antiPreviousNegative = directResult.negativePrompt || '';
 
       updateCut(task.epId, task.cutId, { 
         isDirecting: false,
+        promptEn,
+        shotScale,
+        cinematicAngle,
+        cameraWork: directResult.cameraWork || existingCut?.cameraWork,
+        cameraMotion: directResult.cameraMotion || existingCut?.cameraMotion,
+        kenBurnsPreset: directResult.kenBurnsPreset || existingCut?.kenBurnsPreset,
+        telop: directResult.telop ? { ...existingCut?.telop, ...directResult.telop } : existingCut?.telop,
         negativePrompt: antiPreviousNegative
       });
 
@@ -269,7 +282,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
         scale: shotScale,
         angle: cinematicAngle,
         prompt: promptEn,
-        tag: existingCut?.cameraWork,
+        tag: directResult.cameraWork || existingCut?.cameraWork,
         telop: existingCut?.telop
       };
 

@@ -486,7 +486,7 @@ Output ONLY valid JSON matching this exact structure:
     { 
       "id": 1, 
       ${isMultiPanel ? '"panelLayout": "split-2",' : ''}
-      "basicPlot": "Cinematic visual description of the cut in English matching the art style", 
+      "basicPlot": "Concise scene concept and situation in English (1-2 sentences, e.g. Walking alone along country path under glowing dusk sky)", 
       "narrationJp": "${isMvMode ? '楽曲の歌詞・リリック（1曲の歌として繋がるエモい歌詞20文字前後）' : '重厚なナレーション（日本語）'}",
       "highlights": ["ナレーション内の重要語1", "ナレーション内の重要語2"]
     }
@@ -635,6 +635,17 @@ MANDATORY RULE: This Cut ${cutId} MUST BE RADICALLY DIFFERENT from the previous 
     settings.productionMode
   );
 
+  const isMultiPanelActive = !!(settings.isMultiPanel || task.isMultiPanel);
+  const rawPanelLayout = task.panelLayout || (isMultiPanelActive ? 'dynamic-multi' : 'single');
+  const multiPanelExtraDirecting = (isMultiPanelActive && rawPanelLayout !== 'single')
+    ? `MANDATORY MULTI-PANEL COMIC COMPOSITION (${rawPanelLayout}):
+Create a dynamic split comic panels composition with seamless full-bleed edge-to-edge artwork.
+- Absolutely NO white outer borders, NO blank page margins!
+- Clearly divided separate panel frames.
+- If one panel features a character, other panels MUST focus on world-appropriate background scenery (matching the setting), props, atmospheric lighting, or distinct camera angles.
+- NEVER stack or overlap characters directly on top of each other! Keep composition spacious with visual breathing room.`
+    : '';
+
   const directorPrompt = `You are a ${directorRole} designing a visual shot and motion-graphics telop staging for ${genreDesc}.
 Context: "${prompt}".
 Style: "${rawStyle}".
@@ -645,6 +656,7 @@ Avoid scale errors. If wide shot, character MUST be small and background realist
 COLOR & MEDIUM FIDELITY: Maintain the authentic color grading, vibrant lighting, and visual medium of "${rawStyle}". Do NOT describe scenes as monochrome, grayscale, pencil sketch, or manga screentones unless the chosen style is explicitly monochrome.
 ${mangaExtraDirecting}
 ${mvExtraDirecting}
+${multiPanelExtraDirecting}
 
 Output ONLY valid JSON:
 {
@@ -661,6 +673,10 @@ Output ONLY valid JSON:
   let antiPreviousNegative = buildDynamicAntiPreviousNegative(previousShotInfo);
   if (settings.isMvMode && !isAllowedEyeContact) {
     antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${MV_ANTI_CAMERA_LOOK_NEGATIVE}` : MV_ANTI_CAMERA_LOOK_NEGATIVE;
+  }
+  if (isMultiPanelActive) {
+    const multiPanelNeg = 'white outer border, page margins, white paper border, blank border, picture frame, overlapping characters, stacked people, people sitting on top of each other, merged humans, duplicate characters overlapping';
+    antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${multiPanelNeg}` : multiPanelNeg;
   }
 
   try {
