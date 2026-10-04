@@ -508,21 +508,31 @@ export function buildCompactScriptPrompt(
   isMvMode?: boolean,
   taste?: string,
   productionMode?: string,
-  isMultiPanel?: boolean
+  isMultiPanel?: boolean,
+  existingTitles?: string[]
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
   const modeConfig = getProductionModeConfig(effMode, isMvMode);
   const contextTitle = modeConfig.getContextTitle(isMangaMode, checkIsHistorical(era, theme));
 
-  return `You are a script director.
-Create a compact 12-cut ${contextTitle} for Episode ${epId} ("${currentPlan.titleJp}").
-Theme & Setting: "${worldSetting}". Art Style: "${taste || 'Cinematic'}".
+  const avoidSection = existingTitles && existingTitles.length > 0
+    ? `\nPREVIOUSLY COVERED TOPICS IN THIS SERIES (DO NOT DUPLICATE OR OVERLAP WITH THESE):\n${existingTitles.map(t => `- ${t}`).join('\n')}\n`
+    : '';
+
+  return `You are a top-tier creative showrunner and YouTube/TikTok Shorts script director.
+Task: Create a captivating, completely unique 12-cut ${contextTitle} for Episode ${epId} within the broad world of "${worldSetting}".
+Art Style: "${taste || 'Cinematic'}".
+${avoidSection}
+CRITICAL NAMING RULE FOR "titleJp" AND "titleEn":
+- NEVER output generic placeholder titles like "${currentPlan.titleJp}", "Vol.${epId}", or repeating the theme name.
+- You MUST create a brand-new, punchy, curiosity-inducing specific Japanese topic title ("titleJp") tailored exclusively to this episode's distinct topic/angle (around 15-25 Japanese characters, e.g. "極限の兵糧攻め！甲冑の革紐を煮て食った男たち" or "死因第1位は刀傷にあらず！陣中を襲った悪夢の赤痢").
+- Provide a matching specific English title ("titleEn") (e.g. "Siege of Starvation: Men Who Boiled Armor Leather").
 ${isMultiPanel ? 'Direct each cut panel layout freely ("single", "split-2", "split-3", "dynamic-multi") without white borders. Keep panels cleanly divided, spacious, non-overlapping figures.' : 'Dynamically alternate camera distances (Wide -> Close-up -> Medium -> Climax).'}
 Output ONLY valid JSON:
 {
-  "titleJp": "${currentPlan.titleJp}",
-  "titleEn": "${currentPlan.titleEn}",
+  "titleJp": "このエピソード独自の具体的で引きの強い日本語お題（15〜25文字）",
+  "titleEn": "Specific Topic Episode Subtitle in English",
   "summary": "${isMvMode ? '楽曲の世界観（日本語）' : 'あらすじ（日本語）'}",
   "eraAnalysisJp": "時代背景の解説（日本語）",
   "authenticAttireEn": "Costume and attire matching ${worldSetting}",
@@ -533,7 +543,7 @@ Output ONLY valid JSON:
   "cuts": [
     { "id": 1, ${isMultiPanel ? '"panelLayout": "split-2", ' : ''}"basicPlot": "Visual description in English", "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}", "highlights": ["キーワード"] }
   ]
-}`;
+};`;
 }
 
 /**
@@ -740,6 +750,7 @@ export interface GenerateSafeScriptOptions {
   taste?: string;
   productionMode?: string;
   isMultiPanel?: boolean;
+  existingTitles?: string[];
   addLog?: (msg: string, type?: 'info' | 'success' | 'warning' | 'error' | 'process') => void;
 }
 
@@ -770,12 +781,12 @@ export interface SafeScriptResult {
 export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions): Promise<SafeScriptResult> {
   const {
     epId, currentPlan, country, theme, era, isMangaMode, isMvMode,
-    taste, productionMode, isMultiPanel, addLog
+    taste, productionMode, isMultiPanel, existingTitles, addLog
   } = opts;
 
   // 初手から無駄な長文指示を削ぎ落とした軽量骨組みプロンプトを使用（1〜2秒で即座に通す）
   const scriptPrompt = buildCompactScriptPrompt(
-    epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, isMultiPanel
+    epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, isMultiPanel, existingTitles
   );
 
   let scriptRes: any;

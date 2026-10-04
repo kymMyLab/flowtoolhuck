@@ -674,7 +674,12 @@ Output JSON ONLY:
           const rawTitle = (endEpIndex > 1) ? `${baseRawTitle} Vol.${epIndex}` : baseRawTitle;
           const currentEnTitle = (endEpIndex > 1) ? `${defaultEnTitle} Vol.${epIndex}` : defaultEnTitle;
 
-          addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit} / 今回制作: ${currentBatchStep}曲目（全${totalEpCount}${modeInfo.unit}）】「${rawTitle}」の脚本・演出（12カット）を策定中...`, 'process');
+          // 既出タイトルの収集（ネタ・お題の重複被り防止）
+          const existingTitles = episodesRef.current
+            .map(e => e.titleJp.replace(/^[^\w\s一-龯]+/, '').trim())
+            .filter(Boolean);
+
+          addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit} / 今回制作: ${currentBatchStep}${modeInfo.unit}目（全${totalEpCount}${modeInfo.unit}）】「${baseRawTitle}」第${epIndex}弾のお題＆脚本（12カット）をAIが考案中...`, 'process');
 
           const curPlan = {
             epNumber: epIndex,
@@ -694,6 +699,7 @@ Output JSON ONLY:
             taste: settings.taste,
             productionMode: curMode,
             isMultiPanel: settings.isMultiPanel,
+            existingTitles,
             addLog
           });
 
@@ -718,10 +724,23 @@ Output JSON ONLY:
             return cut;
           });
 
+          // 各話固有のお題（サブタイトル）を整形
+          const cleanParsedTitle = (parsed.titleJp || '').replace(/^【.*?】\s*/, '').replace(/^(第\d+話|Vol\.\d+|Track\s*\d+)[:：\s]*/i, '').trim();
+          const cleanTopicJp = cleanParsedTitle && cleanParsedTitle !== baseRawTitle ? cleanParsedTitle : `第${epIndex}の物語`;
+          const displayTitleJp = (endEpIndex > 1 || isContinuing)
+            ? `${modeInfo.icon} 【Vol.${epIndex}】${cleanTopicJp}`
+            : `${modeInfo.icon} ${cleanTopicJp}`;
+
+          const cleanParsedEn = (parsed.titleEn || '').replace(/^(Vol\.\d+|Track\s*\d+|Episode\s*\d+)[:：\s]*/i, '').trim();
+          const cleanTopicEn = cleanParsedEn && cleanParsedEn !== defaultEnTitle ? cleanParsedEn : `Episode ${epIndex}`;
+          const displayTitleEn = (endEpIndex > 1 || isContinuing)
+            ? `VOL.${epIndex}: ${cleanTopicEn}`
+            : cleanTopicEn;
+
           const newEpisode: Episode = {
             id: epIndex, internalId: crypto.randomUUID(),
-            titleJp: `${modeInfo.icon} ${parsed.titleJp || rawTitle}`, titleEn: parsed.titleEn || currentEnTitle,
-            summary: parsed.summary || `${rawTitle}の情景`, eraAnalysis: parsed.eraAnalysisJp || '作品を引き立てる演出構図。',
+            titleJp: displayTitleJp, titleEn: displayTitleEn,
+            summary: parsed.summary || `${cleanTopicJp}の情景`, eraAnalysis: parsed.eraAnalysisJp || '作品を引き立てる演出構図。',
             forbiddenAnachronisms: parsed.forbiddenAnachronisms || ['過剰な劇的演出'],
             authenticAttireEn: parsed.authenticAttireEn || 'Cinematic style attire', forbiddenKeywordsEn: 'explosive drama',
             coverCatchphraseJp: parsed.coverCatchphraseJp || '心揺さぶる一瞬の物語。', highlightWords: parsed.highlightWords || ['光'],
@@ -732,7 +751,7 @@ Output JSON ONLY:
 
           setEpisodes(prev => [...prev.filter(e => e.id !== epIndex), newEpisode]);
           episodesRef.current = [...episodesRef.current.filter(e => e.id !== epIndex), newEpisode];
-          addLog(`✨ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』全12カットの情景演出が確定！描画を開始します...`, 'success');
+          addLog(`✨ 第${epIndex}${modeInfo.unit}のお題決定！『${newEpisode.titleJp}』全12カットの情景演出が確定！描画を開始します...`, 'success');
 
           const targetCutCount = Math.min(settings.previewCutCount, CUTS_PER_EPISODE);
           await runTasks(buildCutTasks(newEpisode, newEpisode.cuts.slice(0, targetCutCount)));
