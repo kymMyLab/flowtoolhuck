@@ -8,7 +8,8 @@ import {
 import { THEMES } from '../constants';
 import { ProductionMode } from '../types';
 
-const STORAGE_KEY = 'flowtool_custom_themes_v1';
+const STORAGE_KEY = 'flowtool_custom_themes_v2';
+const OLD_STORAGE_KEY = 'flowtool_custom_themes_v1';
 
 export type CustomThemeMap = Record<string, string[]>;
 
@@ -27,8 +28,18 @@ export const DEFAULT_THEME_MAP: CustomThemeMap = {
  */
 export function loadCustomThemes(): CustomThemeMap {
   try {
+    // 旧キャッシュが存在すれば自動クリーンアップして新デフォルトへ移行
+    if (localStorage.getItem(OLD_STORAGE_KEY)) {
+      localStorage.removeItem(OLD_STORAGE_KEY);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_THEME_MAP));
+      return { ...DEFAULT_THEME_MAP };
+    }
+
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_THEME_MAP };
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_THEME_MAP));
+      return { ...DEFAULT_THEME_MAP };
+    }
     const parsed = JSON.parse(raw);
     return {
       mv: Array.isArray(parsed.mv) && parsed.mv.length > 0 ? parsed.mv : [...MV_THEMES],
