@@ -26,6 +26,7 @@ import {
   generateSafeEpisodeScript,
   extractHighlights,
   checkIsHistorical,
+  sanitizeForYouTubeSafety,
   PreviousShotInfo
 } from './directorService';
 import { 
@@ -730,8 +731,8 @@ Output JSON ONLY:
             .replace(/^(第\d+話|第\d+曲|Vol\.\d+|Track\s*\d+|Episode\s*\d+)[:：\s]*/i, '')
             .replace(/\s*\(?(Vol\.\d+|第\d+話)\)?\s*$/i, '')
             .trim();
-          const cleanTopicJp = cleanParsedTitle && cleanParsedTitle !== baseRawTitle ? cleanParsedTitle : `情景の断章`;
-          const displayTitleJp = `${modeInfo.icon} ${cleanTopicJp}`;
+          const safeTopicJp = sanitizeForYouTubeSafety(cleanParsedTitle && cleanParsedTitle !== baseRawTitle ? cleanParsedTitle : `情景の断章`);
+          const displayTitleJp = `${modeInfo.icon} ${safeTopicJp}`;
 
           const cleanParsedEn = (parsed.titleEn || '')
             .replace(/^(Vol\.\d+|Track\s*\d+|Episode\s*\d+)[:：\s]*/i, '')
@@ -743,7 +744,7 @@ Output JSON ONLY:
           const newEpisode: Episode = {
             id: epIndex, internalId: crypto.randomUUID(),
             titleJp: displayTitleJp, titleEn: displayTitleEn,
-            summary: parsed.summary || `${cleanTopicJp}の情景`, eraAnalysis: parsed.eraAnalysisJp || '作品を引き立てる演出構図。',
+            summary: parsed.summary || `${safeTopicJp}の情景`, eraAnalysis: parsed.eraAnalysisJp || '作品を引き立てる演出構図。',
             forbiddenAnachronisms: parsed.forbiddenAnachronisms || ['過剰な劇的演出'],
             authenticAttireEn: parsed.authenticAttireEn || 'Cinematic style attire', forbiddenKeywordsEn: 'explosive drama',
             coverCatchphraseJp: parsed.coverCatchphraseJp || '心揺さぶる一瞬の物語。', highlightWords: parsed.highlightWords || ['光'],

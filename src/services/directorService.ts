@@ -529,6 +529,13 @@ CRITICAL NAMING RULE FOR "titleJp" AND "titleEn":
 - NEVER output generic placeholder titles like "${currentPlan.titleJp}" or simply repeating the theme name.
 - You MUST create a brand-new, punchy, curiosity-inducing specific Japanese topic title ("titleJp") tailored exclusively to this episode's distinct topic/angle (around 15-25 Japanese characters, e.g. "極限の兵糧攻め！甲冑の革紐を煮て食った男たち" or "死因第1位は刀傷にあらず！陣中を襲った悪夢の赤痢").
 - Provide a matching specific English title ("titleEn") without numbers (e.g. "Siege of Starvation: Men Who Boiled Armor Leather").
+
+YOUTUBE ADVERTISER-FRIENDLY & MONETIZATION SAFETY RULES (CRITICAL):
+- Strictly comply with YouTube Advertiser-Friendly Content Guidelines (ensure green dollar monetization and maximum algorithmic reach).
+- Do NOT use crude, vulgar, or disgust-inducing slangs in "titleJp", "narrationJp", or "titleEn".
+- Bodily waste & crude terms (e.g., "うんこ", "人糞", "糞尿", "下痢便"): NEVER use direct slangs! ALWAYS use historical, scientific, or clever intrigue terms like "下肥（しもごえ）", "有機肥料", "排泄物", "黄金の肥料", or intriguing intrigue phrases like "【アレ】".
+- Excessive gore/violence (e.g., "死体", "惨殺"): Use dignified historical terms like "遺骸", "無情の最期", "討死".
+- Keep every title viral, sensational, yet 100% brand-safe for monetization!
 ${isMultiPanel ? 'Direct each cut panel layout freely ("single", "split-2", "split-3", "dynamic-multi") without white borders. Keep panels cleanly divided, spacious, non-overlapping figures.' : 'Dynamically alternate camera distances (Wide -> Close-up -> Medium -> Climax).'}
 Output ONLY valid JSON:
 {
@@ -545,6 +552,22 @@ Output ONLY valid JSON:
     { "id": 1, ${isMultiPanel ? '"panelLayout": "split-2", ' : ''}"basicPlot": "Visual description in English", "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}", "highlights": ["キーワード"] }
   ]
 };`;
+}
+
+/**
+ * YouTube広告ガイドライン・アルゴリズムに配慮したセーフワードサニタイザー
+ * 露骨な下品語・身体排出物・過度なグロ表現を学術・歴史用語や安全な表現へ自動置換
+ */
+export function sanitizeForYouTubeSafety(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/うんち|うんこ/g, '下肥')
+    .replace(/人糞/g, '下肥')
+    .replace(/糞尿/g, '排泄物')
+    .replace(/下痢便/g, '赤痢')
+    .replace(/下痢/g, '激しい腹痛')
+    .replace(/死体/g, '遺骸')
+    .replace(/惨殺/g, '討死');
 }
 
 /**
@@ -842,24 +865,25 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   const rawCuts = Array.isArray(parsed.cuts) ? parsed.cuts : (Array.isArray(parsed.scenes) ? parsed.scenes : (Array.isArray(parsed) ? parsed : []));
   const normalizedCuts = Array.from({ length: 12 }, (_, j) => {
     const cutData = rawCuts[j] || {};
+    const rawNarration = cutData.narrationJp || cutData.narration || (isMvMode ? `歌詞${j + 1}` : `場面${j + 1}`);
     return {
       id: j + 1,
       panelLayout: cutData.panelLayout || (isMultiPanel ? (j % 3 === 0 ? 'single' : 'split-2') : 'single'),
       basicPlot: cutData.basicPlot || cutData.promptEn || cutData.prompt || `Scene ${j + 1} of ${currentPlan.titleEn}`,
-      narrationJp: cutData.narrationJp || cutData.narration || (isMvMode ? `歌詞${j + 1}` : `場面${j + 1}`),
+      narrationJp: sanitizeForYouTubeSafety(rawNarration),
       highlights: cutData.highlights || parsed.highlightWords || []
     };
   });
 
   return {
-    titleJp: parsed.titleJp || currentPlan.titleJp,
+    titleJp: sanitizeForYouTubeSafety(parsed.titleJp || currentPlan.titleJp),
     titleEn: parsed.titleEn || currentPlan.titleEn,
-    summary: parsed.summary || currentPlan.summary || '',
-    eraAnalysisJp: parsed.eraAnalysisJp || '',
+    summary: sanitizeForYouTubeSafety(parsed.summary || currentPlan.summary || ''),
+    eraAnalysisJp: sanitizeForYouTubeSafety(parsed.eraAnalysisJp || ''),
     forbiddenAnachronisms: parsed.forbiddenAnachronisms || [],
     authenticAttireEn: parsed.authenticAttireEn || '',
     forbiddenKeywordsEn: parsed.forbiddenKeywordsEn || '',
-    coverCatchphraseJp: parsed.coverCatchphraseJp || currentPlan.titleJp,
+    coverCatchphraseJp: sanitizeForYouTubeSafety(parsed.coverCatchphraseJp || currentPlan.titleJp),
     highlightWords: parsed.highlightWords || [],
     cuts: normalizedCuts
   };
