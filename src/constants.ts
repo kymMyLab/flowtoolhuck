@@ -130,7 +130,16 @@ export const TASTES: Record<string, string> = {
     "Masterpiece Alphonse Mucha inspired Art Nouveau anime illustration, elegant imperial court aesthetics, ultra-fine delicate golden ink contours, fragile thin linework, no bold lines, expressive gorgeous character design, cascading flowing hair, intricate gold filigree and botanical lace motifs gently blended into the background, translucent silk drapery, luminous porcelain skin, soft diffused museum lighting, vibrant amber and emerald palette, seamless full-bleed composition, edge-to-edge artwork, absolutely NO frame, NO borders, NO arch window",
 
   "🎴 ネオ・エンブレム・カードアート (Modern High-End Anime Card Art)":
-    "High-end Japanese anime character card art aesthetic, ultra-fine crisp ink line art, fragile thin linework, no bold lines, sharp cel shading with rich dimensional gradient shadows, highly intricate costume and texture details, dynamic low-angle composition with subtle forced foreshortening, dramatic cinematic rim lighting, luminous floating light particles, full-bleed edge-to-edge seamless artwork, polished 2D key visual finish"
+    "High-end Japanese anime character card art aesthetic, ultra-fine crisp ink line art, fragile thin linework, no bold lines, sharp cel shading with rich dimensional gradient shadows, highly intricate costume and texture details, dynamic low-angle composition with subtle forced foreshortening, dramatic cinematic rim lighting, luminous floating light particles, full-bleed edge-to-edge seamless artwork, polished 2D key visual finish",
+
+  "🌸 日常系萌えアニメ・ハッチングチーク (Moe Daily Hatching Blush Anime)":
+    "Authentic Japanese TV anime aesthetic, high-end slice-of-life anime style, ultra-fine delicate ink lines, simple expressive anime eyes, vertical blush lines on cheeks, hatching blush, separated subtle blush, soft natural skin tones, charming character design, gentle warm school life atmosphere, vibrant clean anime color palette, polished 2D digital cel animation finish",
+
+  "🎨 くすみパステル・チルスケッチ (Muted Pastel Chill Sketch Anime)":
+    "Anime sketch style, delicate clean line art, muted pastel color palette, warm beige tones, minimalist flat coloring, soft natural ambient lighting, cozy relaxed Lo-Fi atmosphere, indie music video aesthetic, poetic unhurried mood, beautiful subtle artistic composition",
+
+  "🌃 劇場版フラットセル・夜景ティール (Cinematic Flat Cel Teal Anime)":
+    "Cinematic anime movie aesthetic, clean crisp ink lineart, authentic flat cel shading, muted dark teal environmental background, subtle sharp rim light, high-impact cinematic contrast, elegant restrained color grading, theatrical anime feature film key frame finish"
 };
 
 import {

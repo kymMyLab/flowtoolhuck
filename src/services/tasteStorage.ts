@@ -1,7 +1,7 @@
 import { TASTES } from '../constants';
 
-const STORAGE_KEY = 'flowtool_custom_tastes_v2';
-const OLD_STORAGE_KEY = 'flowtool_custom_tastes_v1';
+const STORAGE_KEY = 'flowtool_custom_tastes_v3';
+const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
 
 export type CustomTasteMap = Record<string, string>;
 
@@ -12,11 +12,21 @@ export const DEFAULT_TASTES: CustomTasteMap = { ...TASTES };
  */
 export function loadCustomTastes(): CustomTasteMap {
   try {
-    // 旧キャッシュが存在すれば自動クリーンアップして新デフォルトへ移行
-    if (localStorage.getItem(OLD_STORAGE_KEY)) {
-      localStorage.removeItem(OLD_STORAGE_KEY);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_TASTES, null, 2));
-      return { ...DEFAULT_TASTES };
+    // 旧キャッシュが存在すれば新デフォルトとマージしてv3へ移行
+    for (const oldKey of OLD_STORAGE_KEYS) {
+      const oldRaw = localStorage.getItem(oldKey);
+      if (oldRaw) {
+        try {
+          const oldParsed = JSON.parse(oldRaw);
+          if (typeof oldParsed === 'object' && oldParsed !== null) {
+            const merged = { ...DEFAULT_TASTES, ...oldParsed };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged, null, 2));
+            localStorage.removeItem(oldKey);
+            return merged;
+          }
+        } catch (_) {}
+        localStorage.removeItem(oldKey);
+      }
     }
 
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -26,7 +36,9 @@ export function loadCustomTastes(): CustomTasteMap {
     }
     const parsed = JSON.parse(raw);
     if (typeof parsed === 'object' && parsed !== null && Object.keys(parsed).length > 0) {
-      return parsed;
+      // 新規デフォルト画風が未登録なら安全に補完マージ
+      const merged = { ...DEFAULT_TASTES, ...parsed };
+      return merged;
     }
     return { ...DEFAULT_TASTES };
   } catch (e) {

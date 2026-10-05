@@ -268,6 +268,27 @@ export function buildFinalCinematicPromptAndNegative(
     ? 'white outer border, page margins, white paper border, blank border, picture frame, matting, outer canvas border, wide margins, cardboard border, overlapping characters, stacked people, people sitting on top of each other, merged humans, intersecting figures, duplicate characters overlapping, cluttered characters, confusing anatomy overlapping across panels, figures blending into each other'
     : '';
 
+  // ── 画風特化型ネガティブガード（ハッチングチーク、くすみパステル、フラットセルの品質保証） ──
+  const styleSpecificNegatives: string[] = [];
+  const lowerStyleFull = (styleKey + ' ' + rawStyle).toLowerCase();
+  
+  // 1. 萌え・ハッチングチーク特化（赤鼻・シール状チーク・ドット赤み・リアル目の完全排除）
+  if (lowerStyleFull.includes('blush') || lowerStyleFull.includes('チーク') || lowerStyleFull.includes('萌え')) {
+    styleSpecificNegatives.push('dotted blush, stippling, sticker blush, connected blush across nose, red nose, full face blush, detailed realistic eyes, small pupils');
+  }
+
+  // 2. くすみパステル・スケッチ特化（ギラつき・高彩度・重い影・テカリの完全排除）
+  if (lowerStyleFull.includes('sketch') || lowerStyleFull.includes('pastel') || lowerStyleFull.includes('くすみ') || lowerStyleFull.includes('チルスケッチ')) {
+    styleSpecificNegatives.push('high contrast, vibrant saturated colors, heavy shadows, complex shading, glossy');
+  }
+
+  // 3. フラットセル・劇場版特化（エアブラシグラデーション・CG立体感の完全排除）
+  if (lowerStyleFull.includes('flat cel') || lowerStyleFull.includes('フラットセル')) {
+    styleSpecificNegatives.push('detailed shading, heavy gradient, 3d render, complex shading');
+  }
+
+  const styleSpecificNegative = styleSpecificNegatives.join(', ');
+
   const negativeLayers: string[] = [
     BASELINE_NEGATIVE_TOKENS.anatomicalIntegrity,
     BASELINE_NEGATIVE_TOKENS.antiReferenceStiffness,
@@ -275,6 +296,7 @@ export function buildFinalCinematicPromptAndNegative(
     mvAntiDramaticNegative,
     sanitizedForbidden,
     illustrationNegative,
+    styleSpecificNegative,
     BASELINE_NEGATIVE_TOKENS.antiFrameAndBorder,
     multiPanelNegative,
     negativePrompt || '', // 直前構図ネガティブ（最重要）
