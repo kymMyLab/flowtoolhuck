@@ -22,6 +22,10 @@ import {
   PreviousShotInfo
 } from './directorService';
 import { useEpisodeState } from './useEpisodeState';
+import { saveReferenceAsset } from './db';
+import { resolveCameraWork } from '../config/studioDefinitions';
+import type { LogEntry } from '../components/StudioLogs';
+import { useVideoGeneration } from './useVideoGeneration';
 
 interface UseStudioProductionProps {
   settings: GeneratorSettings;
@@ -74,6 +78,14 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
     eraNegative: string;
   } | null>(null);
 
+  const { generateVideo, generateBrowserVideo } = useVideoGeneration({
+    settings,
+    addLog,
+    isAbortedRef,
+    episodesRef,
+    updateCut
+  });
+
 
   const resumeSeries = useCallback(async (manifest: SeriesManifest, onAssetRestored?: (assetId: number) => void) => {
     seriesManifestRef.current = manifest;
@@ -125,7 +137,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
         if (manifest.referenceAsset.characterDna) {
           const uploadRes = await Flow.upload({
             base64: manifest.referenceAsset.base64,
-            mimeType: (manifest.referenceAsset.mimeType || 'image/png') as any,
+            mimeType: (manifest.referenceAsset.mimeType || 'image/png') as 'image/png' | 'image/jpeg' | 'image/webp',
             name: `Ref: ${manifest.referenceAsset.name || 'Character'}`
           });
           activeReferenceRef.current = {
@@ -357,88 +369,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
     }
   };
 
-  const generateVideo = async (epId: number, cutId: number, modelType: VideoModelType) => {
-    const cut = episodesRef.current.find(e => e.id === epId)?.cuts.find(c => c.id === cutId);
-    let mediaId = cut?.imageMediaId;
-    if (!mediaId && cut?.imageBase64) {
-      try {
-        const cleanImg = cut.imageBase64.replace(/^data:[^;]+;base64,/, '');
-        const up = await Flow.upload({ base64: cleanImg, mimeType: 'image/png', name: `Cut_${epId}_${cutId}` });
-        mediaId = up.mediaId;
-        updateCut(epId, cutId, { imageMediaId: mediaId });
-      } catch (_) {}
-    }
-    if (!mediaId) {
-      addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像がないため動画生成をスキップ`, 'warning');
-      updateCut(epId, cutId, { isGeneratingVideo: false });
-      return;
-    }
-    // 動画モデル定義から安全に解決（デフォルト値・尺・コストを自動取得）
-    const modelDef = resolveVideoModel(modelType);
-    updateCut(epId, cutId, { isGeneratingVideo: true, videoModelUsed: modelDef.name, error: undefined });
-    addLog(`🎥 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画生成開始 (${modelDef.name})`, 'info');
-
-    try {
-      // カメラモーションを定義レジストリから解決して自然に注入
-      const cameraMotionText = cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : '');
-      const cameraInstruction = cameraMotionText ? ` [Camera Motion: ${cameraMotionText}]` : '';
-      const finalVideoPrompt = `${cut?.promptEn || ''}${cameraInstruction}`;
-
-      const res = await callWithRetry<any>(
-        () => Flow.generate.video({ 
-          prompt: finalVideoPrompt, 
-          firstFrameImageMediaId: mediaId, 
-          modelDisplayName: modelDef.name, 
-          durationSeconds: modelDef.defaultDuration, 
-          aspectRatio: DEFAULT_ASPECT_RATIO as any 
-        }),
-        (attempt, max, delay, err, isSuper) => {
-          const waitStr = formatDurationMs(delay);
-          const errMsg = formatErrorMessage(err);
-          if (isSuper) {
-            addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
-          } else {
-            addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
-          }
-        },
-        {
-          maxRetries: 5,
-          timeoutMs: 180000,
-          timeoutLabel: '動画生成',
-          superBackoff: settings.superBackoff,
-          abortCheck: () => isAbortedRef.current
-        }
-      );
-      const cleanVideoBase64 = res.base64 ? res.base64.replace(/^data:[^;]+;base64,/, '') : '';
-      updateCut(epId, cutId, { 
-        videoBase64: cleanVideoBase64, 
-        videoMediaId: res.mediaId, 
-        isGeneratingVideo: false, 
-        error: undefined,
-        videoDuration: modelDef.defaultDuration 
-      });
-      addLog(`🎬 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画生成完了 (${modelDef.defaultDuration}s)`, 'success');
-    } catch (err) {
-      updateCut(epId, cutId, { isGeneratingVideo: false, error: '動画失敗' });
-      addLog(`❌ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画失敗 - ${formatErrorMessage(err)}`, 'error');
-    }
-  };
-
-  const generateBrowserVideo = async (epId: number, cutId: number) => {
-    const cut = episodesRef.current.find(e => e.id === epId)?.cuts.find(c => c.id === cutId);
-    if (!cut?.imageBase64) return;
-    updateCut(epId, cutId, { isGeneratingVideo: true, videoModelUsed: 'Browser (0pt)', error: undefined });
-    try {
-      const isMvMode = episodesRef.current.find(e => e.id === epId)?.isMvMode || false;
-      const base64 = await renderKenBurnsVideo(cut, 4, isMvMode);
-      const cleanVideoBase64 = base64 ? base64.replace(/^data:[^;]+;base64,/, '') : '';
-      updateCut(epId, cutId, { videoBase64: cleanVideoBase64, isGeneratingVideo: false, error: undefined, videoDuration: 4 });
-      addLog(`🎬 Ep.${epId} C${cutId.toString().padStart(2, '0')}: ブラウザ動画化完了`, 'success');
-    } catch (err) { 
-      updateCut(epId, cutId, { isGeneratingVideo: false, error: '失敗' }); 
-    }
-  };
-
   const handleBulkVideo = async (epId: number) => {
     const ep = episodesRef.current.find(e => e.id === epId);
     if (!ep) return;
@@ -489,7 +419,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
         if (asset) {
           currentAssetRef.current = { name: asset.name, base64: asset.base64, mimeType: asset.mimeType };
           addLog('🔍 キャラクターDNA抽出中...', 'process');
-          const uploadRes = await Flow.upload({ base64: asset.base64, mimeType: asset.mimeType as any, name: `Ref: ${asset.name}` });
+          const uploadRes = await Flow.upload({ base64: asset.base64, mimeType: asset.mimeType as 'image/png' | 'image/jpeg' | 'image/webp', name: `Ref: ${asset.name}` });
           const screeningPrompt = buildCharacterScreeningPrompt(settings.era, settings.country, settings.isMvMode, settings.theme);
           const screenRes = await callWithRetry<any>(
             () => Flow.generate.text(screeningPrompt, { images: [{ base64: asset.base64, mimeType: asset.mimeType }] }),
