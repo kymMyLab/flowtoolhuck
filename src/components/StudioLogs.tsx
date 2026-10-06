@@ -6,10 +6,11 @@ interface StudioLogsProps {
   logs: LogEntry[];
   onAddLog: (msg: string, type?: LogEntry['type']) => void;
   isProducing?: boolean;
+  defaultCollapsed?: boolean;
 }
 
-export const StudioLogs: React.FC<StudioLogsProps> = ({ logs, onAddLog, isProducing = false }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export const StudioLogs: React.FC<StudioLogsProps> = ({ logs, onAddLog, isProducing = false, defaultCollapsed = false }) => {
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [isMaximized, setIsMaximized] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 

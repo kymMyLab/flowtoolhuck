@@ -15,10 +15,32 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
   const cardIcon = modeConfig.cardIcon;
   const themeLabel = modeConfig.themeLabel;
 
+  const [previewImage, setPreviewImage] = React.useState<{ src: string; title: string } | null>(null);
+
   return (
     <div className={`border rounded-2xl p-5 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-500 ${
       isMv ? 'bg-purple-950/20 border-purple-500/30' : 'bg-white/5 border-white/10'
     }`}>
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[999] bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center gap-2 bg-[#181818] border border-white/10 rounded-2xl p-3 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="w-full flex items-center justify-between pb-2 border-b border-white/10">
+              <span className="text-xs font-bold text-white/90">{previewImage.title}</span>
+              <button 
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+            <img src={previewImage.src} alt={previewImage.title} className="max-w-full max-h-[75vh] object-contain rounded-xl border border-white/5" />
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between border-b border-white/5 pb-3">
         <div className="flex items-center gap-2">
           <span className={`material-symbols-outlined text-xl ${isMv ? 'text-purple-400' : 'text-amber-400'}`}>
@@ -123,8 +145,10 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                   alt="三面図 Turnaround Sheet" 
                   className="w-14 h-14 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
                   onClick={() => {
-                    const w = window.open('');
-                    w?.document.write(`<title>三面図シート</title><body style="margin:0;background:#111;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${ep.characterTurnaroundBase64}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;" /></body>`);
+                    setPreviewImage({
+                      src: ep.characterTurnaroundBase64!,
+                      title: '🎨 3面設計図シート (正面・側面・背面の360°基準)'
+                    });
                   }}
                   title="クリックで拡大表示（正面・側面・背面の3面設計図）"
                 />
@@ -144,8 +168,10 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                   alt="マスターアンカー Master Anchor" 
                   className="w-14 h-14 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
                   onClick={() => {
-                    const w = window.open('');
-                    w?.document.write(`<title>マスターアンカー</title><body style="margin:0;background:#111;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${ep.masterAnchorBase64}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;" /></body>`);
+                    setPreviewImage({
+                      src: ep.masterAnchorBase64!,
+                      title: '⚓ マスターアンカー (Cut 1 確定キメ絵)'
+                    });
                   }}
                   title="クリックで拡大表示（Cut 1 確定キメ絵）"
                 />
