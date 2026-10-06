@@ -437,8 +437,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs, on
       }
 
       const endPromptInstruction = cut.isObjectOnly
-        ? `[STILL LIFE PERSPECTIVE SHIFT 8 SECONDS LATER]: ${effectiveEndPlot}. Maintain identical scene environment, props, and ambient lighting tone from this dynamic angle.`
-        : `[TRANSFORMED PERSPECTIVE 8 SECONDS LATER]: ${effectiveEndPlot}. Maintain identical room setting, identical protagonist, hairstyle, and outfit from this dramatically transformed perspective.`;
+        ? `[RELATIVE TO START FRAME - STILL LIFE]: ${effectiveEndPlot}. Maintain identical scene environment, props, and ambient lighting tone, ensuring seamless spatial continuity.`
+        : `[RELATIVE TO START FRAME]: ${effectiveEndPlot}. Maintain identical room setting, identical protagonist, hairstyle, and outfit as the reference start frame, ensuring seamless natural evolution.`;
 
       const endTask: GenerationTask = {
         epId,

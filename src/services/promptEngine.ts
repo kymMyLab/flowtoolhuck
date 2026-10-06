@@ -162,9 +162,9 @@ export function buildFinalCinematicPromptAndNegative(
   let cameraContext = '';
 
   if (task.isEndFrame) {
-    // EndFrame（到達点フレーム）: 正面ポートレート指示を完全排除し、劇的なカメラアングル変革を最重要視
-    const cameraShift = task.endFrameCameraDirective || 'Cinematic 180-degree camera shift to the opposite side';
-    cameraContext = `[EXTREME CAMERA ANGLE SHIFT]: ${cameraShift}`;
+    // EndFrame（到達点フレーム）: 元絵からの相対変化（カメラ・表情・距離）を最重要視
+    const cameraShift = task.endFrameCameraDirective || 'Relative to the start frame: subtle cinematic camera and gaze shift';
+    cameraContext = `[RELATIVE TRANSFORMATION FROM START FRAME]: ${cameraShift}`;
   } else if (isMv) {
     const mvGazePrompt = isAllowedEyeContact
       ? 'dramatic emotional climax, direct captivating eye contact with camera, powerful cinematic presence'
@@ -319,8 +319,8 @@ export function buildFinalCinematicPromptAndNegative(
   ];
 
   if (task.isEndFrame) {
-    // EndFrameではStart絵と同じ正面構図・カメラ目線を徹底排除
-    negativeLayers.push('same frontal composition, direct forward view, looking straight at camera, frontal bust portrait, identical start frame camera angle');
+    // EndFrameでは、完全に静止して変化しないフリーズ重複や、全く別キャラ・別世界になる乖離を防ぐ
+    negativeLayers.push('frozen motionless static duplicate, completely identical frozen posture, different character, different outfit, different bedroom setting');
   }
 
   const panelDirective = multiPanelPrompt ? `[PANEL COMPOSITION: ${multiPanelPrompt}]. ` : '';
