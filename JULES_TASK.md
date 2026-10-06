@@ -1,82 +1,84 @@
 # Jules Pro Autonomous Debugging & Enhancement Mission
 **Project**: FlowTool (Studio Pro - MV & Cinematic Video Production System)  
-**Target Environment**: Chrome DevTools Mount / High-Speed Web App Bundle
+**Target Environment**: Chrome DevTools Mount / High-Speed Web App Bundle  
+**Updated**: 2026-10-07 (Morning Job)
 
 ---
 
 ## 🎯 ミッション概要
 本リポジトリは、Google Flow Tools 上にマウントして動作するシネマティック映像・音楽MV制作支援ツール（FlowTool Studio Pro）です。
-本日のアップデートにより、**「GSAP & CSS アニメーションによるキネティック・タイポグラフィ」「多彩ネオンカラーパレット」「テロップ演出一括リロール機能（画像再生成なし）」「全12カット中サビ1回のみカメラ目線制限」** などの新機能が導入されました。
 
-Jules は就寝中のユーザーに代わり、コードベース全体の**徹底的な静的解析・型安全性検証・パフォーマンスおよびメモリリークのデバッグ・動作安定化**を自律的に遂行してください。
+Jules が前回作成してくれた **「Veo 3.1 2点間補間時のロギング強化および `[Start Frame]` / `[Target Ending Frame]` プロンプト構造化（Commit 9d90b20）」** はローカル環境へ無事マージ・統合されました！  
+また、直近のアップデートにて **「型安全性エラーの完全解消」「正規表現記号によるクラッシュ防止」「連続ダウンロードを阻害していたモーダルUIの永久廃止とバックグラウンド直接保存化」** が完了しています。
+
+ユーザーが日中仕事に出ている間に、Jules は以下の重点項目について**コードベース全体の深層監査・デバッグ・パフォーマンス検証・エッジケース対策**を自律的に遂行してください。
 
 ---
 
-## 📌 重点デバッグ＆検証項目
+## 📌 今回の重点デバッグ＆検証項目
 
-### 1. TypeScript 型安全性とビルド整合性 (Zero Type Errors)
-- **現状**:
-  - `types.ts`: `TelopStyle` に `'traditional-sumi'` を追加済み。
-  - `components/Primitives.tsx`: `PillButton` に `title?: string;` を追加済み。
-  - `components/MediaPreviewModal.tsx`: `highlightIndices` の型を `Map<number, { color: string; sizeScale: number; word?: string }>` に整合済み。
+### 1. Veo 3.1 2フレーム補間パイプラインの統合・エッジケース検証
+- **対象ファイル**: 
+  - `src/services/useVideoGeneration.ts`
+  - `src/services/useStudioProduction.ts` (`generateEndFrame`)
+  - `src/services/productionPipelines.ts`
+  - `src/components/preview/CutEditorPanel.tsx`
 - **検証作業**:
-  - ローカルSSDビルド環境（`~/.flowtool_build`）にて `npx tsc --noEmit` を実行し、型エラーが 0 件であることを継続的に維持すること。
+  - 前回導入された `[Start Frame]: ... [Target Ending Frame]: ...` のプロンプト構造化が、1カット2枚生成（Start絵 ➔ After絵）を行った全モード（Shorts, MV, ドラマ）において正しく動画APIへ投入されているか検証。
+  - After絵が未生成（`endMediaId` なし）のカットで動画生成が要求された際、フォールバック（1枚絵からの通常生成）が例外をスローせず安全に完了するか確認。
+  - After絵プロンプト（`endFramePromptEn`）やモーション命令（`veoMotionPrompt`）が空文字や記号のみの場合でも、安全なデフォルト値へフォールバックされるか。
 
-### 2. GSAP アニメーションと DOM ライフサイクルのデバッグ
-- **対象ファイル**: `components/MediaPreviewModal.tsx`
-- **チェックポイント**:
-  - GSAP または CSS アニメーション適用時に、モーダルクローズ時やカット切り替え時（`nextCut`, `prevCut`）にアニメーションタイマーやTweenがリーク（重複実行）していないか。
-  - `useEffect` のクリーンアップ関数でアニメーションの Kill や DOM 参照の破棄が確実に行われているか。
-  - テロップ一括リロール（`onBulkRerollTelop`）実行時に、未定義変数や不正な CSS クラス（`undefined` や `null`）が DOM の `className` や `style` に混入しないか。
+### 2. 連続・自動パッケージ保存（Auto-Download）の安定性とキュー詰まり防止
+- **対象ファイル**:
+  - `src/services/exportService.ts` (`savePackageFile`, `downloadZip`)
+  - `src/services/productionPipelines.ts` (`autoDownload` 処理部)
+  - `src/App.tsx` (`handleDownloadZip`)
+- **仕様 & 注意点**:
+  - **【重要】ダウンロード完了モーダル（`PackageDownloadModal`等）は連続バッチダウンロードの邪魔になるため永久廃止されました（`.agents/rules/flowtool_rules.md` 参照）。絶対にモーダルを復活させないでください。**
+  - 全エピソード一括生成時、各話完了ごとにバックグラウンドで `downloadZip` ➔ `savePackageFile` が順次トリガーされます。
+- **検証作業**:
+  - 複数話（5〜10話など）が連続して完了した際に、ブラウザのダウンロードキュー詰まりや `blobUrl` のメモリ肥大化が起きないか検証。
+  - 扉絵合成（`renderCoverCanvas`）のオフスクリーンキャンバス破棄と、SRT字幕生成の整合性をチェック。
 
-### 3. ブラウザ動画レンダリングエンジン（Offscreen Canvas / Mediabunny）の完全同期
-- **対象ファイル**: `services/browserVideoService.ts`
-- **チェックポイント**:
-  - `MediaPreviewModal.tsx` 上でプレビューされるトランジション（`animista-slide-bck`, `aos-fade-soft`, `gsap-kinetic-stagger`）およびネオンパレット（ゴールド、シアン、ピンク、ライム、オレンジ、パープル）が、ブラウザ動画化（Canvas焼き込み）時にも完全に同一の見た目でレンダリングされること。
-  - Canvas 描画ループ内のメモリ割り当て（毎フレームの不要なオブジェクト生成）を最小化し、4K/フルHDの動画書き出し時にブラウザがクラッシュしないか検証すること。
+### 3. ブラウザ動画レンダリングエンジン（Offscreen Canvas / Mediabunny）の負荷検証
+- **対象ファイル**: `src/services/browserVideoService.ts`
+- **検証作業**:
+  - `renderFullEpisodeMovie` において、全12カット（動画と静止画が混在するケース）を1本に結合レンダリングする際のメモリ割り当てを点検。
+  - Chromeのビデオデコーダー上限（同時16個等）を回避するためのビデオ要素クリーンアップ（`video.pause(); video.removeAttribute('src'); video.load(); video.remove();`）が、例外発生時（`try-finally`）にも確実に実行されているか確認。
+  - ケンバーン演出（Ken Burns）と字幕合成のフレーム同期にズレが生じないか検証。
 
-### 4. MVモードのカメラ目線制限ロジックの厳格性
-- **対象ファイル**: `services/directorService.ts`, `services/promptEngine.ts`
-- **仕様**:
-  - 12カット中、サビのクライマックス（`cutId === 8` または `(cutId % 12) === 8`）の**1回のみ**カメラ目線（`direct captivating eye contact`）を許可。
-  - 残り11カットは徹底して「視線外し・横顔・伏し目・後ろ姿・ドキュメンタリー構図」をプロンプトおよびネガティブプロンプトで排除。
-- **チェックポイント**:
-  - カット番号が 12 を超えた連番（Cut 13〜24 等）でも `cutId % 12 === 8` で正確にサビ位置だけが判定されているか。
-  - ドラマ連番モード（`isMvMode === false`）やマンガモード（`isMangaMode === true`）に意図しない副作用を与えていないか。
-
-### 5. 全7制作モード別カメラワーク＆ケンバーン自動連動の検証（最新追加）
-- **対象ファイル**: `config/studioDefinitions.ts`, `services/directorService.ts`, `services/useStudioProduction.ts`, `components/CutCard.tsx`
-- **仕様**:
-  - `resolveRecommendedCameraWorkAndKenBurns` により、各制作モード特性に応じたカメラワーク＆ケンバーン演出（MVの展開連動、ドラマの映画的ローテーション、雑学のズームイン、名言/画風比較/漫画の固定等）が正しく初期化・適用されること。
-  - `CutCard.tsx` 表面にショットスケール（WIDE等）と並んでケンバーン演出バッジ（`📹 ZOOM IN` 等）が美しく表示され、動画化済みカットでは非表示になること。
-- **チェックポイント**:
-  - モード切替時や新規エピソード生成時に、各カットに正しい `kenBurnsPreset` および `cameraWork` が設定され、フォールバック（意図しない固定）が発生していないか。
-  - ブラウザ動画化（Mediabunny / Canvas描画）時にも、設定されたケンバーン効果が正確にレンダリングされるか。
+### 4. TypeScript 型安全性とビルド完全パス (Zero Errors) の維持
+- **検証作業**:
+  - `~/.flowtool_build` 環境で `npx tsc --noEmit` を実行し、エラーが 0 件であることを確認。
+  - `npm run build`（`node scripts/build.mjs`）で 130 以上の全モジュールが警告なくバンドルされることを確認。
 
 ---
 
 ## 🛠️ コマンドと実行パイプライン
 
-### ビルドと型チェック
+### 型チェック
 ```powershell
-# SSDキャッシュ環境での型チェック
 Set-Location "$env:USERPROFILE\.flowtool_build"
 npx tsc --noEmit
+```
 
-# 高速ビルド
+### ビルド
+```powershell
 npm run build
 ```
 
-### デプロイパイプライン
+### デプロイパイプライン（変更完了時）
 ```powershell
-# ルートディレクトリで実行（ビルド・Gitコミット・GitHubプッシュ・jsDelivr CDNパージが全自動実行されます）
 npm run deploy
 ```
+※ `scripts/deploy.mjs` により、ビルド・コミット・プッシュ・CDNパージ・`MOUNT_COMMAND.js` 更新が全自動実行されます。
 
 ---
 
 ## 💡 Jules への注意事項
-1. **画像再生成なしの原則**:
-   - テロップ演出やレイアウトのリロール機能は、画像生成API（Gemini/Imagen）を消費せず、フロントエンドおよびメタデータのみを更新する設計です。この原則を絶対に壊さないでください。
-2. **CDN 配信の完全性**:
-   - `scripts/deploy.mjs` が生成する `MOUNT_COMMAND.js` は、GitHub の最新コミットハッシュで jsDelivr から配信されます。常にビルド成果物 `dist/bundle.js` が最新コミットに含まれるようにしてください。
+1. **ダウンロードモーダルは永久廃止**:
+   - ダウンロード完了時にポップアップダイアログやモーダルを表示するコードは絶対に再導入しないでください（直接保存のみ）。
+2. **画像再生成なしの原則**:
+   - テロップ演出やレイアウトのリロール機能は、画像生成API（Gemini/Imagen）を消費せず、フロントエンドおよびメタデータのみを更新する設計を維持してください。
+3. **CDN 配信の完全性**:
+   - `scripts/deploy.mjs` が生成する `MOUNT_COMMAND.js` は最新コミットハッシュで jsDelivr から配信されます。コミット時は常に `dist/bundle.js` を最新の状態にしてください。
