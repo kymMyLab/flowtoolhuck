@@ -160,7 +160,12 @@ export function buildFinalCinematicPromptAndNegative(
   // Layer 2 & 3: Camera Context & Action
   const isAllowedEyeContact = isMv && isMvChorusCut(task.cutId || 1);
   let cameraContext = '';
-  if (isMv) {
+
+  if (task.isEndFrame) {
+    // EndFrame（到達点フレーム）: 正面ポートレート指示を完全排除し、劇的なカメラアングル変革を最重要視
+    const cameraShift = task.endFrameCameraDirective || 'Cinematic 180-degree camera shift to the opposite side';
+    cameraContext = `[EXTREME CAMERA ANGLE SHIFT]: ${cameraShift}`;
+  } else if (isMv) {
     const mvGazePrompt = isAllowedEyeContact
       ? 'dramatic emotional climax, direct captivating eye contact with camera, powerful cinematic presence'
       : 'unposed candid non-look angle, character looking away into distance or downcast in quiet contemplation, no camera look, no eye contact';
@@ -313,6 +318,11 @@ export function buildFinalCinematicPromptAndNegative(
     BASELINE_NEGATIVE_TOKENS.renderingQuality
   ];
 
+  if (task.isEndFrame) {
+    // EndFrameではStart絵と同じ正面構図・カメラ目線を徹底排除
+    negativeLayers.push('same frontal composition, direct forward view, looking straight at camera, frontal bust portrait, identical start frame camera angle');
+  }
+
   const panelDirective = multiPanelPrompt ? `[PANEL COMPOSITION: ${multiPanelPrompt}]. ` : '';
 
   // ── キャラクター一貫性（Character Consistency DNA）＆ 物体カット分離 ──
@@ -324,8 +334,14 @@ export function buildFinalCinematicPromptAndNegative(
     characterPromptLayer = '[STRICT STILL-LIFE INSERT: completely deserted scene, strictly NO humans, NO person, pure macro shot of object and atmospheric environment]. ';
     negativeLayers.push('human, person, girl, boy, man, woman, child, face, eye, hands, fingers, legs, feet, body silhouette, crowd, portrait');
   } else if (effectiveDna) {
-    characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${effectiveDna}, strictly maintain identical facial appearance, hairstyle, hair color, and clothing across all scenes]. `;
-    negativeLayers.push('different character, different face, different hair, change of clothes, multiple people, extra person, duplicate characters, changing appearance');
+    if (task.isEndFrame) {
+      // 到達点フレーム: 顔正面の縛りを解き、髪型・衣装の一貫性を維持したまま大胆なアングル変更を許容
+      characterPromptLayer = `[PROTAGONIST CONTINUITY: ${effectiveDna}, strictly maintain identical hairstyle, hair color, and clothing from this transformed perspective]. `;
+      negativeLayers.push('different character, change of clothes, multiple people, extra person, duplicate characters');
+    } else {
+      characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${effectiveDna}, strictly maintain identical facial appearance, hairstyle, hair color, and clothing across all scenes]. `;
+      negativeLayers.push('different character, different face, different hair, change of clothes, multiple people, extra person, duplicate characters, changing appearance');
+    }
   }
 
   // 参照画像（Reference Images / Turnaround / Master Anchor）
@@ -343,7 +359,9 @@ export function buildFinalCinematicPromptAndNegative(
     if (eraNegative) negativeLayers.push(eraNegative);
 
     const finalNegative = negativeLayers.filter(Boolean).join(', ');
-    const finalPrompt = `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${effectivePrompt}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+    const finalPrompt = task.isEndFrame
+      ? `${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${effectivePrompt}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${effectivePrompt}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt,
@@ -352,7 +370,9 @@ export function buildFinalCinematicPromptAndNegative(
     };
   } else {
     const finalNegative = negativeLayers.filter(Boolean).join(', ');
-    const finalPrompt = `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${effectivePrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+    const finalPrompt = task.isEndFrame
+      ? `${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${effectivePrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${effectivePrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt,

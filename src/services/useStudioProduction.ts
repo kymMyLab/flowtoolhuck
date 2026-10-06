@@ -437,8 +437,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs, on
       }
 
       const endPromptInstruction = cut.isObjectOnly
-        ? `[TARGET REACHED STATE 8 SECONDS LATER - STILL LIFE]: ${effectiveEndPlot}. Maintain 100% identical environment, lighting tone, and props as start frame, capturing the subtle lighting shift and lingering atmosphere 8 seconds later.`
-        : `[TARGET REACHED STATE 8 SECONDS LATER]: ${effectiveEndPlot}. Maintain 100% identical protagonist, identical face, identical hair, identical clothing, and identical room setting as start frame, capturing the natural evolved posture and settled emotion after 8 seconds of continuous movement.`;
+        ? `[STILL LIFE PERSPECTIVE SHIFT 8 SECONDS LATER]: ${effectiveEndPlot}. Maintain identical scene environment, props, and ambient lighting tone from this dynamic angle.`
+        : `[TRANSFORMED PERSPECTIVE 8 SECONDS LATER]: ${effectiveEndPlot}. Maintain identical room setting, identical protagonist, hairstyle, and outfit from this dramatically transformed perspective.`;
 
       const endTask: GenerationTask = {
         epId,
@@ -455,7 +455,9 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs, on
         forbiddenKeywordsEn: ep.forbiddenKeywordsEn,
         referenceImageMediaId: refMediaIds[0],
         characterDna: ep.characterDna,
-        isObjectOnly: cut.isObjectOnly
+        isObjectOnly: cut.isObjectOnly,
+        isEndFrame: true,
+        endFrameCameraDirective: effectiveEndPlot
       };
 
       const { finalPrompt, finalNegative, referenceImageMediaIds } = buildImagePromptAndNegative(

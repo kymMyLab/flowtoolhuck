@@ -682,7 +682,7 @@ export function resolveCinematicEndFrameAndMotion(options: {
   // 1. 物体・静物カット（Cut 6 または isObjectOnly）
   if (isObjectOnly || cutIndex === 5) {
     return {
-      endFramePlot: `Cinematic 180-degree drone orbit around the same central subject, completely devoid of humans: ${basicPlot}. Captured from the dynamic reverse angle with dramatic lighting shift, moving light reflections casting rich depth across the textures.`,
+      endFramePlot: `180-degree reverse macro orbit view of the still-life object: captured from the opposite side, dynamic lighting shift, glowing reflections casting rich depth across the surface.`,
       veoMotionPrompt: 'Continuous 8-second cinematic macro drone orbit: camera smoothly circles 180 degrees around the subject with fluid depth-of-field transition, ambient lighting and reflections sweeping dynamically across surfaces, settling into deep cinematic stillness.'
     };
   }
@@ -690,29 +690,29 @@ export function resolveCinematicEndFrameAndMotion(options: {
   // 2. 普遍的シネマティック・ドローン＆スパイラル旋回パターン（12カット循環）
   // どんな世界観・人物・シチュエーションでも100%通用し、Veo 3.1 が最も得意とするカメラワークで空間をぐるりと大旋回！
   const universalDroneMotions: CinematicEvolution[] = [
-    // Pattern 1: 180度ドローンオービット旋回（正面から斜め背面・横顔へ大旋回）
+    // Pattern 1: 180度ドローンオービット旋回（正面から完全背面・横顔へ大旋回）
     {
-      endFramePlot: `Cinematic 180-degree reverse drone angle of the same scene: ${basicPlot}. Camera has orbited completely to the opposite side, framing the same protagonist from an expressive three-quarters profile with beautiful dynamic rim lighting, revealing the expansive atmospheric background.`,
+      endFramePlot: `180-degree reverse drone shot captured completely from behind the subject. The protagonist's back, hair, and side silhouette are framed from behind looking forward across the room, beautiful dynamic rim lighting haloing shoulders, glowing background elements visible ahead.`,
       veoMotionPrompt: 'Continuous 8-second cinematic drone orbit: camera smoothly circles 180 degrees around the protagonist from front-angle to side-back perspective, dynamic spatial parallax, light sweeping across hair and environment, settling into breathtaking cinematic depth.'
     },
     // Pattern 2: ローアングルからハイアングルへのスパイラル上昇（クレーン螺旋アップ）
     {
-      endFramePlot: `Dramatic high-angle overhead crane shot of the same scene: ${basicPlot}. Camera has ascended in a graceful spiral, looking down from above, capturing the same protagonist gazing upward into the ambient light with rich floor shadows and expansive space.`,
+      endFramePlot: `Dramatic high-angle overhead bird's-eye crane shot looking straight down from the ceiling. Showing the top of the protagonist's head, shoulders, floor layout, and long atmospheric shadows stretching across the expansive space.`,
       veoMotionPrompt: '8-second cinematic spiral crane ascent: camera gracefully glides upward while rotating 90 degrees around the subject, moving from low eye-level to an atmospheric high-angle bird-eye view with fluid vertical motion.'
     },
     // Pattern 3: 斜め下からのダイナミック・ドリーイン ＆ アングル回転
     {
-      endFramePlot: `Dynamic low-angle tilted composition of the same scene: ${basicPlot}. Camera has glided close to the protagonist from a sharp low perspective, dramatic cinematic lighting catching intense reflection in their eyes, powerful emotional visual presence.`,
+      endFramePlot: `Low-angle sharp perspective shot looking up from floor level. Dramatic cinematic upward tilt, heroic silhouette against illuminated ceiling, atmospheric light catching intense edge reflection.`,
       veoMotionPrompt: 'Continuous 8-second dynamic push-in and low-angle tilt: camera sweeps smoothly forward and low, rotating slightly to create heroic dynamic framing, depth of field blurring the background as it settles close.'
     },
     // Pattern 4: ワイドパノラマ・プルバック ＆ 180度アーク旋回
     {
-      endFramePlot: `Wide panoramic perspective of the same scene: ${basicPlot}. Camera has tracked backward and swept along a wide 180-degree arc to the far corner, revealing the full grand environment while the same protagonist is framed with generous cinematic breathing room.`,
+      endFramePlot: `Wide panoramic pull-back shot from the far corner of the room. The entire environment is revealed in a grand cinematic vista, the protagonist framed smaller in the wide atmospheric space with generous breathing room.`,
       veoMotionPrompt: 'Dynamic 8-second drone pullback and sweeping 180-degree arc: camera smoothly tracks backward while orbiting, opening up the entire cinematic atmosphere with majestic, fluid spatial expansion.'
     },
     // Pattern 5: ラテラル・ドリー ＆ 振り返りリバースアングル
     {
-      endFramePlot: `Dynamic profile tracking shot of the same scene: ${basicPlot}. Captured from the opposite flank with rich side-lighting, the same protagonist framed in an evocative silhouette against the glowing background.`,
+      endFramePlot: `Profile tracking shot captured from the opposite flank. Crisp side silhouette against the illuminated background, distinct profile angle showing completely transformed perspective.`,
       veoMotionPrompt: 'Continuous 8-second lateral tracking shot curving smoothly around the subject, lighting reflections sliding dynamically across surfaces, protagonist naturally turning gaze along with the camera motion.'
     },
     // Pattern 6: 静物・マイクロ360度オービット
@@ -722,32 +722,32 @@ export function resolveCinematicEndFrameAndMotion(options: {
     },
     // Pattern 7: ダッチアングル・スパイラル下降
     {
-      endFramePlot: `Striking diagonal Dutch-angle framing of the same scene: ${basicPlot}. Camera has glided down from above along an elegant spiral curve, capturing the same protagonist in an artistic, modern cinematic perspective with rich contrast.`,
+      endFramePlot: `Striking Dutch-angle diagonal composition tilted at 45 degrees from high side angle. Dynamic artistic framing with dramatic diagonal lines, rich contrast, and cinematic depth.`,
       veoMotionPrompt: '8-second dynamic spiral descent: camera gracefully glides down while rotating smoothly, settling into a striking diagonal cinematic composition with natural spatial flow.'
     },
     // Pattern 8: サビ・クライマックス！正面猛追突入 ＆ 迫力のアイレベル旋回
     {
-      endFramePlot: `Intense emotional climax framing of the same scene: ${basicPlot}. Camera has surged forward in a dramatic heroic low-angle arc, capturing the same protagonist looking with fierce, vibrant passion directly toward the viewer, atmospheric light blooming dynamically!`,
+      endFramePlot: `Intense close-range low-angle heroic framing. Camera has surged forward close to eye level, protagonist gazing with fierce vibrant passion directly toward the viewer, atmospheric bloom radiating across frame.`,
       veoMotionPrompt: 'Continuous 8-second sweeping camera push and heroic low-angle tilt, soaring forward into dramatic eye contact with dynamic swirling atmosphere and radiant lighting bloom.'
     },
     // Pattern 9: オーバーショルダー・回り込みリバースショット
     {
-      endFramePlot: `Over-the-shoulder reverse framing of the same scene: ${basicPlot}. Camera has smoothly glided behind the protagonist, capturing the wide cinematic view spreading out in front of them, soft rim light haloing their hair and shoulders.`,
+      endFramePlot: `Over-the-shoulder reverse angle shot. Camera is positioned closely behind the protagonist's shoulder, framing the back of their head and hair in soft focus while revealing the wide panoramic scene spreading out ahead.`,
       veoMotionPrompt: 'Smooth 8-second over-shoulder orbit: camera sweeps around the character from front to back, dynamic rim light blooming softly, poetic cinematic movement revealing what lies ahead.'
     },
     // Pattern 10: 水平ワイドアーク ＆ アンビエント・トワイライト
     {
-      endFramePlot: `Expanded atmospheric wide angle of the same scene: ${basicPlot}. Camera has drifted laterally along a graceful curve, framing the scene with tranquil poetic stillness and deep atmospheric color grading.`,
+      endFramePlot: `Expanded atmospheric wide angle drifting along a graceful horizontal arc. Tranquil poetic stillness, character framed gracefully within the expansive ambient space.`,
       veoMotionPrompt: 'Fluid 8-second slow cinematic pan and dolly arc, gliding gently around the character while lighting subtly shifts into deep twilight hues, seamless peaceful pacing.'
     },
     // Pattern 11: コージー・フローティング俯瞰
     {
-      endFramePlot: `Soft-focus elevated shot looking gently down at the same scene: ${basicPlot}. Camera has floated upward in a cozy tilted arc, capturing the same protagonist in deep relaxed comfort with warm ambient glow.`,
+      endFramePlot: `Top-down floating elevated shot looking gently down upon the scene. Soft cozy vertical perspective from above, capturing deep relaxed comfort with warm ambient glow.`,
       veoMotionPrompt: 'Continuous 8-second gentle floating crane motion, camera rising slowly while tilting downward in soft graceful arc, peaceful ambient drift.'
     },
     // Pattern 12: エピローグ・天翔るクレーン上昇 ＆ 光芒へのスパイラル
     {
-      endFramePlot: `Breathtaking cinematic finale shot of the same scene: ${basicPlot}. Camera has soared upward into an expansive high-altitude vista, golden ambient light spreading across the entire frame in majestic resolution.`,
+      endFramePlot: `Expansive high-altitude aerial vista shot looking outward. Majestic resolution, golden ambient light spreading across the entire frame in breathtaking panoramic finale.`,
       veoMotionPrompt: 'Dramatic 8-second final crane ascent: camera gracefully ascends while sweeping in a slow majestic arc, revealing the full horizon and ambient light in breathtaking resolution.'
     }
   ];

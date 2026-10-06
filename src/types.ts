@@ -203,6 +203,8 @@ export interface GenerationTask {
   storyContext?: string;
   characterDna?: string;
   isObjectOnly?: boolean;
+  isEndFrame?: boolean;
+  endFrameCameraDirective?: string;
 }
 
 /** 
