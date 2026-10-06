@@ -586,7 +586,13 @@ RULES:
 1. Title: Create an engaging Japanese title ("titleJp", 15-25 chars) and English title ("titleEn"). No episode numbers.
 2. Protagonist: Define "characterDna" in English (consistent single protagonist: age, gender, hair, signature attire). All character cuts MUST feature this exact protagonist.
 3. Object Cut: Cut 6 should be an iconic object without humans ("isObjectOnly": true).
-${isMultiPanel ? '4. Panel layout: Use "single", "split-2", or "split-3" per cut.' : ''}
+4. 8-Second Dynamic Motion & Evolution (Start -> End):
+Every scene is an 8-second video! DO NOT make minor head tilts!
+Design an energetic, distinct physical action change between start and end frames:
+- "basicPlot": Start frame initial situation in English.
+- "endFramePlot": End frame (8s later) reached posture. Keep identical protagonist, clothing, and room, but CHANGE posture/body action dynamically (e.g. standing up stretching arms high, spinning chair 90 degrees holding warm mug, leaning close pointing at screen, walking to open window, collapsing onto bed).
+- "veoMotionPrompt": Continuous 8-second motion directive for Veo 3.1 interpolation (First [action], then [smooth transition], finally [reached dynamic state]).
+${isMultiPanel ? '5. Panel layout: Use "single", "split-2", or "split-3" per cut.' : ''}
 
 Output ONLY valid JSON:
 {
@@ -600,7 +606,9 @@ Output ONLY valid JSON:
       "id": 1, 
       ${isMultiPanel ? '"panelLayout": "split-2", ' : ''}
       "isObjectOnly": false,
-      "basicPlot": "Cinematic visual description in English featuring the protagonist", 
+      "basicPlot": "Sitting focused drawing on tablet at glowing desk", 
+      "endFramePlot": "Having stood up from chair, stretching arms high overhead with arched back",
+      "veoMotionPrompt": "First drawing on tablet, then setting pen down and rising to feet, stretching arms high above head with deep breath",
       "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}"
     }
   ]
@@ -663,121 +671,144 @@ export function resolveCinematicEndFrameAndMotion(options: {
 }): CinematicEvolution {
   const { cutIndex, basicPlot, isObjectOnly, theme = '', isMvMode, existingEndPlot, existingVeoMotion } = options;
 
-  // 既に独自性のある endFramePlot が与えられている場合（basicPlot と完全一致ではない場合）
-  if (existingEndPlot && existingEndPlot.trim() !== basicPlot.trim() && existingVeoMotion) {
+  // 既にGemini等から独自性のある endFramePlot が生成されている場合（basicPlot と完全一致ではなく、20文字以上）
+  if (existingEndPlot && existingEndPlot.trim() !== basicPlot.trim() && existingEndPlot.length > 20 && existingVeoMotion) {
     return {
       endFramePlot: existingEndPlot.trim(),
       veoMotionPrompt: existingVeoMotion.trim()
     };
   }
 
-  const text = `${basicPlot} ${theme}`.toLowerCase();
+  const isHist = checkIsHistorical('', theme);
 
-  // 1. 物体・静物カット
-  if (isObjectOnly || text.includes('still-life') || text.includes('still life') || text.includes('object only')) {
+  // 1. 物体・静物カット（Cut 6 または isObjectOnly）
+  if (isObjectOnly || cutIndex === 5) {
     return {
-      endFramePlot: 'The same iconic atmospheric still-life scene completely devoid of people, ambient light having subtly shifted with glowing night reflections slowly drifting across the surface, curtains or fabric gently stirring in the nocturnal breeze, calm settled stillness.',
-      veoMotionPrompt: 'First still atmospheric frame focusing on the iconic object, then subtle environmental breeze swaying nearby fabric as lighting reflections shift across surfaces, finally settling into deep, poetic nocturnal quiet.'
+      endFramePlot: 'The same iconic atmospheric still-life scene completely devoid of people, night breeze swaying curtains casting moving shadows, luminous neon and moonlight reflections drifting slowly across the surface, indicator LED pulsing softly in deep stillness.',
+      veoMotionPrompt: 'First still atmospheric frame focusing on the iconic object, then nocturnal breeze swaying nearby fabric as neon and moonlight reflections shift across surfaces, finally settling into poetic, quiet midnight stillness.'
     };
   }
 
-  // 2. PC / デスク / モニター作業・チル
-  if (
-    text.includes('screen') || text.includes('monitor') || text.includes('display') || 
-    text.includes('desk') || text.includes('laptop') || text.includes('computer') || 
-    text.includes('pc') || text.includes('keyboard') || text.includes('typing') || text.includes('work')
-  ) {
-    return {
-      endFramePlot: 'The same character sitting in the same chair at the desk, leaning back comfortably against the chair backrest with relaxed shoulders, looking up toward the gentle ceiling light with a calm, peaceful exhale, room softly illuminated by the cyan monitor glow.',
-      veoMotionPrompt: 'First character sitting focused on the glowing display, then slowly leaning back into the chair stretching subtly and releasing tension, finally looking up toward the ceiling with a gentle quiet breath, settling into serene relaxation.'
-    };
+  // 2. 時代劇・歴史設定の場合の12カット固有アクション
+  if (isHist) {
+    const historicalActions: CinematicEvolution[] = [
+      {
+        endFramePlot: 'The same historical protagonist having stepped forward along the stone path, resting hand firmly on the hilt of the katana, sharp vigilant eyes scanning the moonlit trees.',
+        veoMotionPrompt: 'First standing stationary in traditional garb, then taking two resolute paces forward while resting hand on the sword hilt, finally pausing with a vigilant, sharp glance into the night.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist sitting down smoothly on the wooden engawa porch, holding a steaming earthenware tea cup with both hands, looking out at the rain-soaked garden.',
+        veoMotionPrompt: 'First walking along the hallway, then kneeling smoothly onto the wooden porch, lifting an earthenware cup with both hands, finally taking a quiet sip while gazing at the garden.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist having slightly unclasped the sword from its scabbard with their thumb, the polished steel blade catching a glint of cold moonlight.',
+        veoMotionPrompt: 'First holding scabbard still, then using left thumb to nudge the sword guard, blade sliding out two inches with cold metallic glint in moonlight, finally locking eyes on the edge.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist raising a paper lantern high overhead, amber candlelight illuminating their focused determined profile as night wind flutters their haori.',
+        veoMotionPrompt: 'First carrying lantern low in darkness, then lifting arm high to cast warm candlelight forward, haori coat fluttering in the breeze, finally standing resolute.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist turning around swiftly under the shadow of the temple roof, bamboo grove swaying fiercely behind them in a sudden rush of mountain wind.',
+        veoMotionPrompt: 'First standing with back turned, then pivoting body gracefully in sudden alert, bamboo swaying dramatically in the wind, finally settling in a grounded stance.'
+      },
+      {
+        endFramePlot: 'Still life of antique katana resting horizontally on a lacquered wooden stand, incense smoke curling upward into the moonbeams, quiet deserted chamber.',
+        veoMotionPrompt: 'First still shot of the katana on the stand, then gentle curl of incense smoke drifting across the blade catching moonlight, finally settling into sacred stillness.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist kneeling quietly on the tatami mat, setting down the calligraphy brush, gazing thoughtfully at the fresh ink characters drying on washi paper.',
+        veoMotionPrompt: 'First writing with intense brush strokes, then setting brush gently onto stone rest, resting hands on knees, finally exhaling softly while admiring the calligraphy.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist in dramatic emotional climax, stepping forward boldly, gazing directly into camera with intense piercing eyes, haori whipping in the storm wind!',
+        veoMotionPrompt: 'First crouched in darkness, then rising with powerful explosive grace, stepping forward with haori whipping in the wind, finally locking eyes directly on camera with fierce determination.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist unfastening their straw travel hat, letting it hang back over their shoulder, wiping forehead with a tenugui cloth with a relaxed faint smile.',
+        veoMotionPrompt: 'First walking with head bowed under straw hat, then reaching up to untie cord, letting hat slip back, wiping brow with cloth, finally gazing forward with serene relief.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist blowing out the paper lantern candle, the room plunging into deep indigo moonlight through the shoji sliding screens.',
+        veoMotionPrompt: 'First warm candlelight glowing on face, then leaning gently to blow out the flame, scene plunging instantly into cool indigo moonlight and shoji shadows.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist resting peacefully on the futon bed, wrapped in warm kimono bedding, softly closing eyes in tranquil slumber under the safe roof.',
+        veoMotionPrompt: 'First sitting on futon adjusting collar, then lying down smoothly, pulling thick quilt over shoulders, finally closing eyes in deep peaceful sleep.'
+      },
+      {
+        endFramePlot: 'The same historical protagonist standing in the courtyard at dawn, morning mist parting around them, golden sunrise rays spilling across their shoulders as they breathe in the new dawn.',
+        veoMotionPrompt: 'First shrouded in morning twilight, then golden dawn rays breaking over the roof, illuminating protagonist who takes a deep breath and looks toward the morning sun.'
+      }
+    ];
+    return historicalActions[cutIndex % 12];
   }
 
-  // 3. ベッド / 横たわる / 布団・枕・部屋チル
-  if (
-    text.includes('bed') || text.includes('lying') || text.includes('pillow') || 
-    text.includes('blanket') || text.includes('sheets') || text.includes('mattress') || 
-    text.includes('curled') || text.includes('sofa') || text.includes('couch')
-  ) {
-    return {
-      endFramePlot: 'The same character resting on the same bed, having gently put down their device onto the sheet, nestling cheek deeper into the soft pillow, softly closing eyes in tranquil, comforting slumber with quiet night shadows.',
-      veoMotionPrompt: 'First resting comfortably on the bed looking into the space, then slowly sliding hands down to the soft blanket, finally burying cheek into the pillow and softly closing eyes in peaceful nocturnal tranquility.'
-    };
-  }
+  // 3. 音楽MV・現代深夜チル・ビジュアルドラマの場合の12カット被りなしダイナミックアクション
+  const modernMvActions: CinematicEvolution[] = [
+    // Cut 1 (index 0): 椅子を押して立ち上がり、両手を頭上に大きく伸ばして背中を反らせる豪快な伸び
+    {
+      endFramePlot: 'The same protagonist having pushed the desk chair back, standing up and arching back in a wide satisfying stretch with both arms lifted high overhead, breathing deeply in ambient screen light.',
+      veoMotionPrompt: 'First sitting focused at the glowing workstation, then setting tools down, smoothly rising to feet and stretching arms high overhead with arched back, finally lowering arms with a relaxed deep breath.'
+    },
+    // Cut 2 (index 1): 椅子を90度くるりと部屋側に回し、両手で温かいマグカップを包み込んで口元に寄せる
+    {
+      endFramePlot: 'The same protagonist having spun the desk chair 90 degrees toward the room, cradling a warm ceramic mug in both hands near their lips, gentle steam rising into the cozy shadows.',
+      veoMotionPrompt: 'First gazing at the illuminated display, then smoothly spinning the desk chair 90 degrees toward the room, reaching out to pick up the warm mug, finally holding it with both hands enjoying the warmth.'
+    },
+    // Cut 3 (index 2): 前屈みになり、顔をモニターにグッと近づけて人差し指で画面の波形やコードを指差して閃き・驚きの表情
+    {
+      endFramePlot: 'The same protagonist leaning forward close to the glowing monitor, pointing their right index finger at a specific line on screen with wide, inspired, captivated eyes.',
+      veoMotionPrompt: 'First typing or drawing steadily, then suddenly pausing fingers, leaning upper body forward close to the screen in sudden revelation, finally pointing index finger at the glowing waveform with intrigued eyes.'
+    },
+    // Cut 4 (index 3): 窓辺に歩み寄り、片手でカーテンを軽く引き寄せながら雨の夜景を見下ろす
+    {
+      endFramePlot: 'The same protagonist standing right beside the window, gently drawing the sheer curtain aside with one hand, looking out at the glittering nocturnal cityscape.',
+      veoMotionPrompt: 'First standing in the quiet room, then taking slow natural steps toward the window, pulling the curtain aside with left hand, finally gazing down at the rain-washed city lights.'
+    },
+    // Cut 5 (index 4): 窓をサッと開け放ち、吹き込む夜風で髪と部屋着が大きくふわりとなびく中、目を細めて爽快に深呼吸
+    {
+      endFramePlot: 'The same protagonist having slid the window open, cool midnight breeze blowing their bangs and clothing dynamically, smiling softly with eyes gently squinted in the fresh air.',
+      veoMotionPrompt: 'First resting hands on window frame, then sliding the glass pane open, brisk night breeze blowing hair and fabric dynamically, finally closing eyes inhaling the fresh midnight air.'
+    },
+    // Cut 6 (index 5): 静物インサート
+    {
+      endFramePlot: 'The same iconic still-life scene empty of humans, curtains swaying in the nocturnal breeze as moving city neon reflections drift across the wooden desk, glowing LED indicator softly pulsing.',
+      veoMotionPrompt: 'First static atmospheric still-life of the desktop object, then night breeze swaying curtains casting moving shadows as neon reflections drift across surfaces, finally settling quiet.'
+    },
+    // Cut 7 (index 6): ベッドの上にバフッと仰向けに倒れ込み、柔らかな掛け布団の上に大の字になって脱力する
+    {
+      endFramePlot: 'The same protagonist collapsed backward onto the soft mattress, arms and legs sprawled wide across the plush duvet, staring up at the ceiling with a happy, relieved smile.',
+      veoMotionPrompt: 'First sitting on the bed edge looking exhausted, then falling straight backward onto the plush mattress, arms and legs sprawling wide across the soft quilt with a relieved smile.'
+    },
+    // Cut 8 (index 7): サビ・感情爆発！サッと勢いよく上半身を起こし、カメラ（視聴者）をまっすぐ強い情熱的な眼差しで見つめる
+    {
+      endFramePlot: 'The same protagonist surging upright with dynamic motion, turning their face directly toward the camera with fierce emotional passion, hair flowing, eyes sparkling with determination!',
+      veoMotionPrompt: 'First lying still in dim shadows, then powerfully surging upper body upright with hair tossing, turning gaze directly into camera lens with vibrant emotional intensity and sparkling eyes.'
+    },
+    // Cut 9 (index 8): ヘッドホンをサッと外して首にかけ、片手で前髪をサラリとかきあげて視線を投げかける
+    {
+      endFramePlot: 'The same protagonist having slipped the headphones down around their neck, running their slender fingers through their front bangs, looking forward with a clear, refreshed gaze.',
+      veoMotionPrompt: 'First swaying gently to music with headphones on, then raising hands to slip headphones down around neck, running slender fingers smoothly through front bangs, finally looking forward with clear calm eyes.'
+    },
+    // Cut 10 (index 9): デスクランプのスイッチをパチリと消し、部屋が瞬時に青白いPC画面と月明かりだけの深い世界へと一変する
+    {
+      endFramePlot: 'The same protagonist having switched off the warm desk lamp, the room instantly plunging into deep ethereal blue moonlight and screen glow, character resting in serene silhouette.',
+      veoMotionPrompt: 'First warm orange incandescent glow, then reaching arm up to switch off lamp, light instantly shifting to deep atmospheric blue tones, settling into tranquil silhouette.'
+    },
+    // Cut 11 (index 10): 毛布を頭まですっぽり被り、枕をぎゅっと抱きしめて心地よい眠りに落ちていく
+    {
+      endFramePlot: 'The same protagonist snuggled deeply under the fluffy blanket pulled over their head, hugging a soft pillow tight, drifting peacefully into sweet nocturnal slumber.',
+      veoMotionPrompt: 'First shivering lightly in cool room, then tugging warm comforter over shoulders and ears, hugging pillow tightly, finally settling into deep cozy slumber.'
+    },
+    // Cut 12 (index 11): カーテンの隙間から淡い紫とオレンジの朝焼けの光が差し込み、ゆっくりとまぶたを開けて新しい朝を見つめる
+    {
+      endFramePlot: 'Soft dawn daylight and pastel morning glow creeping through the window across the room, illuminating the protagonist softly fluttering their eyelids open, looking toward the new day.',
+      veoMotionPrompt: 'First nocturnal dimness, then soft morning daylight creeping across the room, illuminating eyelashes, character slowly opening luminous eyes toward the dawn sky.'
+    }
+  ];
 
-  // 4. 窓辺 / 夜景 / 外 / 雨
-  if (
-    text.includes('window') || text.includes('balcony') || text.includes('looking out') || 
-    text.includes('outside') || text.includes('rain') || text.includes('citylight') || 
-    text.includes('night sky') || text.includes('streetlights')
-  ) {
-    return {
-      endFramePlot: 'The same character standing by the same window, gently turning their head three-quarters towards the room, subtle breath mist fading on the glass pane, soft moonlight catching their eyes with a tender reflective expression.',
-      veoMotionPrompt: 'First gazing pensively out through the misty window pane at the night lights, then slowly turning head three-quarters towards the quiet interior, finally settling with a subtle thoughtful breath.'
-    };
-  }
-
-  // 5. ヘッドホン / 音楽 / リスニング
-  if (
-    text.includes('headphone') || text.includes('earphone') || text.includes('listening') || 
-    text.includes('music') || text.includes('audio') || text.includes('headphones')
-  ) {
-    return {
-      endFramePlot: 'The same character in the same room, having smoothly lowered the headphones around their neck, softly opening eyes with a clear tranquil gaze toward the room, feeling the quiet resonant aftermath of the music.',
-      veoMotionPrompt: 'First immersed in sound with headphones on and eyes closed, then smoothly sliding the headphones down to rest around the neck, finally opening eyes with a calm, refreshed, and peaceful gaze.'
-    };
-  }
-
-  // 6. マグカップ / カフェ / ドリンク / 湯気
-  if (
-    text.includes('cup') || text.includes('mug') || text.includes('coffee') || 
-    text.includes('tea') || text.includes('drink') || text.includes('drinking')
-  ) {
-    return {
-      endFramePlot: 'The same character having gently set the warm mug down onto the table, resting hands loosely in their lap, gazing peacefully forward with a warm, faint smile in quiet atmospheric lighting.',
-      veoMotionPrompt: 'First holding warm mug with both hands enjoying the warmth, then slowly lowering and placing the cup onto the table surface, finally resting hands gently and looking forward with a serene faint smile.'
-    };
-  }
-
-  // 7. クローズアップ / 表情 / 瞳
-  if (
-    text.includes('close-up') || text.includes('close up') || text.includes('face') || 
-    text.includes('eyes') || text.includes('expression') || text.includes('profile') || text.includes('gaze')
-  ) {
-    return {
-      endFramePlot: 'Intimate close-up of the same character, eyes slowly lifting from a downward introspective gaze to look gently forward, ambient screen light glinting faintly in their pupils, expression softening into serene peace.',
-      veoMotionPrompt: 'First looking gently downcast in deep thought, then slowly raising eye gaze upward towards the ambient light, finally settling with a subtle emotional spark in the eyes and relaxed lips.'
-    };
-  }
-
-  // 8. 歩き / 移動 / 振り返り
-  if (
-    text.includes('walk') || text.includes('stepping') || text.includes('path') || 
-    text.includes('street') || text.includes('corridor') || text.includes('alley') || text.includes('stairs')
-  ) {
-    return {
-      endFramePlot: 'The same character having come to a smooth graceful halt, slowly turning to look back over their shoulder into the night breeze, hair gently settling around their face in cinematic rim light.',
-      veoMotionPrompt: 'First walking steadily forward with jacket and hair swaying in the breeze, then smoothly slowing pace and turning head gracefully over shoulder, finally pausing with an evocative lingering backward glance.'
-    };
-  }
-
-  // 9. 汎用フォールバック（12カットの時間・感情アークに基づく自然な進化）
-  if (cutIndex < 4) {
-    return {
-      endFramePlot: 'The same character in the exact same setting, shifting posture slightly to raise their gaze toward the ambient light, taking a deep quiet breath with soft relaxed shoulders.',
-      veoMotionPrompt: 'First resting quietly in initial posture, then slowly lifting gaze and shifting shoulders slightly, finally settling into a calm, centered composure.'
-    };
-  } else if (cutIndex < 8) {
-    return {
-      endFramePlot: 'The same character in the exact same setting, sitting up taller with emotional clarity, hair gently caught in a subtle ambient draft, eyes focused with renewed tenderness.',
-      veoMotionPrompt: 'First looking absorbed in thought, then slowly turning head with emotional expression as hair gently stirs, finally settling with clear, expressive eyes.'
-    };
-  } else {
-    return {
-      endFramePlot: 'The same character in the exact same setting, resting in peaceful stillness, closing eyes gently or gazing softly toward the dawn light creeping into the room, profound serenity.',
-      veoMotionPrompt: 'First holding thoughtful posture, then slowly softening expression and tilting head gently, finally settling into deep tranquil peace.'
-    };
-  }
+  return modernMvActions[cutIndex % 12];
 }
 
 /**
