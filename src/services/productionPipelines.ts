@@ -61,7 +61,8 @@ async function ensureCharacterTurnaround(
       settings.theme,
       settings.country,
       settings.era,
-      settings.taste
+      settings.taste,
+      ep.characterDna
     );
 
     const modelDef = resolveImageModel(settings.imageModel);
@@ -219,6 +220,7 @@ export async function runStyleMatrixProduction(ctx: ProductionPipelineContext): 
       titleJp: `【${shortTaste}】${sharedScript.titleJp}`,
       titleEn: sharedScript.titleEn,
       summary: sharedScript.summary,
+      characterDna: sharedScript.characterDna,
       eraAnalysis: sharedScript.eraAnalysisJp,
       forbiddenAnachronisms: sharedScript.forbiddenAnachronisms,
       authenticAttireEn: sharedScript.authenticAttireEn,
@@ -376,7 +378,9 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     const newEpisode: Episode = {
       id: epIndex, internalId: crypto.randomUUID(),
       titleJp: displayTitleJp, titleEn: displayTitleEn,
-      summary: parsed.summary || `${safeTopicJp}の情景`, eraAnalysis: parsed.eraAnalysisJp || '作品を引き立てる演出構図。',
+      summary: parsed.summary || `${safeTopicJp}の情景`, 
+      characterDna: parsed.characterDna,
+      eraAnalysis: parsed.eraAnalysisJp || '作品を引き立てる演出構図。',
       forbiddenAnachronisms: parsed.forbiddenAnachronisms || ['過剰な劇的演出'],
       authenticAttireEn: parsed.authenticAttireEn || 'Cinematic style attire', forbiddenKeywordsEn: 'explosive drama',
       coverCatchphraseJp: parsed.coverCatchphraseJp || '心揺さぶる一瞬の物語。', highlightWords: parsed.highlightWords || ['光'],
@@ -659,6 +663,9 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       });
 
       const currentEpObj = episodesRef.current.find(e => e.id === epId);
+      if (currentEpObj) {
+        currentEpObj.characterDna = sharedScript.characterDna;
+      }
       let turnaroundMediaId = currentEpObj?.characterTurnaroundMediaId;
       let turnaroundBase64 = currentEpObj?.characterTurnaroundBase64;
       if (!turnaroundMediaId && currentEpObj) {
@@ -669,6 +676,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
 
       updateEpisode(epId, {
         titleJp: sharedScript.titleJp, titleEn: sharedScript.titleEn, summary: sharedScript.summary,
+        characterDna: sharedScript.characterDna,
         eraAnalysis: sharedScript.eraAnalysisJp, forbiddenAnachronisms: sharedScript.forbiddenAnachronisms,
         authenticAttireEn: sharedScript.authenticAttireEn, forbiddenKeywordsEn: sharedScript.forbiddenKeywordsEn,
         coverCatchphraseJp: sharedScript.coverCatchphraseJp, coverCatchphraseEn: sharedScript.coverCatchphraseEn,

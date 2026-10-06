@@ -315,26 +315,49 @@ export function buildFinalCinematicPromptAndNegative(
 
   const panelDirective = multiPanelPrompt ? `[PANEL COMPOSITION: ${multiPanelPrompt}]. ` : '';
 
-  if (activeReference) {
-    const { styleDna, antiPoseNegative, eraNegative, mediaId } = activeReference;
+  // ── キャラクター一貫性（Character Consistency DNA）＆ 物体カット分離 ──
+  const isObjectCut = !!task.isObjectOnly;
+  const effectiveDna = !isObjectCut ? (task.characterDna || activeReference?.characterDna) : '';
+
+  let characterPromptLayer = '';
+  if (isObjectCut) {
+    characterPromptLayer = '[STRICT STILL-LIFE INSERT: completely deserted scene, strictly NO humans, NO person, pure macro shot of object and atmospheric environment]. ';
+    negativeLayers.push('human, person, girl, boy, man, woman, child, face, eye, hands, fingers, legs, feet, body silhouette, crowd, portrait');
+  } else if (effectiveDna) {
+    characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${effectiveDna}, strictly maintain identical facial appearance, hairstyle, hair color, and clothing across all scenes]. `;
+    negativeLayers.push('different character, different face, different hair, change of clothes, multiple people, extra person, duplicate characters, changing appearance');
+  }
+
+  // 参照画像（Reference Images / Turnaround / Master Anchor）
+  const targetMediaIds: string[] = [];
+  if (!isObjectCut) {
+    if (task.referenceImageMediaId) targetMediaIds.push(task.referenceImageMediaId);
+    if (activeReference?.mediaId && !targetMediaIds.includes(activeReference.mediaId)) {
+      targetMediaIds.push(activeReference.mediaId);
+    }
+  }
+
+  if (activeReference && !isObjectCut) {
+    const { styleDna, antiPoseNegative, eraNegative } = activeReference;
     if (antiPoseNegative) negativeLayers.push(antiPoseNegative);
     if (eraNegative) negativeLayers.push(eraNegative);
 
     const finalNegative = negativeLayers.filter(Boolean).join(', ');
-    const finalPrompt = `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}[ACTION: ${effectivePrompt}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+    const finalPrompt = `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${effectivePrompt}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt,
       finalNegative,
-      referenceImageMediaIds: mediaId ? [mediaId] : undefined
+      referenceImageMediaIds: targetMediaIds.length > 0 ? targetMediaIds : undefined
     };
   } else {
     const finalNegative = negativeLayers.filter(Boolean).join(', ');
-    const finalPrompt = `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${cameraContext}. ${effectivePrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+    const finalPrompt = `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${effectivePrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt,
-      finalNegative
+      finalNegative,
+      referenceImageMediaIds: targetMediaIds.length > 0 ? targetMediaIds : undefined
     };
   }
 }

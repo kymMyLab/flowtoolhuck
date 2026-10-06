@@ -106,7 +106,7 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
       </div>
 
       {/* キャラクター基準モデルシート & マスターアンカー表示 */}
-      {(ep.characterTurnaroundBase64 || ep.masterAnchorBase64) && (
+      {(ep.characterTurnaroundBase64 || ep.masterAnchorBase64 || ep.characterDna) && (
         <div className="flex flex-col gap-2 pt-3 border-t border-white/5 animate-in fade-in duration-300">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -156,6 +156,17 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                   </div>
                   <span className="text-[9px] text-white/50 leading-tight mt-0.5">全カット固定参照（世代ドリフト防止）</span>
                 </div>
+              </div>
+            )}
+            {ep.characterDna && (
+              <div className="flex flex-col justify-center px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl min-w-0 max-w-md shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-amber-400">固定主人公DNA</span>
+                  <span className="px-1.5 py-0.2 bg-white/10 text-white/60 text-[8px] font-bold rounded">Protagonist</span>
+                </div>
+                <span className="text-[10px] text-white/80 line-clamp-2 leading-tight mt-0.5" title={ep.characterDna}>
+                  {ep.characterDna}
+                </span>
               </div>
             )}
           </div>

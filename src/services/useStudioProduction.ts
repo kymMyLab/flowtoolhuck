@@ -184,7 +184,9 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
         forbiddenAnachronisms: ep.forbiddenAnachronisms,
         authenticAttireEn: ep.authenticAttireEn,
         forbiddenKeywordsEn: ep.forbiddenKeywordsEn,
-        referenceImageMediaId: refMediaId
+        referenceImageMediaId: refMediaId,
+        characterDna: ep.characterDna,
+        isObjectOnly: c.isObjectOnly
       };
     });
   };

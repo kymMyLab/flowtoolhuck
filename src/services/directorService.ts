@@ -62,7 +62,8 @@ export function buildCharacterTurnaroundPrompt(
   theme: string,
   country: string,
   era?: string,
-  taste?: string
+  taste?: string,
+  characterDna?: string
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
@@ -71,9 +72,14 @@ export function buildCharacterTurnaroundPrompt(
     ? `Strictly authentic historical attire matching ${era || 'period Japan'}. No modern elements.` 
     : `Aesthetic, evocative outfit and styling fitting ${worldSetting}.`;
 
+  const protagonistProfile = characterDna 
+    ? `Protagonist design: ${characterDna}.` 
+    : `Protagonist designed for ${worldSetting}.`;
+
   return `Master character model sheet, three-view turnaround:
 front view, side profile view, back view of the same single protagonist standing in a neutral pose side-by-side.
-Full body from head to toe, perfectly consistent face, hairstyle, facial features, and attire (${costumeInstruction}).
+Full body from head to toe, perfectly consistent face, hairstyle, facial features, and attire.
+${protagonistProfile} (${costumeInstruction})
 Clean plain pure white background, professional animation concept art, character turnaround sheet, model sheet, masterpiece, highly detailed, 8k resolution.
 ${rawStyle ? `Art style: ${rawStyle}.` : ''}
 CRITICAL MANDATE: EXACTLY THREE VIEWS (front, side, back) of ONE SINGLE INDIVIDUAL aligned on a single sheet. Absolutely NO multiple different people, NO cluttered props, NO extra poses!`;
@@ -590,6 +596,12 @@ YOUTUBE ADVERTISER-FRIENDLY & MONETIZATION SAFETY RULES (CRITICAL):
 - Excessive gore/violence (e.g., "死体", "惨殺"): Use dignified historical terms like "遺骸", "無情の最期", "討死".
 - Keep every title viral, sensational, yet 100% brand-safe for monetization!
 
+CRITICAL SINGLE PROTAGONIST CONSISTENCY MANDATE:
+- This episode MUST follow ONE SINGLE, SPECIFIC PROTAGONIST across all 12 cuts.
+- NEVER switch characters, NEVER introduce different random people, NEVER change their hairstyle, hair color, or signature attire between cuts.
+- Define "characterDna" in the JSON: detailed description of this single protagonist's gender, approximate age, hairstyle, hair color, facial features, and signature outfit/props (e.g. "19-year-old Japanese girl with soft wavy chin-length dark brown bob, dark brown eyes, wearing an oversized pastel lilac knit sweater and silver over-ear headphones").
+- For EVERY cut where "isObjectOnly" is false, the "basicPlot" MUST feature THIS EXACT SAME PROTAGONIST, maintaining their exact hair, face, and clothing consistency!
+
 CINEMATIC INSERTS & FOCAL POINT RULES:
 - Exactly 1 to 2 cuts (Cut 6 or 9) MUST BE an object/prop cut with NO HUMANS ("isObjectOnly": true, e.g. dropped smartphone, rolling soda can, splashing raindrops).
 - Specify "focalPoint": { "grid": "top-center", "normalizedCoord": [0.5, 0.3], "focalSubject": "character_face" } (or [0.5, 0.5] for objects) to avoid crop cut-offs.
@@ -600,6 +612,7 @@ Output ONLY valid JSON:
   "titleJp": "このエピソード独自の具体的で引きの強い日本語お題（15〜25文字）",
   "titleEn": "Specific Topic Episode Subtitle in English",
   "summary": "${isMvMode ? '楽曲の世界観（日本語）' : 'あらすじ（日本語）'}",
+  "characterDna": "Consistent single protagonist profile in English (gender, age, hairstyle, hair color, signature outfit)",
   "eraAnalysisJp": "時代背景の解説（日本語）",
   "authenticAttireEn": "Costume and attire matching ${worldSetting}",
   "forbiddenKeywordsEn": "modern elements, out of context",
@@ -613,7 +626,7 @@ Output ONLY valid JSON:
       "isObjectOnly": false,
       "focalPoint": { "grid": "top-center", "normalizedCoord": [0.5, 0.3], "focalSubject": "character_face" },
       "compositionPrompt": "Subject framed at upper-third, face centered at top-center",
-      "basicPlot": "Visual description in English", 
+      "basicPlot": "Visual description in English explicitly featuring the protagonist", 
       "veoMotionPrompt": "First standing still, then slowly looking up at the sky, finally gently settling",
       "endFramePlot": "Close profile looking upward calmly",
       "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}", 
@@ -674,9 +687,16 @@ export async function directShot(
 ): Promise<Partial<Cut>> {
   const { cutId, prompt, styleKey } = task;
   const rawStyle = resolveTastePrompt(styleKey);
-  const characterGuidance = activeReference 
-    ? `Protagonist: ${activeReference.characterDna}. NOTE: Adopt only the character's appearance and distinctive features (face, hair, eyes); DO NOT copy reference pose.` 
-    : 'No specific reference asset.';
+  const effectiveDna = task.characterDna || activeReference?.characterDna;
+  const isObjectCut = !!task.isObjectOnly;
+  const characterGuidance = isObjectCut
+    ? 'OBJECT/INSERT CUT: This scene features strictly NO HUMANS. Focus purely on the iconic object, still-life, or environmental scenery.'
+    : effectiveDna
+      ? `EXACT PROTAGONIST CONSISTENCY MANDATE: The protagonist is explicitly defined as: "${effectiveDna}".
+You MUST retain THIS EXACT SAME character (same gender, same age, same hairstyle, same hair color, same eyes, same clothing style/accessories). DO NOT alter their face or clothing.`
+      : activeReference 
+        ? `Protagonist: ${activeReference.characterDna}. NOTE: Adopt only the character's appearance and distinctive features (face, hair, eyes); DO NOT copy reference pose.` 
+        : 'Consistent single protagonist throughout the entire story.';
 
   // 定義テーブルから本カットの演出プリセットおよびカメラワーク＆ケンバーンを取得
   const preset = getStoryboardPreset(cutId, settings.isMvMode, settings.isMangaMode);
@@ -854,6 +874,7 @@ export interface SafeScriptResult {
   titleJp: string;
   titleEn: string;
   summary: string;
+  characterDna?: string;
   eraAnalysisJp: string;
   forbiddenAnachronisms: string[];
   authenticAttireEn: string;
@@ -921,6 +942,9 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
       titleJp: currentPlan.titleJp,
       titleEn: currentPlan.titleEn,
       summary: currentPlan.summary || `${currentPlan.titleJp}の世界観で紡がれる物語`,
+      characterDna: isMvMode 
+        ? 'Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob hair, gentle eyes, oversized cozy knit cardigan, sleek over-ear headphones'
+        : 'Consistent single protagonist matching the world setting and narrative',
       eraAnalysisJp: '歴史・文化と人情の情景。',
       forbiddenAnachronisms: ['時代にそぐわない現代物'],
       authenticAttireEn: 'Authentic costume matching setting',
@@ -1026,6 +1050,9 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     titleJp: sanitizeForYouTubeSafety(parsed.titleJp || currentPlan.titleJp),
     titleEn: parsed.titleEn || currentPlan.titleEn,
     summary: sanitizeForYouTubeSafety(parsed.summary || currentPlan.summary || ''),
+    characterDna: parsed.characterDna || (isMvMode 
+      ? 'Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob hair, gentle eyes, oversized cozy knit cardigan, sleek over-ear headphones' 
+      : undefined),
     eraAnalysisJp: sanitizeForYouTubeSafety(parsed.eraAnalysisJp || ''),
     forbiddenAnachronisms: parsed.forbiddenAnachronisms || [],
     authenticAttireEn: parsed.authenticAttireEn || '',

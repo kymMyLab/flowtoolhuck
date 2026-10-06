@@ -121,7 +121,8 @@ export interface Episode {
   coverCatchphraseEn?: string;
   coverBase64?: string;
 
-  // 三面図マスター ＆ Cut 1 マスターアンカー画像
+  // 三面図マスター ＆ Cut 1 マスターアンカー画像 ＆ 主人公DNA
+  characterDna?: string;
   characterTurnaroundMediaId?: string;
   characterTurnaroundBase64?: string;
   characterTurnaroundPrompt?: string;
@@ -198,6 +199,8 @@ export interface GenerationTask {
   forbiddenKeywordsEn?: string;
   referenceImageMediaId?: string;
   storyContext?: string;
+  characterDna?: string;
+  isObjectOnly?: boolean;
 }
 
 /** 
