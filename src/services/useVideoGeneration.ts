@@ -47,7 +47,9 @@ export function useVideoGeneration({
           endFrameImageMediaId: endMediaId,
           endFrameMediaId: endMediaId 
         } as any);
-      } catch (_) {}
+      } catch (err) {
+        addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: End絵のアップロードに失敗しました`, 'warning');
+      }
     }
 
     const modelDef = resolveVideoModel(modelType);
@@ -56,6 +58,7 @@ export function useVideoGeneration({
     if (endMediaId) {
       addLog(`🎥 Ep.${epId} C${cutId.toString().padStart(2, '0')}: Start絵 🏁 After絵の前後フレーム完全補間動画を生成開始 (${modelDef.name})`, 'info');
     } else {
+      addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: End絵(2枚目)のMediaIDが無いため、1枚絵からの通常動画生成(フォールバック)を実行します`, 'warning');
       addLog(`🎥 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画生成開始 (${modelDef.name})`, 'info');
     }
 
@@ -65,7 +68,11 @@ export function useVideoGeneration({
         : (cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : ''));
       
       const cameraInstruction = motionText ? ` [Motion Directive: ${motionText}]` : '';
-      const finalVideoPrompt = `${cut?.promptEn || ''}${cameraInstruction}${cut?.endFramePromptEn ? ` [Target Ending: ${cut.endFramePromptEn}]` : ''}`;
+      let finalVideoPrompt = `${cut?.promptEn || ''}${cameraInstruction}`;
+
+      if (endMediaId && cut?.endFramePromptEn) {
+        finalVideoPrompt = `[Start Frame]: ${cut?.promptEn || ''} ${cameraInstruction} [Target Ending Frame]: ${cut.endFramePromptEn}`;
+      }
 
       const res = await callWithRetry<any>(
         () => Flow.generate.video({ 
