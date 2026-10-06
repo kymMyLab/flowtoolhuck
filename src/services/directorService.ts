@@ -586,12 +586,12 @@ RULES:
 1. Title: Create an engaging Japanese title ("titleJp", 15-25 chars) and English title ("titleEn"). No episode numbers.
 2. Protagonist: Define "characterDna" in English (consistent single protagonist: age, gender, hair, signature attire). All character cuts MUST feature this exact protagonist.
 3. Object Cut: Cut 6 should be an iconic object without humans ("isObjectOnly": true).
-4. 8-Second Dynamic Motion & Evolution (Start -> End):
-Every scene is an 8-second video! DO NOT make minor head tilts!
-Design an energetic, distinct physical action change between start and end frames:
-- "basicPlot": Start frame initial situation in English.
-- "endFramePlot": End frame (8s later) reached posture. Keep identical protagonist, clothing, and room, but CHANGE posture/body action dynamically (e.g. standing up stretching arms high, spinning chair 90 degrees holding warm mug, leaning close pointing at screen, walking to open window, collapsing onto bed).
-- "veoMotionPrompt": Continuous 8-second motion directive for Veo 3.1 interpolation (First [action], then [smooth transition], finally [reached dynamic state]).
+4. 8-Second Dynamic Cinematic Progression (180° Drone Orbit & Camera Angle Shift):
+Every cut is an 8-second video! Veo 3.1 excels at sweeping camera motion, 180° drone orbits, and spatial parallax without breaking anatomy!
+Between Start Frame ("basicPlot") and End Frame ("endFramePlot"), create a DRAMATIC PERSPECTIVE / ANGLE SHIFT (e.g. 180-degree drone orbit to the other side showing dynamic profile/back, low-angle rising to high overhead crane view, sweeping spiral pan revealing the atmosphere, or character dramatically changing action/posture):
+- "basicPlot": Start frame initial situation and camera angle in English.
+- "endFramePlot": The reached visual state 8 seconds later. Maintain 100% identical protagonist, clothing, and room, but CAPTURED FROM A COMPLETELY DIFFERENT ANGLE OR SHIFTED POSTURE (e.g. camera has orbited 180 degrees to show dynamic side-profile or back against glowing backdrop, or character smoothly transitioned to a new posture under dynamic new lighting angle).
+- "veoMotionPrompt": Natural continuous 8-second motion directive for Veo 3.1 interpolation (e.g. "Continuous 8-second cinematic drone orbit: camera smoothly circles 180 degrees around character from front to side-back angle while character naturally turns head, dynamic light sweep, seamless cinematic motion").
 ${isMultiPanel ? '5. Panel layout: Use "single", "split-2", or "split-3" per cut.' : ''}
 
 Output ONLY valid JSON:
@@ -606,9 +606,9 @@ Output ONLY valid JSON:
       "id": 1, 
       ${isMultiPanel ? '"panelLayout": "split-2", ' : ''}
       "isObjectOnly": false,
-      "basicPlot": "Sitting focused drawing on tablet at glowing desk", 
-      "endFramePlot": "Having stood up from chair, stretching arms high overhead with arched back",
-      "veoMotionPrompt": "First drawing on tablet, then setting pen down and rising to feet, stretching arms high above head with deep breath",
+      "basicPlot": "Front-three-quarters view of protagonist sitting focused at glowing desk in dark room", 
+      "endFramePlot": "180-degree reverse drone angle of the same protagonist, seen from behind and side looking across the room illuminated by rim light",
+      "veoMotionPrompt": "Continuous 8-second cinematic drone orbit: camera smoothly circles 180 degrees around the character from front to side-back angle, dynamic lighting sweep across surfaces, seamless cinematic movement",
       "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}"
     }
   ]
@@ -669,7 +669,7 @@ export function resolveCinematicEndFrameAndMotion(options: {
   existingEndPlot?: string;
   existingVeoMotion?: string;
 }): CinematicEvolution {
-  const { cutIndex, basicPlot, isObjectOnly, theme = '', isMvMode, existingEndPlot, existingVeoMotion } = options;
+  const { cutIndex, basicPlot, isObjectOnly, theme = '', existingEndPlot, existingVeoMotion } = options;
 
   // 既にGemini等から独自性のある endFramePlot が生成されている場合（basicPlot と完全一致ではなく、20文字以上）
   if (existingEndPlot && existingEndPlot.trim() !== basicPlot.trim() && existingEndPlot.length > 20 && existingVeoMotion) {
@@ -679,136 +679,80 @@ export function resolveCinematicEndFrameAndMotion(options: {
     };
   }
 
-  const isHist = checkIsHistorical('', theme);
-
   // 1. 物体・静物カット（Cut 6 または isObjectOnly）
   if (isObjectOnly || cutIndex === 5) {
     return {
-      endFramePlot: 'The same iconic atmospheric still-life scene completely devoid of people, night breeze swaying curtains casting moving shadows, luminous neon and moonlight reflections drifting slowly across the surface, indicator LED pulsing softly in deep stillness.',
-      veoMotionPrompt: 'First still atmospheric frame focusing on the iconic object, then nocturnal breeze swaying nearby fabric as neon and moonlight reflections shift across surfaces, finally settling into poetic, quiet midnight stillness.'
+      endFramePlot: `Cinematic 180-degree drone orbit around the same central subject, completely devoid of humans: ${basicPlot}. Captured from the dynamic reverse angle with dramatic lighting shift, moving light reflections casting rich depth across the textures.`,
+      veoMotionPrompt: 'Continuous 8-second cinematic macro drone orbit: camera smoothly circles 180 degrees around the subject with fluid depth-of-field transition, ambient lighting and reflections sweeping dynamically across surfaces, settling into deep cinematic stillness.'
     };
   }
 
-  // 2. 時代劇・歴史設定の場合の12カット固有アクション
-  if (isHist) {
-    const historicalActions: CinematicEvolution[] = [
-      {
-        endFramePlot: 'The same historical protagonist having stepped forward along the stone path, resting hand firmly on the hilt of the katana, sharp vigilant eyes scanning the moonlit trees.',
-        veoMotionPrompt: 'First standing stationary in traditional garb, then taking two resolute paces forward while resting hand on the sword hilt, finally pausing with a vigilant, sharp glance into the night.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist sitting down smoothly on the wooden engawa porch, holding a steaming earthenware tea cup with both hands, looking out at the rain-soaked garden.',
-        veoMotionPrompt: 'First walking along the hallway, then kneeling smoothly onto the wooden porch, lifting an earthenware cup with both hands, finally taking a quiet sip while gazing at the garden.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist having slightly unclasped the sword from its scabbard with their thumb, the polished steel blade catching a glint of cold moonlight.',
-        veoMotionPrompt: 'First holding scabbard still, then using left thumb to nudge the sword guard, blade sliding out two inches with cold metallic glint in moonlight, finally locking eyes on the edge.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist raising a paper lantern high overhead, amber candlelight illuminating their focused determined profile as night wind flutters their haori.',
-        veoMotionPrompt: 'First carrying lantern low in darkness, then lifting arm high to cast warm candlelight forward, haori coat fluttering in the breeze, finally standing resolute.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist turning around swiftly under the shadow of the temple roof, bamboo grove swaying fiercely behind them in a sudden rush of mountain wind.',
-        veoMotionPrompt: 'First standing with back turned, then pivoting body gracefully in sudden alert, bamboo swaying dramatically in the wind, finally settling in a grounded stance.'
-      },
-      {
-        endFramePlot: 'Still life of antique katana resting horizontally on a lacquered wooden stand, incense smoke curling upward into the moonbeams, quiet deserted chamber.',
-        veoMotionPrompt: 'First still shot of the katana on the stand, then gentle curl of incense smoke drifting across the blade catching moonlight, finally settling into sacred stillness.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist kneeling quietly on the tatami mat, setting down the calligraphy brush, gazing thoughtfully at the fresh ink characters drying on washi paper.',
-        veoMotionPrompt: 'First writing with intense brush strokes, then setting brush gently onto stone rest, resting hands on knees, finally exhaling softly while admiring the calligraphy.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist in dramatic emotional climax, stepping forward boldly, gazing directly into camera with intense piercing eyes, haori whipping in the storm wind!',
-        veoMotionPrompt: 'First crouched in darkness, then rising with powerful explosive grace, stepping forward with haori whipping in the wind, finally locking eyes directly on camera with fierce determination.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist unfastening their straw travel hat, letting it hang back over their shoulder, wiping forehead with a tenugui cloth with a relaxed faint smile.',
-        veoMotionPrompt: 'First walking with head bowed under straw hat, then reaching up to untie cord, letting hat slip back, wiping brow with cloth, finally gazing forward with serene relief.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist blowing out the paper lantern candle, the room plunging into deep indigo moonlight through the shoji sliding screens.',
-        veoMotionPrompt: 'First warm candlelight glowing on face, then leaning gently to blow out the flame, scene plunging instantly into cool indigo moonlight and shoji shadows.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist resting peacefully on the futon bed, wrapped in warm kimono bedding, softly closing eyes in tranquil slumber under the safe roof.',
-        veoMotionPrompt: 'First sitting on futon adjusting collar, then lying down smoothly, pulling thick quilt over shoulders, finally closing eyes in deep peaceful sleep.'
-      },
-      {
-        endFramePlot: 'The same historical protagonist standing in the courtyard at dawn, morning mist parting around them, golden sunrise rays spilling across their shoulders as they breathe in the new dawn.',
-        veoMotionPrompt: 'First shrouded in morning twilight, then golden dawn rays breaking over the roof, illuminating protagonist who takes a deep breath and looks toward the morning sun.'
-      }
-    ];
-    return historicalActions[cutIndex % 12];
-  }
-
-  // 3. 音楽MV・現代深夜チル・ビジュアルドラマの場合の12カット被りなしダイナミックアクション
-  const modernMvActions: CinematicEvolution[] = [
-    // Cut 1 (index 0): 椅子を押して立ち上がり、両手を頭上に大きく伸ばして背中を反らせる豪快な伸び
+  // 2. 普遍的シネマティック・ドローン＆スパイラル旋回パターン（12カット循環）
+  // どんな世界観・人物・シチュエーションでも100%通用し、Veo 3.1 が最も得意とするカメラワークで空間をぐるりと大旋回！
+  const universalDroneMotions: CinematicEvolution[] = [
+    // Pattern 1: 180度ドローンオービット旋回（正面から斜め背面・横顔へ大旋回）
     {
-      endFramePlot: 'The same protagonist having pushed the desk chair back, standing up and arching back in a wide satisfying stretch with both arms lifted high overhead, breathing deeply in ambient screen light.',
-      veoMotionPrompt: 'First sitting focused at the glowing workstation, then setting tools down, smoothly rising to feet and stretching arms high overhead with arched back, finally lowering arms with a relaxed deep breath.'
+      endFramePlot: `Cinematic 180-degree reverse drone angle of the same scene: ${basicPlot}. Camera has orbited completely to the opposite side, framing the same protagonist from an expressive three-quarters profile with beautiful dynamic rim lighting, revealing the expansive atmospheric background.`,
+      veoMotionPrompt: 'Continuous 8-second cinematic drone orbit: camera smoothly circles 180 degrees around the protagonist from front-angle to side-back perspective, dynamic spatial parallax, light sweeping across hair and environment, settling into breathtaking cinematic depth.'
     },
-    // Cut 2 (index 1): 椅子を90度くるりと部屋側に回し、両手で温かいマグカップを包み込んで口元に寄せる
+    // Pattern 2: ローアングルからハイアングルへのスパイラル上昇（クレーン螺旋アップ）
     {
-      endFramePlot: 'The same protagonist having spun the desk chair 90 degrees toward the room, cradling a warm ceramic mug in both hands near their lips, gentle steam rising into the cozy shadows.',
-      veoMotionPrompt: 'First gazing at the illuminated display, then smoothly spinning the desk chair 90 degrees toward the room, reaching out to pick up the warm mug, finally holding it with both hands enjoying the warmth.'
+      endFramePlot: `Dramatic high-angle overhead crane shot of the same scene: ${basicPlot}. Camera has ascended in a graceful spiral, looking down from above, capturing the same protagonist gazing upward into the ambient light with rich floor shadows and expansive space.`,
+      veoMotionPrompt: '8-second cinematic spiral crane ascent: camera gracefully glides upward while rotating 90 degrees around the subject, moving from low eye-level to an atmospheric high-angle bird-eye view with fluid vertical motion.'
     },
-    // Cut 3 (index 2): 前屈みになり、顔をモニターにグッと近づけて人差し指で画面の波形やコードを指差して閃き・驚きの表情
+    // Pattern 3: 斜め下からのダイナミック・ドリーイン ＆ アングル回転
     {
-      endFramePlot: 'The same protagonist leaning forward close to the glowing monitor, pointing their right index finger at a specific line on screen with wide, inspired, captivated eyes.',
-      veoMotionPrompt: 'First typing or drawing steadily, then suddenly pausing fingers, leaning upper body forward close to the screen in sudden revelation, finally pointing index finger at the glowing waveform with intrigued eyes.'
+      endFramePlot: `Dynamic low-angle tilted composition of the same scene: ${basicPlot}. Camera has glided close to the protagonist from a sharp low perspective, dramatic cinematic lighting catching intense reflection in their eyes, powerful emotional visual presence.`,
+      veoMotionPrompt: 'Continuous 8-second dynamic push-in and low-angle tilt: camera sweeps smoothly forward and low, rotating slightly to create heroic dynamic framing, depth of field blurring the background as it settles close.'
     },
-    // Cut 4 (index 3): 窓辺に歩み寄り、片手でカーテンを軽く引き寄せながら雨の夜景を見下ろす
+    // Pattern 4: ワイドパノラマ・プルバック ＆ 180度アーク旋回
     {
-      endFramePlot: 'The same protagonist standing right beside the window, gently drawing the sheer curtain aside with one hand, looking out at the glittering nocturnal cityscape.',
-      veoMotionPrompt: 'First standing in the quiet room, then taking slow natural steps toward the window, pulling the curtain aside with left hand, finally gazing down at the rain-washed city lights.'
+      endFramePlot: `Wide panoramic perspective of the same scene: ${basicPlot}. Camera has tracked backward and swept along a wide 180-degree arc to the far corner, revealing the full grand environment while the same protagonist is framed with generous cinematic breathing room.`,
+      veoMotionPrompt: 'Dynamic 8-second drone pullback and sweeping 180-degree arc: camera smoothly tracks backward while orbiting, opening up the entire cinematic atmosphere with majestic, fluid spatial expansion.'
     },
-    // Cut 5 (index 4): 窓をサッと開け放ち、吹き込む夜風で髪と部屋着が大きくふわりとなびく中、目を細めて爽快に深呼吸
+    // Pattern 5: ラテラル・ドリー ＆ 振り返りリバースアングル
     {
-      endFramePlot: 'The same protagonist having slid the window open, cool midnight breeze blowing their bangs and clothing dynamically, smiling softly with eyes gently squinted in the fresh air.',
-      veoMotionPrompt: 'First resting hands on window frame, then sliding the glass pane open, brisk night breeze blowing hair and fabric dynamically, finally closing eyes inhaling the fresh midnight air.'
+      endFramePlot: `Dynamic profile tracking shot of the same scene: ${basicPlot}. Captured from the opposite flank with rich side-lighting, the same protagonist framed in an evocative silhouette against the glowing background.`,
+      veoMotionPrompt: 'Continuous 8-second lateral tracking shot curving smoothly around the subject, lighting reflections sliding dynamically across surfaces, protagonist naturally turning gaze along with the camera motion.'
     },
-    // Cut 6 (index 5): 静物インサート
+    // Pattern 6: 静物・マイクロ360度オービット
     {
-      endFramePlot: 'The same iconic still-life scene empty of humans, curtains swaying in the nocturnal breeze as moving city neon reflections drift across the wooden desk, glowing LED indicator softly pulsing.',
-      veoMotionPrompt: 'First static atmospheric still-life of the desktop object, then night breeze swaying curtains casting moving shadows as neon reflections drift across surfaces, finally settling quiet.'
+      endFramePlot: `The same iconic still-life scene viewed from a dramatically shifted side angle, ambient light and reflections having slid across the surface, deep nocturnal atmosphere.`,
+      veoMotionPrompt: 'Continuous 8-second macro drone orbit circling smoothly around the central object, light reflections sweeping dynamically across textures, deep cinematic still life.'
     },
-    // Cut 7 (index 6): ベッドの上にバフッと仰向けに倒れ込み、柔らかな掛け布団の上に大の字になって脱力する
+    // Pattern 7: ダッチアングル・スパイラル下降
     {
-      endFramePlot: 'The same protagonist collapsed backward onto the soft mattress, arms and legs sprawled wide across the plush duvet, staring up at the ceiling with a happy, relieved smile.',
-      veoMotionPrompt: 'First sitting on the bed edge looking exhausted, then falling straight backward onto the plush mattress, arms and legs sprawling wide across the soft quilt with a relieved smile.'
+      endFramePlot: `Striking diagonal Dutch-angle framing of the same scene: ${basicPlot}. Camera has glided down from above along an elegant spiral curve, capturing the same protagonist in an artistic, modern cinematic perspective with rich contrast.`,
+      veoMotionPrompt: '8-second dynamic spiral descent: camera gracefully glides down while rotating smoothly, settling into a striking diagonal cinematic composition with natural spatial flow.'
     },
-    // Cut 8 (index 7): サビ・感情爆発！サッと勢いよく上半身を起こし、カメラ（視聴者）をまっすぐ強い情熱的な眼差しで見つめる
+    // Pattern 8: サビ・クライマックス！正面猛追突入 ＆ 迫力のアイレベル旋回
     {
-      endFramePlot: 'The same protagonist surging upright with dynamic motion, turning their face directly toward the camera with fierce emotional passion, hair flowing, eyes sparkling with determination!',
-      veoMotionPrompt: 'First lying still in dim shadows, then powerfully surging upper body upright with hair tossing, turning gaze directly into camera lens with vibrant emotional intensity and sparkling eyes.'
+      endFramePlot: `Intense emotional climax framing of the same scene: ${basicPlot}. Camera has surged forward in a dramatic heroic low-angle arc, capturing the same protagonist looking with fierce, vibrant passion directly toward the viewer, atmospheric light blooming dynamically!`,
+      veoMotionPrompt: 'Continuous 8-second sweeping camera push and heroic low-angle tilt, soaring forward into dramatic eye contact with dynamic swirling atmosphere and radiant lighting bloom.'
     },
-    // Cut 9 (index 8): ヘッドホンをサッと外して首にかけ、片手で前髪をサラリとかきあげて視線を投げかける
+    // Pattern 9: オーバーショルダー・回り込みリバースショット
     {
-      endFramePlot: 'The same protagonist having slipped the headphones down around their neck, running their slender fingers through their front bangs, looking forward with a clear, refreshed gaze.',
-      veoMotionPrompt: 'First swaying gently to music with headphones on, then raising hands to slip headphones down around neck, running slender fingers smoothly through front bangs, finally looking forward with clear calm eyes.'
+      endFramePlot: `Over-the-shoulder reverse framing of the same scene: ${basicPlot}. Camera has smoothly glided behind the protagonist, capturing the wide cinematic view spreading out in front of them, soft rim light haloing their hair and shoulders.`,
+      veoMotionPrompt: 'Smooth 8-second over-shoulder orbit: camera sweeps around the character from front to back, dynamic rim light blooming softly, poetic cinematic movement revealing what lies ahead.'
     },
-    // Cut 10 (index 9): デスクランプのスイッチをパチリと消し、部屋が瞬時に青白いPC画面と月明かりだけの深い世界へと一変する
+    // Pattern 10: 水平ワイドアーク ＆ アンビエント・トワイライト
     {
-      endFramePlot: 'The same protagonist having switched off the warm desk lamp, the room instantly plunging into deep ethereal blue moonlight and screen glow, character resting in serene silhouette.',
-      veoMotionPrompt: 'First warm orange incandescent glow, then reaching arm up to switch off lamp, light instantly shifting to deep atmospheric blue tones, settling into tranquil silhouette.'
+      endFramePlot: `Expanded atmospheric wide angle of the same scene: ${basicPlot}. Camera has drifted laterally along a graceful curve, framing the scene with tranquil poetic stillness and deep atmospheric color grading.`,
+      veoMotionPrompt: 'Fluid 8-second slow cinematic pan and dolly arc, gliding gently around the character while lighting subtly shifts into deep twilight hues, seamless peaceful pacing.'
     },
-    // Cut 11 (index 10): 毛布を頭まですっぽり被り、枕をぎゅっと抱きしめて心地よい眠りに落ちていく
+    // Pattern 11: コージー・フローティング俯瞰
     {
-      endFramePlot: 'The same protagonist snuggled deeply under the fluffy blanket pulled over their head, hugging a soft pillow tight, drifting peacefully into sweet nocturnal slumber.',
-      veoMotionPrompt: 'First shivering lightly in cool room, then tugging warm comforter over shoulders and ears, hugging pillow tightly, finally settling into deep cozy slumber.'
+      endFramePlot: `Soft-focus elevated shot looking gently down at the same scene: ${basicPlot}. Camera has floated upward in a cozy tilted arc, capturing the same protagonist in deep relaxed comfort with warm ambient glow.`,
+      veoMotionPrompt: 'Continuous 8-second gentle floating crane motion, camera rising slowly while tilting downward in soft graceful arc, peaceful ambient drift.'
     },
-    // Cut 12 (index 11): カーテンの隙間から淡い紫とオレンジの朝焼けの光が差し込み、ゆっくりとまぶたを開けて新しい朝を見つめる
+    // Pattern 12: エピローグ・天翔るクレーン上昇 ＆ 光芒へのスパイラル
     {
-      endFramePlot: 'Soft dawn daylight and pastel morning glow creeping through the window across the room, illuminating the protagonist softly fluttering their eyelids open, looking toward the new day.',
-      veoMotionPrompt: 'First nocturnal dimness, then soft morning daylight creeping across the room, illuminating eyelashes, character slowly opening luminous eyes toward the dawn sky.'
+      endFramePlot: `Breathtaking cinematic finale shot of the same scene: ${basicPlot}. Camera has soared upward into an expansive high-altitude vista, golden ambient light spreading across the entire frame in majestic resolution.`,
+      veoMotionPrompt: 'Dramatic 8-second final crane ascent: camera gracefully ascends while sweeping in a slow majestic arc, revealing the full horizon and ambient light in breathtaking resolution.'
     }
   ];
 
-  return modernMvActions[cutIndex % 12];
+  return universalDroneMotions[cutIndex % 12];
 }
 
 /**
