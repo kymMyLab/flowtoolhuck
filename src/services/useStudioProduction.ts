@@ -33,18 +33,9 @@ interface UseStudioProductionProps {
   addLog: (message: string, type?: LogEntry['type']) => void;
   refreshStories: () => Promise<void>;
   logs?: LogEntry[];
-  onPackageReady?: (data: {
-    epId: number;
-    titleJp: string;
-    filename: string;
-    blobUrl: string;
-    sizeStr: string;
-    videoCount: number;
-    imageCount: number;
-  }) => void;
 }
 
-export function useStudioProduction({ settings, addLog, refreshStories, logs, onPackageReady }: UseStudioProductionProps) {
+export function useStudioProduction({ settings, addLog, refreshStories, logs }: UseStudioProductionProps) {
   const logsRef = useRef(logs);
   logsRef.current = logs;
 
@@ -576,8 +567,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs, on
       seriesManifestRef,
       setActiveSeriesManifest,
       activeReferenceRef,
-      currentAssetRef,
-      onPackageReady
+      currentAssetRef
     };
 
     try {

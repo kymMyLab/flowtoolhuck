@@ -418,8 +418,7 @@ export const downloadZip = async (
   ep: Episode, 
   addLog: (msg: string, type?: any) => void, 
   manifest?: SeriesManifest,
-  logs?: LogEntry[],
-  onReady?: (info: { filename: string; blobUrl: string; sizeStr: string }) => void
+  logs?: LogEntry[]
 ): Promise<{ filename: string; blobUrl: string; sizeStr: string; flowSuccess: boolean } | null> => {
   addLog(`📦 Ep.${ep.id} パッケージング中...`, 'process');
   try {
@@ -552,11 +551,7 @@ export const downloadZip = async (
     // 統合保存処理を実行（ASCII安全名 asciiFilename を最優先で Flow.download に渡す）
     const saveRes = await savePackageFile(zipBlob, filename, addLog, asciiFilename);
 
-    const result = { filename, blobUrl, sizeStr, flowSuccess: saveRes.success };
-    if (onReady) {
-      onReady(result);
-    }
-    return result;
+    return { filename, blobUrl, sizeStr, flowSuccess: saveRes.success };
   } catch (err: any) { 
     addLog(`❌ ZIP生成エラー: ${err.message}`, 'error'); 
     return null;
