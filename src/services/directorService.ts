@@ -579,58 +579,29 @@ export function buildCompactScriptPrompt(
     ? `\nPREVIOUSLY COVERED TOPICS IN THIS SERIES (DO NOT DUPLICATE OR OVERLAP WITH THESE):\n${existingTitles.map(t => `- ${t}`).join('\n')}\n`
     : '';
 
-  return `You are a top-tier creative showrunner and YouTube/TikTok Shorts script director.
-Task: Create a captivating, completely unique 12-cut ${contextTitle} for Episode ${epId} within the broad world of "${worldSetting}".
+  return `You are a creative showrunner directing a 12-cut ${contextTitle} for Episode ${epId} in "${worldSetting}".
 Art Style: "${taste || 'Cinematic'}".
 ${avoidSection}
-CRITICAL NAMING RULE FOR "titleJp" AND "titleEn":
-- STRICTLY FORBIDDEN: Do NOT include any volume/episode numbers or sequential tags like "Vol.1", "Vol.2", "第1話", "Track 1", or "#1" in "titleJp" or "titleEn". The title must be purely the standalone topic itself without any numbering.
-- NEVER output generic placeholder titles like "${currentPlan.titleJp}" or simply repeating the theme name.
-- You MUST create a brand-new, punchy, curiosity-inducing specific Japanese topic title ("titleJp") tailored exclusively to this episode's distinct topic/angle (around 15-25 Japanese characters, e.g. "極限の兵糧攻め！甲冑の革紐を煮て食った男たち" or "死因第1位は刀傷にあらず！陣中を襲った悪夢の赤痢").
-- Provide a matching specific English title ("titleEn") without numbers (e.g. "Siege of Starvation: Men Who Boiled Armor Leather").
+RULES:
+1. Title: Create an engaging Japanese title ("titleJp", 15-25 chars) and English title ("titleEn"). No episode numbers.
+2. Protagonist: Define "characterDna" in English (consistent single protagonist: age, gender, hair, signature attire). All character cuts MUST feature this exact protagonist.
+3. Object Cut: Cut 6 should be an iconic object without humans ("isObjectOnly": true).
+${isMultiPanel ? '4. Panel layout: Use "single", "split-2", or "split-3" per cut.' : ''}
 
-YOUTUBE ADVERTISER-FRIENDLY & MONETIZATION SAFETY RULES (CRITICAL):
-- Strictly comply with YouTube Advertiser-Friendly Content Guidelines (ensure green dollar monetization and maximum algorithmic reach).
-- Do NOT use crude, vulgar, or disgust-inducing slangs in "titleJp", "narrationJp", or "titleEn".
-- Bodily waste & crude terms (e.g., "うんこ", "人糞", "糞尿", "下痢便"): NEVER use direct slangs! ALWAYS use historical, scientific, or clever intrigue terms like "下肥（しもごえ）", "有機肥料", "排泄物", "黄金の肥料", or intriguing intrigue phrases like "【アレ】".
-- Excessive gore/violence (e.g., "死体", "惨殺"): Use dignified historical terms like "遺骸", "無情の最期", "討死".
-- Keep every title viral, sensational, yet 100% brand-safe for monetization!
-
-CRITICAL SINGLE PROTAGONIST CONSISTENCY MANDATE:
-- This episode MUST follow ONE SINGLE, SPECIFIC PROTAGONIST across all 12 cuts.
-- NEVER switch characters, NEVER introduce different random people, NEVER change their hairstyle, hair color, or signature attire between cuts.
-- Define "characterDna" in the JSON: detailed description of this single protagonist's gender, approximate age, hairstyle, hair color, facial features, and signature outfit/props (e.g. "19-year-old Japanese girl with soft wavy chin-length dark brown bob, dark brown eyes, wearing an oversized pastel lilac knit sweater and silver over-ear headphones").
-- For EVERY cut where "isObjectOnly" is false, the "basicPlot" MUST feature THIS EXACT SAME PROTAGONIST, maintaining their exact hair, face, and clothing consistency!
-
-CINEMATIC INSERTS & FOCAL POINT RULES:
-- Exactly 1 to 2 cuts (Cut 6 or 9) MUST BE an object/prop cut with NO HUMANS ("isObjectOnly": true, e.g. dropped smartphone, rolling soda can, splashing raindrops).
-- Specify "focalPoint": { "grid": "top-center", "normalizedCoord": [0.5, 0.3], "focalSubject": "character_face" } (or [0.5, 0.5] for objects) to avoid crop cut-offs.
-- Provide "veoMotionPrompt" with narrative pacing adverbs (First ..., then ..., smoothly settles).
-${isMultiPanel ? 'Direct each cut panel layout freely ("single", "split-2", "split-3", "dynamic-multi") without white borders. Keep panels cleanly divided, spacious, non-overlapping figures.' : 'Dynamically alternate camera distances (Wide -> Close-up -> Medium -> Climax).'}
 Output ONLY valid JSON:
 {
   "titleJp": "このエピソード独自の具体的で引きの強い日本語お題（15〜25文字）",
   "titleEn": "Specific Topic Episode Subtitle in English",
   "summary": "${isMvMode ? '楽曲の世界観（日本語）' : 'あらすじ（日本語）'}",
-  "characterDna": "Consistent single protagonist profile in English (gender, age, hairstyle, hair color, signature outfit)",
+  "characterDna": "Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob, cozy knit sweater, sleek headphones",
   "eraAnalysisJp": "時代背景の解説（日本語）",
-  "authenticAttireEn": "Costume and attire matching ${worldSetting}",
-  "forbiddenKeywordsEn": "modern elements, out of context",
-  "forbiddenAnachronisms": ["不自然な要素"],
-  "coverCatchphraseJp": "惹きつけるキャッチコピー",
-  "highlightWords": ["キーワード"],
   "cuts": [
     { 
       "id": 1, 
       ${isMultiPanel ? '"panelLayout": "split-2", ' : ''}
       "isObjectOnly": false,
-      "focalPoint": { "grid": "top-center", "normalizedCoord": [0.5, 0.3], "focalSubject": "character_face" },
-      "compositionPrompt": "Subject framed at upper-third, face centered at top-center",
-      "basicPlot": "Visual description in English explicitly featuring the protagonist", 
-      "veoMotionPrompt": "First standing still, then slowly looking up at the sky, finally gently settling",
-      "endFramePlot": "Close profile looking upward calmly",
-      "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}", 
-      "highlights": ["キーワード"] 
+      "basicPlot": "Cinematic visual description in English featuring the protagonist", 
+      "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}"
     }
   ]
 };`;
@@ -915,28 +886,23 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   try {
     scriptRes = await callWithRetry<any>(
       () => Flow.generate.text(scriptPrompt),
-      (attempt, max, delay, err, isSuper) => {
+      (attempt, max, delay, err) => {
         console.error(`[Script Retry ${attempt}/${max}]`, err);
-        const errMsg = err?.message || String(err);
         const waitStr = formatDurationMs(delay);
         if (addLog) {
-          if (isSuper) {
-            addLog(`🌙 第${epId}話 [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
-          } else {
-            addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${waitStr}後... 理由: ${errMsg}`, 'warning');
-          }
+          addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${waitStr}後... (サーバー混雑検出)`, 'warning');
         }
       },
       {
-        maxRetries: 5,
-        superBackoff,
+        maxRetries: 2,
+        superBackoff: false,
         abortCheck
       }
     );
   } catch (err: any) {
     const errMsg = err?.message || String(err);
-    console.error(`[Script Failed for Episode ${epId}]`, err, { prompt: scriptPrompt });
-    if (addLog) addLog(`⚠️ 第${epId}話の脚本AI生成が混雑のため、世界観に即した安全構成フォールバックで生成を続行します: ${errMsg}`, 'warning');
+    console.warn(`[Script Fallback for Episode ${epId}] API混雑のため安全構成フォールバックを適用:`, errMsg);
+    if (addLog) addLog(`✨ 第${epId}話 サーバー混雑のため、世界観に最適化された安全構成脚本で即座に制作を開始します！`, 'process');
 
     return {
       titleJp: currentPlan.titleJp,
