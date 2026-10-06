@@ -22,6 +22,16 @@ import {
 } from './directorService';
 import { LogEntry } from '../components/StudioLogs';
 
+/**
+ * 1話完了時のクリーンアップ処理（メモリリーク対策用）
+ */
+function cleanupEpisodeMemory() {
+  if (typeof window !== 'undefined' && (window as any).gc) {
+    try { (window as any).gc(); } catch (e) {}
+  }
+}
+
+
 export interface ProductionPipelineContext {
   settings: GeneratorSettings;
   addLog: (message: string, type?: LogEntry['type']) => void;
@@ -368,6 +378,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       }
     }
     await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
+    cleanupEpisodeMemory();
   }
 
   if (!isAbortedRef.current) {
@@ -632,6 +643,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         }
       }
       await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
+      cleanupEpisodeMemory();
     } catch (epErr: any) {
       addLog(`⚠️ 第 ${epId} 話の生成中にエラーが発生しました。スキップして次へ進みます: ${formatErrorMessage(epErr)}`, 'warning');
       updateEpisode(epId, { isGenerating: false, error: '生成中断' });

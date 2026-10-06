@@ -35,7 +35,7 @@ export function loadCustomTastes(): CustomTasteMap {
       return { ...DEFAULT_TASTES };
     }
     const parsed = JSON.parse(raw);
-    if (typeof parsed === 'object' && parsed !== null && Object.keys(parsed).length > 0) {
+    if (typeof parsed === 'object' && parsed !== null && Object.keys(parsed || {}).length > 0) {
       // 新規デフォルト画風が未登録なら安全に補完マージ
       const merged = { ...DEFAULT_TASTES, ...parsed };
       return merged;

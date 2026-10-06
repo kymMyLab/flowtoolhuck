@@ -12,6 +12,7 @@ import { initDB, getAllStories, StoryRecord } from './services/db';
 import { downloadZip, triggerBrowserDownload, savePackageFile } from './services/exportService';
 import { useStudioProduction } from './services/useStudioProduction';
 import { extractHighlights } from './services/directorService';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
@@ -115,7 +116,8 @@ export default function App() {
   }, [refreshStories]);
 
   return (
-    <div className="flex h-screen w-screen bg-[#0e0e0e] text-white select-none">
+    <ErrorBoundary>
+      <div className="flex h-screen w-screen bg-[#0e0e0e] text-white select-none">
       <StudioSidebar settings={settings} setSettings={setSettings} isProducing={isProducing} onStart={startProduction} onAbort={abortProduction} onClear={() => setIsTrashModalOpen(true)} onOpenArchive={() => setArchiveOpen(true)} onResumeSeries={handleResumeSeries} activeSeriesManifest={activeSeriesManifest} logs={logs} onAddLog={addLog} />
       <div className="flex-1 overflow-y-auto p-8 bg-[#080808] dark-scrollbar">
         <div className="max-w-[1300px] mx-auto flex flex-col gap-16">
@@ -202,5 +204,6 @@ export default function App() {
       <ArchiveDrawer isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} stories={stories} onRemake={(s) => { setSettings(prev => ({ ...prev, country: s.country, era: s.era, theme: s.theme })); setArchiveOpen(false); }} />
       <ConfirmationModal isOpen={isTrashModalOpen} title="全消去" message="制作中のデータを消去します。" onConfirm={() => { clearEpisodes(); setIsTrashModalOpen(false); }} onCancel={() => setIsTrashModalOpen(false)} />
     </div>
+    </ErrorBoundary>
   );
 }

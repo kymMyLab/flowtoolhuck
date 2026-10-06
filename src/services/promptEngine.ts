@@ -205,8 +205,12 @@ export function buildFinalCinematicPromptAndNegative(
 
   const dynamicForbidden = forbiddenKeywordsEn || (forbiddenAnachronisms || []).join(', ');
 
-  // 画風に必須のキーワード（例: neon, pop, pastel等）がAIの禁止ワードに誤混入した場合の衝突自動除外フィルター
+  // 画風に必須のキーワード（例: neon, pop, pastel, チーク等）がAIの禁止ワードに誤混入した場合の衝突自動除外フィルター
   const styleKeywords = `${styleKey} ${rawStyle}`.toLowerCase();
+  const isMoeBlush = styleKeywords.includes('ハッチングチーク') || styleKeywords.includes('チーク') || styleKeywords.includes('萌え');
+  const isPastelSketch = styleKeywords.includes('くすみパステル') || styleKeywords.includes('チルスケッチ') || styleKeywords.includes('pastel') || styleKeywords.includes('sketch');
+  const isFlatCel = styleKeywords.includes('フラットセル') || styleKeywords.includes('flat cel');
+  
   const sanitizedForbidden = dynamicForbidden
     ? dynamicForbidden
         .split(',')
@@ -215,7 +219,13 @@ export function buildFinalCinematicPromptAndNegative(
           if (!w) return false;
           const lower = w.toLowerCase();
           const words = lower.split(/\s+/);
-          // 画風の定義に含まれる単語（neon, pop, pastel等）がネガティブに含まれていたら除去
+          
+          // 特定の画風特有の必須キーワードと衝突するユーザー入力ネガティブを保護（無効化）する
+          if (isMoeBlush && (lower.includes('blush') || lower.includes('チーク') || lower.includes('頬'))) return false;
+          if (isPastelSketch && (lower.includes('pastel') || lower.includes('sketch') || lower.includes('くすみ'))) return false;
+          if (isFlatCel && (lower.includes('flat') || lower.includes('cel') || lower.includes('セル'))) return false;
+
+          // 一般的な画風定義に含まれる単語（neon, pop, pastel等）がネガティブに含まれていたら除去
           return !words.some(word => word.length > 2 && styleKeywords.includes(word));
         })
         .join(', ')

@@ -157,6 +157,10 @@ export async function renderFullEpisodeMovie(
   canvasSource.close();
   await output.finalize();
 
+  ctx.clearRect(0, 0, width, height);
+  outputCanvas.width = 0;
+  outputCanvas.height = 0;
+
   return new Blob([output.target.buffer!], { type: 'video/mp4' });
 }
 
@@ -214,6 +218,11 @@ export async function renderKenBurnsVideo(cut: Cut, durationSec: number = 4, isM
 
   canvasSource.close();
   await output.finalize();
+
+  ctx.clearRect(0, 0, width, height);
+  canvas.width = 0;
+  canvas.height = 0;
+
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onloadend = () => resolve((reader.result as string).split(',')[1]);

@@ -108,17 +108,29 @@ export function formatDurationMs(ms: number): string {
  * 緊急停止（Abort）を即座に検知可能なスリープ
  */
 export async function sleepWithAbortCheck(durationMs: number, abortCheck?: () => boolean): Promise<boolean> {
-  const stepMs = 500;
-  let elapsed = 0;
-  while (elapsed < durationMs) {
+  return new Promise((resolve) => {
+    let elapsed = 0;
+    const intervalMs = 100;
+    
+    // Immediate check
     if (abortCheck && abortCheck()) {
-      return false; // 中断された
+      return resolve(false);
     }
-    const wait = Math.min(stepMs, durationMs - elapsed);
-    await new Promise(r => setTimeout(r, wait));
-    elapsed += wait;
-  }
-  return true;
+    
+    const timer = setInterval(() => {
+      elapsed += intervalMs;
+      if (abortCheck && abortCheck()) {
+        clearInterval(timer);
+        clearTimeout(timeout);
+        return resolve(false);
+      }
+    }, intervalMs);
+
+    const timeout = setTimeout(() => {
+      clearInterval(timer);
+      resolve(true);
+    }, durationMs);
+  });
 }
 
 /** 

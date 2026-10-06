@@ -503,6 +503,7 @@ export const downloadZip = async (
     const sizeStr = `${sizeMb} MB`;
 
     const blobUrl = URL.createObjectURL(zipBlob);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000); // Free URL after download starts
 
     // 統合保存処理を実行（ASCII安全名 asciiFilename を最優先で Flow.download に渡す）
     const saveRes = await savePackageFile(zipBlob, filename, addLog, asciiFilename);

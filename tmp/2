@@ -1,0 +1,75 @@
+{
+"project_overview": {
+"title": "Automated MV Video Generation Pipeline Specification",
+"target_model": "Veo 3.1 / Google Flow (Diffusion Transformer Architecture)",
+"orchestrator_llm": "Gemini",
+"goal": "12カット構成のMV用動画・静止画を自動生成し、キャラクター一貫性と自然な物理挙動を両立させる"
+},
+"core_principles_and_mechanisms": {
+"video_interpolation_mechanism": {
+"concept": "2点間（Start/End Frame）の補間は物理演算シミュレータではなく、潜在空間（Latent Space）における逆拡散過程（Denoising）と時系列アテンション（Temporal Attention）による確率的探索である。",
+"behavior_patterns": {
+"dissolve_or_morphing": "始点と終点の物理的因果関係が薄い、または遮蔽物が存在する場合、AIは計算コストの低い『最短距離でのテクスチャ溶解・モーフィング（フェード）』を選択しやすい。",
+"camera_work_bypass": "急激なズームイン・ズームアウト、画面ブレ（モーションブラー）により、不連続な2枚をトランジションとして誤魔化す傾向がある。",
+"penetration_clipping": "剛体当たり判定（Collision Detection）が存在しないため、ソファなどの遮蔽物はすり抜ける（透過する）確率が高い。"
+},
+"mitigation_rule": "プロンプトで『物理的な移動ルート（順序と速度）』を明確に指定することで、溶解ではなく物理的軌道（回り込み等）の確率を優先的に引き当てる。"
+},
+"prompting_rules_for_video": {
+"time_allocation": {
+"do_not": "『0-3秒: 歩く、4-8秒: 座る』のような厳密な秒数指定はタイムコード同期が効きにくいため避ける。",
+"recommended": "接続詞（First, then, next, finally）とペース副詞（slowly, steadily, smoothly settles）を用いた起承転結のナレーション調記述を採用する。"
+},
+"duration_handling": "8秒尺の場合、前半の主アクションだけでなく『着地後の安定動作（呼吸、微小な視線移動、落ち着く動作）』までプロンプトに含めて後半の蠢き・フリーズを防ぐ。"
+}
+},
+"character_consistency_strategies": {
+"shot_distribution_rule": {
+"multi_actor_limitation": "同一画面に複数キャラ（例: 恋人2人）を同時に生成させると特徴の混濁（Concept Bleed）が発生しやすい。",
+"recommended_ratio": {
+"solo_focus_A": "40%（話者Aのバストアップ/オーバー・ザ・ショルダー）",
+"solo_focus_B": "40%（話者Bのリアクション/バストアップ）",
+"two_shot_or_inserts": "20%（引きのシルエット、手元・足元のアップ、背中越しの構図）"
+}
+},
+"mob_handling": {
+"technique": "被写界深度（shallow depth of field, blurred background crowd）を指定し、背景のモブ（約10人）を意図的にボカすことで、AIのリソースをメインキャラの整合性に集中させる。",
+"anchoring": "メインキャラにのみ固有のアイテム（例: 鮮烈な赤ネクタイ、特定のピアス）を付与し、モブと明確に識別させる。"
+}
+},
+"scene_specific_solutions": {
+"cooking_action": {
+"case": "カレーを皿によそう → カレーが皿に盛られた状態",
+"strategy": "全身で両方を描くと服や顔がブレるため、手元・お鍋・お皿のクローズアップ（インサートカット）に逃がすか、1枚目をi2i参照させて2枚目を差分生成する。"
+},
+"field_walking": {
+"case": "原っぱ（草原）を歩く情景",
+"advantages": "遮蔽物による貫通バグがなく、草や風のゆらぎは拡散モデルの得意領域のため破綻率が極めて低い。",
+"composition": "手前から奥への後ろ姿、または草を踏みしめる足元のアップから入るのが安定。"
+},
+"angle_transition_and_i2i": {
+"case": "足元のアップ（ローアングル） → バストアップ（正面）",
+"generation_direction": "逆算クロップ（Top-Down / Reverse Generation）を採用する。",
+"steps": [
+"1. 先にマスターキャラの『バストアップ画像（End Frame）』を高精度に生成・固定。",
+"2. その画像からOutpainting（下部拡張）または全身i2iを行い、服装・靴・地面が完全一致した全身像を作成。",
+"3. 全身像の足元部分をトリミング（クロップ）して『足元画像（Start Frame）』を抽出。",
+"4. Start FrameとEnd FrameをVeoに渡し、ティルトアップ・クレーン上昇のプロンプトで正順補間させる。"
+]
+},
+"mp4_reverse_playback": {
+"technique": "FFmpeg等による『ffmpeg -i input.mp4 -vf reverse -af areverse output.mp4』",
+"suitability": {
+"usable_cases": "人物が動かずカメラだけが移動するカット、または巻き戻し演出・回想シーン。",
+"unusable_cases": "歩行モーション（ムーンウォーク化）、風になびく髪や草（重力・空気抵抗の逆行）が目立つシーンでは使用不可。これらはVeoの正順生成が必須。"
+}
+}
+},
+"automation_pipeline_architecture": {
+"step_0_metadata": "LLMがMV全体の12カット構成（JSON）を出力（話者、ショットタイプ、アクション、背景）。",
+"step_1_master_asset": "Master A（主人公）の単体キャラクターシート・ポートレートを生成・キャッシュ。",
+"step_2_frame_generation": "各カットのStart/End FrameをImage-to-Image / Outpaint / Cropパイプラインで自動生成。",
+"step_3_prompt_enrichment": "Geminiが『物理経路』『時間経過副詞』『カメラワーク』を補強した英語Veoプロンプトを自動生成。",
+"step_4_video_rendering": "Google Flow / Veo 3.1 APIへStart Frame、End Frame、拡張プロンプトを投入して動画クリップを出力。"
+}
+}

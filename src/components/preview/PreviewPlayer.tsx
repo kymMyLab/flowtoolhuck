@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Cut } from '../../types';
 import { 
   STUDIO_NEON_PALETTE, 
@@ -50,6 +50,19 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
   isRewriting = false
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Media memory leak cleanup on unmount or cut change
+  useEffect(() => {
+    const video = videoRef.current;
+    return () => {
+      if (video) {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      }
+    };
+  }, [cut.id]);
+
 
   const videoSrc = cut.videoBase64
     ? (cut.videoBase64.startsWith('data:') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`)
