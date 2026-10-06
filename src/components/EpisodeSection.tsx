@@ -104,6 +104,63 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
           </div>
         </div>
       </div>
+
+      {/* キャラクター基準モデルシート & マスターアンカー表示 */}
+      {(ep.characterTurnaroundBase64 || ep.masterAnchorBase64) && (
+        <div className="flex flex-col gap-2 pt-3 border-t border-white/5 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[14px]">badge</span>
+              キャラクター統一アンカー (Character Consistency Anchors)
+            </span>
+            <span className="text-[9px] text-white/40">全カットの顔・骨格・衣装の完全一致を参照中</span>
+          </div>
+          <div className="flex items-center gap-3 overflow-x-auto py-1">
+            {ep.characterTurnaroundBase64 && (
+              <div className="flex items-center gap-2.5 bg-black/40 border border-amber-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
+                <img 
+                  src={ep.characterTurnaroundBase64} 
+                  alt="三面図 Turnaround Sheet" 
+                  className="w-14 h-14 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
+                  onClick={() => {
+                    const w = window.open('');
+                    w?.document.write(`<title>三面図シート</title><body style="margin:0;background:#111;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${ep.characterTurnaroundBase64}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;" /></body>`);
+                  }}
+                  title="クリックで拡大表示（正面・側面・背面の3面設計図）"
+                />
+                <div className="flex flex-col pr-2">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px] font-bold text-amber-300">3面設計図シート</span>
+                    <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-400 text-[8px] font-bold rounded">Turnaround</span>
+                  </div>
+                  <span className="text-[9px] text-white/50 leading-tight mt-0.5">正面・側面・背面の360°基準</span>
+                </div>
+              </div>
+            )}
+            {ep.masterAnchorBase64 && (
+              <div className="flex items-center gap-2.5 bg-black/40 border border-blue-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
+                <img 
+                  src={ep.masterAnchorBase64} 
+                  alt="マスターアンカー Master Anchor" 
+                  className="w-14 h-14 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
+                  onClick={() => {
+                    const w = window.open('');
+                    w?.document.write(`<title>マスターアンカー</title><body style="margin:0;background:#111;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${ep.masterAnchorBase64}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;" /></body>`);
+                  }}
+                  title="クリックで拡大表示（Cut 1 確定キメ絵）"
+                />
+                <div className="flex flex-col pr-2">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px] font-bold text-blue-300">マスターアンカー</span>
+                    <span className="px-1.5 py-0.2 bg-blue-500/20 text-blue-400 text-[8px] font-bold rounded">Cut 1 Fix</span>
+                  </div>
+                  <span className="text-[9px] text-white/50 leading-tight mt-0.5">全カット固定参照（世代ドリフト防止）</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

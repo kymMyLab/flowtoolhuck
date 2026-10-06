@@ -38,6 +38,17 @@ export interface ComicPanelMeta {
   dialogueType?: 'monologue' | 'shout' | 'whisper' | 'narration';
 }
 
+export type CompositionGrid = 
+  | 'top-left' | 'top-center' | 'top-right'
+  | 'center-left' | 'center' | 'center-right'
+  | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
+export interface FocalPoint {
+  grid: CompositionGrid;
+  normalizedCoord: [number, number]; // [x, y] 0.0〜1.0 (例: [0.5, 0.28] は顔上部1/3)
+  focalSubject: string; // 'character_face', 'hands', 'dropped_smartphone', 'kicked_can', 'scenery' など
+}
+
 export interface Cut {
   id: number;
   promptEn: string;
@@ -54,6 +65,17 @@ export interface Cut {
 
   kenBurnsPreset?: KenBurnsPreset; 
   cameraMotion?: string;
+
+  // 9分割注視点構図 ＆ 人物なし物体カットフラグ
+  focalPoint?: FocalPoint;
+  compositionPrompt?: string;
+  isObjectOnly?: boolean;
+
+  // Veo 3.1 2点間補間用モーション＆End絵プロンプト
+  veoMotionPrompt?: string;
+  endFramePromptEn?: string;
+  endFrameImageMediaId?: string;
+  endFrameImageBase64?: string;
 
   summary?: string;
   isKeyScene?: boolean;
@@ -98,6 +120,13 @@ export interface Episode {
   coverCatchphraseJp?: string;
   coverCatchphraseEn?: string;
   coverBase64?: string;
+
+  // 三面図マスター ＆ Cut 1 マスターアンカー画像
+  characterTurnaroundMediaId?: string;
+  characterTurnaroundBase64?: string;
+  characterTurnaroundPrompt?: string;
+  masterAnchorMediaId?: string;
+  masterAnchorBase64?: string;
   
   cuts: Cut[];
   isGenerating: boolean;
@@ -146,6 +175,11 @@ export interface GeneratorSettings {
   superBackoff?: boolean;
   selectedAssetId?: number;
   isMultiPanel?: boolean;
+
+  // 三面図パイプライン設定
+  enableTurnaroundSheet?: boolean;
+  autoApproveTurnaround?: boolean;
+  enableObjectCut?: boolean;
 }
 
 export interface GenerationTask {

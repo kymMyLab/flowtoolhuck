@@ -6,7 +6,8 @@ import {
   TASTES, 
   resolveRecommendedCameraWorkAndKenBurns, 
   resolveRecommendedTelopStaging, 
-  resolveVideoModel 
+  resolveVideoModel,
+  resolveImageModel
 } from '../constants';
 import { getStoryboardPreset } from './promptEngine';
 import { createDefaultCut, isCutSelectedForVideo, safeJsonParse, callWithRetry, formatErrorMessage } from './utils';
@@ -18,7 +19,8 @@ import {
   checkIsHistorical, 
   sanitizeForYouTubeSafety, 
   buildGrandDesignPrompt, 
-  buildNextEpisodePlanPrompt 
+  buildNextEpisodePlanPrompt,
+  buildCharacterTurnaroundPrompt
 } from './directorService';
 import { LogEntry } from '../components/StudioLogs';
 
@@ -29,6 +31,59 @@ function cleanupEpisodeMemory() {
   if (typeof window !== 'undefined' && (window as any).gc) {
     try { (window as any).gc(); } catch (e) {}
   }
+}
+
+/**
+ * 主人公キャラクターの三面図マスターシートを生成・登録
+ */
+async function ensureCharacterTurnaround(
+  ctx: ProductionPipelineContext,
+  ep: Episode
+): Promise<{ mediaId?: string; base64?: string }> {
+  const { settings, addLog, isAbortedRef, activeReferenceRef } = ctx;
+
+  // すでに三面図または保管庫参照画像があればスキップ
+  if (ep.characterTurnaroundMediaId) {
+    return { mediaId: ep.characterTurnaroundMediaId, base64: ep.characterTurnaroundBase64 };
+  }
+  if (activeReferenceRef.current?.mediaId) {
+    return { mediaId: activeReferenceRef.current.mediaId };
+  }
+
+  // 三面図が無効化されている場合はスキップ
+  if (settings.enableTurnaroundSheet === false) {
+    return {};
+  }
+
+  try {
+    addLog(`🎨 【三面図マスター生成】360度キャラ一貫性を保証する主人公の三面図（正面・横顔・後ろ姿）を設計中...`, 'process');
+    const turnaroundPrompt = buildCharacterTurnaroundPrompt(
+      settings.theme,
+      settings.country,
+      settings.era,
+      settings.taste
+    );
+
+    const modelDef = resolveImageModel(settings.imageModel);
+    const res = await callWithRetry<any>(
+      () => Flow.generate.image({
+        prompt: turnaroundPrompt,
+        modelDisplayName: modelDef.name,
+        aspectRatio: '16:9' as any
+      }),
+      undefined,
+      4
+    );
+
+    if (res && res.mediaId) {
+      addLog(`✨ 【三面図マスター確定】主人公の三面図シートが完成！全カットの基準アセットとして登録しました。`, 'success');
+      return { mediaId: res.mediaId, base64: res.base64 };
+    }
+  } catch (err: any) {
+    addLog(`⚠️ 三面図の自動生成をスキップし通常描画を継続します: ${formatErrorMessage(err)}`, 'warning');
+  }
+
+  return {};
 }
 
 
@@ -291,6 +346,14 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       cut.kenBurnsPreset = recCw.recommendedKenBurns;
       Object.assign(cut.telop, staging);
       cut.telop.highlights = extractHighlights(narration, cutHighlights);
+
+      // 新仕様: 人物なし物体カット、9分割注視点構図、Veo補間用モーション
+      cut.isObjectOnly = cutData.isObjectOnly || false;
+      cut.focalPoint = cutData.focalPoint;
+      cut.compositionPrompt = cutData.compositionPrompt;
+      cut.veoMotionPrompt = cutData.veoMotionPrompt;
+      cut.endFramePromptEn = cutData.endFramePlot;
+
       return cut;
     });
 
@@ -321,6 +384,13 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       isPreviewDone: false, isDone: false, taste: settings.taste, era: settings.era, theme: settings.theme,
       isMvMode: curMode === 'mv', productionMode: curMode as any
     };
+
+    // 三面図マスターシートの自動生成（360度キャラ崩れ完全防止）
+    const turnaround = await ensureCharacterTurnaround(ctx, newEpisode);
+    if (turnaround.mediaId) {
+      newEpisode.characterTurnaroundMediaId = turnaround.mediaId;
+      newEpisode.characterTurnaroundBase64 = turnaround.base64;
+    }
 
     setEpisodes(prev => [...prev.filter(e => e.id !== epIndex), newEpisode]);
     episodesRef.current = [...episodesRef.current.filter(e => e.id !== epIndex), newEpisode];
@@ -577,8 +647,25 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         const dramaStaging = resolveRecommendedTelopStaging(j + 1, false, false, undefined, 'episodes');
         Object.assign(cut.telop, dramaStaging);
         cut.telop.highlights = extractHighlights(narration, cutData.highlights || sharedScript.highlightWords);
+
+        // 新仕様: 人物なし物体カット、9分割注視点構図、Veo補間用モーション
+        cut.isObjectOnly = cutData.isObjectOnly || false;
+        cut.focalPoint = cutData.focalPoint;
+        cut.compositionPrompt = cutData.compositionPrompt;
+        cut.veoMotionPrompt = cutData.veoMotionPrompt;
+        cut.endFramePromptEn = cutData.endFramePlot;
+
         return cut;
       });
+
+      const currentEpObj = episodesRef.current.find(e => e.id === epId);
+      let turnaroundMediaId = currentEpObj?.characterTurnaroundMediaId;
+      let turnaroundBase64 = currentEpObj?.characterTurnaroundBase64;
+      if (!turnaroundMediaId && currentEpObj) {
+        const turnaround = await ensureCharacterTurnaround(ctx, currentEpObj);
+        turnaroundMediaId = turnaround.mediaId;
+        turnaroundBase64 = turnaround.base64;
+      }
 
       updateEpisode(epId, {
         titleJp: sharedScript.titleJp, titleEn: sharedScript.titleEn, summary: sharedScript.summary,
@@ -586,6 +673,8 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         authenticAttireEn: sharedScript.authenticAttireEn, forbiddenKeywordsEn: sharedScript.forbiddenKeywordsEn,
         coverCatchphraseJp: sharedScript.coverCatchphraseJp, coverCatchphraseEn: sharedScript.coverCatchphraseEn,
         highlightWords: sharedScript.highlightWords || [], cuts: episodeCuts,
+        characterTurnaroundMediaId: turnaroundMediaId,
+        characterTurnaroundBase64: turnaroundBase64,
         taste: settings.taste, era: settings.era, theme: settings.theme, productionMode: 'episodes'
       });
 

@@ -163,22 +163,30 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
   }, [addLog]);
 
   const buildCutTasks = (ep: Episode, cuts: Cut[], styleKey?: string): GenerationTask[] => {
-    return cuts.map(c => ({
-      epId: ep.id,
-      cutId: c.id,
-      prompt: c.promptEn,
-      styleKey: styleKey || ep.taste || settings.taste,
-      imageModel: settings.imageModel,
-      isMvMode: ep.isMvMode,
-      isMultiPanel: settings.isMultiPanel,
-      panelLayout: c.panelLayout,
-      storyContext: ep.summary || '',
-      eraAnalysis: ep.eraAnalysis,
-      forbiddenAnachronisms: ep.forbiddenAnachronisms,
-      authenticAttireEn: ep.authenticAttireEn,
-      forbiddenKeywordsEn: ep.forbiddenKeywordsEn,
-      referenceImageMediaId: activeReferenceRef.current?.mediaId
-    }));
+    return cuts.map(c => {
+      // 物体・インサートカット（isObjectOnly）なら人物参照（三面図/マスター絵）は絶対に除外！
+      // 人物カットなら、Cut 1のマスターアンカー ＞ 三面図 ＞ activeReference の優先度で参照
+      const refMediaId = c.isObjectOnly
+        ? undefined
+        : (ep.masterAnchorMediaId || ep.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId);
+
+      return {
+        epId: ep.id,
+        cutId: c.id,
+        prompt: c.promptEn,
+        styleKey: styleKey || ep.taste || settings.taste,
+        imageModel: settings.imageModel,
+        isMvMode: ep.isMvMode,
+        isMultiPanel: settings.isMultiPanel,
+        panelLayout: c.panelLayout,
+        storyContext: ep.summary || '',
+        eraAnalysis: ep.eraAnalysis,
+        forbiddenAnachronisms: ep.forbiddenAnachronisms,
+        authenticAttireEn: ep.authenticAttireEn,
+        forbiddenKeywordsEn: ep.forbiddenKeywordsEn,
+        referenceImageMediaId: refMediaId
+      };
+    });
   };
 
   const handleGenerateRemaining = async (epId: number) => {
@@ -361,6 +369,16 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
         isGeneratingImage: false,
         error: undefined
       });
+
+      // Cut 1 の画像が完成したら、以降のカットのキャラ崩れを完全防止するためマスターアンカーとして固定！
+      if (cutId === 1 && res.mediaId) {
+        updateEpisode(epId, {
+          masterAnchorMediaId: res.mediaId,
+          masterAnchorBase64: res.base64
+        });
+        addLog(`👑 Ep.${epId}: Cut 1 の決定版ポートレートを【全カット共通マスターアンカー】としてロックしました！`, 'success');
+      }
+
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');
     } catch (err) {
       const errorMsg = formatErrorMessage(err);

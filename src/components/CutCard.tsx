@@ -94,11 +94,21 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
           <span className="text-white/10 text-[8px] tracking-widest uppercase">Standby</span>
         )}
 
-        {/* 演出バッジ (Shot Scale & Ken Burns) */}
-        <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 z-10 max-w-[90%] overflow-hidden">
+        {/* 演出バッジ (Shot Scale & Ken Burns & Object & Focal) */}
+        <div className="absolute bottom-1.5 left-1.5 flex flex-wrap items-center gap-1 z-10 max-w-[95%] overflow-hidden">
           {cut.shotScale && (
             <div className="px-1.5 py-0.5 rounded-sm bg-amber-500 text-[7px] font-black text-black uppercase tracking-tighter shadow-lg shrink-0">
               {cut.shotScale}
+            </div>
+          )}
+          {cut.isObjectOnly && (
+            <div className="px-1.5 py-0.5 rounded-sm bg-emerald-600 text-[7px] font-black text-white uppercase tracking-tighter shadow-lg shrink-0" title="人物なし・物体/情景カット">
+              📦 OBJ
+            </div>
+          )}
+          {cut.focalPoint && (
+            <div className="px-1.5 py-0.5 rounded-sm bg-cyan-800/80 border border-cyan-400/30 text-[7px] font-black text-cyan-200 uppercase tracking-tighter shadow-lg shrink-0" title={`注視点: ${cut.focalPoint.focalSubject} (${cut.focalPoint.grid}) [${cut.focalPoint.normalizedCoord.join(',')}]`}>
+              🎯 {cut.focalPoint.grid.replace('top-', 'T-').replace('bottom-', 'B-').replace('center', 'CTR').toUpperCase()}
             </div>
           )}
           {cut.kenBurnsPreset && cut.kenBurnsPreset !== 'none' && !videoSrc && (

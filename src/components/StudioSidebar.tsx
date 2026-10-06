@@ -348,6 +348,23 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               checked={!!settings.superBackoff} 
               onChange={v => setSettings(s => ({ ...s, superBackoff: v }))} 
             />
+            <ToggleSwitch 
+              label="🎨 三面図先行生成 (360°キャラ崩れ防止)" 
+              checked={settings.enableTurnaroundSheet !== false} 
+              onChange={v => setSettings(s => ({ ...s, enableTurnaroundSheet: v }))} 
+            />
+            {settings.enableTurnaroundSheet !== false && (
+              <ToggleSwitch 
+                label="⚡ 三面図自動承認 (無人完走)" 
+                checked={!!settings.autoApproveTurnaround} 
+                onChange={v => setSettings(s => ({ ...s, autoApproveTurnaround: v }))} 
+              />
+            )}
+            <ToggleSwitch 
+              label="📦 象徴アイテムカット (人なしシーン挿入)" 
+              checked={settings.enableObjectCut !== false} 
+              onChange={v => setSettings(s => ({ ...s, enableObjectCut: v }))} 
+            />
           </div>
         </div>
         

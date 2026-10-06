@@ -1,5 +1,5 @@
 import { Flow } from 'flow-sdk';
-import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, SeriesEpisodePlan } from '../types';
+import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, SeriesEpisodePlan, FocalPoint } from '../types';
 import { IMAGE_MODELS, DEFAULT_ASPECT_RATIO, STRICT_STYLE_SUFFIX, TASTES } from '../constants';
 import { resolveTastePrompt } from './tasteStorage';
 import { safeJsonParse, callWithRetry, formatDurationMs } from './utils';
@@ -53,6 +53,30 @@ export function checkIsHistorical(era: string = '', theme: string = ''): boolean
     combined.includes('屋台めし') || combined.includes('薬売り') || combined.includes('鉄火場') ||
     combined.includes('鼠小僧')
   );
+}
+
+/**
+ * 主人公キャラクターの三面図（正面・横顔・後ろ姿）マスターシート生成プロンプトを構築
+ */
+export function buildCharacterTurnaroundPrompt(
+  theme: string,
+  country: string,
+  era?: string,
+  taste?: string
+): string {
+  const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
+  const rawStyle = taste ? resolveTastePrompt(taste) : '';
+  const isHist = checkIsHistorical(era, theme);
+  const costumeInstruction = isHist 
+    ? `Strictly authentic historical attire matching ${era || 'period Japan'}. No modern elements.` 
+    : `Aesthetic, evocative outfit and styling fitting ${worldSetting}.`;
+
+  return `Master character model sheet, three-view turnaround:
+front view, side profile view, back view of the same single protagonist standing in a neutral pose side-by-side.
+Full body from head to toe, perfectly consistent face, hairstyle, facial features, and attire (${costumeInstruction}).
+Clean plain pure white background, professional animation concept art, character turnaround sheet, model sheet, masterpiece, highly detailed, 8k resolution.
+${rawStyle ? `Art style: ${rawStyle}.` : ''}
+CRITICAL MANDATE: EXACTLY THREE VIEWS (front, side, back) of ONE SINGLE INDIVIDUAL aligned on a single sheet. Absolutely NO multiple different people, NO cluttered props, NO extra poses!`;
 }
 
 /**
@@ -465,6 +489,26 @@ Design all 12 cuts with continuous, professional cinematic pacing and contrastin
 ${mvCameraMandate}
 ${multiPanelMandate}
 
+CRITICAL: MANDATORY OBJECT / INSERT CUT (NON-HUMAN SCENE):
+Among the 12 cuts, EXACTLY 1 to 2 cuts (specifically Cut 6 or Cut 9 as emotional transition/interlude) MUST BE a symbolic object, prop, or environmental still-life with ABSOLUTELY NO HUMANS visible!
+Examples of iconic objects matching "${worldSetting}":
+- Illuminated or dropped smartphone screen displaying a notification/message on damp pavement.
+- A kicked empty soda can rolling slowly across the asphalt street under streetlights.
+- A basketball resting motionless on an empty playground court under setting sun.
+- Raindrops splashing onto a dark puddle reflecting neon city reflections.
+- Curtains fluttering gently by an open window.
+For these non-human cuts, set "isObjectOnly": true! For all other human cuts, set "isObjectOnly": false.
+
+CRITICAL: 9-GRID FOCAL POINT & SAFE COMPOSITION (PREVENT CROP CUT-OFFS):
+For EVERY cut, specify where the main visual subject is positioned to prevent auto-crop accidents:
+- If a person is present, position face safely in upper third: "grid": "top-center", "normalizedCoord": [0.5, 0.3], "focalSubject": "character_face".
+- If an object or wide landscape, center it: "grid": "center", "normalizedCoord": [0.5, 0.5], "focalSubject": "object_name".
+
+CRITICAL: NARRATIVE EMOTIONAL ARC & VEO MOTION (START -> END INTERPOLATION):
+Derive motion pacing from the story's emotional flow (Intro -> Struggle -> Chorus Climax -> Settled Afterglow):
+- "veoMotionPrompt": Natural fluid progression using transition adverbs (First ..., then ..., next ..., finally ... smoothly settles). NEVER use exact second numbers like "0-3s"!
+- "endFramePlot": The visual state at the end of the camera/character motion (used as End Frame input).
+
 ${isMvMode ? 'ATMOSPHERIC & VISUAL HARMONY:' : (isHistorical ? 'STRICT HISTORICAL ACCURACY:' : 'AUTHENTIC SETTING & CULTURAL ACCURACY:')}
 Dynamically analyze the period, setting, and atmosphere implied by "${worldSetting}". Determine authentic aesthetic attire and identify elements that would break the mood and must NEVER appear (NEVER forbid elements of the chosen Visual Art Style).
 
@@ -486,7 +530,16 @@ Output ONLY valid JSON matching this exact structure:
     { 
       "id": 1, 
       ${isMultiPanel ? '"panelLayout": "split-2",' : ''}
+      "isObjectOnly": false,
+      "focalPoint": {
+        "grid": "top-center",
+        "normalizedCoord": [0.5, 0.3],
+        "focalSubject": "character_face"
+      },
+      "compositionPrompt": "Subject framed at upper-third, face centered at top-center, rule of thirds",
       "basicPlot": "Concise scene concept and situation in English (1-2 sentences, e.g. Walking alone along country path under glowing dusk sky)", 
+      "veoMotionPrompt": "First walking steadily forward with hair swaying in the breeze, then slowly turning head towards the sunset sky, finally smoothly settling into a calm reflective pause",
+      "endFramePlot": "Side profile of protagonist bathed in golden sunset glow, gazing quietly at the distant horizon",
       "narrationJp": "${isMvMode ? '楽曲の歌詞・リリック（1曲の歌として繋がるエモい歌詞20文字前後）' : '重厚なナレーション（日本語）'}",
       "highlights": ["ナレーション内の重要語1", "ナレーション内の重要語2"]
     }
@@ -536,6 +589,11 @@ YOUTUBE ADVERTISER-FRIENDLY & MONETIZATION SAFETY RULES (CRITICAL):
 - Bodily waste & crude terms (e.g., "うんこ", "人糞", "糞尿", "下痢便"): NEVER use direct slangs! ALWAYS use historical, scientific, or clever intrigue terms like "下肥（しもごえ）", "有機肥料", "排泄物", "黄金の肥料", or intriguing intrigue phrases like "【アレ】".
 - Excessive gore/violence (e.g., "死体", "惨殺"): Use dignified historical terms like "遺骸", "無情の最期", "討死".
 - Keep every title viral, sensational, yet 100% brand-safe for monetization!
+
+CINEMATIC INSERTS & FOCAL POINT RULES:
+- Exactly 1 to 2 cuts (Cut 6 or 9) MUST BE an object/prop cut with NO HUMANS ("isObjectOnly": true, e.g. dropped smartphone, rolling soda can, splashing raindrops).
+- Specify "focalPoint": { "grid": "top-center", "normalizedCoord": [0.5, 0.3], "focalSubject": "character_face" } (or [0.5, 0.5] for objects) to avoid crop cut-offs.
+- Provide "veoMotionPrompt" with narrative pacing adverbs (First ..., then ..., smoothly settles).
 ${isMultiPanel ? 'Direct each cut panel layout freely ("single", "split-2", "split-3", "dynamic-multi") without white borders. Keep panels cleanly divided, spacious, non-overlapping figures.' : 'Dynamically alternate camera distances (Wide -> Close-up -> Medium -> Climax).'}
 Output ONLY valid JSON:
 {
@@ -549,7 +607,18 @@ Output ONLY valid JSON:
   "coverCatchphraseJp": "惹きつけるキャッチコピー",
   "highlightWords": ["キーワード"],
   "cuts": [
-    { "id": 1, ${isMultiPanel ? '"panelLayout": "split-2", ' : ''}"basicPlot": "Visual description in English", "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}", "highlights": ["キーワード"] }
+    { 
+      "id": 1, 
+      ${isMultiPanel ? '"panelLayout": "split-2", ' : ''}
+      "isObjectOnly": false,
+      "focalPoint": { "grid": "top-center", "normalizedCoord": [0.5, 0.3], "focalSubject": "character_face" },
+      "compositionPrompt": "Subject framed at upper-third, face centered at top-center",
+      "basicPlot": "Visual description in English", 
+      "veoMotionPrompt": "First standing still, then slowly looking up at the sky, finally gently settling",
+      "endFramePlot": "Close profile looking upward calmly",
+      "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}", 
+      "highlights": ["キーワード"] 
+    }
   ]
 };`;
 }
@@ -797,6 +866,11 @@ export interface SafeScriptResult {
     basicPlot: string;
     narrationJp: string;
     highlights?: string[];
+    isObjectOnly?: boolean;
+    focalPoint?: FocalPoint;
+    compositionPrompt?: string;
+    veoMotionPrompt?: string;
+    endFramePlot?: string;
   }>;
 }
 
@@ -853,13 +927,41 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
       forbiddenKeywordsEn: 'modern items',
       coverCatchphraseJp: `${currentPlan.titleJp}`,
       highlightWords: ['光', '風'],
-      cuts: Array.from({ length: 12 }, (_, j) => ({
-        id: j + 1,
-        panelLayout: isMultiPanel ? (j % 2 === 0 ? 'split-2' : 'dynamic-multi') : 'single',
-        basicPlot: `Cinematic high quality visual scene, ${theme}, scene ${j + 1} of ${currentPlan.titleEn}, atmospheric lighting and expressive visual pacing`,
-        narrationJp: isMvMode ? `第${epId}曲 歌詞パート${j + 1}` : `第${epId}話 場面${j + 1}の情景`,
-        highlights: []
-      }))
+      cuts: Array.from({ length: 12 }, (_, j) => {
+        const isObj = j === 5 || j === 8; // Cut 6 or Cut 9 as object/insert
+        const defaultGrid = isObj ? 'center' : 'top-center';
+        const defaultCoord: [number, number] = isObj ? [0.5, 0.5] : [0.5, 0.3];
+        const defaultSubject = isObj ? 'symbolic_object' : 'character_face';
+
+        return {
+          id: j + 1,
+          panelLayout: isMultiPanel ? (j % 2 === 0 ? 'split-2' : 'dynamic-multi') : 'single',
+          isObjectOnly: isObj,
+          focalPoint: {
+            grid: defaultGrid as any,
+            normalizedCoord: defaultCoord,
+            focalSubject: defaultSubject
+          },
+          compositionPrompt: isObj 
+            ? 'Centered close-up still-life composition focusing on iconic object' 
+            : 'Subject framed at upper-third, face positioned at top-center, rule of thirds',
+          basicPlot: isObj
+            ? `Close-up shot of an iconic atmospheric object matching ${theme}, completely deserted with no people, moody lighting`
+            : `Cinematic high quality visual scene, ${theme}, scene ${j + 1} of ${currentPlan.titleEn}, atmospheric lighting`,
+          veoMotionPrompt: isObj
+            ? 'First still atmospheric frame, then subtle environmental breeze or light shift, finally settled quiet stillness'
+            : (j < 4 
+                ? 'First looking downward gently, then slowly raising gaze, finally smoothly settling with a calm breath'
+                : j < 8 
+                  ? 'First steady walking motion, then turning gaze across the scenery, finally coming to a smooth pause'
+                  : 'First sweeping emotional camera motion, then dramatic lighting shift, finally settling resolute'),
+          endFramePlot: isObj
+            ? `Still object with soft lingering light and quiet shadows`
+            : `Protagonist in settled reflective profile, looking towards the horizon`,
+          narrationJp: isMvMode ? `第${epId}曲 歌詞パート${j + 1}` : `第${epId}話 場面${j + 1}の情景`,
+          highlights: []
+        };
+      })
     };
   }
 
@@ -880,12 +982,43 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   const normalizedCuts = Array.from({ length: 12 }, (_, j) => {
     const cutData = rawCuts[j] || {};
     const rawNarration = cutData.narrationJp || cutData.narration || (isMvMode ? `歌詞${j + 1}` : `場面${j + 1}`);
+    
+    // 物体カットの判定（AI指定、またはCut 6をデフォルトで物体カットに指定）
+    const isObj = cutData.isObjectOnly !== undefined 
+      ? Boolean(cutData.isObjectOnly) 
+      : (j === 5); // Cut 6 is iconic insert by default
+
+    // 9分割focalPointのパースと正規化
+    const rawFocal = cutData.focalPoint || {};
+    const grid = rawFocal.grid || (isObj ? 'center' : 'top-center');
+    const coord: [number, number] = Array.isArray(rawFocal.normalizedCoord) && rawFocal.normalizedCoord.length === 2
+      ? [Number(rawFocal.normalizedCoord[0]) || 0.5, Number(rawFocal.normalizedCoord[1]) || (isObj ? 0.5 : 0.3)]
+      : (isObj ? [0.5, 0.5] : [0.5, 0.3]);
+    const subject = rawFocal.focalSubject || (isObj ? 'symbolic_object' : 'character_face');
+
     return {
       id: j + 1,
       panelLayout: cutData.panelLayout || (isMultiPanel ? (j % 3 === 0 ? 'single' : 'split-2') : 'single'),
       basicPlot: cutData.basicPlot || cutData.promptEn || cutData.prompt || `Scene ${j + 1} of ${currentPlan.titleEn}`,
       narrationJp: sanitizeForYouTubeSafety(rawNarration),
-      highlights: cutData.highlights || parsed.highlightWords || []
+      highlights: cutData.highlights || parsed.highlightWords || [],
+      isObjectOnly: isObj,
+      focalPoint: {
+        grid,
+        normalizedCoord: coord,
+        focalSubject: subject
+      },
+      compositionPrompt: cutData.compositionPrompt || (isObj 
+        ? 'Centered still-life composition of prop/object, rule of thirds, completely empty of people' 
+        : 'Subject framed at upper-third, face centered at top-center, rule of thirds composition'),
+      veoMotionPrompt: cutData.veoMotionPrompt || (isObj
+        ? 'First still atmospheric frame, then subtle environmental breeze or light shift, finally settled quiet stillness'
+        : (j < 4 
+            ? 'First standing still, then slowly raising gaze, finally smoothly settling with a calm breath'
+            : j < 8 
+              ? 'First walking steadily, then turning gaze across the scene, finally coming to a smooth pause'
+              : 'First sweeping emotional camera motion, then dramatic lighting shift, finally settling resolute')),
+      endFramePlot: cutData.endFramePlot || cutData.basicPlot || `End frame of scene ${j + 1}`
     };
   });
 
