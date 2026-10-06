@@ -20333,11 +20333,14 @@ function sx({
         t(`⚠️ Ep.${d} C${h.toString().padStart(2, "0")}: 画像がないため動画生成をスキップ`, "warning"), a(d, h, { isGeneratingVideo: !1 });
         return;
       }
-      let v = m?.endFrameMediaId;
-      if (!v && m?.endFrameBase64)
+      let v = m?.endFrameImageMediaId || m?.endFrameMediaId;
+      if (!v && (m?.endFrameImageBase64 || m?.endFrameBase64))
         try {
-          const k = m.endFrameBase64.replace(/^data:[^;]+;base64,/, "");
-          v = (await ft.upload({ base64: k, mimeType: "image/png", name: `CutEnd_${d}_${h}` })).mediaId, a(d, h, { endFrameMediaId: v });
+          const x = (m?.endFrameImageBase64 || m?.endFrameBase64 || "").replace(/^data:[^;]+;base64,/, "");
+          v = (await ft.upload({ base64: x, mimeType: "image/png", name: `CutEnd_${d}_${h}` })).mediaId, a(d, h, {
+            endFrameImageMediaId: v,
+            endFrameMediaId: v
+          });
         } catch {
         }
       const g = Zo(y);

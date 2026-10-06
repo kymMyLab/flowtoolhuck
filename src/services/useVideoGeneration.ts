@@ -36,13 +36,17 @@ export function useVideoGeneration({
       return;
     }
     
-    let endMediaId = cut?.endFrameMediaId;
-    if (!endMediaId && cut?.endFrameBase64) {
+    let endMediaId = cut?.endFrameImageMediaId || (cut as any)?.endFrameMediaId;
+    if (!endMediaId && (cut?.endFrameImageBase64 || (cut as any)?.endFrameBase64)) {
       try {
-        const cleanEndImg = cut.endFrameBase64.replace(/^data:[^;]+;base64,/, '');
+        const rawBase64 = cut?.endFrameImageBase64 || (cut as any)?.endFrameBase64 || '';
+        const cleanEndImg = rawBase64.replace(/^data:[^;]+;base64,/, '');
         const upEnd = await Flow.upload({ base64: cleanEndImg, mimeType: 'image/png', name: `CutEnd_${epId}_${cutId}` });
         endMediaId = upEnd.mediaId;
-        updateCut(epId, cutId, { endFrameMediaId: endMediaId });
+        updateCut(epId, cutId, { 
+          endFrameImageMediaId: endMediaId,
+          endFrameMediaId: endMediaId 
+        } as any);
       } catch (_) {}
     }
 
