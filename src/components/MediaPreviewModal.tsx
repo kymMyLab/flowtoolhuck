@@ -23,6 +23,7 @@ export interface MediaPreviewModalProps {
   onUpdateCut: (updates: Partial<Cut>) => void;
   onBulkRerollTelop?: (epId: number) => void;
   onRegenerateImage: (modelLabel: string, customPrompt?: string, customNeg?: string) => void;
+  onGenerateEndFrame?: (epId: number, cutId: number, customEndPrompt?: string) => void;
 }
 
 export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
@@ -42,7 +43,8 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
   onBrowserAnimate,
   onUpdateCut,
   onBulkRerollTelop,
-  onRegenerateImage
+  onRegenerateImage,
+  onGenerateEndFrame
 }) => {
   const [showTelop, setShowTelop] = useState(true);
   const [isRewriting, setIsRewriting] = useState(false);
@@ -110,6 +112,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
           showTelop={showTelop}
           onToggleTelop={() => setShowTelop(!showTelop)}
           isRewriting={isRewriting}
+          onGenerateEndFrame={() => onGenerateEndFrame?.(episodeId, cut.id)}
         />
 
         {/* Right: Cut Editor Panel */}
@@ -128,6 +131,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
           onBrowserAnimate={onBrowserAnimate}
           isRewriting={isRewriting}
           setIsRewriting={setIsRewriting}
+          onGenerateEndFrame={(customPrompt) => onGenerateEndFrame?.(episodeId, cut.id, customPrompt)}
         />
       </div>
     </div>

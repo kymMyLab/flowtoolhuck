@@ -36,6 +36,7 @@ export interface CutEditorPanelProps {
   onBrowserAnimate: () => void;
   isRewriting: boolean;
   setIsRewriting: (val: boolean) => void;
+  onGenerateEndFrame?: (customEndPrompt?: string) => void;
 }
 
 export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
@@ -52,7 +53,8 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
   onAnimate,
   onBrowserAnimate,
   isRewriting,
-  setIsRewriting
+  setIsRewriting,
+  onGenerateEndFrame
 }) => {
   const [aiWish, setAiWish] = useState('');
   const [newKeyword, setNewKeyword] = useState('');
@@ -582,6 +584,99 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
                 >
                   <span className="material-symbols-outlined text-[13px]">auto_mode</span>
                   全カット一括リロール
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── 🎬 Veo 3.1 2点間補間モーション＆After絵設計 ── */}
+        <div className="pt-6 border-t border-white/5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <SectionLabel>Veo 3.1 補間モーション＆After絵</SectionLabel>
+            <span className="text-[9px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[11px]">compare</span>
+              1Cut 2画像補間
+            </span>
+          </div>
+
+          <div className="bg-blue-950/20 p-3.5 rounded-xl border border-blue-500/30 flex flex-col gap-3">
+            {/* 補間挙動（veoMotionPrompt）指示 */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-amber-300 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px] text-amber-400">animation</span>
+                  補間モーション命令 (Motion Directive)
+                </span>
+                <span className="text-[9px] text-white/40">Start ➜ End 間の推移動作</span>
+              </div>
+              <textarea
+                value={cut.veoMotionPrompt || ''}
+                onChange={e => onUpdateCut({ veoMotionPrompt: e.target.value })}
+                placeholder="例: First looking downward, then slowly raising gaze and smiling, smoothly settles..."
+                rows={2}
+                className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 text-xs text-white/90 font-mono outline-none focus:border-amber-400 leading-relaxed resize-none"
+              />
+            </div>
+
+            {/* 到達点プロンプト（endFramePromptEn） */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-blue-300 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">flag</span>
+                  After絵プロンプト (End Frame Plot)
+                </span>
+                <span className="text-[9px] text-white/40">到達地点の描画指示</span>
+              </div>
+              <textarea
+                value={cut.endFramePromptEn || ''}
+                onChange={e => onUpdateCut({ endFramePromptEn: e.target.value })}
+                placeholder="例: Close-up profile of the protagonist smiling gently, bathed in warm sunset..."
+                rows={2}
+                className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 text-xs text-white/90 font-mono outline-none focus:border-blue-400 leading-relaxed resize-none"
+              />
+            </div>
+
+            {/* After絵のプレビュー＆生成ボタン */}
+            <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/5">
+              <div className="flex items-center gap-2 min-w-0">
+                {cut.endFrameImageBase64 ? (
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={`data:image/png;base64,${cut.endFrameImageBase64}`} 
+                      alt="After frame" 
+                      className="w-12 h-16 object-cover rounded-lg border border-blue-400/50 shadow-md shrink-0" 
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11px] font-bold text-blue-300 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs text-green-400">check_circle</span>
+                        After絵 生成済
+                      </span>
+                      <span className="text-[9px] text-white/40 truncate">Veo補間の終点として登録中</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="w-12 h-16 rounded-lg border border-dashed border-white/20 bg-black/40 flex flex-col items-center justify-center text-white/20 shrink-0">
+                      <span className="material-symbols-outlined text-base">hide_image</span>
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11px] font-bold text-white/60">After絵 未生成</span>
+                      <span className="text-[9px] text-white/30">Start絵を参照して生成可能</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {onGenerateEndFrame && (
+                <button
+                  type="button"
+                  onClick={() => onGenerateEndFrame(cut.endFramePromptEn)}
+                  disabled={cut.isGeneratingEndFrame || !cut.imageBase64}
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-lg shadow-blue-600/30 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                >
+                  <span className="material-symbols-outlined text-sm">palette</span>
+                  {cut.isGeneratingEndFrame ? '描画中...' : cut.endFrameImageBase64 ? 'After絵を再描画' : 'After絵を描画'}
                 </button>
               )}
             </div>

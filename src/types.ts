@@ -76,6 +76,7 @@ export interface Cut {
   endFramePromptEn?: string;
   endFrameImageMediaId?: string;
   endFrameImageBase64?: string;
+  isGeneratingEndFrame?: boolean;
 
   summary?: string;
   isKeyScene?: boolean;
@@ -181,6 +182,7 @@ export interface GeneratorSettings {
   enableTurnaroundSheet?: boolean;
   autoApproveTurnaround?: boolean;
   enableObjectCut?: boolean;
+  enableEndFrames?: boolean; // 1カット2枚（Start ＆ End/After絵）自動生成
 }
 
 export interface GenerationTask {

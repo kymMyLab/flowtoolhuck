@@ -382,10 +382,86 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
       }
 
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');
+
+      // 1カット2枚生成トグル（enableEndFrames）がONなら、Start絵の直後にAfter絵（到達点フレーム）も自動生成！
+      if (settings.enableEndFrames !== false) {
+        await generateEndFrame(epId, cutId);
+      }
     } catch (err) {
       const errorMsg = formatErrorMessage(err);
       updateCut(epId, cutId, { isGeneratingImage: false, error: errorMsg });
       addLog(`❌ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像失敗 - ${errorMsg}`, 'error');
+    }
+  };
+
+  const generateEndFrame = async (epId: number, cutId: number, customEndPrompt?: string) => {
+    if (isAbortedRef.current) return;
+    const ep = episodesRef.current.find(e => e.id === epId);
+    const cut = ep?.cuts.find(c => c.id === cutId);
+    if (!ep || !cut) return;
+
+    updateCut(epId, cutId, { isGeneratingEndFrame: true });
+    const modelDef = resolveImageModel(settings.imageModel);
+    addLog(`🏁 Ep.${epId} C${cutId.toString().padStart(2, '0')}: Veo補間用 After絵（到達点フレーム）を描画中...`, 'process');
+
+    try {
+      // Start絵の参照（i2i）
+      const refMediaIds: string[] = [];
+      if (cut.imageMediaId) {
+        refMediaIds.push(cut.imageMediaId);
+      } else if (ep.masterAnchorMediaId) {
+        refMediaIds.push(ep.masterAnchorMediaId);
+      }
+
+      // 到達点プロンプトの決定
+      const targetPlot = customEndPrompt || cut.endFramePromptEn || `${cut.promptEn}, ending posture: ${cut.veoMotionPrompt || 'settled state'}`;
+
+      const endTask: GenerationTask = {
+        epId,
+        cutId,
+        prompt: targetPlot,
+        styleKey: ep.taste || settings.taste,
+        imageModel: settings.imageModel,
+        isMvMode: ep.isMvMode,
+        isMultiPanel: false,
+        storyContext: ep.summary || '',
+        eraAnalysis: ep.eraAnalysis,
+        forbiddenAnachronisms: ep.forbiddenAnachronisms,
+        authenticAttireEn: ep.authenticAttireEn,
+        forbiddenKeywordsEn: ep.forbiddenKeywordsEn,
+        referenceImageMediaId: refMediaIds[0],
+        characterDna: ep.characterDna,
+        isObjectOnly: cut.isObjectOnly
+      };
+
+      const { finalPrompt, finalNegative, referenceImageMediaIds } = buildImagePromptAndNegative(
+        endTask,
+        settings,
+        activeReferenceRef.current
+      );
+
+      const res = await callWithRetry<any>(
+        () => Flow.generate.image({
+          prompt: finalPrompt,
+          negativePrompt: finalNegative,
+          modelDisplayName: modelDef.name,
+          aspectRatio: DEFAULT_ASPECT_RATIO as any,
+          referenceImageMediaIds: referenceImageMediaIds || refMediaIds
+        }),
+        undefined,
+        4
+      );
+
+      updateCut(epId, cutId, {
+        endFrameImageMediaId: res.mediaId,
+        endFrameImageBase64: res.base64,
+        isGeneratingEndFrame: false
+      });
+      addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: After絵（到達点フレーム）の描画が完了しました！`, 'success');
+    } catch (err) {
+      const errorMsg = formatErrorMessage(err);
+      updateCut(epId, cutId, { isGeneratingEndFrame: false });
+      addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: After絵の生成スキップ - ${errorMsg}`, 'warning');
     }
   };
 
@@ -521,5 +597,5 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
     addLog(`🎲 第 ${epId} 話: 全12カットのテロップ演出（動き・配置）を一括再抽選しました！（画像は保持）`, 'success');
   }, [addLog]);
 
-  return { episodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes };
+  return { episodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes };
 }

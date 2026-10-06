@@ -17,7 +17,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
     productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: '30%', episodeCount: 1, previewCutCount: 3, parallelCount: 2, autoVideo: false, autoDownload: false, superBackoff: false, isMvMode: false, isMultiPanel: false,
-    enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true
+    enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: true
   });
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -36,7 +36,7 @@ export default function App() {
     setStories(all);
   }, []);
 
-  const { episodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
+  const { episodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
     settings, 
     addLog, 
     refreshStories
@@ -198,7 +198,8 @@ export default function App() {
                 authenticAttireEn: ep?.authenticAttireEn,
                 forbiddenKeywordsEn: ep?.forbiddenKeywordsEn
               });
-            }} 
+            }}
+            onGenerateEndFrame={(epId, cutId, customPrompt) => generateEndFrame(epId, cutId, customPrompt)}
           />
         );
       })()}

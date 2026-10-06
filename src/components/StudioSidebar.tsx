@@ -365,6 +365,11 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               checked={settings.enableObjectCut !== false} 
               onChange={v => setSettings(s => ({ ...s, enableObjectCut: v }))} 
             />
+            <ToggleSwitch 
+              label="🎬 1Cut2枚生成 (Veo補間用 Start/After絵)" 
+              checked={settings.enableEndFrames !== false} 
+              onChange={v => setSettings(s => ({ ...s, enableEndFrames: v }))} 
+            />
           </div>
         </div>
         

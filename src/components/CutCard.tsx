@@ -111,6 +111,11 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
               🎯 {cut.focalPoint.grid.replace('top-', 'T-').replace('bottom-', 'B-').replace('center', 'CTR').toUpperCase()}
             </div>
           )}
+          {cut.endFrameImageBase64 && (
+            <div className="px-1.5 py-0.5 rounded-sm bg-blue-600 text-[7px] font-black text-white uppercase tracking-tighter shadow-lg shrink-0 flex items-center gap-0.5" title="Veo補間用 After絵（到達点フレーム）生成済">
+              <span>🏁 2F</span>
+            </div>
+          )}
           {cut.kenBurnsPreset && cut.kenBurnsPreset !== 'none' && !videoSrc && (
             <div className="px-1.5 py-0.5 rounded-sm bg-black/75 backdrop-blur-md border border-white/20 text-[7px] font-bold text-white/90 uppercase tracking-tighter shadow-lg flex items-center gap-0.5 truncate shrink-0">
               <span className="material-symbols-outlined text-[8px] text-amber-400">videocam</span>
