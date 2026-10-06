@@ -97,18 +97,18 @@ export const FieldDropdown: React.FC<{
       >
         <p className="text-[11px] font-medium text-[rgba(255,255,255,0.35)] tracking-[0.1px]">{label}</p>
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-medium text-white tracking-[0.1px] truncate pr-2">{value}</span>
+          <span className="text-[11px] font-medium text-white tracking-[0.1px] line-clamp-2 leading-tight break-words pr-2">{value}</span>
           {!disabled && (
-            <span className={`material-symbols-outlined text-[16px] text-[rgba(218,220,224,0.5)] mr-1 transition-transform ${isOpen ? 'rotate-180' : ''}`}>keyboard_arrow_down</span>
+            <span className={`material-symbols-outlined text-[16px] text-[rgba(218,220,224,0.5)] mr-1 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}>keyboard_arrow_down</span>
           )}
         </div>
       </button>
       {isOpen && !disabled && (
-        <div className="absolute z-50 top-[calc(100%+4px)] left-0 w-full bg-[#0c0c0c] border border-white/15 rounded-xl overflow-hidden shadow-2xl backdrop-blur-md animate-dropdown origin-top max-h-80 overflow-y-auto dark-scrollbar">
+        <div className="absolute z-50 top-[calc(100%+4px)] left-0 w-full min-w-full bg-[#181818] border border-white/20 rounded-xl overflow-hidden shadow-[0_12px_48px_rgba(0,0,0,0.9)] backdrop-blur-xl animate-dropdown origin-top max-h-[460px] overflow-y-auto dark-scrollbar">
           {groups ? (
             groups.map((grp) => (
               <div key={grp.label} className="border-b border-white/10 last:border-b-0 pb-1">
-                <div className="px-2.5 py-1.5 text-[10px] font-bold text-amber-400 tracking-wider bg-[#181818] sticky top-0 backdrop-blur-md z-10 flex items-center gap-1.5 border-b border-white/10">
+                <div className="px-2.5 py-1.5 text-[10px] font-bold text-amber-400 tracking-wider bg-[#222222] sticky top-0 backdrop-blur-md z-10 flex items-center gap-1.5 border-b border-white/10">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
                   <span className="truncate">{grp.label}</span>
                 </div>
@@ -116,10 +116,10 @@ export const FieldDropdown: React.FC<{
                   <button 
                     key={opt} 
                     type="button"
-                    className={`w-full text-left px-3 py-1.5 text-[11px] font-medium tracking-[0.1px] hover:bg-white/10 transition-colors flex items-center justify-between ${value === opt ? 'bg-amber-500/20 text-amber-200 font-bold' : 'text-[rgba(218,220,224,0.85)]'}`}
+                    className={`w-full text-left px-3 py-2 text-[11px] font-medium tracking-[0.1px] hover:bg-white/10 transition-colors flex items-center justify-between gap-2 border-b border-white/5 last:border-b-0 ${value === opt ? 'bg-amber-500/20 text-amber-200 font-bold' : 'text-[rgba(218,220,224,0.9)]'}`}
                     onClick={() => { onChange(opt); setIsOpen(false); }}
                   >
-                    <span className="truncate">{opt}</span>
+                    <span className="break-words leading-snug">{opt}</span>
                     {value === opt && <span className="material-symbols-outlined text-[14px] text-amber-400 shrink-0 ml-1">check</span>}
                   </button>
                 ))}
@@ -131,9 +131,9 @@ export const FieldDropdown: React.FC<{
               const optLabel = typeof opt === 'string' ? opt : opt.label;
               return (
                 <button key={optVal} type="button"
-                  className={`w-full text-left px-2.5 py-2 text-[11px] font-medium tracking-[0.1px] hover:bg-[#1a1a1a] transition-colors flex items-center justify-between ${value === optVal ? 'bg-amber-500/20 text-amber-200 font-bold' : 'text-[rgba(218,220,224,0.9)]'}`}
+                  className={`w-full text-left px-3 py-2 text-[11px] font-medium tracking-[0.1px] hover:bg-white/10 transition-colors flex items-center justify-between gap-2 border-b border-white/5 last:border-b-0 ${value === optVal ? 'bg-amber-500/20 text-amber-200 font-bold' : 'text-[rgba(218,220,224,0.9)]'}`}
                   onClick={() => { onChange(optVal); setIsOpen(false); }}>
-                  <span className="truncate">{optLabel}</span>
+                  <span className="break-words leading-snug">{optLabel}</span>
                   {value === optVal && <span className="material-symbols-outlined text-[14px] text-amber-400 shrink-0 ml-1">check</span>}
                 </button>
               );

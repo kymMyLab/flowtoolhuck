@@ -241,7 +241,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
       <div className="flex flex-col gap-2 overflow-y-auto pr-1 dark-scrollbar flex-1 py-2">
         
         {/* ① 世界観・画風設定 アコーディオン */}
-        <div className="flex flex-col rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden transition-all">
+        <div className={`flex flex-col rounded-xl border border-white/10 bg-white/[0.02] transition-all ${isWorldOpen ? 'overflow-visible relative z-30' : 'overflow-hidden'}`}>
           <button
             type="button"
             onClick={() => setIsWorldOpen(!isWorldOpen)}
@@ -341,7 +341,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         </div>
 
         {/* ② 制作ボリューム・配分 アコーディオン */}
-        <div className="flex flex-col rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden transition-all">
+        <div className={`flex flex-col rounded-xl border border-white/10 bg-white/[0.02] transition-all ${isVolumeOpen ? 'overflow-visible relative z-20' : 'overflow-hidden'}`}>
           <button
             type="button"
             onClick={() => setIsVolumeOpen(!isVolumeOpen)}
@@ -401,7 +401,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         </div>
 
         {/* ③ 自動化＆Veoパイプライン アコーディオン */}
-        <div className="flex flex-col rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden transition-all">
+        <div className={`flex flex-col rounded-xl border border-white/10 bg-white/[0.02] transition-all ${isPipelineOpen ? 'overflow-visible relative z-10' : 'overflow-hidden'}`}>
           <button
             type="button"
             onClick={() => setIsPipelineOpen(!isPipelineOpen)}
