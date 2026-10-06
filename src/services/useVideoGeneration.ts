@@ -36,19 +36,38 @@ export function useVideoGeneration({
       return;
     }
     
+    let endMediaId = cut?.endFrameMediaId;
+    if (!endMediaId && cut?.endFrameBase64) {
+      try {
+        const cleanEndImg = cut.endFrameBase64.replace(/^data:[^;]+;base64,/, '');
+        const upEnd = await Flow.upload({ base64: cleanEndImg, mimeType: 'image/png', name: `CutEnd_${epId}_${cutId}` });
+        endMediaId = upEnd.mediaId;
+        updateCut(epId, cutId, { endFrameMediaId: endMediaId });
+      } catch (_) {}
+    }
+
     const modelDef = resolveVideoModel(modelType);
     updateCut(epId, cutId, { isGeneratingVideo: true, videoModelUsed: modelDef.name, error: undefined });
-    addLog(`🎥 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画生成開始 (${modelDef.name})`, 'info');
+    
+    if (endMediaId) {
+      addLog(`🎥 Ep.${epId} C${cutId.toString().padStart(2, '0')}: Start絵 🏁 After絵の前後フレーム完全補間動画を生成開始 (${modelDef.name})`, 'info');
+    } else {
+      addLog(`🎥 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画生成開始 (${modelDef.name})`, 'info');
+    }
 
     try {
-      const cameraMotionText = cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : '');
-      const cameraInstruction = cameraMotionText ? ` [Camera Motion: ${cameraMotionText}]` : '';
-      const finalVideoPrompt = `${cut?.promptEn || ''}${cameraInstruction}`;
+      const motionText = cut?.veoMotionPrompt 
+        ? `Cinematic interpolation from start frame to end frame: ${cut.veoMotionPrompt}.`
+        : (cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : ''));
+      
+      const cameraInstruction = motionText ? ` [Motion Directive: ${motionText}]` : '';
+      const finalVideoPrompt = `${cut?.promptEn || ''}${cameraInstruction}${cut?.endFramePromptEn ? ` [Target Ending: ${cut.endFramePromptEn}]` : ''}`;
 
       const res = await callWithRetry<any>(
         () => Flow.generate.video({ 
           prompt: finalVideoPrompt, 
           firstFrameImageMediaId: mediaId, 
+          lastFrameImageMediaId: endMediaId || undefined,
           modelDisplayName: modelDef.name, 
           durationSeconds: modelDef.defaultDuration, 
           aspectRatio: DEFAULT_ASPECT_RATIO as "16:9" | "9:16" 
