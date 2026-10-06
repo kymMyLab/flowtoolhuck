@@ -464,6 +464,18 @@ export const downloadZip = async (
       ? coverCanvas.convertToBlob({ type: 'image/png' }) 
       : new Promise<Blob>(r => (coverCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
     folder.file('cover.png', coverBlob);
+    if (coverCanvas instanceof OffscreenCanvas) {
+      const coverCtx = coverCanvas.getContext('2d');
+      if (coverCtx) coverCtx.clearRect(0, 0, coverCanvas.width, coverCanvas.height);
+      coverCanvas.width = 0;
+      coverCanvas.height = 0;
+    } else {
+      const cvs = coverCanvas as HTMLCanvasElement;
+      const coverCtx = cvs.getContext('2d');
+      if (coverCtx) coverCtx.clearRect(0, 0, cvs.width, cvs.height);
+      cvs.width = 0;
+      cvs.height = 0;
+    }
     
     // ※未結合の各カット素材（cut_*.png / cut_*_after.png / cut_*.mp4）と完全版 script.json を同梱
     const scriptJson = {
@@ -546,7 +558,7 @@ export const downloadZip = async (
     const blobUrl = URL.createObjectURL(zipBlob);
     setTimeout(() => {
       try { URL.revokeObjectURL(blobUrl); } catch (_) {}
-    }, 600000); // 10分間有効（モーダルからの再ダウンロードを保証）
+    }, 30000); // 連続自動保存のため、30秒でメモリ解放
 
     // 統合保存処理を実行（ASCII安全名 asciiFilename を最優先で Flow.download に渡す）
     const saveRes = await savePackageFile(zipBlob, filename, addLog, asciiFilename);

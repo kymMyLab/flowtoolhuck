@@ -63,15 +63,17 @@ export function useVideoGeneration({
     }
 
     try {
-      const motionText = cut?.veoMotionPrompt 
+      const isMotionValid = cut?.veoMotionPrompt && /[a-zA-Z0-9]/.test(cut.veoMotionPrompt);
+      const motionText = isMotionValid
         ? `Cinematic interpolation from start frame to end frame: ${cut.veoMotionPrompt}.`
         : (cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : ''));
       
       const cameraInstruction = motionText ? ` [Motion Directive: ${motionText}]` : '';
       let finalVideoPrompt = `${cut?.promptEn || ''}${cameraInstruction}`;
 
-      if (endMediaId && cut?.endFramePromptEn) {
-        finalVideoPrompt = `[Start Frame]: ${cut?.promptEn || ''} ${cameraInstruction} [Target Ending Frame]: ${cut.endFramePromptEn}`;
+      const isEndFrameValid = cut?.endFramePromptEn && /[a-zA-Z0-9]/.test(cut.endFramePromptEn);
+      if (endMediaId && (isEndFrameValid || cut?.promptEn)) {
+        finalVideoPrompt = `[Start Frame]: ${cut?.promptEn || ''} ${cameraInstruction} [Target Ending Frame]: ${isEndFrameValid ? cut.endFramePromptEn : cut?.promptEn || 'Natural evolution'}`;
       }
 
       const res = await callWithRetry<any>(
