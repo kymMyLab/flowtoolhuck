@@ -7,3 +7,11 @@
 
 ## 2. デプロイ運用
 - 変更後は必ず `npm run deploy` を実行し、Git コミット・GitHubプッシュ・jsDelivr CDN パージ・`MOUNT_COMMAND.js` 更新を一括で行うこと。
+
+## 3. Jules（AIエンジニア）連携運用（完全自律モード）
+- Julesにタスクやデバッグジョブを投げる際は、**必ず以下の完全自律パラメータで実行すること**。
+  - `requirePlanApproval: false`（人間の承認待ちを挟まず即時実装・検証へ移行）
+  - `automationMode: "AUTO_CREATE_PR"`（完了時に自動で専用ブランチおよびPRを作成）
+- APIキーはリポジトリトップの `.env`（Git除外済み）から自動取得し、絶対にコードやGitにコミットしないこと。
+- 実行時は `npm run jules`（または `scripts/jules.mjs`）を使用すること。
+
