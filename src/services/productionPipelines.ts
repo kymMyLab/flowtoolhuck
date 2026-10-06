@@ -91,6 +91,7 @@ async function ensureCharacterTurnaround(
 export interface ProductionPipelineContext {
   settings: GeneratorSettings;
   addLog: (message: string, type?: LogEntry['type']) => void;
+  logsRef?: MutableRefObject<LogEntry[] | undefined>;
   isAbortedRef: MutableRefObject<boolean>;
   episodesRef: MutableRefObject<Episode[]>;
   setEpisodes: Dispatch<SetStateAction<Episode[]>>;
@@ -442,7 +443,8 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     const freshEp = episodesRef.current.find(e => e.id === epIndex) || newEpisode;
     if (settings.autoDownload && !isAbortedRef.current) {
       addLog(`📦 第${epIndex}${modeInfo.unit}の完了時自動ダウンロードを開始します...`, 'process');
-      const res = await downloadZip(freshEp, addLog, undefined);
+      const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
+      const res = await downloadZip(freshEp, addLog, undefined, currentLogs);
       if (res) {
         updateEpisode(epIndex, {
           packageZipBlobUrl: res.blobUrl,
@@ -730,7 +732,8 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
 
       const freshEp = episodesRef.current.find(e => e.id === epId)!;
       if (settings.autoDownload && !isAbortedRef.current) {
-        const res = await downloadZip(freshEp, addLog, manifest);
+        const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
+        const res = await downloadZip(freshEp, addLog, manifest, currentLogs);
         if (res) {
           updateEpisode(epId, {
             packageZipBlobUrl: res.blobUrl,

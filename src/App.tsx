@@ -26,9 +26,15 @@ export default function App() {
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
 
-  // ログ保持数を9999に拡大（1万行制限）
+  // ログ保持数を9999に拡大（1万行制限）＆グローバルストアに即時同期
   const addLog = useCallback((message: string, type: LogEntry['type'] = 'info') => {
-    setLogs(prev => [...prev.slice(-9999), { id: Math.random().toString(36).substr(2, 9), message: createLogMessage(message), type }]);
+    setLogs(prev => {
+      const next = [...prev.slice(-9999), { id: Math.random().toString(36).substr(2, 9), message: createLogMessage(message), type }];
+      if (typeof window !== 'undefined') {
+        (window as any).__STUDIO_LOGS__ = next;
+      }
+      return next;
+    });
   }, []);
 
   const refreshStories = useCallback(async () => {
@@ -39,7 +45,8 @@ export default function App() {
   const { episodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
     settings, 
     addLog, 
-    refreshStories
+    refreshStories,
+    logs
   });
 
   const episodesRef = useRef(episodes);

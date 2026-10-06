@@ -640,6 +640,147 @@ export function buildAntiPreviousCompositionNegative(
 }
 
 /**
+ * 8秒間のシネマティック・アクション進化ディレクティブを自律生成
+ * Start絵のシチュエーション（PC/ベッド/窓/ヘッドホン/ドリンク等）を解析し、
+ * 同一キャラクター・同一衣装・同一部屋・同一トーンを厳格に固定したまま、
+ * 8秒後の生き生きとした到達点ポーズ・表情（endFramePlot）と、
+ * それを繋ぐ8秒補間モーション指示（veoMotionPrompt）を決定する。
+ */
+export interface CinematicEvolution {
+  endFramePlot: string;
+  veoMotionPrompt: string;
+}
+
+export function resolveCinematicEndFrameAndMotion(options: {
+  cutIndex: number; // 0 to 11
+  basicPlot: string;
+  isObjectOnly?: boolean;
+  theme?: string;
+  isMvMode?: boolean;
+  isMangaMode?: boolean;
+  existingEndPlot?: string;
+  existingVeoMotion?: string;
+}): CinematicEvolution {
+  const { cutIndex, basicPlot, isObjectOnly, theme = '', isMvMode, existingEndPlot, existingVeoMotion } = options;
+
+  // 既に独自性のある endFramePlot が与えられている場合（basicPlot と完全一致ではない場合）
+  if (existingEndPlot && existingEndPlot.trim() !== basicPlot.trim() && existingVeoMotion) {
+    return {
+      endFramePlot: existingEndPlot.trim(),
+      veoMotionPrompt: existingVeoMotion.trim()
+    };
+  }
+
+  const text = `${basicPlot} ${theme}`.toLowerCase();
+
+  // 1. 物体・静物カット
+  if (isObjectOnly || text.includes('still-life') || text.includes('still life') || text.includes('object only')) {
+    return {
+      endFramePlot: 'The same iconic atmospheric still-life scene completely devoid of people, ambient light having subtly shifted with glowing night reflections slowly drifting across the surface, curtains or fabric gently stirring in the nocturnal breeze, calm settled stillness.',
+      veoMotionPrompt: 'First still atmospheric frame focusing on the iconic object, then subtle environmental breeze swaying nearby fabric as lighting reflections shift across surfaces, finally settling into deep, poetic nocturnal quiet.'
+    };
+  }
+
+  // 2. PC / デスク / モニター作業・チル
+  if (
+    text.includes('screen') || text.includes('monitor') || text.includes('display') || 
+    text.includes('desk') || text.includes('laptop') || text.includes('computer') || 
+    text.includes('pc') || text.includes('keyboard') || text.includes('typing') || text.includes('work')
+  ) {
+    return {
+      endFramePlot: 'The same character sitting in the same chair at the desk, leaning back comfortably against the chair backrest with relaxed shoulders, looking up toward the gentle ceiling light with a calm, peaceful exhale, room softly illuminated by the cyan monitor glow.',
+      veoMotionPrompt: 'First character sitting focused on the glowing display, then slowly leaning back into the chair stretching subtly and releasing tension, finally looking up toward the ceiling with a gentle quiet breath, settling into serene relaxation.'
+    };
+  }
+
+  // 3. ベッド / 横たわる / 布団・枕・部屋チル
+  if (
+    text.includes('bed') || text.includes('lying') || text.includes('pillow') || 
+    text.includes('blanket') || text.includes('sheets') || text.includes('mattress') || 
+    text.includes('curled') || text.includes('sofa') || text.includes('couch')
+  ) {
+    return {
+      endFramePlot: 'The same character resting on the same bed, having gently put down their device onto the sheet, nestling cheek deeper into the soft pillow, softly closing eyes in tranquil, comforting slumber with quiet night shadows.',
+      veoMotionPrompt: 'First resting comfortably on the bed looking into the space, then slowly sliding hands down to the soft blanket, finally burying cheek into the pillow and softly closing eyes in peaceful nocturnal tranquility.'
+    };
+  }
+
+  // 4. 窓辺 / 夜景 / 外 / 雨
+  if (
+    text.includes('window') || text.includes('balcony') || text.includes('looking out') || 
+    text.includes('outside') || text.includes('rain') || text.includes('citylight') || 
+    text.includes('night sky') || text.includes('streetlights')
+  ) {
+    return {
+      endFramePlot: 'The same character standing by the same window, gently turning their head three-quarters towards the room, subtle breath mist fading on the glass pane, soft moonlight catching their eyes with a tender reflective expression.',
+      veoMotionPrompt: 'First gazing pensively out through the misty window pane at the night lights, then slowly turning head three-quarters towards the quiet interior, finally settling with a subtle thoughtful breath.'
+    };
+  }
+
+  // 5. ヘッドホン / 音楽 / リスニング
+  if (
+    text.includes('headphone') || text.includes('earphone') || text.includes('listening') || 
+    text.includes('music') || text.includes('audio') || text.includes('headphones')
+  ) {
+    return {
+      endFramePlot: 'The same character in the same room, having smoothly lowered the headphones around their neck, softly opening eyes with a clear tranquil gaze toward the room, feeling the quiet resonant aftermath of the music.',
+      veoMotionPrompt: 'First immersed in sound with headphones on and eyes closed, then smoothly sliding the headphones down to rest around the neck, finally opening eyes with a calm, refreshed, and peaceful gaze.'
+    };
+  }
+
+  // 6. マグカップ / カフェ / ドリンク / 湯気
+  if (
+    text.includes('cup') || text.includes('mug') || text.includes('coffee') || 
+    text.includes('tea') || text.includes('drink') || text.includes('drinking')
+  ) {
+    return {
+      endFramePlot: 'The same character having gently set the warm mug down onto the table, resting hands loosely in their lap, gazing peacefully forward with a warm, faint smile in quiet atmospheric lighting.',
+      veoMotionPrompt: 'First holding warm mug with both hands enjoying the warmth, then slowly lowering and placing the cup onto the table surface, finally resting hands gently and looking forward with a serene faint smile.'
+    };
+  }
+
+  // 7. クローズアップ / 表情 / 瞳
+  if (
+    text.includes('close-up') || text.includes('close up') || text.includes('face') || 
+    text.includes('eyes') || text.includes('expression') || text.includes('profile') || text.includes('gaze')
+  ) {
+    return {
+      endFramePlot: 'Intimate close-up of the same character, eyes slowly lifting from a downward introspective gaze to look gently forward, ambient screen light glinting faintly in their pupils, expression softening into serene peace.',
+      veoMotionPrompt: 'First looking gently downcast in deep thought, then slowly raising eye gaze upward towards the ambient light, finally settling with a subtle emotional spark in the eyes and relaxed lips.'
+    };
+  }
+
+  // 8. 歩き / 移動 / 振り返り
+  if (
+    text.includes('walk') || text.includes('stepping') || text.includes('path') || 
+    text.includes('street') || text.includes('corridor') || text.includes('alley') || text.includes('stairs')
+  ) {
+    return {
+      endFramePlot: 'The same character having come to a smooth graceful halt, slowly turning to look back over their shoulder into the night breeze, hair gently settling around their face in cinematic rim light.',
+      veoMotionPrompt: 'First walking steadily forward with jacket and hair swaying in the breeze, then smoothly slowing pace and turning head gracefully over shoulder, finally pausing with an evocative lingering backward glance.'
+    };
+  }
+
+  // 9. 汎用フォールバック（12カットの時間・感情アークに基づく自然な進化）
+  if (cutIndex < 4) {
+    return {
+      endFramePlot: 'The same character in the exact same setting, shifting posture slightly to raise their gaze toward the ambient light, taking a deep quiet breath with soft relaxed shoulders.',
+      veoMotionPrompt: 'First resting quietly in initial posture, then slowly lifting gaze and shifting shoulders slightly, finally settling into a calm, centered composure.'
+    };
+  } else if (cutIndex < 8) {
+    return {
+      endFramePlot: 'The same character in the exact same setting, sitting up taller with emotional clarity, hair gently caught in a subtle ambient draft, eyes focused with renewed tenderness.',
+      veoMotionPrompt: 'First looking absorbed in thought, then slowly turning head with emotional expression as hair gently stirs, finally settling with clear, expressive eyes.'
+    };
+  } else {
+    return {
+      endFramePlot: 'The same character in the exact same setting, resting in peaceful stillness, closing eyes gently or gazing softly toward the dawn light creeping into the room, profound serenity.',
+      veoMotionPrompt: 'First holding thoughtful posture, then slowly softening expression and tilting head gently, finally settling into deep tranquil peace.'
+    };
+  }
+}
+
+/**
  * 画像生成用の最終プロンプトとネガティブプロンプトを構築
  * （Media Vault 6層レイヤー＆定義駆動エンジンに委譲）
  */
@@ -897,6 +1038,18 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
         const defaultGrid = isObj ? 'center' : 'top-center';
         const defaultCoord: [number, number] = isObj ? [0.5, 0.5] : [0.5, 0.3];
         const defaultSubject = isObj ? 'symbolic_object' : 'character_face';
+        const defaultBasicPlot = isObj
+          ? `Close-up shot of an iconic atmospheric object matching ${theme}, completely deserted with no people, moody lighting`
+          : `Cinematic high quality visual scene, ${theme}, scene ${j + 1} of ${currentPlan.titleEn}, atmospheric lighting`;
+
+        const evolution = resolveCinematicEndFrameAndMotion({
+          cutIndex: j,
+          basicPlot: defaultBasicPlot,
+          isObjectOnly: isObj,
+          theme,
+          isMvMode,
+          isMangaMode
+        });
 
         return {
           id: j + 1,
@@ -910,19 +1063,9 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
           compositionPrompt: isObj 
             ? 'Centered close-up still-life composition focusing on iconic object' 
             : 'Subject framed at upper-third, face positioned at top-center, rule of thirds',
-          basicPlot: isObj
-            ? `Close-up shot of an iconic atmospheric object matching ${theme}, completely deserted with no people, moody lighting`
-            : `Cinematic high quality visual scene, ${theme}, scene ${j + 1} of ${currentPlan.titleEn}, atmospheric lighting`,
-          veoMotionPrompt: isObj
-            ? 'First still atmospheric frame, then subtle environmental breeze or light shift, finally settled quiet stillness'
-            : (j < 4 
-                ? 'First looking downward gently, then slowly raising gaze, finally smoothly settling with a calm breath'
-                : j < 8 
-                  ? 'First steady walking motion, then turning gaze across the scenery, finally coming to a smooth pause'
-                  : 'First sweeping emotional camera motion, then dramatic lighting shift, finally settling resolute'),
-          endFramePlot: isObj
-            ? `Still object with soft lingering light and quiet shadows`
-            : `Protagonist in settled reflective profile, looking towards the horizon`,
+          basicPlot: defaultBasicPlot,
+          veoMotionPrompt: evolution.veoMotionPrompt,
+          endFramePlot: evolution.endFramePlot,
           narrationJp: isMvMode ? `第${epId}曲 歌詞パート${j + 1}` : `第${epId}話 場面${j + 1}の情景`,
           highlights: []
         };
@@ -960,11 +1103,23 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
       ? [Number(rawFocal.normalizedCoord[0]) || 0.5, Number(rawFocal.normalizedCoord[1]) || (isObj ? 0.5 : 0.3)]
       : (isObj ? [0.5, 0.5] : [0.5, 0.3]);
     const subject = rawFocal.focalSubject || (isObj ? 'symbolic_object' : 'character_face');
+    const basicPlot = cutData.basicPlot || cutData.promptEn || cutData.prompt || `Scene ${j + 1} of ${currentPlan.titleEn}`;
+
+    const evolution = resolveCinematicEndFrameAndMotion({
+      cutIndex: j,
+      basicPlot,
+      isObjectOnly: isObj,
+      theme,
+      isMvMode,
+      isMangaMode,
+      existingEndPlot: cutData.endFramePlot,
+      existingVeoMotion: cutData.veoMotionPrompt
+    });
 
     return {
       id: j + 1,
       panelLayout: cutData.panelLayout || (isMultiPanel ? (j % 3 === 0 ? 'single' : 'split-2') : 'single'),
-      basicPlot: cutData.basicPlot || cutData.promptEn || cutData.prompt || `Scene ${j + 1} of ${currentPlan.titleEn}`,
+      basicPlot,
       narrationJp: sanitizeForYouTubeSafety(rawNarration),
       highlights: cutData.highlights || parsed.highlightWords || [],
       isObjectOnly: isObj,
@@ -976,14 +1131,8 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
       compositionPrompt: cutData.compositionPrompt || (isObj 
         ? 'Centered still-life composition of prop/object, rule of thirds, completely empty of people' 
         : 'Subject framed at upper-third, face centered at top-center, rule of thirds composition'),
-      veoMotionPrompt: cutData.veoMotionPrompt || (isObj
-        ? 'First still atmospheric frame, then subtle environmental breeze or light shift, finally settled quiet stillness'
-        : (j < 4 
-            ? 'First standing still, then slowly raising gaze, finally smoothly settling with a calm breath'
-            : j < 8 
-              ? 'First walking steadily, then turning gaze across the scene, finally coming to a smooth pause'
-              : 'First sweeping emotional camera motion, then dramatic lighting shift, finally settling resolute')),
-      endFramePlot: cutData.endFramePlot || cutData.basicPlot || `End frame of scene ${j + 1}`
+      veoMotionPrompt: evolution.veoMotionPrompt,
+      endFramePlot: evolution.endFramePlot
     };
   });
 

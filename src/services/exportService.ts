@@ -418,16 +418,34 @@ export const downloadZip = async (
     const folder = zip.folder(`Episode_${ep.id}_Package`);
     if (!folder) throw new Error('ZIP creation failed');
 
+    // 1. 各カット素材（Start絵、After絵/到達点フレーム、動画）をすべて同梱
     ep.cuts.forEach(c => {
+      // Start絵
       if (c.imageBase64) {
         const cleanImg = c.imageBase64.replace(/^data:[^;]+;base64,/, '');
         folder.file(`cut_${c.id}.png`, cleanImg, { base64: true });
       }
+      // After絵（Veo補間用 到達点フレーム）
+      if (c.endFrameImageBase64) {
+        const cleanEndImg = c.endFrameImageBase64.replace(/^data:[^;]+;base64,/, '');
+        folder.file(`cut_${c.id}_after.png`, cleanEndImg, { base64: true });
+      }
+      // 生成動画
       if (c.videoBase64) {
         const cleanVid = c.videoBase64.replace(/^data:[^;]+;base64,/, '');
         folder.file(`cut_${c.id}.mp4`, cleanVid, { base64: true });
       }
     });
+
+    // 2. キャラクター基準マスターアセット（三面図、Cut 1マスターアンカー）
+    if (ep.characterTurnaroundBase64) {
+      const cleanTurnaround = ep.characterTurnaroundBase64.replace(/^data:[^;]+;base64,/, '');
+      folder.file('character_turnaround.png', cleanTurnaround, { base64: true });
+    }
+    if (ep.masterAnchorBase64) {
+      const cleanMaster = ep.masterAnchorBase64.replace(/^data:[^;]+;base64,/, '');
+      folder.file('master_anchor.png', cleanMaster, { base64: true });
+    }
     
     addLog(`📝 SRT字幕ファイルを生成中...`, 'info');
     folder.file('subtitles.srt', generateSRT(ep));
@@ -439,9 +457,7 @@ export const downloadZip = async (
       : new Promise<Blob>(r => (coverCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
     folder.file('cover.png', coverBlob);
     
-    // ※向こう（CT192）側で音声実尺に合わせて高画質結合・焼き直しを行うため、
-    // 未結合の各カット素材（cut_*.png / cut_*.mp4）と script.json のみを同梱し、不要な結合動画は完全カットして爆速化
-    
+    // ※未結合の各カット素材（cut_*.png / cut_*_after.png / cut_*.mp4）と完全版 script.json を同梱
     const scriptJson = {
       id: ep.id,
       productionMode: ep.productionMode || (ep.isMvMode ? 'mv' : 'episodes'),
@@ -450,7 +466,10 @@ export const downloadZip = async (
       summary: ep.summary || '',
       theme: ep.theme || '',
       taste: ep.taste || '',
+      characterDna: ep.characterDna || '',
       catchphrase: { jp: ep.coverCatchphraseJp, en: ep.coverCatchphraseEn },
+      hasTurnaround: !!ep.characterTurnaroundBase64,
+      hasMasterAnchor: !!ep.masterAnchorBase64,
       historicalIntelligence: {
         eraAnalysis: ep.eraAnalysis || '',
         forbiddenAnachronisms: ep.forbiddenAnachronisms || []
@@ -468,10 +487,21 @@ export const downloadZip = async (
           narrationJp: narration,
           narrationEn: c.narrationEn || '',
           prompt: c.promptEn || '',
+          startFramePromptEn: c.promptEn || '',
+          endFramePromptEn: c.endFramePromptEn || '',
+          veoMotionPrompt: c.veoMotionPrompt || '',
+          isObjectOnly: !!c.isObjectOnly,
+          panelLayout: c.panelLayout || 'single',
+          focalPoint: c.focalPoint || null,
+          compositionPrompt: c.compositionPrompt || '',
           shotScale: c.shotScale || 'Wide',
           cameraWork: c.cameraWork || 'static',
           cameraMotion: c.cameraMotion || '',
           kenBurnsPreset: c.kenBurnsPreset || 'none',
+          hasStartImage: !!c.imageBase64,
+          hasEndImage: !!c.endFrameImageBase64,
+          hasVideo: !!c.videoBase64,
+          videoModelUsed: c.videoModelUsed || '',
           telop: {
             fullText: c.telop?.fullText || narration,
             highlightKeywords: hlWords,
@@ -490,7 +520,10 @@ export const downloadZip = async (
       folder.file('series_manifest.json', JSON.stringify(manifest, null, 2));
     }
 
-    const logLines = logs ? logs.map(l => l.message) : [];
+    // ログの完全収集: 引数 logs が渡されていない場合でも、グローバルログストアから取得
+    const globalLogs = (typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || [];
+    const effectiveLogs: LogEntry[] = (logs && logs.length > 0) ? logs : globalLogs;
+    const logLines = effectiveLogs.map(l => l.message);
     logLines.push(`[${new Date().toLocaleTimeString('ja-JP')}] 📦 パッケージング完了`);
     folder.file('production_logs.txt', logLines.join('\n'));
 

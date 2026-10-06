@@ -19,6 +19,7 @@ import {
   buildCharacterScreeningPrompt, 
   extractHighlights,
   checkIsHistorical,
+  resolveCinematicEndFrameAndMotion,
   PreviousShotInfo
 } from './directorService';
 import { useEpisodeState } from './useEpisodeState';
@@ -31,6 +32,7 @@ interface UseStudioProductionProps {
   settings: GeneratorSettings;
   addLog: (message: string, type?: LogEntry['type']) => void;
   refreshStories: () => Promise<void>;
+  logs?: LogEntry[];
   onPackageReady?: (data: {
     epId: number;
     titleJp: string;
@@ -42,7 +44,9 @@ interface UseStudioProductionProps {
   }) => void;
 }
 
-export function useStudioProduction({ settings, addLog, refreshStories, onPackageReady }: UseStudioProductionProps) {
+export function useStudioProduction({ settings, addLog, refreshStories, logs, onPackageReady }: UseStudioProductionProps) {
+  const logsRef = useRef(logs);
+  logsRef.current = logs;
 
   const {
     episodes,
@@ -414,13 +418,32 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
         refMediaIds.push(ep.masterAnchorMediaId);
       }
 
-      // 到達点プロンプトの決定
-      const targetPlot = customEndPrompt || cut.endFramePromptEn || `${cut.promptEn}, ending posture: ${cut.veoMotionPrompt || 'settled state'}`;
+      // 到達点プロンプトの決定（Start絵からの8秒後のドラマチックな姿勢・表情進化を保証）
+      let effectiveEndPlot = customEndPrompt || cut.endFramePromptEn;
+      if (!effectiveEndPlot || effectiveEndPlot === cut.promptEn) {
+        const evo = resolveCinematicEndFrameAndMotion({
+          cutIndex: cutId - 1,
+          basicPlot: cut.promptEn || cut.narration || '',
+          isObjectOnly: cut.isObjectOnly,
+          theme: settings.theme,
+          isMvMode: ep.isMvMode
+        });
+        effectiveEndPlot = evo.endFramePlot;
+        // cutのメタデータも更新
+        updateCut(epId, cutId, {
+          endFramePromptEn: effectiveEndPlot,
+          veoMotionPrompt: cut.veoMotionPrompt || evo.veoMotionPrompt
+        });
+      }
+
+      const endPromptInstruction = cut.isObjectOnly
+        ? `[TARGET REACHED STATE 8 SECONDS LATER - STILL LIFE]: ${effectiveEndPlot}. Maintain 100% identical environment, lighting tone, and props as start frame, capturing the subtle lighting shift and lingering atmosphere 8 seconds later.`
+        : `[TARGET REACHED STATE 8 SECONDS LATER]: ${effectiveEndPlot}. Maintain 100% identical protagonist, identical face, identical hair, identical clothing, and identical room setting as start frame, capturing the natural evolved posture and settled emotion after 8 seconds of continuous movement.`;
 
       const endTask: GenerationTask = {
         epId,
         cutId,
-        prompt: targetPlot,
+        prompt: endPromptInstruction,
         styleKey: ep.taste || settings.taste,
         imageModel: settings.imageModel,
         isMvMode: ep.isMvMode,
@@ -539,6 +562,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
     const pipelineContext = {
       settings,
       addLog,
+      logsRef,
       isAbortedRef,
       episodesRef,
       setEpisodes,

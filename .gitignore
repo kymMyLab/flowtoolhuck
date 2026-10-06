@@ -22,8 +22,11 @@ yarn-error.log*
 *.sw?
 .DS_Store
 
-# Temporary scratch repo
+# Temporary scratch repo & downloads
 scratch_repo/
+tmp/
+*.zip
+*.zip.txt
 
 # Secrets & Credentials
 .env
