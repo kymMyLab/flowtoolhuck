@@ -252,15 +252,16 @@ export function useStudioProduction({ settings, addLog, refreshStories, onPackag
       }
     }
 
+    addLog(`🎬 全 ${tasks.length} カットの映画的対比演出・カメラワークを自動最適化中...`, 'process');
+
     for (let i = 0; i < tasks.length; i++) {
       if (isAbortedRef.current) break;
       const task = tasks[i];
       const existingCut = episodesRef.current.find(e => e.id === task.epId)?.cuts.find(c => c.id === task.cutId);
       
       updateCut(task.epId, task.cutId, { isDirecting: true });
-      addLog(`🎬 Ep.${task.epId} C${task.cutId.toString().padStart(2, '0')}: 直前構図との対比演出をAIディレクション中...`, 'process');
 
-      // オンデマンド演出AI（directShot）で直前カットとの対比・構図・詳細プロンプトを生成
+      // オンデマンド演出（directShot）で直前カットとの対比・構図・詳細プロンプトを即座に生成
       const directResult = await directShot(
         task,
         settings,

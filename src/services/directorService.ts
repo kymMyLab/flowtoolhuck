@@ -773,32 +773,7 @@ Output ONLY valid JSON:
     antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${multiPanelNeg}` : multiPanelNeg;
   }
 
-  try {
-    const res = await Flow.generate.text(directorPrompt);
-    const resText = typeof res === 'string' ? res : (res?.text || res);
-    const parsed = safeJsonParse<any>(resText, {});
-    if (parsed && parsed.enhancedPrompt) {
-      const cwDef = parsed.cameraWork ? resolveCameraWork(parsed.cameraWork) : recCw;
-      return {
-        promptEn: parsed.enhancedPrompt,
-        negativePrompt: antiPreviousNegative,
-        cameraWork: cwDef.id,
-        cameraMotion: cwDef.motionPrompt,
-        cinematicAngle: parsed.cinematicAngle || preset.angle,
-        shotScale: parsed.shotScale || preset.scale,
-        kenBurnsPreset: cwDef.recommendedKenBurns || kbPreset,
-        telop: {
-          fullText: '',
-          style: parsed.telopStyle || defaultTelop.style,
-          transition: parsed.telopTransition || defaultTelop.transition,
-          position: defaultTelop.position,
-          directorNote: parsed.directorTelopNote || defaultTelop.directorNote
-        }
-      };
-    }
-  } catch (err) {
-    if (addLog) addLog(`演出AIの生成をスキップしプリセットを適用します: ${err}`, 'warning');
-  }
+
 
   return {
     promptEn: `${preset.angle}. ${prompt}`,

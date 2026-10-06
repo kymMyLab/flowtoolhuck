@@ -4,6 +4,11 @@ import { PillButton } from './Primitives';
 import { CutCard } from './CutCard';
 import { getProductionModeConfig } from '../config/studioDefinitions';
 
+function formatDataUri(b64?: string): string {
+  if (!b64) return '';
+  return b64.startsWith('data:') ? b64 : `data:image/png;base64,${b64}`;
+}
+
 /**
  * 時代考証・世界観インテリジェンスカード（作品の時代設定と禁止要素を表示）
  */
@@ -141,12 +146,12 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
             {ep.characterTurnaroundBase64 && (
               <div className="flex items-center gap-2.5 bg-black/40 border border-amber-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
                 <img 
-                  src={ep.characterTurnaroundBase64} 
+                  src={formatDataUri(ep.characterTurnaroundBase64)} 
                   alt="三面図 Turnaround Sheet" 
                   className="w-14 h-14 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
                   onClick={() => {
                     setPreviewImage({
-                      src: ep.characterTurnaroundBase64!,
+                      src: formatDataUri(ep.characterTurnaroundBase64),
                       title: '🎨 3面設計図シート (正面・側面・背面の360°基準)'
                     });
                   }}
@@ -164,12 +169,12 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
             {ep.masterAnchorBase64 && (
               <div className="flex items-center gap-2.5 bg-black/40 border border-blue-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
                 <img 
-                  src={ep.masterAnchorBase64} 
+                  src={formatDataUri(ep.masterAnchorBase64)} 
                   alt="マスターアンカー Master Anchor" 
                   className="w-14 h-14 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
                   onClick={() => {
                     setPreviewImage({
-                      src: ep.masterAnchorBase64!,
+                      src: formatDataUri(ep.masterAnchorBase64),
                       title: '⚓ マスターアンカー (Cut 1 確定キメ絵)'
                     });
                   }}
