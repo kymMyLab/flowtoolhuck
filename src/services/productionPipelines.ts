@@ -110,6 +110,16 @@ export interface ProductionPipelineContext {
     eraNegative: string;
   } | null>;
   currentAssetRef: MutableRefObject<{ name: string; base64: string; mimeType: string } | null>;
+  onPackageReady?: (data: {
+    epId: number;
+    titleJp: string;
+    filename: string;
+    blobUrl: string;
+    sizeStr: string;
+    videoCount: number;
+    imageCount: number;
+    flowSuccess?: boolean;
+  }) => void;
 }
 
 export const SHORTS_CONFIG_MAP: Record<string, { label: string; unit: string; icon: string }> = {
@@ -451,6 +461,16 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
           packageZipFilename: res.filename,
           packageZipSizeStr: res.sizeStr
         });
+        ctx.onPackageReady?.({
+          epId: epIndex,
+          titleJp: freshEp.titleJp,
+          filename: res.filename,
+          blobUrl: res.blobUrl,
+          sizeStr: res.sizeStr,
+          videoCount: freshEp.cuts.filter(c => c.videoBase64).length,
+          imageCount: freshEp.cuts.filter(c => c.imageBase64).length,
+          flowSuccess: res.flowSuccess
+        });
       }
     }
     await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
@@ -730,7 +750,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       manifest.currentEpisodeId = epId + 1;
       setActiveSeriesManifest({ ...manifest });
 
-      const freshEp = episodesRef.current.find(e => e.id === epId)!;
+      const freshEp = episodesRef.current.find(e => e.id === epId) || currentEp;
       if (settings.autoDownload && !isAbortedRef.current) {
         const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
         const res = await downloadZip(freshEp, addLog, manifest, currentLogs);
@@ -739,6 +759,16 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
             packageZipBlobUrl: res.blobUrl,
             packageZipFilename: res.filename,
             packageZipSizeStr: res.sizeStr
+          });
+          ctx.onPackageReady?.({
+            epId: epId,
+            titleJp: freshEp.titleJp,
+            filename: res.filename,
+            blobUrl: res.blobUrl,
+            sizeStr: res.sizeStr,
+            videoCount: freshEp.cuts.filter(c => c.videoBase64).length,
+            imageCount: freshEp.cuts.filter(c => c.imageBase64).length,
+            flowSuccess: res.flowSuccess
           });
         }
       }

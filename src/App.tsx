@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ConfirmationModal } from './components/Primitives';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
+import { PackageDownloadModal, PackageDownloadData } from './components/PackageDownloadModal';
 import { ArchiveDrawer } from './components/ArchiveDrawer';
 import { StudioSidebar } from './components/StudioSidebar';
 import { EpisodeSection } from './components/EpisodeSection';
@@ -25,6 +26,7 @@ export default function App() {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
+  const [downloadModalData, setDownloadModalData] = useState<PackageDownloadData | null>(null);
 
   // ログ保持数を9999に拡大（1万行制限）＆グローバルストアに即時同期
   const addLog = useCallback((message: string, type: LogEntry['type'] = 'info') => {
@@ -42,11 +44,16 @@ export default function App() {
     setStories(all);
   }, []);
 
+  const handlePackageReady = useCallback((data: PackageDownloadData) => {
+    setDownloadModalData(data);
+  }, []);
+
   const { episodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
     settings, 
     addLog, 
     refreshStories,
-    logs
+    logs,
+    onPackageReady: handlePackageReady
   });
 
   const episodesRef = useRef(episodes);
@@ -56,9 +63,22 @@ export default function App() {
     const filename = ep.packageZipFilename || `Episode_${ep.id}_Package.zip`;
     console.log(`[FlowTool] 手動ダウンロードボタン押下: Ep.${ep.id} (${filename})`);
 
-    // 1. すでに ZIP が生成済みの場合は、即座に savePackageFile をキック！（詳細コンソールログ出力）
+    const vCount = ep.cuts.filter(c => c.videoBase64).length;
+    const iCount = ep.cuts.filter(c => c.imageBase64).length;
+
+    // 1. すでに ZIP が生成済みの場合は、即座にモーダルを表示し直接保存も試行
     if (ep.packageZipBlobUrl) {
-      addLog(`💾 作成済みパッケージ「${filename}」を直接保存中...`, 'process');
+      addLog(`💾 作成済みパッケージ「${filename}」のダウンロードモーダルを開きます...`, 'process');
+      setDownloadModalData({
+        epId: ep.id,
+        titleJp: ep.titleJp,
+        filename: filename,
+        blobUrl: ep.packageZipBlobUrl,
+        sizeStr: ep.packageZipSizeStr || 'Ready',
+        videoCount: vCount,
+        imageCount: iCount,
+        flowSuccess: true
+      });
       try {
         window.open(ep.packageZipBlobUrl, '_blank');
       } catch (_) {}
@@ -80,6 +100,16 @@ export default function App() {
         packageZipBlobUrl: res.blobUrl,
         packageZipFilename: res.filename,
         packageZipSizeStr: res.sizeStr
+      });
+      setDownloadModalData({
+        epId: ep.id,
+        titleJp: ep.titleJp,
+        filename: res.filename,
+        blobUrl: res.blobUrl,
+        sizeStr: res.sizeStr,
+        videoCount: vCount,
+        imageCount: iCount,
+        flowSuccess: res.flowSuccess
       });
     }
   }, [addLog, activeSeriesManifest, logs, updateEpisode]);
@@ -212,6 +242,7 @@ export default function App() {
       })()}
       <ArchiveDrawer isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} stories={stories} onRemake={(s) => { setSettings(prev => ({ ...prev, country: s.country, era: s.era, theme: s.theme })); setArchiveOpen(false); }} />
       <ConfirmationModal isOpen={isTrashModalOpen} title="全消去" message="制作中のデータを消去します。" onConfirm={() => { clearEpisodes(); setIsTrashModalOpen(false); }} onCancel={() => setIsTrashModalOpen(false)} />
+      <PackageDownloadModal isOpen={!!downloadModalData} data={downloadModalData} onClose={() => setDownloadModalData(null)} />
     </div>
     </ErrorBoundary>
   );

@@ -424,7 +424,7 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
 
         <div className="relative h-full max-h-full aspect-[9/16] shadow-2xl rounded-2xl overflow-hidden border border-white/10 group bg-[#111] flex items-center justify-center">
           {activeView === 'video' && videoSrc ? (
-            <video ref={videoRef} src={videoSrc} className="w-full h-full object-contain block" autoPlay loop playsInline />
+            <video ref={videoRef} src={videoSrc} className="w-full h-full object-contain block" autoPlay loop playsInline muted />
           ) : activeView === 'end' ? (
             endImageSrc ? (
               <div className="w-full h-full overflow-hidden flex items-center justify-center">

@@ -423,7 +423,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs, on
       if (!effectiveEndPlot || effectiveEndPlot === cut.promptEn) {
         const evo = resolveCinematicEndFrameAndMotion({
           cutIndex: cutId - 1,
-          basicPlot: cut.promptEn || cut.narration || '',
+          basicPlot: cut.promptEn || cut.narrationJp || cut.narrationEn || '',
           isObjectOnly: cut.isObjectOnly,
           theme: settings.theme,
           isMvMode: ep.isMvMode
@@ -576,7 +576,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs, on
       seriesManifestRef,
       setActiveSeriesManifest,
       activeReferenceRef,
-      currentAssetRef
+      currentAssetRef,
+      onPackageReady
     };
 
     try {

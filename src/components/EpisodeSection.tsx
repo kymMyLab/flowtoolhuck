@@ -13,7 +13,7 @@ function formatDataUri(b64?: string): string {
  * 時代考証・世界観インテリジェンスカード（作品の時代設定と禁止要素を表示）
  */
 export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
-  const isMv = !!ep.isMvMode || ep.titleJp.startsWith('🎵') || ep.productionMode === 'mv';
+  const isMv = !!ep.isMvMode || (ep.titleJp || '').startsWith('🎵') || ep.productionMode === 'mv';
   const modeConfig = getProductionModeConfig(ep.productionMode, isMv);
   const mode = modeConfig.value;
   const cardTitle = modeConfig.cardTitle;
@@ -263,9 +263,9 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
           <div className="flex flex-col gap-0.5 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className={`font-black italic uppercase tracking-tight text-white leading-tight ${
-                ep.titleJp.length > 30 ? 'text-base sm:text-lg md:text-xl' : (ep.titleJp.length > 20 ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-3xl')
+                (ep.titleJp || '').length > 30 ? 'text-base sm:text-lg md:text-xl' : ((ep.titleJp || '').length > 20 ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-3xl')
               }`}>
-                {ep.titleJp}
+                {ep.titleJp || '無題'}
               </h2>
               {ep.isDone && <span className="material-symbols-outlined text-green-500 font-bold text-lg">check_circle</span>}
               {ep.isGenerating && <div className="w-4 h-4 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin shrink-0" />}

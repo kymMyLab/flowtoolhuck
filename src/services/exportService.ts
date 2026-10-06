@@ -115,13 +115,22 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
     ctx.textBaseline = 'middle';
     
     const segments: { text: string; isHighlight: boolean }[] = [];
-    if (highlights.length > 0) {
-      const regex = new RegExp(`(${highlights.join('|')})`, 'g');
-      const parts = text.split(regex);
-      parts.forEach(p => {
-        if (highlights.includes(p)) segments.push({ text: p, isHighlight: true });
-        else if (p) segments.push({ text: p, isHighlight: false });
-      });
+    const validHighlights = (highlights || [])
+      .filter((h): h is string => Boolean(h && h.trim()))
+      .map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+    if (validHighlights.length > 0) {
+      try {
+        const regex = new RegExp(`(${validHighlights.join('|')})`, 'g');
+        const parts = text.split(regex);
+        parts.forEach(p => {
+          if (highlights.includes(p)) segments.push({ text: p, isHighlight: true });
+          else if (p) segments.push({ text: p, isHighlight: false });
+        });
+      } catch (_) {
+        segments.length = 0;
+        segments.push({ text, isHighlight: false });
+      }
     } else {
       segments.push({ text, isHighlight: false });
     }
@@ -536,7 +545,9 @@ export const downloadZip = async (
     const sizeStr = `${sizeMb} MB`;
 
     const blobUrl = URL.createObjectURL(zipBlob);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000); // Free URL after download starts
+    setTimeout(() => {
+      try { URL.revokeObjectURL(blobUrl); } catch (_) {}
+    }, 600000); // 10分間有効（モーダルからの再ダウンロードを保証）
 
     // 統合保存処理を実行（ASCII安全名 asciiFilename を最優先で Flow.download に渡す）
     const saveRes = await savePackageFile(zipBlob, filename, addLog, asciiFilename);

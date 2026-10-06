@@ -92,7 +92,7 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
     const currentHighlights = cut.telop?.highlights || [];
     if (!currentHighlights.some(h => h.word === target)) {
       const next = [...currentHighlights, { word: target, color: '#FFE600', sizeScale: 1.1 }];
-      onUpdateCut({ telop: { ...cut.telop!, fullText: cut.telop?.fullText || '', highlights: next } });
+      onUpdateCut({ telop: { ...(cut.telop || {}), fullText: cut.telop?.fullText || '', highlights: next } });
     }
     setNewKeyword('');
   };
@@ -100,7 +100,7 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
   const handleRemoveKeyword = (wordToRemove: string) => {
     const currentHighlights = cut.telop?.highlights || [];
     const next = currentHighlights.filter(h => h.word !== wordToRemove);
-    onUpdateCut({ telop: { ...cut.telop!, fullText: cut.telop?.fullText || '', highlights: next } });
+    onUpdateCut({ telop: { ...(cut.telop || {}), fullText: cut.telop?.fullText || '', highlights: next } });
   };
 
   const handleAutoExtract = () => {
@@ -223,7 +223,7 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
                 const currentHighlights = cut.telop?.highlights || [];
                 const validExisting = currentHighlights.filter(h => h.word && v.includes(h.word));
                 const nextHighlights = validExisting.length > 0 ? validExisting : extractHighlights(v);
-                onUpdateCut({ telop: { ...cut.telop!, fullText: v, highlights: nextHighlights } });
+                onUpdateCut({ telop: { ...(cut.telop || {}), fullText: v, highlights: nextHighlights } });
               }} 
             />
 
@@ -238,7 +238,8 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
                   if (found) {
                     onUpdateCut({ 
                       telop: { 
-                        ...cut.telop!, 
+                        ...(cut.telop || {}), 
+                        fullText: cut.telop?.fullText || cut.narrationJp || '',
                         style: found.id,
                         transition: cut.telop?.transition || found.defaultTransition,
                         position: cut.telop?.position || found.defaultPosition
@@ -256,7 +257,8 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
                   if (found) {
                     onUpdateCut({ 
                       telop: { 
-                        ...cut.telop!, 
+                        ...(cut.telop || {}), 
+                        fullText: cut.telop?.fullText || cut.narrationJp || '',
                         transition: found.id 
                       } 
                     });
@@ -274,7 +276,8 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
                   if (found) {
                     onUpdateCut({ 
                       telop: { 
-                        ...cut.telop!, 
+                        ...(cut.telop || {}), 
+                        fullText: cut.telop?.fullText || cut.narrationJp || '',
                         position: found.id 
                       } 
                     });
