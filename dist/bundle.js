@@ -7965,7 +7965,7 @@ const eg = ({
   isRewriting: y = !1,
   onGenerateEndFrame: g
 }) => {
-  const x = Ee.useRef(null), [v, m] = useState("start");
+  const x = Ee.useRef(null), [v, m] = Ee.useState("start");
   Ee.useEffect(() => {
     const M = x.current;
     return () => {

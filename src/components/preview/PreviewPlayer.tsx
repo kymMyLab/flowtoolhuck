@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Cut } from '../../types';
 import { 
   STUDIO_NEON_PALETTE, 
