@@ -90,45 +90,88 @@ async function ensureCharacterTurnaround(
 
 /**
  * 世界観適応インフォグラフィック扉絵（9:16特大ポスター）を自動生成・登録
- * （Cut 1の確定キメ絵を下部に下げて配置し、世界観適応型の看板プレートをドッキング・被りゼロ）
+ * （Google AI Ultra Direct により、Cut 1マスターアンカーを参照しつつ上部25%看板＋下部被りゼロ配置の本格アートを描画）
  */
 async function ensureInfographicCover(
   ctx: ProductionPipelineContext,
   ep: Episode
-): Promise<{ base64?: string }> {
-  const { addLog, isAbortedRef, updateEpisode, episodesRef, setEpisodes } = ctx;
+): Promise<{ mediaId?: string; base64?: string; promptEn?: string }> {
+  const { settings, addLog, isAbortedRef, activeReferenceRef, updateEpisode, episodesRef, setEpisodes } = ctx;
 
   if (isAbortedRef.current) return {};
 
   const freshEp = episodesRef.current.find(e => e.id === ep.id) || ep;
-  if (freshEp.coverBase64) {
-    return { base64: freshEp.coverBase64 };
+  if (freshEp.coverMediaId || freshEp.coverBase64) {
+    return { mediaId: freshEp.coverMediaId, base64: freshEp.coverBase64, promptEn: freshEp.coverPromptEn };
   }
 
   try {
-    addLog(`🎨 Ep.${freshEp.id}: 【扉絵自動ドッキング】世界観適応インフォグラフィック扉絵（Cut 1合成・被りゼロ）を生成中...`, 'process');
+    addLog(`🎨 Ep.${freshEp.id}: 【扉絵自動生成】世界観適応インフォグラフィック扉絵（9:16特大ポスター）を描画中...`, 'process');
     updateEpisode(freshEp.id, { isGeneratingCover: true });
 
-    const coverBase64 = await renderCoverBase64(freshEp);
+    const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
+      titleJp: freshEp.titleJp,
+      titleEn: freshEp.titleEn,
+      coverCatchphraseJp: freshEp.coverCatchphraseJp,
+      coverCatchphraseEn: freshEp.coverCatchphraseEn,
+      theme: freshEp.theme || settings.theme,
+      era: freshEp.era || settings.era,
+      taste: freshEp.taste || settings.taste,
+      country: settings.country,
+      productionMode: freshEp.productionMode || settings.productionMode,
+      characterDna: freshEp.characterDna,
+      styleDna: activeReferenceRef.current?.styleDna,
+      forbiddenAnachronisms: freshEp.forbiddenAnachronisms,
+      authenticAttireEn: freshEp.authenticAttireEn
+    });
 
-    if (coverBase64) {
+    // 参照画像があれば渡す（Cut 1マスターアンカー、または三面図、または手動リファレンス）
+    const refMediaIds: string[] = [];
+    if (freshEp.masterAnchorMediaId) {
+      refMediaIds.push(freshEp.masterAnchorMediaId);
+    } else if (freshEp.characterTurnaroundMediaId) {
+      refMediaIds.push(freshEp.characterTurnaroundMediaId);
+    } else if (activeReferenceRef.current?.mediaId) {
+      refMediaIds.push(activeReferenceRef.current.mediaId);
+    }
+
+    const modelDef = resolveImageModel(settings.imageModel);
+    const res = await callWithRetry<any>(
+      () => Flow.generate.image({
+        prompt: coverPromptObj.promptEn,
+        negativePrompt: coverPromptObj.negativePromptEn,
+        modelDisplayName: modelDef.name,
+        aspectRatio: '9:16' as any,
+        referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
+      }),
+      undefined,
+      4
+    );
+
+    if (res && (res.mediaId || res.base64)) {
       updateEpisode(freshEp.id, {
-        coverBase64,
+        coverMediaId: res.mediaId,
+        coverBase64: res.base64,
+        coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       });
       episodesRef.current = episodesRef.current.map(e => e.id === freshEp.id ? {
         ...e,
-        coverBase64,
+        coverMediaId: res.mediaId,
+        coverBase64: res.base64,
+        coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       } : e);
       setEpisodes(prev => prev.map(e => e.id === freshEp.id ? {
         ...e,
-        coverBase64,
+        coverMediaId: res.mediaId,
+        coverBase64: res.base64,
+        coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       } : e));
 
-      addLog(`✨ Ep.${freshEp.id}: 【扉絵自動生成完了】世界観適応インフォグラフィック扉絵が完成しました！（被りゼロ保証）`, 'success');
-      return { base64: coverBase64 };
+      addLog(`✨ Ep.${freshEp.id}: 【扉絵自動生成完了】世界観適応インフォグラフィック扉絵が完成しました！（被りゼロ本格ポスター）`, 'success');
+      return { mediaId: res.mediaId, base64: res.base64, promptEn: coverPromptObj.promptEn };
     }
   } catch (err: any) {
     updateEpisode(freshEp.id, { isGeneratingCover: false });

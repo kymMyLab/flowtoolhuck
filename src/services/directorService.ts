@@ -1204,8 +1204,8 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
     extraNegative = `cluttered graphics, juvenile cartoon elements, chaotic composition`;
   } else if (productionMode === 'mv' || combinedContext.includes('音楽') || combinedContext.includes('music') || combinedContext.includes('mv')) {
     // 【音楽・MV】
-    mediumInstruction = `Iconic music concept art poster and editorial vinyl cover design, evocative atmospheric color grading, cinematic emotional visual narrative, stylish graphic design accents`;
-    typographyStyle = `Stylized Japanese music single headline typography reading "${titleJp}"`;
+    mediumInstruction = `Iconic music concept art poster and editorial vinyl single cover design, evocative atmospheric color grading, cinematic emotional visual narrative, stylish audio metadata HUD graphics, subtle equalizer visualizer accents, track title graphic hierarchy`;
+    typographyStyle = `Stylized Japanese music single headline typography reading "${titleJp}" seamlessly integrated into the upper visual atmosphere with subtle glowing neon treatment and audio player typography aesthetics`;
     extraNegative = `boring layout, flat corporate diagram, low-effort snapshot`;
   } else {
     // 【汎用・現代ドラマ・通常モード】

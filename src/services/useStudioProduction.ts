@@ -377,22 +377,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           masterAnchorBase64: res.base64
         });
         addLog(`👑 Ep.${epId}: Cut 1 の決定版ポートレートを【全カット共通マスターアンカー】としてロックしました！`, 'success');
-
-        // ★Cut 1確定の瞬間に、インフォグラフィック特大扉絵（絵を下げて看板ドッキング・被りゼロ）を自動生成！
-        try {
-          const targetEp = episodesRef.current.find(e => e.id === epId);
-          if (targetEp) {
-            const compositeCover = await renderCoverBase64({
-              ...targetEp,
-              masterAnchorBase64: res.base64,
-              cuts: targetEp.cuts.map(c => c.id === 1 ? { ...c, imageBase64: res.base64 } : c)
-            });
-            updateEpisode(epId, { coverBase64: compositeCover });
-            addLog(`🖼️ Ep.${epId}: Cut 1確定ポートレートから世界観適応インフォグラフィック特大扉絵を自動ドッキング完了！`, 'success');
-          }
-        } catch (coverErr: any) {
-          console.warn('Auto cover render error:', coverErr);
-        }
       }
 
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');
@@ -512,21 +496,70 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     if (!ep) return;
 
     updateEpisode(epId, { isGeneratingCover: true });
-    addLog(`🎨 Ep.${epId}: 「${ep.titleJp}」世界観適応インフォグラフィック扉絵（Cut 1合成・被りゼロ）を生成中...`, 'process');
+    const modelDef = resolveImageModel(settings.imageModel);
+    addLog(`🎨 Ep.${epId}: 「${ep.titleJp}」世界観適応インフォグラフィック扉絵（9:16特大ポスター）をAI描画中...`, 'process');
 
     try {
-      const coverBase64 = await renderCoverBase64(ep);
+      const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
+        titleJp: ep.titleJp,
+        titleEn: ep.titleEn,
+        coverCatchphraseJp: ep.coverCatchphraseJp,
+        coverCatchphraseEn: ep.coverCatchphraseEn,
+        theme: ep.theme || settings.theme,
+        era: ep.era || settings.era,
+        taste: ep.taste || settings.taste,
+        country: settings.country,
+        productionMode: ep.productionMode || settings.productionMode,
+        characterDna: ep.characterDna,
+        styleDna: activeReferenceRef.current?.styleDna,
+        forbiddenAnachronisms: ep.forbiddenAnachronisms,
+        authenticAttireEn: ep.authenticAttireEn
+      });
+
+      // 参照画像があれば渡す（Cut 1マスターアンカー、または三面図、または手動リファレンス）
+      const refMediaIds: string[] = [];
+      if (ep.masterAnchorMediaId) {
+        refMediaIds.push(ep.masterAnchorMediaId);
+      } else if (ep.characterTurnaroundMediaId) {
+        refMediaIds.push(ep.characterTurnaroundMediaId);
+      } else if (activeReferenceRef.current?.mediaId) {
+        refMediaIds.push(activeReferenceRef.current.mediaId);
+      }
+
+      const res = await callWithRetry<any>(
+        () => Flow.generate.image({
+          prompt: coverPromptObj.promptEn,
+          negativePrompt: coverPromptObj.negativePromptEn,
+          modelDisplayName: modelDef.name,
+          aspectRatio: DEFAULT_ASPECT_RATIO as any,
+          referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
+        }),
+        (attempt, max, delay, err) => {
+          addLog(`⚠️ Ep.${epId}: 扉絵生成リトライ (${attempt}/${max})... (理由: ${formatErrorMessage(err)})`, 'warning');
+        },
+        {
+          maxRetries: 4,
+          timeoutMs: 90000,
+          timeoutLabel: '扉絵生成',
+          superBackoff: settings.superBackoff,
+          abortCheck: () => isAbortedRef.current
+        }
+      );
+
       updateEpisode(epId, {
-        coverBase64,
+        coverMediaId: res.mediaId,
+        coverBase64: res.base64,
+        coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       });
-      addLog(`🖼️ Ep.${epId}: インフォグラフィック特大扉絵（Cut 1完全連動・被りゼロ）が完成しました！`, 'success');
+
+      addLog(`🖼️ Ep.${epId}: インフォグラフィック特大扉絵（9:16特大ポスター）の描画が完了しました！`, 'success');
     } catch (err: any) {
       const errorMsg = formatErrorMessage(err);
       updateEpisode(epId, { isGeneratingCover: false });
       addLog(`❌ Ep.${epId} 扉絵生成エラー: ${errorMsg}`, 'error');
     }
-  }, [addLog, updateEpisode]);
+  }, [settings, addLog, updateEpisode]);
 
   const handleBulkVideo = async (epId: number) => {
     const ep = episodesRef.current.find(e => e.id === epId);
