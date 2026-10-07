@@ -1214,15 +1214,15 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
     extraNegative = `cheap low-res flyer, amateur layout, chaotic clutter`;
   }
 
-  // 2. 主役・フォーカルサブジェクトの動的設定（看板・文字との被りを防ぐため、タイトル枠の下に余裕を持った配置）
+  // 2. 主役・フォーカルサブジェクトの動的設定（頭部が天井やタイトルと衝突するのを防ぐため、引きの構図で下半身・腰上から低めに配置）
   let focalSubject = '';
   if (characterDna) {
     const costumeNote = isHist && authenticAttireEn ? `dressed in authentic ${authenticAttireEn}` : '';
-    focalSubject = `Main focal subject: ${characterDna} ${costumeNote}, positioned in the comfortable center portion of the composition with ample clear margin beneath the top title banner, captured in a charismatic and expressive hero pose with zero collision between head and typography.`;
+    focalSubject = `Main focal subject: ${characterDna} ${costumeNote}, captured in a pull-back medium-wide shot (framed comfortably from waist up or seated low), positioned firmly in the lower-middle portion of the vertical canvas. The subject's head is kept low (at or below 35% down from the top edge), leaving the top 30% of the poster completely open and spacious for prominent title graphic design.`;
   } else if (theme) {
-    focalSubject = `Key thematic visual: Symbolic central subject embodying the essence of "${theme}", positioned in the center with clear breathing room beneath the title banner.`;
+    focalSubject = `Key thematic visual: Symbolic central subject embodying the essence of "${theme}", framed comfortably in the lower-middle portion with the upper 30% kept wide open and spacious beneath the title.`;
   } else {
-    focalSubject = `Central hero focal visual with striking presence, positioned comfortably in the mid-lower composition beneath the title.`;
+    focalSubject = `Central hero focal visual with striking presence, framed in a pull-back view positioned in the lower-middle half beneath the spacious top title area.`;
   }
 
   // 3. サブキャッチコピー
@@ -1234,20 +1234,20 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
   const resolvedTaste = taste ? resolveTastePrompt(taste) : (styleDna || '');
   const styleClause = resolvedTaste ? `Artistic rendering style: ${resolvedTaste}.` : '';
 
-  // 5. プロンプト結合（上部25%のタイトル看板枠と、中央のキャラクターの完全な棲み分け・被り防止）
+  // 5. プロンプト結合（上部30%のゆったりとしたタイトル看板枠と、低めに配置した被写体の完全な棲み分け）
   const promptEn = [
-    `Vertical 9:16 high-impact cover poster and commercial infographic key visual.`,
+    `Vertical 9:16 high-impact editorial cover poster and commercial infographic key visual.`,
     mediumInstruction + `.`,
-    `Layout Hierarchy: Top 25% is dedicated exclusively to the header banner and bold Japanese title typography. Generous visual breathing space between the bottom of the title banner and the subject below.`,
+    `Poster Layout & Hierarchy: Generous editorial margins on all sides. The top 30% features a prominent, beautifully centered headline signboard block displaying the exact title "${titleJp}" with high-end graphic design hierarchy. The title banner sits comfortably down from the ceiling with generous breathing space (never touching the top edge).`,
     focalSubject,
     typographyStyle + `.`,
     subtitleClause,
     styleClause,
-    `Composition: Vertical 9:16 aspect ratio, perfectly balanced editorial hierarchy. The character is framed entirely below the top title banner with clear vertical separation, ensuring zero visual overlap or collision between the character's head/hair and the banner frame. Crystal clear focal point, professional graphic design, masterpiece, 8k resolution.`
+    `Camera & Composition: Vertical 9:16 aspect ratio, perfectly balanced editorial hierarchy. Wide or medium-wide framing with the character's head clearly positioned in the lower portion (at or below 35% from the top), ensuring zero visual crowding, zero text touching the ceiling, and zero collision between head and typography. Crystal clear focal point, professional graphic design, masterpiece, 8k resolution.`
   ].filter(Boolean).join(' ');
 
-  // 6. ネガティブプロンプト（文字と頭部の重なり・被りを徹底排除）
-  const baseNegative = `text overlapping character's head, banner colliding with hair, text covering face, cluttered overlap between subject and title, awkwardly placed text, blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts`;
+  // 6. ネガティブプロンプト（文字が天井に張り付く現象・頭部と文字の被りを徹底排除）
+  const baseNegative = `text touching the top border, text crammed against the ceiling, text cut off at top edge, extreme close-up portrait with head at top ceiling, text overlapping character's head, banner colliding with hair, text covering face, cluttered overlap between subject and title, awkwardly placed text, blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts`;
   const forbiddenAnachStr = forbiddenAnachronisms.length > 0 ? forbiddenAnachronisms.join(', ') : '';
   const negativePromptEn = [
     baseNegative,
