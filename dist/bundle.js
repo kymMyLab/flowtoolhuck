@@ -19512,7 +19512,7 @@ async function Zb(r, t) {
           y.currentTime = E, await new Promise((B) => y.onseeked = B), d.fillStyle = "black", d.fillRect(0, 0, i, a), d.drawImage(y, 0, 0, i, a), Mc(d, i, a, k, E, b, !!r.isMvMode), await g.add(m, 1 / o), m += 1 / o;
         }
       } finally {
-        y.pause(), y.removeAttribute("src"), y.src = "", y.load(), y.parentNode && y.parentNode.removeChild(y);
+        y.pause(), y.removeAttribute("src"), y.src = "", y.load(), y.remove(), y.parentNode && y.parentNode.removeChild(y);
       }
     } else if (k.imageBase64) {
       const y = await new Promise((E, B) => {
@@ -19540,11 +19540,16 @@ async function Xb(r, t = 4, i = !1) {
   }), x = new fp(d, { codec: "avc", frameRate: l });
   m.addVideoTrack(x), await m.start();
   const k = !i && !r.telop?.style?.startsWith("mv-") ? bp(a, o, r) : null;
-  for (let y = 0; y < u; y++) {
-    const b = y / u;
-    h.fillStyle = "black", h.fillRect(0, 0, a, o), Dh(h, g, a, o, r.kenBurnsPreset || "none", b), k ? h.drawImage(k, 0, 0) : Mc(h, a, o, r, y / l, t, i), await x.add(y / l, 1 / l);
+  try {
+    for (let y = 0; y < u; y++) {
+      const b = y / u;
+      h.fillStyle = "black", h.fillRect(0, 0, a, o), Dh(h, g, a, o, r.kenBurnsPreset || "none", b), k ? h.drawImage(k, 0, 0) : Mc(h, a, o, r, y / l, t, i), await x.add(y / l, 1 / l);
+    }
+    x.close(), await m.finalize();
+  } finally {
+    h.clearRect(0, 0, a, o), d.width = 0, d.height = 0;
   }
-  return x.close(), await m.finalize(), h.clearRect(0, 0, a, o), d.width = 0, d.height = 0, new Promise((y) => {
+  return new Promise((y) => {
     const b = new FileReader();
     b.onloadend = () => y(b.result.split(",")[1]), b.readAsDataURL(new Blob([m.target.buffer], { type: "video/mp4" }));
   });
@@ -20616,7 +20621,10 @@ function av({
       const y = Xo(g);
       o(d, h, { isGeneratingVideo: !0, videoModelUsed: y.name, error: void 0 }), t(`🎥 Ep.${d} C${h.toString().padStart(2, "0")}: Start絵基準・プロンプト誘導型動画生成を開始 (${y.name})`, "info");
       try {
-        const v = m?.veoMotionPrompt && /[a-zA-Z0-9]/.test(m.veoMotionPrompt) ? `[Temporal Scene Transition]: ${m.veoMotionPrompt}` : m?.cameraMotion || (m?.cameraWork ? an(m.cameraWork).motionPrompt : ""), E = m?.endFramePromptEn && /[a-zA-Z0-9]/.test(m.endFramePromptEn) ? ` [Destination Finale Scene]: ${m.endFramePromptEn}` : "", B = `[Initial Starting Scene]: ${m?.promptEn || ""} ${v}${E}`.trim(), A = await lr(
+        const v = m?.veoMotionPrompt && /[a-zA-Z0-9]/.test(m.veoMotionPrompt) ? `[Temporal Scene Transition]: ${m.veoMotionPrompt}` : m?.cameraMotion || (m?.cameraWork ? an(m.cameraWork).motionPrompt : ""), E = m?.endFramePromptEn && /[a-zA-Z0-9]/.test(m.endFramePromptEn) ? ` [Destination Finale Scene]: ${m.endFramePromptEn}` : "";
+        let B = `[Initial Starting Scene]: ${m?.promptEn || ""} ${v}${E}`.trim();
+        (B.includes("undefined") || !/[a-zA-Z0-9]/.test(B)) && (B = "Cinematic moving shot, high quality");
+        const A = await lr(
           () => ct.generate.video({
             prompt: B,
             firstFrameImageMediaId: x,

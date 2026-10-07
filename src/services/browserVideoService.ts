@@ -127,6 +127,7 @@ export async function renderFullEpisodeMovie(
         video.removeAttribute('src');
         video.src = '';
         video.load();
+        video.remove();
         if (video.parentNode) {
           video.parentNode.removeChild(video);
         }
@@ -213,27 +214,29 @@ export async function renderKenBurnsVideo(cut: Cut, durationSec: number = 4, isM
     ? createCachedSubtitleCanvas(width, height, cut)
     : null;
 
-  for (let frame = 0; frame < totalFrames; frame++) {
-    const progress = frame / totalFrames;
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, width, height);
-    drawKenBurnsFrame(ctx, img, width, height, cut.kenBurnsPreset || 'none', progress);
+  try {
+    for (let frame = 0; frame < totalFrames; frame++) {
+      const progress = frame / totalFrames;
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, width, height);
+      drawKenBurnsFrame(ctx, img, width, height, cut.kenBurnsPreset || 'none', progress);
 
-    if (subtitleCache) {
-      ctx.drawImage(subtitleCache as any, 0, 0);
-    } else {
-      drawBakedSubtitles(ctx, width, height, cut, frame / fps, durationSec, isMvMode);
+      if (subtitleCache) {
+        ctx.drawImage(subtitleCache as any, 0, 0);
+      } else {
+        drawBakedSubtitles(ctx, width, height, cut, frame / fps, durationSec, isMvMode);
+      }
+
+      await canvasSource.add(frame / fps, 1 / fps);
     }
 
-    await canvasSource.add(frame / fps, 1 / fps);
+    canvasSource.close();
+    await output.finalize();
+  } finally {
+    ctx.clearRect(0, 0, width, height);
+    canvas.width = 0;
+    canvas.height = 0;
   }
-
-  canvasSource.close();
-  await output.finalize();
-
-  ctx.clearRect(0, 0, width, height);
-  canvas.width = 0;
-  canvas.height = 0;
 
   return new Promise((resolve) => {
     const reader = new FileReader();
