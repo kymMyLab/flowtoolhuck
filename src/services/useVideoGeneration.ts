@@ -55,32 +55,27 @@ export function useVideoGeneration({
     const modelDef = resolveVideoModel(modelType);
     updateCut(epId, cutId, { isGeneratingVideo: true, videoModelUsed: modelDef.name, error: undefined });
     
-    if (endMediaId) {
-      addLog(`🎥 Ep.${epId} C${cutId.toString().padStart(2, '0')}: Start絵 🏁 After絵の前後フレーム完全補間動画を生成開始 (${modelDef.name})`, 'info');
-    } else {
-      addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: End絵(2枚目)のMediaIDが無いため、1枚絵からの通常動画生成(フォールバック)を実行します`, 'warning');
-      addLog(`🎥 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画生成開始 (${modelDef.name})`, 'info');
-    }
+    addLog(`🎥 Ep.${epId} C${cutId.toString().padStart(2, '0')}: Start絵基準・プロンプト誘導型動画生成を開始 (${modelDef.name})`, 'info');
 
     try {
+      // ユーザー指示: After絵の画像参照はモーフィング崩壊の害悪となるため無効化！
+      // Start絵（画像1枚）のみを参照し、プロンプトだけで「初めに●●、次に■■、最後にAfterの状態」へと自然に進化させる
       const isMotionValid = cut?.veoMotionPrompt && /[a-zA-Z0-9]/.test(cut.veoMotionPrompt);
       const motionText = isMotionValid
         ? `[Temporal Scene Transition]: ${cut.veoMotionPrompt}`
         : (cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : ''));
       
-      const cameraInstruction = motionText ? ` ${motionText}` : '';
-      let finalVideoPrompt = `${cut?.promptEn || ''}${cameraInstruction}`;
-
       const isEndFrameValid = cut?.endFramePromptEn && /[a-zA-Z0-9]/.test(cut.endFramePromptEn);
-      if (endMediaId && (isEndFrameValid || cut?.promptEn)) {
-        finalVideoPrompt = `[Start Frame]: ${cut?.promptEn || ''} ${cameraInstruction} [Target Ending Frame]: ${isEndFrameValid ? cut.endFramePromptEn : cut?.promptEn || 'Natural evolution'}`;
-      }
+      const endDestinationText = isEndFrameValid ? ` [Destination Finale Scene]: ${cut.endFramePromptEn}` : '';
+
+      // Start絵の構図 ＋ 三段時系列カメラ＆情景推移 ＋ 最終到達点（After）の情景プロンプト
+      const finalVideoPrompt = `[Initial Starting Scene]: ${cut?.promptEn || ''} ${motionText}${endDestinationText}`.trim();
 
       const res = await callWithRetry<any>(
         () => Flow.generate.video({ 
           prompt: finalVideoPrompt, 
           firstFrameImageMediaId: mediaId, 
-          lastFrameImageMediaId: endMediaId || undefined,
+          // lastFrameImageMediaId: endMediaId || undefined, // ※ユーザー指示: After参照はモーフィング崩壊の害悪となるため無効化
           modelDisplayName: modelDef.name, 
           durationSeconds: modelDef.defaultDuration, 
           aspectRatio: DEFAULT_ASPECT_RATIO as "16:9" | "9:16" 

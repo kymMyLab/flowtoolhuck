@@ -380,10 +380,13 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');
 
-      // 1カット2枚生成トグル（enableEndFrames）がONなら、Start絵の直後にAfter絵（到達点フレーム）も自動生成！
+      // ユーザー指示: After絵の参照がモーフィング崩壊の害悪となるため自動生成を無効化
+      // （※Start絵1枚からプロンプトだけでAfter状態へ導く仕様に変更）
+      /*
       if (settings.enableEndFrames !== false) {
         await generateEndFrame(epId, cutId);
       }
+      */
     } catch (err) {
       const errorMsg = formatErrorMessage(err);
       updateCut(epId, cutId, { isGeneratingImage: false, error: errorMsg });
