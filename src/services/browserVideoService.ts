@@ -63,6 +63,18 @@ export async function renderFullEpisodeMovie(
       await canvasSource.add(globalTime, 1 / fps);
       globalTime += 1 / fps;
     }
+    if (coverCanvas instanceof OffscreenCanvas) {
+      const coverCtx = coverCanvas.getContext('2d');
+      if (coverCtx) coverCtx.clearRect(0, 0, coverCanvas.width, coverCanvas.height);
+      coverCanvas.width = 0;
+      coverCanvas.height = 0;
+    } else {
+      const cvs = coverCanvas as HTMLCanvasElement;
+      const coverCtx = cvs.getContext('2d');
+      if (coverCtx) coverCtx.clearRect(0, 0, cvs.width, cvs.height);
+      cvs.width = 0;
+      cvs.height = 0;
+    }
   } catch (e) {
     console.error('Intro cover render failed', e);
   }

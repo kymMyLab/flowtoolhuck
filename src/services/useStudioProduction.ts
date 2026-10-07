@@ -411,6 +411,9 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
       // 到達点プロンプトの決定（Start絵からの8秒後のドラマチックな姿勢・表情進化を保証）
       let effectiveEndPlot = customEndPrompt || cut.endFramePromptEn;
+      if (effectiveEndPlot && !/[a-zA-Z0-9]/.test(effectiveEndPlot)) {
+        effectiveEndPlot = undefined;
+      }
       if (!effectiveEndPlot || effectiveEndPlot === cut.promptEn) {
         const evo = resolveCinematicEndFrameAndMotion({
           cutIndex: cutId - 1,
