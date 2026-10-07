@@ -20,7 +20,8 @@ import {
   sanitizeForYouTubeSafety, 
   buildGrandDesignPrompt, 
   buildNextEpisodePlanPrompt,
-  buildCharacterTurnaroundPrompt
+  buildCharacterTurnaroundPrompt,
+  buildAdaptiveInfographicCoverPrompt
 } from './directorService';
 import { LogEntry } from '../components/StudioLogs';
 
@@ -86,6 +87,100 @@ async function ensureCharacterTurnaround(
 
   return {};
 }
+
+/**
+ * 世界観適応インフォグラフィック扉絵（9:16特大ポスター）を自動生成・登録
+ */
+async function ensureInfographicCover(
+  ctx: ProductionPipelineContext,
+  ep: Episode
+): Promise<{ mediaId?: string; base64?: string; promptEn?: string }> {
+  const { settings, addLog, isAbortedRef, activeReferenceRef, updateEpisode, episodesRef, setEpisodes } = ctx;
+
+  if (isAbortedRef.current) return {};
+
+  const freshEp = episodesRef.current.find(e => e.id === ep.id) || ep;
+  if (freshEp.coverMediaId || freshEp.coverBase64) {
+    return { mediaId: freshEp.coverMediaId, base64: freshEp.coverBase64, promptEn: freshEp.coverPromptEn };
+  }
+
+  try {
+    addLog(`🎨 Ep.${freshEp.id}: 【扉絵自動生成】世界観適応インフォグラフィック扉絵（9:16特大ポスター）を描画中...`, 'process');
+    updateEpisode(freshEp.id, { isGeneratingCover: true });
+
+    const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
+      titleJp: freshEp.titleJp,
+      titleEn: freshEp.titleEn,
+      coverCatchphraseJp: freshEp.coverCatchphraseJp,
+      coverCatchphraseEn: freshEp.coverCatchphraseEn,
+      theme: freshEp.theme || settings.theme,
+      era: freshEp.era || settings.era,
+      taste: freshEp.taste || settings.taste,
+      country: settings.country,
+      productionMode: freshEp.productionMode || settings.productionMode,
+      characterDna: freshEp.characterDna,
+      styleDna: activeReferenceRef.current?.styleDna,
+      forbiddenAnachronisms: freshEp.forbiddenAnachronisms,
+      authenticAttireEn: freshEp.authenticAttireEn
+    });
+
+    const refMediaIds: string[] = [];
+    if (freshEp.masterAnchorMediaId) {
+      refMediaIds.push(freshEp.masterAnchorMediaId);
+    } else if (freshEp.characterTurnaroundMediaId) {
+      refMediaIds.push(freshEp.characterTurnaroundMediaId);
+    } else if (activeReferenceRef.current?.mediaId) {
+      refMediaIds.push(activeReferenceRef.current.mediaId);
+    } else if (freshEp.cuts[0]?.imageMediaId) {
+      refMediaIds.push(freshEp.cuts[0].imageMediaId);
+    }
+
+    const modelDef = resolveImageModel(settings.imageModel);
+    const res = await callWithRetry<any>(
+      () => Flow.generate.image({
+        prompt: coverPromptObj.promptEn,
+        negativePrompt: coverPromptObj.negativePromptEn,
+        modelDisplayName: modelDef.name,
+        aspectRatio: '9:16' as any,
+        referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
+      }),
+      undefined,
+      4
+    );
+
+    if (res && res.mediaId) {
+      updateEpisode(freshEp.id, {
+        coverMediaId: res.mediaId,
+        coverBase64: res.base64,
+        coverPromptEn: coverPromptObj.promptEn,
+        isGeneratingCover: false
+      });
+      episodesRef.current = episodesRef.current.map(e => e.id === freshEp.id ? {
+        ...e,
+        coverMediaId: res.mediaId,
+        coverBase64: res.base64,
+        coverPromptEn: coverPromptObj.promptEn,
+        isGeneratingCover: false
+      } : e);
+      setEpisodes(prev => prev.map(e => e.id === freshEp.id ? {
+        ...e,
+        coverMediaId: res.mediaId,
+        coverBase64: res.base64,
+        coverPromptEn: coverPromptObj.promptEn,
+        isGeneratingCover: false
+      } : e));
+
+      addLog(`✨ Ep.${freshEp.id}: 【扉絵自動生成完了】世界観適応インフォグラフィック扉絵が完成しました！`, 'success');
+      return { mediaId: res.mediaId, base64: res.base64, promptEn: coverPromptObj.promptEn };
+    }
+  } catch (err: any) {
+    updateEpisode(freshEp.id, { isGeneratingCover: false });
+    addLog(`⚠️ Ep.${freshEp.id}: 扉絵の自動生成スキップ（手動ボタンで再生成可能）: ${formatErrorMessage(err)}`, 'warning');
+  }
+
+  return {};
+}
+
 
 
 export interface ProductionPipelineContext {
@@ -412,6 +507,9 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     });
     addLog(`✅ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！`, 'success');
 
+    // ★インフォグラフィック扉絵（9:16特大ポスター）を全自動生成！
+    await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epIndex) || newEpisode);
+
     if (settings.autoVideo && !isAbortedRef.current) {
       const currentEpForVideo = episodesRef.current.find(e => e.id === epIndex);
       const selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
@@ -692,6 +790,9 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       const currentEp = episodesRef.current.find(e => e.id === epId)!;
       await runTasks(buildCutTasks(currentEp, episodeCuts.slice(0, settings.previewCutCount)));
       addLog(`🎉 【第${epId}話】「${currentPlan.titleJp}」の先行プレビュー制作が完了しました！`, 'success');
+
+      // ★インフォグラフィック扉絵（9:16特大ポスター）を全自動生成！
+      await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epId) || currentEp);
 
       const currentEpForVideo = episodesRef.current.find(e => e.id === epId);
       const cutsToAnimate = currentEpForVideo ? currentEpForVideo.cuts.filter(c => c.isSelectedForVideo) : [];
