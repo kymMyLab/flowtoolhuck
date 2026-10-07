@@ -63,15 +63,26 @@ export function useVideoGeneration({
     }
 
     try {
-      const motionText = cut?.veoMotionPrompt 
-        ? `Cinematic interpolation from start frame to end frame: ${cut.veoMotionPrompt}.`
+      // Validate prompt strings to prevent rendering failures
+      let validMotionPrompt = cut?.veoMotionPrompt;
+      if (validMotionPrompt && !/[a-zA-Z0-9]/.test(validMotionPrompt)) {
+        validMotionPrompt = ''; // discard if only symbols
+      }
+
+      let validEndFramePrompt = cut?.endFramePromptEn;
+      if (validEndFramePrompt && !/[a-zA-Z0-9]/.test(validEndFramePrompt)) {
+        validEndFramePrompt = cut?.promptEn || ''; // fallback
+      }
+
+      const motionText = validMotionPrompt
+        ? `Cinematic interpolation from start frame to end frame: ${validMotionPrompt}.`
         : (cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : ''));
       
       const cameraInstruction = motionText ? ` [Motion Directive: ${motionText}]` : '';
       let finalVideoPrompt = `${cut?.promptEn || ''}${cameraInstruction}`;
 
-      if (endMediaId && cut?.endFramePromptEn) {
-        finalVideoPrompt = `[Start Frame]: ${cut?.promptEn || ''} ${cameraInstruction} [Target Ending Frame]: ${cut.endFramePromptEn}`;
+      if (endMediaId && validEndFramePrompt) {
+        finalVideoPrompt = `[Start Frame]: ${cut?.promptEn || ''} ${cameraInstruction} [Target Ending Frame]: ${validEndFramePrompt}`;
       }
 
       const res = await callWithRetry<any>(

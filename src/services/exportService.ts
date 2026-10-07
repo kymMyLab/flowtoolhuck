@@ -465,6 +465,12 @@ export const downloadZip = async (
       : new Promise<Blob>(r => (coverCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
     folder.file('cover.png', coverBlob);
     
+    // cleanup cover canvas immediately to free memory
+    const ctx = coverCanvas.getContext('2d');
+    ctx?.clearRect(0, 0, coverCanvas.width, coverCanvas.height);
+    coverCanvas.width = 0;
+    coverCanvas.height = 0;
+
     // ※未結合の各カット素材（cut_*.png / cut_*_after.png / cut_*.mp4）と完全版 script.json を同梱
     const scriptJson = {
       id: ep.id,
@@ -546,7 +552,7 @@ export const downloadZip = async (
     const blobUrl = URL.createObjectURL(zipBlob);
     setTimeout(() => {
       try { URL.revokeObjectURL(blobUrl); } catch (_) {}
-    }, 600000); // 10分間有効（モーダルからの再ダウンロードを保証）
+    }, 60000); // reduced timeout to free memory quicker
 
     // 統合保存処理を実行（ASCII安全名 asciiFilename を最優先で Flow.download に渡す）
     const saveRes = await savePackageFile(zipBlob, filename, addLog, asciiFilename);

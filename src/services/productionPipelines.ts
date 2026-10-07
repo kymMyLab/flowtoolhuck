@@ -445,13 +445,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       addLog(`📦 第${epIndex}${modeInfo.unit}の完了時自動ダウンロードを開始します...`, 'process');
       const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
       const res = await downloadZip(freshEp, addLog, undefined, currentLogs);
-      if (res) {
-        updateEpisode(epIndex, {
-          packageZipBlobUrl: res.blobUrl,
-          packageZipFilename: res.filename,
-          packageZipSizeStr: res.sizeStr
-        });
-      }
+      // Removed packageZipBlobUrl update to prevent memory leak and block modals in continuous downloads
     }
     await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
     cleanupEpisodeMemory();
@@ -734,13 +728,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       if (settings.autoDownload && !isAbortedRef.current) {
         const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
         const res = await downloadZip(freshEp, addLog, manifest, currentLogs);
-        if (res) {
-          updateEpisode(epId, {
-            packageZipBlobUrl: res.blobUrl,
-            packageZipFilename: res.filename,
-            packageZipSizeStr: res.sizeStr
-          });
-        }
+        // Removed packageZipBlobUrl update to prevent memory leak and block modals in continuous downloads
       }
       await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
       cleanupEpisodeMemory();

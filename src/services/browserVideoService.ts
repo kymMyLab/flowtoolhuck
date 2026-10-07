@@ -63,6 +63,12 @@ export async function renderFullEpisodeMovie(
       await canvasSource.add(globalTime, 1 / fps);
       globalTime += 1 / fps;
     }
+
+    // explicitly clear coverCanvas to free memory
+    const coverCtx = coverCanvas.getContext('2d');
+    coverCtx?.clearRect(0, 0, coverCanvas.width, coverCanvas.height);
+    coverCanvas.width = 0;
+    coverCanvas.height = 0;
   } catch (e) {
     console.error('Intro cover render failed', e);
   }
