@@ -690,10 +690,10 @@ export function resolveCinematicEndFrameAndMotion(options: {
   // 2. 普遍的相対シネマティック指示（元絵に対して●●）
   // どんな世界観・人物でも100%通用し、元絵との乖離を起こさず自然なカメラ・表情変化を生み出す
   const universalDroneMotions: CinematicEvolution[] = [
-    // Pattern 1: 元絵に対して、180度反対向きへ回り込む
+    // Pattern 1: 元絵に対して、緩やかな30度アーク移動（斜め前 ➔ 横顔）と指先・表情の自然な連動
     {
-      endFramePlot: `Relative to the start frame: camera orbits 180 degrees to the opposite perspective, capturing the same protagonist from behind looking across the room, strictly preserving identical hair, clothing, and nocturnal lighting.`,
-      veoMotionPrompt: 'Continuous 8-second smooth 180-degree drone orbit circling the character to the opposite perspective, seamless spatial flow.'
+      endFramePlot: `Relative to the start frame: camera glides in a gentle 30-degree tracking arc toward a refined side profile, capturing the protagonist with their chin slightly raised and a focused artistic gaze, maintaining the exact same room, hoodie, and lighting.`,
+      veoMotionPrompt: 'Continuous 8-second cinematic 30-degree arc glide: smooth subtle parallax as the character gently tilts their head and taps rhythmically, maintaining seamless facial and spatial fidelity without distortion.'
     },
     // Pattern 2: 元絵に対して、上から見下ろすアングル（俯瞰）に上昇する
     {
