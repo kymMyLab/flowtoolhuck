@@ -1,80 +1,69 @@
-# Jules Pro Autonomous Debugging & Enhancement Mission (Overnight Job)
+# Jules Pro Autonomous Debugging & Hardening Mission
 **Project**: FlowTool (Studio Pro - MV & Cinematic Video Production System)  
-**Target Environment**: Chrome DevTools Mount / High-Speed Web App Bundle  
-**Updated**: 2026-10-08 (Overnight Autonomous Session)
+**Target Environment**: Chrome DevTools Mount / Single ESM Web App Bundle  
+**Branch**: `main`  
+**Updated**: 2026-10-08
 
 ---
 
 ## 🎯 ミッション概要
-本リポジトリは、Google Flow Tools 上にマウントして動作するシネマティック映像・音楽MV制作支援ツール（FlowTool Studio Pro）です。
+本リポジトリは、Google Flow Tools の Web 画面内にマウントして動作するシネマティック映像・音楽MV制作システム（FlowTool Studio Pro）です。
 
-直近のセッションにて、以下の重要なアーキテクチャ更新を行いました：
-1. **After絵（2枚目フレーム）補間処理の安全停止とプロンプト誘導化**:
-   - 2点間画像参照補間によるモーフィング崩壊を防止するため、`lastFrameImageMediaId` は意図的にコメントアウトしています。
-   - 現在は「Start絵（1枚目）＋ 時系列遷移プロンプト（Beginning ➔ Midway ➔ Finally）＋ 最終到達点プロンプト」により動画生成を駆動しています。
-   - **【最重要】コメントアウトされている After 関連コードは即時ロールバック用として絶対に削除・再有効化しないでください。**
-2. **世界観適応インフォグラフィック特大扉絵（Google AI Ultra Direct）の復旧**:
-   - `buildAdaptiveInfographicCoverPrompt` と `ensureInfographicCover` により、Cut 1のマスターアンカーを参照しつつ上部25%の看板エリアと下部のキャラクターを被りゼロで描き分けるポスター生成エンジンが稼働しています。
-3. **バックグラウンド直接保存の維持**:
-   - 連続生成を阻害していたダウンロードモーダル（`PackageDownloadModal`）は永久廃止されています。
+直近の更新にて、以下の改善が `main` に反映されています：
+1. **動画生成プロンプトの安全性ガード**: `useVideoGeneration.ts` にて `finalVideoPrompt` の `undefined` 混入防止および英数字フォールバック処理を導入。
+2. **ブラウザ動画エンジンのリソース完全解放**: `browserVideoService.ts` にて `renderKenBurnsVideo` の `try...finally` による Canvas / Context クリアおよび `renderFullEpisodeMovie` での `video.remove()` を導入。
+3. **特大扉絵（Google AI Ultra Direct）のレイアウト安定化**: 看板バナーとキャラクター頭部の干渉回避プロンプト。
 
-ユーザーの就寝・不在中に、Jules は以下の重点項目について**コードベース全体の深層監査・デバッグ・メモリリーク対策・エッジケース堅牢化**を自律的に遂行し、Pull Request を作成してください。
+Jules は、最新の `main` ブランチを起点として、**コードベース全体の深層監査・デバッグ・長期連続稼働におけるメモリ・エラーハンドリング堅牢化**を自律的に遂行し、Pull Request を作成してください。
 
 ---
 
-## 📌 今回の重点デバッグ＆検証項目
+## 🚫 絶対遵守の境界規約（Boundary Constraints）
+以下の規約に違反したコードはマージできません。厳格に遵守してください：
 
-### 1. 時系列プロンプト遷移エンジンのエッジケース＆フォールバック検証
+1. **成果物画像データの消去禁止（最重要）**:
+   - `productionPipelines.ts` の `cleanupEpisodeMemory` や各種クリーンアップ関数で、`ep.coverBase64`、`ep.masterAnchorBase64`、`ep.characterTurnaroundBase64` などのエピソード成果物データを **`undefined` にして消去することは絶対に禁止** です。
+   - ※消去すると、UI（`EpisodeSection.tsx`）の扉絵サムネイルが消滅し、さらに一括ZIPエクスポート（`exportService.ts`）時に画像が失われる重大バグが発生します。メモリ対策は作業用中間バッファの解放や `window.gc()` トリガーのみに留めてください。
+2. **ダウンロード完了モーダル（`PackageDownloadModal`）の永久廃止**:
+   - ポップアップやダウンロードモーダルを表示するコンポーネント・UIコードを絶対に再導入・作成しないでください（バックグラウンド直接保存のみ）。
+3. **Afterフレーム参照（`lastFrameImageMediaId`）のコメントアウト維持**:
+   - 2点間モーフィング崩壊を防止するため、`lastFrameImageMediaId` は意図的に無効化されています。再有効化やコメント解除を行わないでください。
+4. **既存の最新UI実装の先祖返り禁止**:
+   - `EpisodeSection.tsx` のプレビューモーダル（画面内収容・Escキー対応）など、直近で最適化されたUIロジックを過去のコードで上書きしないでください。
+
+---
+
+## 📌 今回の重点デバッグ＆堅牢化項目
+
+### 1. 長時間バッチ連続生成時の中断（Abort）処理と未処理リソースの監査
+- **対象ファイル**:
+  - `src/services/productionPipelines.ts` (`runSeriesProduction`, `runShortsBatchProduction`)
+  - `src/services/useStudioProduction.ts`
+- **検証＆実装作業**:
+  - ユーザーが生成を途中で中止（Abort）した場合に、実行中の非同期タイマー、リトライループ（`callWithRetry`）、および生成キューが即座かつ安全に停止し、バックグラウンドで無駄な API リクエストが走り続けないか監査・堅牢化してください。
+  - Abort 発生時に各エピソードやカットの `isGenerating` フラグが正しくリセットされることを確認してください。
+
+### 2. 生成API（Flow.generate.image / Flow.generate.video）の引数型安全性とフォールバック
 - **対象ファイル**:
   - `src/services/useVideoGeneration.ts`
-  - `src/services/directorService.ts` (`resolveCinematicEndFrameAndMotion`, `buildAdaptiveInfographicCoverPrompt`)
-  - `src/components/preview/CutEditorPanel.tsx`
-- **検証作業**:
-  - `cut.veoMotionPrompt` や `cut.endFramePromptEn` が `undefined`、空文字、または特殊記号（`[` `]` `"` 等）を含む場合でも、`finalVideoPrompt` が `undefined` という文字列を含まず、安全かつ構文的に正しいプロンプトとして構築されるか検証。
-  - Shorts / MV / ドラマ / スタイルマトリクス各モードにおいて、動画生成API（`Flow.generate.video`）への引数が常に型安全かつ妥当な値であることを確認。
+  - `src/services/directorService.ts`
+  - `src/services/useStudioProduction.ts`
+- **検証＆実装作業**:
+  - `Flow.generate.image` や `Flow.generate.video` を呼び出す全箇所において、渡されるパラメータ（`prompt`, `aspectRatio`, `durationSeconds`, `imageModel` 等）が空文字や不正な型、NaN、未定義とならないよう、事前バリデーションを徹底してください。
+  - 万が一モデル指定やプロンプト構築に欠損が生じた場合の安全なデフォルトフォールバックを確保してください。
 
-### 2. ブラウザ動画レンダリングエンジン（`browserVideoService.ts`）のメモリリーク・リソース完全解放
-- **対象ファイル**: `src/services/browserVideoService.ts`
-- **検証作業**:
-  - `renderFullEpisodeMovie` や `renderKenBurnsVideo` において、全12カット結合時や途中で中断（Abort）された場合に、すべての `HTMLVideoElement`（`video.pause(); video.removeAttribute('src'); video.load(); video.remove();`）および `URL.createObjectURL`（`URL.revokeObjectURL`）が `try-finally` ブロック内で確実にクリーンアップされているか徹底監査。
-  - Chrome のデコーダー上限（同時16個等）を絶対に超過しないよう、破棄処理の漏れを塞いでください。
-  - ケンバーン演出（Ken Burns）と SRT 字幕合成におけるタイムコード計算の微小な誤差（ミリ秒の丸め誤差等）がないかチェック。
-
-### 3. バッチプロデュース＆自動保存パイプラインのキュー安全性
+### 3. ZIPエクスポート・大容量バッチ保存の安全性
 - **対象ファイル**:
-  - `src/services/productionPipelines.ts` (`runSeriesProduction`, `runShortsBatchProduction`, `cleanupEpisodeMemory`)
-  - `src/services/exportService.ts` (`savePackageFile`, `downloadZip`)
-- **検証作業**:
-  - 複数話（5〜10話）を連続生成する際、各話完了ごとのメモリ回収（`cleanupEpisodeMemory`）が確実に呼び出されているか。
-  - `masterAnchorBase64` や `coverBase64` などの巨大な base64 文字列が、不要になったタイミングで無制限に重複保持されてヒープを圧迫していないか点検。
-  - **【重要規約】ダウンロード完了モーダルは絶対に再導入しないでください（直接保存のみ）。**
+  - `src/services/exportService.ts`
+- **検証＆実装作業**:
+  - 10話以上の長編シリーズ（120カット以上）を一括エクスポートする際、JSZip や Base64 デコード処理でブラウザのヒープメモリが急激に圧迫されてクラッシュしないか検証し、安全な処理フローを担保してください。
 
-### 4. TypeScript 完全パス (Zero Errors) & バンドル整合性
+### 4. TypeScript 完全パス (Zero Errors) & バンドル検証
 - **検証作業**:
-  - `npx tsc --noEmit` を実行し、型エラーが 0 件であることを確認。
-  - `npm run build`（`node scripts/build.mjs`）で 130 以上の全モジュールが警告なくバンドルされることを確認。
+  - `npx tsc --noEmit` で型エラーが 0 件であることを確認。
+  - `npm run build`（`node scripts/build.mjs`）でエラーなくバンドルが完了することを確認。
 
 ---
 
-## 🛠️ コマンドと実行パイプライン
-
-### 型チェック
-```powershell
-Set-Location "$env:USERPROFILE\.flowtool_build"
-npx tsc --noEmit
-```
-
-### ビルド
-```powershell
-npm run build
-```
-
----
-
-## 💡 Jules への注意事項
-1. **ダウンロードモーダルは永久廃止**:
-   - ポップアップやモーダルを表示するコードは絶対に導入しないでください。
-2. **After補間コードの維持**:
-   - `lastFrameImageMediaId` はユーザー指示により意図的にコメントアウトされています。コメントを外したり、削除したりしないでください。
-3. **画像再生成なしの原則**:
-   - テロップ演出やレイアウトのリロール機能は、画像生成APIを消費せず、フロントエンドおよびメタデータのみを更新する設計を維持してください。
+## 🛠️ 成果物の納品
+- 修正完了後、すべての検証を通過した状態で Pull Request を作成してください。
