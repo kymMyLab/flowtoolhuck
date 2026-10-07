@@ -69,7 +69,11 @@ export function useVideoGeneration({
       const endDestinationText = isEndFrameValid ? ` [Destination Finale Scene]: ${cut.endFramePromptEn}` : '';
 
       // Start絵の構図 ＋ 三段時系列カメラ＆情景推移 ＋ 最終到達点（After）の情景プロンプト
-      const finalVideoPrompt = `[Initial Starting Scene]: ${cut?.promptEn || ''} ${motionText}${endDestinationText}`.trim();
+      let finalVideoPrompt = `[Initial Starting Scene]: ${cut?.promptEn || ''} ${motionText}${endDestinationText}`.trim();
+
+      if (finalVideoPrompt.includes('undefined') || !/[a-zA-Z0-9]/.test(finalVideoPrompt)) {
+        finalVideoPrompt = 'Cinematic moving shot, high quality';
+      }
 
       const res = await callWithRetry<any>(
         () => Flow.generate.video({ 
