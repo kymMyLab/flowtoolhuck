@@ -683,72 +683,73 @@ export function resolveCinematicEndFrameAndMotion(options: {
   if (isObjectOnly || cutIndex === 5) {
     return {
       endFramePlot: `Relative to the start frame: camera circles in a 45-degree macro orbit around the scene, ambient light reflections sliding naturally across identical surfaces while keeping the same environment and props.`,
-      veoMotionPrompt: 'Continuous 8-second subtle macro orbit around the central object with sweeping ambient reflections and gentle depth-of-field drift.'
+      veoMotionPrompt: 'Continuous 8-second macro curved orbit: [Beginning] camera starts framed close on the iconic focal object, [Midway] glides in a smooth 45-degree horizontal arc around the object, sweeping ambient reflections across its surface, [Finally] settling at a stylish three-quarter hero angle with shallow depth-of-field and zero object deformation.'
     };
   }
 
   // 2. 普遍的相対シネマティック指示（元絵に対して●●）
-  // どんな世界観・人物でも100%通用し、元絵との乖離を起こさず自然なカメラ・表情変化を生み出す
+  // 【Beginning（初めに） ➔ Midway（途中で） ➔ Finally（最後に）】の3段時系列で中間の情景推移を明示
+  // どんな世界観・人物でも100%通用し、空間歪み・溶け・ダブル人物を完全防止
   const universalDroneMotions: CinematicEvolution[] = [
-    // Pattern 1: 元絵に対して、普遍的な180度リバースアングル旋回（映画的切り返しショット）
+    // Pattern 1: 180度リバースクレーンプルアウト（映画的切り返しショット）
     {
-      endFramePlot: `Relative to the start frame: a precise 180-degree reverse-angle shot (counter-shot), camera positioned directly behind the subject looking toward the opposite side of the environment, revealing the previously unseen opposite wall and room space, strictly maintaining single character consistency, clothing, hair, and lighting.`,
-      veoMotionPrompt: 'Continuous 8-second smooth 180-degree orbital drone glide circling the single character from front to back, seamless spatial orbit around the subject, consistent single subject throughout, fluid cinematic camera move.'
+      endFramePlot: `Relative to the start frame: camera elevates and pulls back into a grand 180-degree reverse wide crane perspective, capturing the subject from the opposite angle within the expansive ambient environment, revealing the previously unseen opposite space while keeping identical character appearance, clothing, and atmosphere.`,
+      veoMotionPrompt: 'Continuous 8-second reverse crane pullout: [Beginning] camera starts on the subject and begins rising while pivoting 180 degrees, [Midway] smoothly gliding backward high into the surrounding air revealing the lateral environment in continuous fluid parallax, [Finally] settling into a grand, cinematic wide counter-shot composition while keeping the subject and environment in perfect, coherent focus throughout.'
     },
-    // Pattern 2: 元絵に対して、上から見下ろすアングル（俯瞰）に上昇する
+    // Pattern 2: 俯瞰クレーン上昇（フロアと空間の幾何学）
     {
       endFramePlot: `Relative to the start frame: camera ascends into an overhead bird's-eye high angle looking down, revealing floor space and surroundings while keeping the same subject and relaxed posture.`,
-      veoMotionPrompt: 'Continuous 8-second gentle crane ascent rising smoothly into an overhead high-angle view, maintaining fluid spatial connection.'
+      veoMotionPrompt: 'Continuous 8-second smooth crane ascent: [Beginning] camera starts at eye level with the subject, [Midway] ascends smoothly upward in a vertical arc, passing overhead ambient light fixtures and revealing the geometry of the surrounding floor, [Finally] gently settling into a breathtaking high-angle bird\'s-eye view looking down on the subject in perfect tranquil continuity.'
     },
-    // Pattern 3: 元絵に対して、ドローンで離れていく（引きの画角）
+    // Pattern 3: ドローン広角プルバック（引きの画角）
     {
       endFramePlot: `Relative to the start frame: camera pulls back in a graceful wide drone shot, revealing more of the atmospheric room while the same subject stays quietly centered.`,
-      veoMotionPrompt: 'Smooth 8-second drone pullback expanding gracefully into a wider ambient composition with natural spatial depth.'
+      veoMotionPrompt: 'Continuous 8-second cinematic drone pullout: [Beginning] camera holds on the character in medium framing, [Midway] glides straight backward in a steady continuous retreat, drawing back through the atmospheric air and expanding the horizontal depth of the setting, [Finally] settling into a majestic wide-angle establishing tableau where the subject remains a coherent, dignified focal point.'
     },
-    // Pattern 4: 元絵に対して、カメラがスッと近づく（寄りの画角・クローズアップ）
+    // Pattern 4: スロープッシュイン（寄りの画角・クローズアップ）
     {
       endFramePlot: `Relative to the start frame: camera glides gently forward into a closer medium shot, drawing closer to the subject's thoughtful expression and soft ambient glow.`,
-      veoMotionPrompt: 'Smooth 8-second slow push-in gliding closer to the subject with soft depth-of-field transition.'
+      veoMotionPrompt: 'Continuous 8-second slow push-in: [Beginning] camera begins in a relaxed medium view, [Midway] glides steadily forward along the central line of sight, smoothly crossing foreground ambient atmosphere with gentle depth-of-field narrowing, [Finally] resting comfortably in an intimate close-up that captures the subject\'s emotional nuance and natural breathing without any abrupt jump.'
     },
-    // Pattern 5: 元絵に対して、表情を変え、視線を遠くへ流す
+    // Pattern 5: 視線と首振りのドラマチックシフト
     {
       endFramePlot: `Relative to the start frame: holding the same framing, the subject gently turns their head and shifts their gaze toward the ambient light with a subtle reflective expression.`,
-      veoMotionPrompt: 'Delicate 8-second emotional shift: character smoothly turns gaze and softens expression with natural organic breathing.'
+      veoMotionPrompt: 'Continuous 8-second organic emotional evolution: [Beginning] subject looks pensively forward in still posture, [Midway] camera executes a slow micro-push while the subject gently shifts their gaze and turns their head toward the soft side lighting, [Finally] settling into a contemplative, serene side-profile nuance with natural subtle hair movement and organic presence.'
     },
-    // Pattern 6: 元絵に対して、斜め45度から回り込む（静物マクロオービット）
+    // Pattern 6: 斜め45度マクロオービット（静物・ディテール）
     {
       endFramePlot: `Relative to the start frame: camera circles in a 45-degree macro orbit around the scene, ambient light reflections sliding naturally across identical surfaces.`,
-      veoMotionPrompt: 'Continuous 8-second subtle macro orbit around the central object with sweeping ambient reflections.'
+      veoMotionPrompt: 'Continuous 8-second macro curved orbit: [Beginning] camera frames the iconic details in sharp macro focus, [Midway] glides in a smooth 45-degree horizontal arc around the subject, sweeping ambient specular highlights across the textures, [Finally] resolving at a stylish three-quarter hero angle with shallow depth-of-field and pristine visual fidelity.'
     },
-    // Pattern 7: 元絵に対して、斜め45度に緩やかに傾く（ダッチアングル）
+    // Pattern 7: ダッチアングル・ダイアゴナルチルト
     {
       endFramePlot: `Relative to the start frame: camera shifts into a stylish diagonal Dutch angle from slightly elevated side, adding artistic geometric depth to the identical scene.`,
-      veoMotionPrompt: '8-second dynamic diagonal tilt and glide, settling into a striking modern artistic composition.'
+      veoMotionPrompt: 'Continuous 8-second diagonal tilt tracking: [Beginning] camera begins in level standard framing, [Midway] smoothly tracks diagonally while tilting the horizon into a stylish 15-degree Dutch angle, revealing geometric leading lines and dynamic background perspective, [Finally] locking into a bold, modern artistic frame with rock-solid subject stability.'
     },
-    // Pattern 8: 元絵に対して、サビの情熱でぐっとこちらをまっすぐ見つめる
+    // Pattern 8: サビ・正面アイレベル情熱プッシュ
     {
       endFramePlot: `Relative to the start frame: camera pushes forward at eye level, the subject turning to look directly at the viewer with focused emotional intensity and vibrant presence.`,
-      veoMotionPrompt: 'Continuous 8-second heroic forward push, character locking eyes with the camera with dynamic atmospheric bloom.'
+      veoMotionPrompt: 'Continuous 8-second dramatic climax push: [Beginning] subject sits or stands in ambient reverie, [Midway] camera surges forward with confident momentum as the subject purposefully turns their gaze to lock eyes with the lens, [Finally] blooming into a vibrant, high-intensity hero portrait framed in crisp dramatic lighting and unbroken character identity.'
     },
-    // Pattern 9: 元絵に対して、肩越し（オーバーショルダー）へ回り込む
+    // Pattern 9: オーバーショルダー・前方展望スライド
     {
       endFramePlot: `Relative to the start frame: camera slides gently behind the subject's shoulder, framing the wide view unfolding in front of them in soft poetic depth.`,
-      veoMotionPrompt: 'Smooth 8-second drift behind the character, revealing their forward perspective in poetic continuity.'
+      veoMotionPrompt: 'Continuous 8-second over-the-shoulder glide: [Beginning] camera starts slightly to the side of the subject, [Midway] glides around in a subtle curved trajectory to position just behind their shoulder, passing close silhouette contours, [Finally] opening up the vast panorama in front of them, using the subject\'s shoulder as a steady poetic depth anchor.'
     },
-    // Pattern 10: 元絵に対して、横へゆっくりスライドする（ラテラル・トラッキング）
+    // Pattern 10: 水平ラテラル・トラッキング（豊かな視差）
     {
       endFramePlot: `Relative to the start frame: camera glides laterally along a horizontal tracking arc, subtle parallax shifting the background elements while keeping the character centered.`,
-      veoMotionPrompt: 'Fluid 8-second slow lateral tracking arc, background parallax moving naturally.'
+      veoMotionPrompt: 'Continuous 8-second horizontal tracking glide: [Beginning] camera frames the subject from an initial angle, [Midway] tracks steadily sideways in a gentle curved arc, generating rich realistic parallax between foreground elements and background walls, [Finally] settling smoothly on the opposite side angle while keeping the subject completely steady and unchanged at the center of the frame.'
     },
-    // Pattern 11: 元絵に対して、ふわりと浮かび上がるコージー俯瞰
+    // Pattern 11: コージー浮遊クレーンドリフト
     {
       endFramePlot: `Relative to the start frame: camera floats gently upward and tilts downward in a cozy high angle, capturing a quiet, peaceful view of the same scene.`,
-      veoMotionPrompt: 'Gentle 8-second floating crane drift, camera easing upward with soft peaceful momentum.'
+      veoMotionPrompt: 'Continuous 8-second floating crane ascent: [Beginning] camera hovers comfortably near eye level, [Midway] gently floats upward like a balloon while tilting downward at a soft 30-degree angle, sweeping warm ambient lighting across the setting, [Finally] easing into a cozy, comforting high perspective that embraces the entire quiet scene.'
     },
-    // Pattern 12: 元絵に対して、天高く広がるエンディング・プルアップ
+    // Pattern 12: フィナーレ・スカイハイプルアップ
     {
       endFramePlot: `Relative to the start frame: camera glides upward and backward in an expansive finale vista shot, opening up the entire cinematic atmosphere in majestic resolution.`,
-      veoMotionPrompt: 'Dramatic 8-second final ascending crane shot, opening up the full horizon and ambient light.'
+      veoMotionPrompt: 'Continuous 8-second majestic skyward pullout: [Beginning] camera centers on the protagonist during their final beat, [Midway] ascends backward into the sky on a high crane sweep, revealing the full horizon, distant lights, and expansive atmospheric grandeur, [Finally] settling into an epic, breathtaking final tableau with the character gracefully integrated into the boundless world.'
     }
   ];
 

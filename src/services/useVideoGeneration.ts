@@ -65,10 +65,10 @@ export function useVideoGeneration({
     try {
       const isMotionValid = cut?.veoMotionPrompt && /[a-zA-Z0-9]/.test(cut.veoMotionPrompt);
       const motionText = isMotionValid
-        ? `Cinematic interpolation from start frame to end frame: ${cut.veoMotionPrompt}.`
+        ? `[Temporal Scene Transition]: ${cut.veoMotionPrompt}`
         : (cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : ''));
       
-      const cameraInstruction = motionText ? ` [Motion Directive: ${motionText}]` : '';
+      const cameraInstruction = motionText ? ` ${motionText}` : '';
       let finalVideoPrompt = `${cut?.promptEn || ''}${cameraInstruction}`;
 
       const isEndFrameValid = cut?.endFramePromptEn && /[a-zA-Z0-9]/.test(cut.endFramePromptEn);
