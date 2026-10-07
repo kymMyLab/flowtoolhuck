@@ -7993,17 +7993,18 @@ function $h(r) {
   let B = "";
   if (y) {
     const J = g && _ ? `dressed in authentic ${_}` : "";
-    B = `Main focal subject: ${y} ${J}, captured in a charismatic and expressive hero pose commanding the upper-middle of the poster.`;
-  } else o ? B = `Key thematic visual: Symbolic central subject embodying the essence of "${o}", positioned as the compelling hero element.` : B = "Central hero focal visual with striking presence and high emotional engagement.";
+    B = `Main focal subject: ${y} ${J}, positioned in the comfortable center portion of the composition with ample clear margin beneath the top title banner, captured in a charismatic and expressive hero pose with zero collision between head and typography.`;
+  } else o ? B = `Key thematic visual: Symbolic central subject embodying the essence of "${o}", positioned in the center with clear breathing room beneath the title banner.` : B = "Central hero focal visual with striking presence, positioned comfortably in the mid-lower composition beneath the title.";
   const A = a ? `Integrated punchy subtitle text accent: "${a}".` : "", j = u ? ra(u) : p || "", I = j ? `Artistic rendering style: ${j}.` : "", D = [
     "Vertical 9:16 high-impact cover poster and commercial infographic key visual.",
     v + ".",
+    "Layout Hierarchy: Top 25% is dedicated exclusively to the header banner and bold Japanese title typography. Generous visual breathing space between the bottom of the title banner and the subject below.",
     B,
     S + ".",
     A,
     I,
-    "Composition: Vertical 9:16 aspect ratio, perfectly balanced composition designed for maximum visual engagement (high CTR), single unified scene, crystal clear focal point, professional graphic design, masterpiece, 8k resolution."
-  ].filter(Boolean).join(" "), L = "blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts", G = b.length > 0 ? b.join(", ") : "", W = [
+    "Composition: Vertical 9:16 aspect ratio, perfectly balanced editorial hierarchy. The character is framed entirely below the top title banner with clear vertical separation, ensuring zero visual overlap or collision between the character's head/hair and the banner frame. Crystal clear focal point, professional graphic design, masterpiece, 8k resolution."
+  ].filter(Boolean).join(" "), L = "text overlapping character's head, banner colliding with hair, text covering face, cluttered overlap between subject and title, awkwardly placed text, blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts", G = b.length > 0 ? b.join(", ") : "", W = [
     L,
     E,
     G
