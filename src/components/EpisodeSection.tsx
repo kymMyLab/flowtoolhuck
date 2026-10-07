@@ -258,27 +258,25 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
   return (
     <section className={`flex flex-col gap-5 animate-slide-in transition-opacity duration-700 ${isPending ? 'opacity-30' : 'opacity-100'}`}>
       <div className="flex flex-col border-b border-white/10 pb-4 gap-3">
-        {/* 最上段: 左にタイトル、右にアクションボタン群をスマートに統合 */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5 min-w-0">
+        {/* 最上段: 上にタイトル（全幅でゆったり表示）、下にアクションボタン群を整列 */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className={`font-black italic uppercase tracking-tight text-white leading-tight ${
-                (ep.titleJp || '').length > 30 ? 'text-base sm:text-lg md:text-xl' : ((ep.titleJp || '').length > 20 ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-3xl')
-              }`}>
+              <h2 className="font-black italic uppercase tracking-tight text-white leading-tight text-lg sm:text-xl md:text-2xl break-words">
                 {ep.titleJp || '無題'}
               </h2>
-              {ep.isDone && <span className="material-symbols-outlined text-green-500 font-bold text-lg">check_circle</span>}
+              {ep.isDone && <span className="material-symbols-outlined text-green-500 font-bold text-lg" title="制作完了">check_circle</span>}
               {ep.isGenerating && <div className="w-4 h-4 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin shrink-0" />}
             </div>
             {ep.titleEn && (
-              <span className="text-[11px] text-white/40 uppercase tracking-widest font-mono truncate">
+              <span className="text-[11px] text-white/40 uppercase tracking-widest font-mono">
                 {ep.titleEn}
               </span>
             )}
           </div>
           
-          {/* アクションボタン群（横1列にスリム配置） */}
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
+          {/* アクションボタン群（下段にゆったり横並び配置） */}
+          <div className="flex items-center gap-2 flex-wrap">
             {onBulkRerollTelop && (
               <PillButton 
                 variant="outline" 

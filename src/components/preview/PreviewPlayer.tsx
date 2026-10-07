@@ -53,6 +53,7 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [activeView, setActiveView] = useState<'start' | 'end' | 'video'>('start');
+  const [isMotionCollapsed, setIsMotionCollapsed] = useState(false);
 
   // Media memory leak cleanup on unmount or cut change
   useEffect(() => {
@@ -464,22 +465,45 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
 
           {telopContent}
 
-          {/* ── 補間挙動（veoMotionPrompt）オーバーレイインスペクター ── */}
+          {/* ── 補間挙動（veoMotionPrompt）オーバーレイインスペクター（折りたたみ可能） ── */}
           {cut.veoMotionPrompt && (
-            <div className="absolute bottom-3 left-3 right-3 z-30 bg-black/85 backdrop-blur-md border border-amber-500/40 rounded-xl p-2.5 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-black text-amber-300 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px] text-amber-400">animation</span>
-                  Veo 3.1 補間モーション命令 (Motion Directive)
-                </span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-                  {activeView === 'end' ? '🏁 到達点 (After)' : activeView === 'video' ? '⚡ 補間完了' : '🎬 始点 (Start)'}
-                </span>
+            isMotionCollapsed ? (
+              <button
+                type="button"
+                onClick={() => setIsMotionCollapsed(false)}
+                className="absolute bottom-3 left-3 z-30 bg-black/85 hover:bg-black/95 backdrop-blur-md border border-amber-500/50 hover:border-amber-400 rounded-lg px-2.5 py-1 text-[10px] text-amber-300 font-bold flex items-center gap-1.5 shadow-xl transition-all cursor-pointer select-none"
+                title="Veo 3.1 補間モーション命令を展開"
+              >
+                <span className="material-symbols-outlined text-[13px] text-amber-400">animation</span>
+                <span>Veo 3.1 補間命令を表示</span>
+                <span className="material-symbols-outlined text-[13px] text-white/50">expand_less</span>
+              </button>
+            ) : (
+              <div className="absolute bottom-3 left-3 right-3 z-30 bg-black/90 backdrop-blur-md border border-amber-500/40 rounded-xl p-2.5 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-black text-amber-300 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px] text-amber-400">animation</span>
+                    Veo 3.1 補間モーション命令 (Motion Directive)
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                      {activeView === 'end' ? '🏁 到達点 (After)' : activeView === 'video' ? '⚡ 補間完了' : '🎬 始点 (Start)'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsMotionCollapsed(true)}
+                      className="text-white/40 hover:text-white p-0.5 rounded transition-colors flex items-center"
+                      title="最小化"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[10px] sm:text-[10.5px] text-white/90 font-medium leading-relaxed font-mono select-text">
+                  {cut.veoMotionPrompt}
+                </p>
               </div>
-              <p className="text-[10px] sm:text-[10.5px] text-white/90 font-medium leading-relaxed font-mono select-text">
-                {cut.veoMotionPrompt}
-              </p>
-            </div>
+            )
           )}
 
           <div className="absolute top-4 right-4 z-40 opacity-0 group-hover:opacity-100 transition-opacity">
