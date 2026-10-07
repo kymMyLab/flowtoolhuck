@@ -12,7 +12,7 @@ import {
 import { getStoryboardPreset } from './promptEngine';
 import { createDefaultCut, isCutSelectedForVideo, safeJsonParse, callWithRetry, formatErrorMessage } from './utils';
 import { saveStory } from './db';
-import { downloadZip } from './exportService';
+import { downloadZip, renderCoverBase64 } from './exportService';
 import { 
   generateSafeEpisodeScript, 
   extractHighlights, 
@@ -90,92 +90,49 @@ async function ensureCharacterTurnaround(
 
 /**
  * 世界観適応インフォグラフィック扉絵（9:16特大ポスター）を自動生成・登録
+ * （Cut 1の確定キメ絵を下部に下げて配置し、世界観適応型の看板プレートをドッキング・被りゼロ）
  */
 async function ensureInfographicCover(
   ctx: ProductionPipelineContext,
   ep: Episode
-): Promise<{ mediaId?: string; base64?: string; promptEn?: string }> {
-  const { settings, addLog, isAbortedRef, activeReferenceRef, updateEpisode, episodesRef, setEpisodes } = ctx;
+): Promise<{ base64?: string }> {
+  const { addLog, isAbortedRef, updateEpisode, episodesRef, setEpisodes } = ctx;
 
   if (isAbortedRef.current) return {};
 
   const freshEp = episodesRef.current.find(e => e.id === ep.id) || ep;
-  if (freshEp.coverMediaId || freshEp.coverBase64) {
-    return { mediaId: freshEp.coverMediaId, base64: freshEp.coverBase64, promptEn: freshEp.coverPromptEn };
+  if (freshEp.coverBase64) {
+    return { base64: freshEp.coverBase64 };
   }
 
   try {
-    addLog(`🎨 Ep.${freshEp.id}: 【扉絵自動生成】世界観適応インフォグラフィック扉絵（9:16特大ポスター）を描画中...`, 'process');
+    addLog(`🎨 Ep.${freshEp.id}: 【扉絵自動ドッキング】世界観適応インフォグラフィック扉絵（Cut 1合成・被りゼロ）を生成中...`, 'process');
     updateEpisode(freshEp.id, { isGeneratingCover: true });
 
-    const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
-      titleJp: freshEp.titleJp,
-      titleEn: freshEp.titleEn,
-      coverCatchphraseJp: freshEp.coverCatchphraseJp,
-      coverCatchphraseEn: freshEp.coverCatchphraseEn,
-      theme: freshEp.theme || settings.theme,
-      era: freshEp.era || settings.era,
-      taste: freshEp.taste || settings.taste,
-      country: settings.country,
-      productionMode: freshEp.productionMode || settings.productionMode,
-      characterDna: freshEp.characterDna,
-      styleDna: activeReferenceRef.current?.styleDna,
-      forbiddenAnachronisms: freshEp.forbiddenAnachronisms,
-      authenticAttireEn: freshEp.authenticAttireEn
-    });
+    const coverBase64 = await renderCoverBase64(freshEp);
 
-    const refMediaIds: string[] = [];
-    if (freshEp.masterAnchorMediaId) {
-      refMediaIds.push(freshEp.masterAnchorMediaId);
-    } else if (freshEp.characterTurnaroundMediaId) {
-      refMediaIds.push(freshEp.characterTurnaroundMediaId);
-    } else if (activeReferenceRef.current?.mediaId) {
-      refMediaIds.push(activeReferenceRef.current.mediaId);
-    } else if (freshEp.cuts[0]?.imageMediaId) {
-      refMediaIds.push(freshEp.cuts[0].imageMediaId);
-    }
-
-    const modelDef = resolveImageModel(settings.imageModel);
-    const res = await callWithRetry<any>(
-      () => Flow.generate.image({
-        prompt: coverPromptObj.promptEn,
-        negativePrompt: coverPromptObj.negativePromptEn,
-        modelDisplayName: modelDef.name,
-        aspectRatio: '9:16' as any,
-        referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
-      }),
-      undefined,
-      4
-    );
-
-    if (res && res.mediaId) {
+    if (coverBase64) {
       updateEpisode(freshEp.id, {
-        coverMediaId: res.mediaId,
-        coverBase64: res.base64,
-        coverPromptEn: coverPromptObj.promptEn,
+        coverBase64,
         isGeneratingCover: false
       });
       episodesRef.current = episodesRef.current.map(e => e.id === freshEp.id ? {
         ...e,
-        coverMediaId: res.mediaId,
-        coverBase64: res.base64,
-        coverPromptEn: coverPromptObj.promptEn,
+        coverBase64,
         isGeneratingCover: false
       } : e);
       setEpisodes(prev => prev.map(e => e.id === freshEp.id ? {
         ...e,
-        coverMediaId: res.mediaId,
-        coverBase64: res.base64,
-        coverPromptEn: coverPromptObj.promptEn,
+        coverBase64,
         isGeneratingCover: false
       } : e));
 
-      addLog(`✨ Ep.${freshEp.id}: 【扉絵自動生成完了】世界観適応インフォグラフィック扉絵が完成しました！`, 'success');
-      return { mediaId: res.mediaId, base64: res.base64, promptEn: coverPromptObj.promptEn };
+      addLog(`✨ Ep.${freshEp.id}: 【扉絵自動生成完了】世界観適応インフォグラフィック扉絵が完成しました！（被りゼロ保証）`, 'success');
+      return { base64: coverBase64 };
     }
   } catch (err: any) {
     updateEpisode(freshEp.id, { isGeneratingCover: false });
-    addLog(`⚠️ Ep.${freshEp.id}: 扉絵の自動生成スキップ（手動ボタンで再生成可能）: ${formatErrorMessage(err)}`, 'warning');
+    addLog(`⚠️ Ep.${freshEp.id}: 扉絵の自動生成スキップ: ${formatErrorMessage(err)}`, 'warning');
   }
 
   return {};

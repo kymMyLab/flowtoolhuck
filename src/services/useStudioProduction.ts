@@ -13,6 +13,7 @@ import {
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs } from './utils';
 import { getAllReferenceAssets } from './db';
 import { renderFullEpisodeMovie, renderKenBurnsVideo } from './browserVideoService';
+import { renderCoverBase64 } from './exportService';
 import { 
   directShot, 
   buildImagePromptAndNegative, 
@@ -370,12 +371,28 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       });
 
       // Cut 1 の画像が完成したら、以降のカットのキャラ崩れを完全防止するためマスターアンカーとして固定！
-      if (cutId === 1 && res.mediaId) {
+      if (cutId === 1) {
         updateEpisode(epId, {
           masterAnchorMediaId: res.mediaId,
           masterAnchorBase64: res.base64
         });
         addLog(`👑 Ep.${epId}: Cut 1 の決定版ポートレートを【全カット共通マスターアンカー】としてロックしました！`, 'success');
+
+        // ★Cut 1確定の瞬間に、インフォグラフィック特大扉絵（絵を下げて看板ドッキング・被りゼロ）を自動生成！
+        try {
+          const targetEp = episodesRef.current.find(e => e.id === epId);
+          if (targetEp) {
+            const compositeCover = await renderCoverBase64({
+              ...targetEp,
+              masterAnchorBase64: res.base64,
+              cuts: targetEp.cuts.map(c => c.id === 1 ? { ...c, imageBase64: res.base64 } : c)
+            });
+            updateEpisode(epId, { coverBase64: compositeCover });
+            addLog(`🖼️ Ep.${epId}: Cut 1確定ポートレートから世界観適応インフォグラフィック特大扉絵を自動ドッキング完了！`, 'success');
+          }
+        } catch (coverErr: any) {
+          console.warn('Auto cover render error:', coverErr);
+        }
       }
 
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');
@@ -495,64 +512,21 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     if (!ep) return;
 
     updateEpisode(epId, { isGeneratingCover: true });
-    const modelDef = resolveImageModel(settings.imageModel);
-    addLog(`🎨 Ep.${epId}: 「${ep.titleJp}」世界観適応インフォグラフィック扉絵を生成中...`, 'process');
+    addLog(`🎨 Ep.${epId}: 「${ep.titleJp}」世界観適応インフォグラフィック扉絵（Cut 1合成・被りゼロ）を生成中...`, 'process');
 
     try {
-      const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
-        titleJp: ep.titleJp,
-        titleEn: ep.titleEn,
-        coverCatchphraseJp: ep.coverCatchphraseJp,
-        coverCatchphraseEn: ep.coverCatchphraseEn,
-        theme: ep.theme || settings.theme,
-        era: ep.era || settings.era,
-        taste: ep.taste || settings.taste,
-        country: settings.country,
-        productionMode: ep.productionMode || settings.productionMode,
-        characterDna: ep.characterDna,
-        styleDna: activeReferenceRef.current?.styleDna,
-        forbiddenAnachronisms: ep.forbiddenAnachronisms,
-        authenticAttireEn: ep.authenticAttireEn
-      });
-
-      // 参照画像があれば渡す（三面図、またはCut 1マスターアンカー、または手動リファレンス）
-      const refMediaIds: string[] = [];
-      if (ep.masterAnchorMediaId) {
-        refMediaIds.push(ep.masterAnchorMediaId);
-      } else if (ep.characterTurnaroundMediaId) {
-        refMediaIds.push(ep.characterTurnaroundMediaId);
-      } else if (activeReferenceRef.current?.mediaId) {
-        refMediaIds.push(activeReferenceRef.current.mediaId);
-      } else if (ep.cuts[0]?.imageMediaId) {
-        refMediaIds.push(ep.cuts[0].imageMediaId);
-      }
-
-      const res = await callWithRetry<any>(
-        () => Flow.generate.image({
-          prompt: coverPromptObj.promptEn,
-          negativePrompt: coverPromptObj.negativePromptEn,
-          modelDisplayName: modelDef.name,
-          aspectRatio: DEFAULT_ASPECT_RATIO as any,
-          referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
-        }),
-        undefined,
-        4
-      );
-
+      const coverBase64 = await renderCoverBase64(ep);
       updateEpisode(epId, {
-        coverMediaId: res.mediaId,
-        coverBase64: res.base64,
-        coverPromptEn: coverPromptObj.promptEn,
+        coverBase64,
         isGeneratingCover: false
       });
-
-      addLog(`🖼️ Ep.${epId}: インフォグラフィック扉絵（9:16特大カバー）の生成が完了しました！`, 'success');
+      addLog(`🖼️ Ep.${epId}: インフォグラフィック特大扉絵（Cut 1完全連動・被りゼロ）が完成しました！`, 'success');
     } catch (err: any) {
       const errorMsg = formatErrorMessage(err);
       updateEpisode(epId, { isGeneratingCover: false });
       addLog(`❌ Ep.${epId} 扉絵生成エラー: ${errorMsg}`, 'error');
     }
-  }, [settings, addLog, updateEpisode]);
+  }, [addLog, updateEpisode]);
 
   const handleBulkVideo = async (epId: number) => {
     const ep = episodesRef.current.find(e => e.id === epId);
