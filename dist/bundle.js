@@ -7727,10 +7727,10 @@ function bc(r) {
     endFramePlot: "Relative to the start frame: camera circles in a 45-degree macro orbit around the scene, ambient light reflections sliding naturally across identical surfaces while keeping the same environment and props.",
     veoMotionPrompt: "Continuous 8-second subtle macro orbit around the central object with sweeping ambient reflections and gentle depth-of-field drift."
   } : [
-    // Pattern 1: 元絵に対して、緩やかな30度アーク移動（斜め前 ➔ 横顔）と指先・表情の自然な連動
+    // Pattern 1: 元絵に対して、普遍的な180度リバースアングル旋回（映画的切り返しショット）
     {
-      endFramePlot: "Relative to the start frame: camera glides in a gentle 30-degree tracking arc toward a refined side profile, capturing the protagonist with their chin slightly raised and a focused artistic gaze, maintaining the exact same room, hoodie, and lighting.",
-      veoMotionPrompt: "Continuous 8-second cinematic 30-degree arc glide: smooth subtle parallax as the character gently tilts their head and taps rhythmically, maintaining seamless facial and spatial fidelity without distortion."
+      endFramePlot: "Relative to the start frame: a precise 180-degree reverse-angle shot (counter-shot), camera positioned directly behind the subject looking toward the opposite side of the environment, revealing the previously unseen opposite wall and room space, strictly maintaining single character consistency, clothing, hair, and lighting.",
+      veoMotionPrompt: "Continuous 8-second smooth 180-degree orbital drone glide circling the single character from front to back, seamless spatial orbit around the subject, consistent single subject throughout, fluid cinematic camera move."
     },
     // Pattern 2: 元絵に対して、上から見下ろすアングル（俯瞰）に上昇する
     {
