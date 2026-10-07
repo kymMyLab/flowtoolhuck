@@ -524,9 +524,30 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
   };
 
   const startProduction = async () => {
-    if (isProducing) return;
+    if (isProducing) {
+      console.warn('⚠️ [FlowTool Studio] すでに制作プロセスが実行中です。');
+      return;
+    }
+    console.log(
+      '%c🎬 ▶️ 【全自動プロデュース】処理が開始されました！',
+      'background: #10b981; color: #fff; font-weight: bold; font-size: 13px; padding: 4px 8px; border-radius: 4px;'
+    );
+    console.log('📋 実行パラメータ:', {
+      mode: settings.productionMode || '通常',
+      theme: settings.theme,
+      totalEpisodes: settings.totalEpisodes || settings.episodeCount,
+      taste: settings.taste,
+      aspectRatio: settings.aspectRatio,
+      imageModel: settings.imageModel,
+      videoModel: settings.defaultVideoModel,
+      autoVideo: settings.autoVideo,
+      autoDownload: settings.autoDownload,
+      enableEndFrames: settings.enableEndFrames
+    });
+
     setIsProducing(true);
     isAbortedRef.current = false;
+    addLog(`🎬 【全自動プロデュース開始】モード: ${settings.productionMode || '通常'} / 全${settings.totalEpisodes || settings.episodeCount || 1}話 / テーマ: 「${settings.theme || '未設定'}」`, 'process');
 
     if (settings.selectedAssetId && !activeReferenceRef.current) {
       try {

@@ -466,7 +466,10 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           <PillButton 
             variant="filled" 
             className="h-11 bg-red-600 hover:bg-red-500 text-white font-black uppercase tracking-widest animate-pulse shadow-lg shadow-red-900/50" 
-            onClick={onAbort} 
+            onClick={() => {
+              console.warn('🛑 [FlowTool UI] 「緊急停止 (Abort)」ボタンが押下されました。');
+              onAbort();
+            }} 
             icon={<span className="material-symbols-outlined">stop_circle</span>}
           >
             🛑 緊急停止 (Abort)
@@ -475,7 +478,10 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           <button 
             type="button"
             disabled={isProducing}
-            onClick={onStart}
+            onClick={() => {
+              console.log(`🔘 [FlowTool UI] 「${startBtn.label}」ボタンが押下されました。`);
+              onStart();
+            }}
             className={`w-full h-11 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shadow-lg active:scale-[0.99] ${startBtn.className}`}
           >
             <span className="material-symbols-outlined text-[18px]">
@@ -487,7 +493,10 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         <PillButton 
           variant="outline" 
           className="text-red-400 h-7.5 text-xs hover:bg-red-500/10" 
-          onClick={onClear} 
+          onClick={() => {
+            console.log('🔘 [FlowTool UI] 「全消去」ボタンが押下されました。');
+            onClear();
+          }} 
           icon={<span className="material-symbols-outlined text-[15px]">delete</span>}
         >
           全消去

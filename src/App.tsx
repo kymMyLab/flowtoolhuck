@@ -26,8 +26,37 @@ export default function App() {
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
 
-  // ログ保持数を9999に拡大（1万行制限）＆グローバルストアに即時同期
+  // マウント時にDevToolsコンソールへ準備完了バナーと制作構成を出力
+  useEffect(() => {
+    console.log(
+      '%c🚀 [FlowTool Studio Pro] スタジオマウント完了！待機中 (Standby)',
+      'background: linear-gradient(90deg, #2563eb, #7c3aed); color: #fff; font-weight: bold; font-size: 13px; padding: 4px 8px; border-radius: 4px;'
+    );
+    console.log(
+      `🎬 制作プリセット: 【モード: ${settings.productionMode || '通常'}】 / 【テーマ: ${settings.theme}】 / 【画風: ${settings.taste}】 / 【全${settings.totalEpisodes || settings.episodeCount || 1}話】`
+    );
+    console.log('💡 左サイドバーの【全自動プロデュース開始】または【シリーズレジューム】をクリックすると制作が始まります。進行ログはここにもリアルタイム出力されます。');
+  }, []);
+
+  // ログ保持数を9999に拡大（1万行制限）＆グローバルストアに即時同期 ＆ DevToolsコンソールへもリアルタイム出力
   const addLog = useCallback((message: string, type: LogEntry['type'] = 'info') => {
+    // 開発者ツールコンソールへのリアルタイム出力（色分けバッジ付き）
+    const colors: Record<string, string> = {
+      info: '#3b82f6',
+      process: '#8b5cf6',
+      success: '#10b981',
+      warning: '#f59e0b',
+      error: '#ef4444'
+    };
+    const color = colors[type] || '#3b82f6';
+    const tag = `[FlowTool ${type.toUpperCase()}]`;
+    const consoleFn = type === 'error' ? console.error : type === 'warning' ? console.warn : console.log;
+    consoleFn(
+      `%c${tag}%c ${message}`,
+      `background: ${color}; color: #ffffff; font-weight: bold; padding: 2px 4px; border-radius: 3px; font-size: 10px;`,
+      'color: inherit; font-size: 11px;'
+    );
+
     setLogs(prev => {
       const next = [...prev.slice(-9999), { id: Math.random().toString(36).substr(2, 9), message: createLogMessage(message), type }];
       if (typeof window !== 'undefined') {

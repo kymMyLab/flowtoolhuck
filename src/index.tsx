@@ -95,6 +95,7 @@ export async function mount(targetElement?: HTMLElement | null): Promise<{ unmou
   );
 
   console.log('🚀 [FlowTool] Mounted successfully into target container:', container);
+  console.log('💡 FlowTool Studio Pro がスタンバイしました。左サイドバーの「全自動プロデュース開始」をクリックして制作を開始してください。');
   return { unmount };
 }
 
