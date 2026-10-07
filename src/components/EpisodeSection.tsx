@@ -113,6 +113,21 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
               title="マスターアンカー（クリックで拡大）"
             />
           )}
+          {ep.coverBase64 && (
+            <img 
+              src={formatDataUri(ep.coverBase64)} 
+              alt="インフォグラフィック扉絵" 
+              className="w-4.5 h-6 object-cover rounded-sm border border-teal-400/60 cursor-pointer hover:scale-115 transition-transform shadow-sm" 
+              onClick={(e) => {
+                e.stopPropagation();
+                setPreviewImage({
+                  src: formatDataUri(ep.coverBase64),
+                  title: '🖼️ 9:16 インフォグラフィック特大扉絵 (サムネイル・ポスター)'
+                });
+              }}
+              title="インフォグラフィック扉絵（クリックで拡大）"
+            />
+          )}
           <button 
             type="button" 
             className="flex items-center gap-0.5 text-[10px] font-bold text-white/50 hover:text-white px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors"
@@ -215,6 +230,29 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                     </div>
                   </div>
                 )}
+                {ep.coverBase64 && (
+                  <div className="flex items-center gap-2.5 bg-black/40 border border-teal-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
+                    <img 
+                      src={formatDataUri(ep.coverBase64)} 
+                      alt="インフォグラフィック扉絵" 
+                      className="w-8 h-12 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
+                      onClick={() => {
+                        setPreviewImage({
+                          src: formatDataUri(ep.coverBase64),
+                          title: '🖼️ 9:16 インフォグラフィック特大扉絵 (サムネイル・ポスター)'
+                        });
+                      }}
+                      title="クリックで拡大表示（9:16 インフォグラフィック扉絵）"
+                    />
+                    <div className="flex flex-col pr-2">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] font-bold text-teal-300">インフォグラフィック扉絵</span>
+                        <span className="px-1.5 py-0.2 bg-teal-500/20 text-teal-400 text-[8px] font-bold rounded">9:16 Cover</span>
+                      </div>
+                      <span className="text-[9px] text-white/50 leading-tight mt-0.5">世界観適応 高CTRポスター</span>
+                    </div>
+                  </div>
+                )}
                 {ep.characterDna && (
                   <div className="flex flex-col justify-center px-3 py-1 bg-white/5 border border-white/10 rounded-xl min-w-0 max-w-md shrink-0">
                     <div className="flex items-center gap-1.5">
@@ -246,11 +284,12 @@ interface EpisodeSectionProps {
   onPreviewCut: (epId: number, cut: Cut) => void;
   onUpdateCut: (epId: number, cutId: number, updates: Partial<Cut>) => void;
   onBulkRerollTelop?: (epId: number) => void;
+  onGenerateCover?: (epId: number) => void;
   onRetry?: (type: 'image' | 'video', epId: number, cutId: number) => void;
 }
 
 export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
-  ep, onGenerateRemaining, onBulkVideo, onBulkBrowserVideo, onExportFullMovie, onDownloadZip, onAnimateRequest, onPreviewCut, onUpdateCut, onBulkRerollTelop, onRetry
+  ep, onGenerateRemaining, onBulkVideo, onBulkBrowserVideo, onExportFullMovie, onDownloadZip, onAnimateRequest, onPreviewCut, onUpdateCut, onBulkRerollTelop, onGenerateCover, onRetry
 }) => {
   // 先行プレビュー完了(isPreviewDone)または全体完了(isDone)していれば操作可能
   const isPending = !ep.isGenerating && !ep.isDone && !ep.isPreviewDone;
@@ -287,6 +326,18 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
                 title="画像は一切再生成せず、12カットすべてのテロップ演出を一括再抽選"
               >
                 テロップ一括
+              </PillButton>
+            )}
+            {onGenerateCover && (
+              <PillButton 
+                variant="outline" 
+                className={`h-8 px-3 border-teal-500/40 text-teal-300 hover:text-teal-100 hover:border-teal-400 hover:bg-teal-950/30 font-bold text-xs whitespace-nowrap shrink-0 transition-colors ${ep.coverBase64 ? 'bg-teal-950/20' : ''}`}
+                disabled={ep.isGeneratingCover || ep.isGenerating || isPending} 
+                onClick={() => onGenerateCover(ep.id)} 
+                icon={ep.isGeneratingCover ? <div className="w-3.5 h-3.5 border-2 border-teal-400/20 border-t-teal-400 rounded-full animate-spin" /> : <span className="material-symbols-outlined text-teal-400 text-sm">auto_stories</span>}
+                title="世界観・時代・ジャンルに完全適応した9:16インフォグラフィック扉絵（ポスター）を生成"
+              >
+                {ep.coverBase64 ? '扉絵再生成' : '扉絵生成 (インフォ)'}
               </PillButton>
             )}
             <PillButton 

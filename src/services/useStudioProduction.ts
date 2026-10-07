@@ -20,6 +20,7 @@ import {
   extractHighlights,
   checkIsHistorical,
   resolveCinematicEndFrameAndMotion,
+  buildAdaptiveInfographicCoverPrompt,
   PreviousShotInfo
 } from './directorService';
 import { useEpisodeState } from './useEpisodeState';
@@ -485,6 +486,71 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     }
   };
 
+  const generateInfographicCover = useCallback(async (epId: number) => {
+    if (isAbortedRef.current) return;
+    const ep = episodesRef.current.find(e => e.id === epId);
+    if (!ep) return;
+
+    updateEpisode(epId, { isGeneratingCover: true });
+    const modelDef = resolveImageModel(settings.imageModel);
+    addLog(`🎨 Ep.${epId}: 「${ep.titleJp}」世界観適応インフォグラフィック扉絵を生成中...`, 'process');
+
+    try {
+      const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
+        titleJp: ep.titleJp,
+        titleEn: ep.titleEn,
+        coverCatchphraseJp: ep.coverCatchphraseJp,
+        coverCatchphraseEn: ep.coverCatchphraseEn,
+        theme: ep.theme || settings.theme,
+        era: ep.era || settings.era,
+        taste: ep.taste || settings.taste,
+        country: settings.country,
+        productionMode: ep.productionMode || settings.productionMode,
+        characterDna: ep.characterDna,
+        styleDna: activeReferenceRef.current?.styleDna,
+        forbiddenAnachronisms: ep.forbiddenAnachronisms,
+        authenticAttireEn: ep.authenticAttireEn
+      });
+
+      // 参照画像があれば渡す（三面図、またはCut 1マスターアンカー、または手動リファレンス）
+      const refMediaIds: string[] = [];
+      if (ep.masterAnchorMediaId) {
+        refMediaIds.push(ep.masterAnchorMediaId);
+      } else if (ep.characterTurnaroundMediaId) {
+        refMediaIds.push(ep.characterTurnaroundMediaId);
+      } else if (activeReferenceRef.current?.mediaId) {
+        refMediaIds.push(activeReferenceRef.current.mediaId);
+      } else if (ep.cuts[0]?.imageMediaId) {
+        refMediaIds.push(ep.cuts[0].imageMediaId);
+      }
+
+      const res = await callWithRetry<any>(
+        () => Flow.generate.image({
+          prompt: coverPromptObj.promptEn,
+          negativePrompt: coverPromptObj.negativePromptEn,
+          modelDisplayName: modelDef.name,
+          aspectRatio: DEFAULT_ASPECT_RATIO as any,
+          referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
+        }),
+        undefined,
+        4
+      );
+
+      updateEpisode(epId, {
+        coverMediaId: res.mediaId,
+        coverBase64: res.base64,
+        coverPromptEn: coverPromptObj.promptEn,
+        isGeneratingCover: false
+      });
+
+      addLog(`🖼️ Ep.${epId}: インフォグラフィック扉絵（9:16特大カバー）の生成が完了しました！`, 'success');
+    } catch (err: any) {
+      const errorMsg = formatErrorMessage(err);
+      updateEpisode(epId, { isGeneratingCover: false });
+      addLog(`❌ Ep.${epId} 扉絵生成エラー: ${errorMsg}`, 'error');
+    }
+  }, [settings, addLog, updateEpisode]);
+
   const handleBulkVideo = async (epId: number) => {
     const ep = episodesRef.current.find(e => e.id === epId);
     if (!ep) return;
@@ -639,5 +705,5 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎲 第 ${epId} 話: 全12カットのテロップ演出（動き・配置）を一括再抽選しました！（画像は保持）`, 'success');
   }, [addLog]);
 
-  return { episodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes };
+  return { episodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes };
 }

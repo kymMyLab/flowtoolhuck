@@ -446,8 +446,9 @@ export const downloadZip = async (
     });
 
     // 2. キャラクター基準マスターアセット（三面図、Cut 1マスターアンカー）
-    if (ep.characterTurnaroundBase64) {
-      const cleanTurnaround = ep.characterTurnaroundBase64.replace(/^data:[^;]+;base64,/, '');
+    const turnaroundBase64 = ep.characterTurnaroundBase64 || manifest?.referenceAsset?.base64;
+    if (turnaroundBase64) {
+      const cleanTurnaround = turnaroundBase64.replace(/^data:[^;]+;base64,/, '');
       folder.file('character_turnaround.png', cleanTurnaround, { base64: true });
     }
     if (ep.masterAnchorBase64) {
@@ -458,23 +459,29 @@ export const downloadZip = async (
     addLog(`📝 SRT字幕ファイルを生成中...`, 'info');
     folder.file('subtitles.srt', generateSRT(ep));
 
-    addLog(`🖼️ YouTube用超ド迫力扉絵を合成中...`, 'info');
-    const coverCanvas = await renderCoverCanvas(ep);
-    const coverBlob = await (coverCanvas instanceof OffscreenCanvas 
-      ? coverCanvas.convertToBlob({ type: 'image/png' }) 
-      : new Promise<Blob>(r => (coverCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
-    folder.file('cover.png', coverBlob);
-    if (coverCanvas instanceof OffscreenCanvas) {
-      const coverCtx = coverCanvas.getContext('2d');
-      if (coverCtx) coverCtx.clearRect(0, 0, coverCanvas.width, coverCanvas.height);
-      coverCanvas.width = 0;
-      coverCanvas.height = 0;
+    if (ep.coverBase64) {
+      addLog(`🖼️ 世界観適応インフォグラフィック扉絵を格納中...`, 'info');
+      const cleanCover = ep.coverBase64.replace(/^data:[^;]+;base64,/, '');
+      folder.file('cover.png', cleanCover, { base64: true });
     } else {
-      const cvs = coverCanvas as HTMLCanvasElement;
-      const coverCtx = cvs.getContext('2d');
-      if (coverCtx) coverCtx.clearRect(0, 0, cvs.width, cvs.height);
-      cvs.width = 0;
-      cvs.height = 0;
+      addLog(`🖼️ YouTube用超ド迫力扉絵を合成中...`, 'info');
+      const coverCanvas = await renderCoverCanvas(ep);
+      const coverBlob = await (coverCanvas instanceof OffscreenCanvas 
+        ? coverCanvas.convertToBlob({ type: 'image/png' }) 
+        : new Promise<Blob>(r => (coverCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
+      folder.file('cover.png', coverBlob);
+      if (coverCanvas instanceof OffscreenCanvas) {
+        const coverCtx = coverCanvas.getContext('2d');
+        if (coverCtx) coverCtx.clearRect(0, 0, coverCanvas.width, coverCanvas.height);
+        coverCanvas.width = 0;
+        coverCanvas.height = 0;
+      } else {
+        const cvs = coverCanvas as HTMLCanvasElement;
+        const coverCtx = cvs.getContext('2d');
+        if (coverCtx) coverCtx.clearRect(0, 0, cvs.width, cvs.height);
+        cvs.width = 0;
+        cvs.height = 0;
+      }
     }
     
     // ※未結合の各カット素材（cut_*.png / cut_*_after.png / cut_*.mp4）と完全版 script.json を同梱

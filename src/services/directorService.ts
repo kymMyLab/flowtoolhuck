@@ -1128,3 +1128,130 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     cuts: normalizedCuts
   };
 }
+
+export interface InfographicCoverPromptOptions {
+  titleJp: string;
+  titleEn?: string;
+  coverCatchphraseJp?: string;
+  coverCatchphraseEn?: string;
+  theme?: string;
+  era?: string;
+  taste?: string;
+  country?: string;
+  productionMode?: string;
+  characterDna?: string;
+  styleDna?: string;
+  forbiddenAnachronisms?: string[];
+  authenticAttireEn?: string;
+}
+
+/**
+ * 世界観・時代・ジャンルに完全適応するインフォグラフィック扉絵プロンプトを構築
+ * （特定ジャンル語句のハードコードを一切排除し、時代・テーマ・プロダクションモードから媒体と作風を動的導出）
+ */
+export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPromptOptions): {
+  promptEn: string;
+  negativePromptEn: string;
+} {
+  const {
+    titleJp,
+    titleEn,
+    coverCatchphraseJp,
+    theme = '',
+    era = '',
+    taste = '',
+    country = 'Japan',
+    productionMode = 'episodes',
+    characterDna,
+    styleDna,
+    forbiddenAnachronisms = [],
+    authenticAttireEn = ''
+  } = options;
+
+  const isHist = checkIsHistorical(era, theme);
+  const combinedContext = `${era} ${theme} ${productionMode}`.toLowerCase();
+
+  // 1. 世界観・ジャンルに応じた媒体（Medium）とグラフィックスタイルの動的決定
+  let mediumInstruction = '';
+  let typographyStyle = '';
+  let extraNegative = '';
+
+  if (isHist) {
+    // 【歴史・時代劇（江戸・幕末・戦国など）】
+    mediumInstruction = `Authentic traditional Japanese broadsheet woodblock print (Kawaraban / Ukiyo-e woodblock poster style), rich aged washi paper texture, bold sumi-ink brush calligraphy accents, historical woodblock aesthetic with vintage ink saturation, authentic period crests and traditional geometric border lines`;
+    typographyStyle = `Prominent bold sumi-ink Japanese calligraphy banner at the top displaying the exact title "${titleJp}" with traditional seal stamp embellishment`;
+    extraNegative = `modern typography, digital fonts, English text overlay, modern glossy plastic, modern digital UI, neon cyberpunk, electronic synthesizers, headphones, sneakers, modern clothing, wristwatch, smartphone, plastic textures`;
+  } else if (productionMode === 'manzai' || combinedContext.includes('漫才') || combinedContext.includes('お笑い') || combinedContext.includes('寄席') || combinedContext.includes('演芸')) {
+    // 【漫才・演芸・コメディ】
+    mediumInstruction = `High-energy theatrical entertainment flyer poster (Yose comedy hall poster style), vibrant comedic composition, dramatic stage lighting, warm festive paper lanterns, bold dynamic layout capturing theatrical charisma and expressive performance energy`;
+    typographyStyle = `Dynamic Japanese theatrical headline typography boldly showing "${titleJp}" with high-impact comedy poster lettering`;
+    extraNegative = `dark horror, grim, somber, overly melancholic, scientific graphs, abstract high-tech`;
+  } else if (productionMode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('トリビア') || combinedContext.includes('科学') || combinedContext.includes('解説') || combinedContext.includes('歴史解説')) {
+    // 【雑学・トリビア・解説・科学】
+    mediumInstruction = `Stunning commercial infographic editorial poster, high-CTR visual encyclopedia diagram layout, elegant schematic breakdown elements, clean structured visual hierarchy, captivating focal demonstration, informative magazine cover aesthetic`;
+    typographyStyle = `Bold high-impact Japanese editorial headline typography featuring "${titleJp}", with clean structured subtext styling`;
+    extraNegative = `messy collage, cluttered unintelligible scribbles, illegible tiny text, distorted diagrams`;
+  } else if (productionMode === 'craft' || combinedContext.includes('職人') || combinedContext.includes('工芸') || combinedContext.includes('伝統技')) {
+    // 【伝統工芸・職人技】
+    mediumInstruction = `Artisan master anatomy infographic poster, warm organic textured craft paper, delicate technical cross-section sketches and authentic artisan handiwork schematics, exquisite workshop atmosphere, masterwork craftsmanship`;
+    typographyStyle = `Refined artisan Japanese brushed typography displaying "${titleJp}"`;
+    extraNegative = `neon, cyberpunk, modern plastic, synthetic futuristic graphics`;
+  } else if (productionMode === 'quotes' || combinedContext.includes('名言') || combinedContext.includes('格言') || combinedContext.includes('哲学')) {
+    // 【名言・哲学】
+    mediumInstruction = `Profound minimalist philosophical graphic poster, commanding negative space, striking monumental focal imagery symbolizing deep contemplation, sophisticated artistic duotone or evocative lighting`;
+    typographyStyle = `Monumental Japanese typographic composition prominently presenting the core phrase "${titleJp}"`;
+    extraNegative = `cluttered graphics, juvenile cartoon elements, chaotic composition`;
+  } else if (productionMode === 'mv' || combinedContext.includes('音楽') || combinedContext.includes('music') || combinedContext.includes('mv')) {
+    // 【音楽・MV】
+    mediumInstruction = `Iconic music concept art poster and editorial vinyl cover design, evocative atmospheric color grading, cinematic emotional visual narrative, stylish graphic design accents`;
+    typographyStyle = `Stylized Japanese music single headline typography reading "${titleJp}"`;
+    extraNegative = `boring layout, flat corporate diagram, low-effort snapshot`;
+  } else {
+    // 【汎用・現代ドラマ・通常モード】
+    mediumInstruction = `Premium cinematic vertical teaser poster, high-CTR commercial infographic design, striking visual hierarchy, compelling editorial cover layout, professional cinematic color grading`;
+    typographyStyle = `Striking high-contrast Japanese poster headline typography reading "${titleJp}"`;
+    extraNegative = `cheap low-res flyer, amateur layout, chaotic clutter`;
+  }
+
+  // 2. 主役・フォーカルサブジェクトの動的設定
+  let focalSubject = '';
+  if (characterDna) {
+    const costumeNote = isHist && authenticAttireEn ? `dressed in authentic ${authenticAttireEn}` : '';
+    focalSubject = `Main focal subject: ${characterDna} ${costumeNote}, captured in a charismatic and expressive hero pose commanding the upper-middle of the poster.`;
+  } else if (theme) {
+    focalSubject = `Key thematic visual: Symbolic central subject embodying the essence of "${theme}", positioned as the compelling hero element.`;
+  } else {
+    focalSubject = `Central hero focal visual with striking presence and high emotional engagement.`;
+  }
+
+  // 3. サブキャッチコピー
+  const subtitleClause = coverCatchphraseJp 
+    ? `Integrated punchy subtitle text accent: "${coverCatchphraseJp}".` 
+    : '';
+
+  // 4. アートスタイル (taste)
+  const resolvedTaste = taste ? resolveTastePrompt(taste) : (styleDna || '');
+  const styleClause = resolvedTaste ? `Artistic rendering style: ${resolvedTaste}.` : '';
+
+  // 5. プロンプト結合
+  const promptEn = [
+    `Vertical 9:16 high-impact cover poster and commercial infographic key visual.`,
+    mediumInstruction + `.`,
+    focalSubject,
+    typographyStyle + `.`,
+    subtitleClause,
+    styleClause,
+    `Composition: Vertical 9:16 aspect ratio, perfectly balanced composition designed for maximum visual engagement (high CTR), single unified scene, crystal clear focal point, professional graphic design, masterpiece, 8k resolution.`
+  ].filter(Boolean).join(' ');
+
+  // 6. ネガティブプロンプト
+  const baseNegative = `blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts`;
+  const forbiddenAnachStr = forbiddenAnachronisms.length > 0 ? forbiddenAnachronisms.join(', ') : '';
+  const negativePromptEn = [
+    baseNegative,
+    extraNegative,
+    forbiddenAnachStr
+  ].filter(Boolean).join(', ');
+
+  return { promptEn, negativePromptEn };
+}

@@ -121,6 +121,9 @@ export interface Episode {
   coverCatchphraseJp?: string;
   coverCatchphraseEn?: string;
   coverBase64?: string;
+  coverMediaId?: string;
+  coverPromptEn?: string;
+  isGeneratingCover?: boolean;
 
   // 三面図マスター ＆ Cut 1 マスターアンカー画像 ＆ 主人公DNA
   characterDna?: string;
