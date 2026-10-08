@@ -67,10 +67,13 @@ async function ensureCharacterTurnaround(
     );
 
     const modelDef = resolveImageModel(settings.imageModel);
+    let safePrompt = turnaroundPrompt && /[a-zA-Z0-9]/.test(turnaroundPrompt) ? turnaroundPrompt : 'Character turnaround sheet, front side back views';
+    const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
+
     const res = await callWithRetry<any>(
       () => Flow.generate.image({
-        prompt: turnaroundPrompt,
-        modelDisplayName: modelDef.name,
+        prompt: safePrompt,
+        modelDisplayName: safeModelName,
         aspectRatio: '16:9' as any
       }),
       undefined,
@@ -136,11 +139,14 @@ async function ensureInfographicCover(
     }
 
     const modelDef = resolveImageModel(settings.imageModel);
+    let safePrompt = coverPromptObj.promptEn && /[a-zA-Z0-9]/.test(coverPromptObj.promptEn) ? coverPromptObj.promptEn : 'Cinematic poster, high quality';
+    const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
+
     const res = await callWithRetry<any>(
       () => Flow.generate.image({
-        prompt: coverPromptObj.promptEn,
+        prompt: safePrompt,
         negativePrompt: coverPromptObj.negativePromptEn,
-        modelDisplayName: modelDef.name,
+        modelDisplayName: safeModelName,
         aspectRatio: '9:16' as any,
         referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
       }),

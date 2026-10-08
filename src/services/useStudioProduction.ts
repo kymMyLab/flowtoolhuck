@@ -338,12 +338,16 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         imageModelUsed: modelDef.label
       });
 
+      let safePrompt = finalPrompt && /[a-zA-Z0-9]/.test(finalPrompt) ? finalPrompt : 'Cinematic scene, high quality';
+      const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
+      const safeAspectRatio = (DEFAULT_ASPECT_RATIO === '16:9' || DEFAULT_ASPECT_RATIO === '9:16') ? DEFAULT_ASPECT_RATIO : '16:9';
+
       const res = await callWithRetry<any>(
         () => Flow.generate.image({ 
-          prompt: finalPrompt, 
+          prompt: safePrompt,
           negativePrompt: finalNegative, 
-          modelDisplayName: modelDef.name, 
-          aspectRatio: DEFAULT_ASPECT_RATIO as any, 
+          modelDisplayName: safeModelName,
+          aspectRatio: safeAspectRatio as any,
           referenceImageMediaIds 
         }),
         (attempt, max, delay, err, isSuper) => {
@@ -465,12 +469,16 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         activeReferenceRef.current
       );
 
+      let safePrompt = finalPrompt && /[a-zA-Z0-9]/.test(finalPrompt) ? finalPrompt : 'Cinematic finale scene, high quality';
+      const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
+      const safeAspectRatio = (DEFAULT_ASPECT_RATIO === '16:9' || DEFAULT_ASPECT_RATIO === '9:16') ? DEFAULT_ASPECT_RATIO : '16:9';
+
       const res = await callWithRetry<any>(
         () => Flow.generate.image({
-          prompt: finalPrompt,
+          prompt: safePrompt,
           negativePrompt: finalNegative,
-          modelDisplayName: modelDef.name,
-          aspectRatio: DEFAULT_ASPECT_RATIO as any,
+          modelDisplayName: safeModelName,
+          aspectRatio: safeAspectRatio as any,
           referenceImageMediaIds: referenceImageMediaIds || refMediaIds
         }),
         undefined,
@@ -526,12 +534,16 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         refMediaIds.push(activeReferenceRef.current.mediaId);
       }
 
+      let safePrompt = coverPromptObj.promptEn && /[a-zA-Z0-9]/.test(coverPromptObj.promptEn) ? coverPromptObj.promptEn : 'Cinematic poster, high quality';
+      const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
+      const safeAspectRatio = (DEFAULT_ASPECT_RATIO === '16:9' || DEFAULT_ASPECT_RATIO === '9:16') ? DEFAULT_ASPECT_RATIO : '16:9';
+
       const res = await callWithRetry<any>(
         () => Flow.generate.image({
-          prompt: coverPromptObj.promptEn,
+          prompt: safePrompt,
           negativePrompt: coverPromptObj.negativePromptEn,
-          modelDisplayName: modelDef.name,
-          aspectRatio: DEFAULT_ASPECT_RATIO as any,
+          modelDisplayName: safeModelName,
+          aspectRatio: safeAspectRatio as any,
           referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
         }),
         (attempt, max, delay, err) => {

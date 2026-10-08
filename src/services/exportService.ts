@@ -579,7 +579,7 @@ export const downloadZip = async (
     if (!folder) throw new Error('ZIP creation failed');
 
     // 1. 各カット素材（Start絵、After絵/到達点フレーム、動画）をすべて同梱
-    ep.cuts.forEach(c => {
+    for (const c of ep.cuts) {
       // Start絵
       if (c.imageBase64) {
         const cleanImg = c.imageBase64.replace(/^data:[^;]+;base64,/, '');
@@ -595,7 +595,9 @@ export const downloadZip = async (
         const cleanVid = c.videoBase64.replace(/^data:[^;]+;base64,/, '');
         folder.file(`cut_${c.id}.mp4`, cleanVid, { base64: true });
       }
-    });
+      // Event loop breather to prevent UI freeze and allow GC during heavy batch exports
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
 
     // 2. キャラクター基準マスターアセット（三面図、Cut 1マスターアンカー）
     const turnaroundBase64 = ep.characterTurnaroundBase64 || manifest?.referenceAsset?.base64;
@@ -707,7 +709,8 @@ export const downloadZip = async (
     folder.file('production_logs.txt', logLines.join('\n'));
 
     addLog(`📦 ZIPアーカイブを圧縮中...`, 'process');
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    // Using compression: 'STORE' to prevent massive memory spikes and crashes during large batch generation
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
 
     const { asciiFilename, displayFilename } = generateSafeFilenames(ep);
     const filename = displayFilename;
