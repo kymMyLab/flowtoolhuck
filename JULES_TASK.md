@@ -2,7 +2,7 @@
 **Project**: FlowTool (Studio Pro - MV & Cinematic Video Production System)  
 **Target Environment**: Chrome DevTools Mount / Single ESM Web App Bundle  
 **Branch**: `main`  
-**Updated**: 2026-10-08
+**Updated**: 2026-10-08  
 
 ---
 
@@ -10,9 +10,13 @@
 本リポジトリは、Google Flow Tools の Web 画面内にマウントして動作するシネマティック映像・音楽MV制作システム（FlowTool Studio Pro）です。
 
 直近の更新にて、以下の改善が `main` に反映されています：
-1. **動画生成プロンプトの安全性ガード**: `useVideoGeneration.ts` にて `finalVideoPrompt` の `undefined` 混入防止および英数字フォールバック処理を導入。
-2. **ブラウザ動画エンジンのリソース完全解放**: `browserVideoService.ts` にて `renderKenBurnsVideo` の `try...finally` による Canvas / Context クリアおよび `renderFullEpisodeMovie` での `video.remove()` を導入。
-3. **特大扉絵（Google AI Ultra Direct）のレイアウト安定化**: 看板バナーとキャラクター頭部の干渉回避プロンプト。
+1. **特大扉絵拡大モーダルの Portal 化とレイアウト完全安定化**:
+   - `src/components/EpisodeSection.tsx` にて `createPortal(..., document.body)` を適用し、親コンテナの transform やスクロールによる見切れバグを完全解消。
+   - `maxHeight` と Flexbox の中央揃えを最適化し、上部ヘッダーや閉じるボタンが確実に画面内に収まるように修正。
+2. **インフォグラフィック扉絵プロンプトの全画面一体化**:
+   - `src/services/directorService.ts` にて、巨大な白紙余白や二分割レイアウトを防ぎ、全画面一体のシームレスな背景と上部 8%〜12% のタイトル看板配置を確立。
+3. **バッチ生成・エクスポート・型安全ガード**:
+   - `productionPipelines.ts`、`useVideoGeneration.ts`、`browserVideoService.ts`、`exportService.ts` の安全性強化。
 
 Jules は、最新の `main` ブランチを起点として、**コードベース全体の深層監査・デバッグ・長期連続稼働におけるメモリ・エラーハンドリング堅牢化**を自律的に遂行し、Pull Request を作成してください。
 
@@ -29,7 +33,7 @@ Jules は、最新の `main` ブランチを起点として、**コードベー�
 3. **Afterフレーム参照（`lastFrameImageMediaId`）のコメントアウト維持**:
    - 2点間モーフィング崩壊を防止するため、`lastFrameImageMediaId` は意図的に無効化されています。再有効化やコメント解除を行わないでください。
 4. **既存の最新UI実装の先祖返り禁止**:
-   - `EpisodeSection.tsx` のプレビューモーダル（画面内収容・Escキー対応）など、直近で最適化されたUIロジックを過去のコードで上書きしないでください。
+   - `EpisodeSection.tsx` のプレビューモーダル（`createPortal` による画面中央配置・Escキー対応）など、直近で最適化されたUIロジックを過去のコードで上書き・改悪しないでください。
 
 ---
 
