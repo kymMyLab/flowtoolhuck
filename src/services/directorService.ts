@@ -1172,6 +1172,18 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
   const isHist = checkIsHistorical(era, theme);
   const combinedContext = `${era} ${theme} ${productionMode}`.toLowerCase();
 
+  // 0. タイトルの徹底的クリーン化（絵文字・装飾タグを除去し、純粋な可読日本語テキストを抽出）
+  const cleanTitle = titleJp
+    .replace(/^[\s🎵🎬💡🏮🎨⚓🖼️✨🔥\uD800-\uDBFF\uDC00-\uDFFF\u2600-\u27BF]+/g, '')
+    .replace(/^【.*?】\s*/, '')
+    .replace(/^[「『](.*?)[」』]$/, '$1')
+    .trim() || titleJp;
+
+  const cleanCatchphrase = (coverCatchphraseJp || '')
+    .replace(/^[\s🎵🎬💡🏮🎨⚓🖼️✨🔥\uD800-\uDBFF\uDC00-\uDFFF\u2600-\u27BF]+/g, '')
+    .replace(/^【.*?】\s*/, '')
+    .trim();
+
   // 1. 世界観・ジャンルに応じた媒体（Medium）とグラフィックスタイルの動的決定
   let mediumInstruction = '';
   let typographyStyle = '';
@@ -1180,74 +1192,74 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
   if (isHist) {
     // 【歴史・時代劇（江戸・幕末・戦国など）】
     mediumInstruction = `Authentic traditional Japanese broadsheet woodblock print (Kawaraban / Ukiyo-e woodblock poster style), rich aged washi paper texture, bold sumi-ink brush calligraphy accents, historical woodblock aesthetic with vintage ink saturation, authentic period crests and traditional geometric border lines`;
-    typographyStyle = `Prominent bold sumi-ink Japanese calligraphy banner at the top displaying the exact title "${titleJp}" with traditional seal stamp embellishment`;
+    typographyStyle = `Prominent bold sumi-ink Japanese calligraphy plaque floating in the upper-middle section below a generous top margin, displaying the exact title "${cleanTitle}" with traditional seal stamp embellishment`;
     extraNegative = `modern typography, digital fonts, English text overlay, modern glossy plastic, modern digital UI, neon cyberpunk, electronic synthesizers, headphones, sneakers, modern clothing, wristwatch, smartphone, plastic textures`;
   } else if (productionMode === 'manzai' || combinedContext.includes('漫才') || combinedContext.includes('お笑い') || combinedContext.includes('寄席') || combinedContext.includes('演芸')) {
     // 【漫才・演芸・コメディ】
     mediumInstruction = `High-energy theatrical entertainment flyer poster (Yose comedy hall poster style), vibrant comedic composition, dramatic stage lighting, warm festive paper lanterns, bold dynamic layout capturing theatrical charisma and expressive performance energy`;
-    typographyStyle = `Dynamic Japanese theatrical headline typography boldly showing "${titleJp}" with high-impact comedy poster lettering`;
+    typographyStyle = `Dynamic Japanese theatrical headline typography boldly showing "${cleanTitle}" centered inside a floating marquee in the upper-middle section below a wide top margin`;
     extraNegative = `dark horror, grim, somber, overly melancholic, scientific graphs, abstract high-tech`;
   } else if (productionMode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('トリビア') || combinedContext.includes('科学') || combinedContext.includes('解説') || combinedContext.includes('歴史解説')) {
     // 【雑学・トリビア・解説・科学】
     mediumInstruction = `Stunning commercial infographic editorial poster, high-CTR visual encyclopedia diagram layout, elegant schematic breakdown elements, clean structured visual hierarchy, captivating focal demonstration, informative magazine cover aesthetic`;
-    typographyStyle = `Bold high-impact Japanese editorial headline typography featuring "${titleJp}", with clean structured subtext styling`;
+    typographyStyle = `Bold high-impact Japanese editorial headline typography featuring "${cleanTitle}" centered inside a floating infographic banner in the upper-middle section with abundant clear margin above`;
     extraNegative = `messy collage, cluttered unintelligible scribbles, illegible tiny text, distorted diagrams`;
   } else if (productionMode === 'craft' || combinedContext.includes('職人') || combinedContext.includes('工芸') || combinedContext.includes('伝統技')) {
     // 【伝統工芸・職人技】
     mediumInstruction = `Artisan master anatomy infographic poster, warm organic textured craft paper, delicate technical cross-section sketches and authentic artisan handiwork schematics, exquisite workshop atmosphere, masterwork craftsmanship`;
-    typographyStyle = `Refined artisan Japanese brushed typography displaying "${titleJp}"`;
+    typographyStyle = `Refined artisan Japanese brushed typography displaying "${cleanTitle}" centered inside a floating artisan plaque in the upper-middle zone with generous open space above`;
     extraNegative = `neon, cyberpunk, modern plastic, synthetic futuristic graphics`;
   } else if (productionMode === 'quotes' || combinedContext.includes('名言') || combinedContext.includes('格言') || combinedContext.includes('哲学')) {
     // 【名言・哲学】
     mediumInstruction = `Profound minimalist philosophical graphic poster, commanding negative space, striking monumental focal imagery symbolizing deep contemplation, sophisticated artistic duotone or evocative lighting`;
-    typographyStyle = `Monumental Japanese typographic composition prominently presenting the core phrase "${titleJp}"`;
+    typographyStyle = `Monumental Japanese typographic composition prominently presenting the core phrase "${cleanTitle}" centered in the upper-middle zone with expansive negative space above and around it`;
     extraNegative = `cluttered graphics, juvenile cartoon elements, chaotic composition`;
   } else if (productionMode === 'mv' || combinedContext.includes('音楽') || combinedContext.includes('music') || combinedContext.includes('mv')) {
     // 【音楽・MV】
     mediumInstruction = `Iconic music concept art poster and editorial vinyl single cover design, evocative atmospheric color grading, cinematic emotional visual narrative, stylish audio metadata HUD graphics, subtle equalizer visualizer accents, track title graphic hierarchy`;
-    typographyStyle = `Stylized Japanese music single headline typography reading "${titleJp}" seamlessly integrated into the upper visual atmosphere with subtle glowing neon treatment and audio player typography aesthetics`;
+    typographyStyle = `Stylized Japanese music single headline typography reading "${cleanTitle}" elegantly centered inside a sleek floating neon-accented audio plaque in the upper-middle atmosphere, positioned well below the top edge with generous open sky above`;
     extraNegative = `boring layout, flat corporate diagram, low-effort snapshot`;
   } else {
     // 【汎用・現代ドラマ・通常モード】
     mediumInstruction = `Premium cinematic vertical teaser poster, high-CTR commercial infographic design, striking visual hierarchy, compelling editorial cover layout, professional cinematic color grading`;
-    typographyStyle = `Striking high-contrast Japanese poster headline typography reading "${titleJp}"`;
+    typographyStyle = `Striking high-contrast Japanese poster headline typography reading "${cleanTitle}" centered inside a floating title block in the upper-middle zone with ample clear margin above`;
     extraNegative = `cheap low-res flyer, amateur layout, chaotic clutter`;
   }
 
-  // 2. 主役・フォーカルサブジェクトの動的設定（頭部が天井やタイトルと衝突するのを防ぐため、引きの構図で下半身・腰上から低めに配置）
+  // 2. 主役・フォーカルサブジェクトの動的設定（看板・文字との完全な棲み分けのため、下半身・腰上から低めに配置）
   let focalSubject = '';
   if (characterDna) {
     const costumeNote = isHist && authenticAttireEn ? `dressed in authentic ${authenticAttireEn}` : '';
-    focalSubject = `Main focal subject: ${characterDna} ${costumeNote}, captured in a pull-back medium-wide shot (framed comfortably from waist up or seated low), positioned firmly in the lower-middle portion of the vertical canvas. The subject's head is kept low (at or below 35% down from the top edge), leaving the top 30% of the poster completely open and spacious for prominent title graphic design.`;
+    focalSubject = `Main focal subject: ${characterDna} ${costumeNote}, captured in a pull-back medium-wide shot (framed comfortably from waist up or seated low), positioned firmly in the lower portion of the vertical canvas. The subject's head is kept low (at or below 42% down from the top edge), leaving the upper 40% of the poster open and spacious with clear separation below the floating title plaque.`;
   } else if (theme) {
-    focalSubject = `Key thematic visual: Symbolic central subject embodying the essence of "${theme}", framed comfortably in the lower-middle portion with the upper 30% kept wide open and spacious beneath the title.`;
+    focalSubject = `Key thematic visual: Symbolic central subject embodying the essence of "${theme}", framed comfortably in the lower portion with the upper 40% kept open and spacious beneath the floating title plaque.`;
   } else {
-    focalSubject = `Central hero focal visual with striking presence, framed in a pull-back view positioned in the lower-middle half beneath the spacious top title area.`;
+    focalSubject = `Central hero focal visual with striking presence, framed in a pull-back view positioned in the lower half beneath the spacious floating title area.`;
   }
 
   // 3. サブキャッチコピー
-  const subtitleClause = coverCatchphraseJp 
-    ? `Integrated punchy subtitle text accent: "${coverCatchphraseJp}".` 
+  const subtitleClause = cleanCatchphrase 
+    ? `Integrated punchy subtitle text accent: "${cleanCatchphrase}".` 
     : '';
 
   // 4. アートスタイル (taste)
   const resolvedTaste = taste ? resolveTastePrompt(taste) : (styleDna || '');
   const styleClause = resolvedTaste ? `Artistic rendering style: ${resolvedTaste}.` : '';
 
-  // 5. プロンプト結合（上部30%のゆったりとしたタイトル看板枠と、低めに配置した被写体の完全な棲み分け）
+  // 5. プロンプト結合（上部15-20%の広大な空・ヘッドルームと、その下に浮かぶフローティング看板の完全黄金比）
   const promptEn = [
     `Vertical 9:16 high-impact editorial cover poster and commercial infographic key visual.`,
     mediumInstruction + `.`,
-    `Poster Layout & Hierarchy: Generous editorial margins on all sides. The top 30% features a prominent, beautifully centered headline signboard block displaying the exact title "${titleJp}" with high-end graphic design hierarchy. The title banner sits comfortably down from the ceiling with generous breathing space (never touching the top edge).`,
+    `Poster Headroom & Safe-Zone Layout: The topmost 15% to 20% of the vertical canvas is pure open sky and clean negative space with absolutely ZERO text, ZERO graphics, and NO signs. Positioned comfortably in the upper-middle zone (strictly floating between 18% and 34% down from the very top edge) is a sleek, centered horizontal signboard plaque boldly displaying the exact title "${cleanTitle}". There is an abundant, wide gap of clear open space between the top ceiling border and the upper edge of the title plaque (the plaque NEVER touches or hugs the top border).`,
     focalSubject,
     typographyStyle + `.`,
     subtitleClause,
     styleClause,
-    `Camera & Composition: Vertical 9:16 aspect ratio, perfectly balanced editorial hierarchy. Wide or medium-wide framing with the character's head clearly positioned in the lower portion (at or below 35% from the top), ensuring zero visual crowding, zero text touching the ceiling, and zero collision between head and typography. Crystal clear focal point, professional graphic design, masterpiece, 8k resolution.`
+    `Camera & Composition: Vertical 9:16 aspect ratio, perfectly balanced editorial poster hierarchy with generous safe margins on all four sides. The title plaque floats stably in the upper-middle area with wide open headroom above it. The character is framed in a pull-back shot in the lower half (head clearly positioned at or below 42% from the top), ensuring ample visual separation and a clean vertical gap between the character and the title plaque above. Crystal clear focal point, professional graphic design, masterpiece, 8k resolution.`
   ].filter(Boolean).join(' ');
 
-  // 6. ネガティブプロンプト（文字が天井に張り付く現象・頭部と文字の被りを徹底排除）
-  const baseNegative = `text touching the top border, text crammed against the ceiling, text cut off at top edge, extreme close-up portrait with head at top ceiling, text overlapping character's head, banner colliding with hair, text covering face, cluttered overlap between subject and title, awkwardly placed text, blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts`;
+  // 6. ネガティブプロンプト（文字や看板が天井・上枠に張り付く現象を徹底排除）
+  const baseNegative = `banner touching top edge, signboard touching top border, banner flush with ceiling, text crammed against the ceiling, text cut off at top edge, signboard at very top of frame, zero top margin, cropped title banner, text touching canvas boundary, missing first character, extreme close-up portrait with head at top ceiling, text overlapping character's head, banner colliding with hair, text covering face, cluttered overlap between subject and title, awkwardly placed text, blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts`;
   const forbiddenAnachStr = forbiddenAnachronisms.length > 0 ? forbiddenAnachronisms.join(', ') : '';
   const negativePromptEn = [
     baseNegative,
