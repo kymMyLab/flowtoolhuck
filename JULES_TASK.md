@@ -1,73 +1,110 @@
-# Jules Pro Autonomous Debugging & Hardening Mission
+# Jules Pro Autonomous Mission: Studio Pro Light Theme & Layout Overhaul
+
 **Project**: FlowTool (Studio Pro - MV & Cinematic Video Production System)  
 **Target Environment**: Chrome DevTools Mount / Single ESM Web App Bundle  
 **Branch**: `main`  
-**Updated**: 2026-10-08  
+**Updated**: 2026-10-09  
 
 ---
 
-## 🎯 ミッション概要
-本リポジトリは、Google Flow Tools の Web 画面内にマウントして動作するシネマティック映像・音楽MV制作システム（FlowTool Studio Pro）です。
+## 🎯 Mission Overview
+The user requested a major UI/UX layout overhaul of FlowTool Studio Pro with three primary goals:
+1. **Light Theme Transformation (白ベース・黒文字)**:
+   - Migrate the overall UI from the current pitch-black theme (`#0e0e0e` / `#121212`) to a crisp, high-contrast, modern Light Theme (`#ffffff` / `#f8fafc` background with `#0f172a` / `#1e293b` text).
+   - Ensure cards, borders (`border-slate-200`), badges, and text remain sharp, professional, and visually stunning.
+2. **Top Navigation Control Bar (上部トップバーの新設と機能移動)**:
+   - Free up the cluttered sidebar by moving core project settings to a sleek horizontal Top Navigation Bar across the top of the screen:
+     - **Left**: Studio Pro Logo + Production Mode Selector (with badge/info).
+     - **Center**: Worldview / Theme & Taste / Style dropdowns with edit modal triggers.
+     - **Right**: Primary Action CTA (✨ Start Production / Abort button) + Utility icons (Archive 📁, Trash 🗑️, Logs Drawer Toggle 📄).
+3. **Sidebar Expansion & Reorganization (サイドバー幅拡大とスッキリ化)**:
+   - Expand sidebar width from `380px` to `440px` (or `460px`) for spacious, comfortable controls.
+   - Retain only: Reference Vault (character/style reference images), Multi-Panel comic toggle, Production Volume (parallel count, episode count, cut count, video ratio), and Automation/Pipeline toggles.
+4. **Slide-in Right Log Drawer (右側スライドイン・ログドロワー「にょきっ」と出現)**:
+   - Instead of the current bottom-pinned logs, implement a sleek slide-in drawer on the right side of the screen (`transform: translateX(...)` animation).
+   - Hidden by default. Smoothly slides in from the right edge when clicking the "Logs" button in the top bar or a floating right-edge handle.
+   - Includes close button (✕), copy-to-clipboard, auto-scroll to latest log, and log filter badges.
 
-直近の更新にて、以下の改善が `main` に反映されています：
-1. **特大扉絵拡大モーダルの Portal 化とレイアウト完全安定化**:
-   - `src/components/EpisodeSection.tsx` にて `createPortal(..., document.body)` を適用し、親コンテナの transform やスクロールによる見切れバグを完全解消。
-   - `maxHeight` と Flexbox の中央揃えを最適化し、上部ヘッダーや閉じるボタンが確実に画面内に収まるように修正。
-2. **インフォグラフィック扉絵プロンプトの全画面一体化**:
-   - `src/services/directorService.ts` にて、巨大な白紙余白や二分割レイアウトを防ぎ、全画面一体のシームレスな背景と上部 8%〜12% のタイトル看板配置を確立。
-3. **バッチ生成・エクスポート・型安全ガード**:
-   - `productionPipelines.ts`、`useVideoGeneration.ts`、`browserVideoService.ts`、`exportService.ts` の安全性強化。
-
-Jules は、最新の `main` ブランチを起点として、**コードベース全体の深層監査・デバッグ・長期連続稼働におけるメモリ・エラーハンドリング堅牢化**を自律的に遂行し、Pull Request を作成してください。
-
----
-
-## 🚫 絶対遵守の境界規約（Boundary Constraints）
-以下の規約に違反したコードはマージできません。厳格に遵守してください：
-
-1. **成果物画像データの消去禁止（最重要）**:
-   - `productionPipelines.ts` の `cleanupEpisodeMemory` や各種クリーンアップ関数で、`ep.coverBase64`、`ep.masterAnchorBase64`、`ep.characterTurnaroundBase64` などのエピソード成果物データを **`undefined` にして消去することは絶対に禁止** です。
-   - ※消去すると、UI（`EpisodeSection.tsx`）の扉絵サムネイルが消滅し、さらに一括ZIPエクスポート（`exportService.ts`）時に画像が失われる重大バグが発生します。メモリ対策は作業用中間バッファの解放や `window.gc()` トリガーのみに留めてください。
-2. **ダウンロード完了モーダル（`PackageDownloadModal`）の永久廃止**:
-   - ポップアップやダウンロードモーダルを表示するコンポーネント・UIコードを絶対に再導入・作成しないでください（バックグラウンド直接保存のみ）。
-3. **Afterフレーム参照（`lastFrameImageMediaId`）のコメントアウト維持**:
-   - 2点間モーフィング崩壊を防止するため、`lastFrameImageMediaId` は意図的に無効化されています。再有効化やコメント解除を行わないでください。
-4. **既存の最新UI実装の先祖返り禁止**:
-   - `EpisodeSection.tsx` のプレビューモーダル（`createPortal` による画面中央配置・Escキー対応）など、直近で最適化されたUIロジックを過去のコードで上書き・改悪しないでください。
+**IMPORTANT AUTONOMY INSTRUCTION**:  
+**DO NOT pause for questions, plan approval, or feedback.** Proceed directly from planning to implementation, run type checks and build, and create a Pull Request automatically.
 
 ---
 
-## 📌 今回の重点デバッグ＆堅牢化項目
-
-### 1. 長時間バッチ連続生成時の中断（Abort）処理と未処理リソースの監査
-- **対象ファイル**:
-  - `src/services/productionPipelines.ts` (`runSeriesProduction`, `runShortsBatchProduction`)
-  - `src/services/useStudioProduction.ts`
-- **検証＆実装作業**:
-  - ユーザーが生成を途中で中止（Abort）した場合に、実行中の非同期タイマー、リトライループ（`callWithRetry`）、および生成キューが即座かつ安全に停止し、バックグラウンドで無駄な API リクエストが走り続けないか監査・堅牢化してください。
-  - Abort 発生時に各エピソードやカットの `isGenerating` フラグが正しくリセットされることを確認してください。
-
-### 2. 生成API（Flow.generate.image / Flow.generate.video）の引数型安全性とフォールバック
-- **対象ファイル**:
-  - `src/services/useVideoGeneration.ts`
-  - `src/services/directorService.ts`
-  - `src/services/useStudioProduction.ts`
-- **検証＆実装作業**:
-  - `Flow.generate.image` や `Flow.generate.video` を呼び出す全箇所において、渡されるパラメータ（`prompt`, `aspectRatio`, `durationSeconds`, `imageModel` 等）が空文字や不正な型、NaN、未定義とならないよう、事前バリデーションを徹底してください。
-  - 万が一モデル指定やプロンプト構築に欠損が生じた場合の安全なデフォルトフォールバックを確保してください。
-
-### 3. ZIPエクスポート・大容量バッチ保存の安全性
-- **対象ファイル**:
-  - `src/services/exportService.ts`
-- **検証＆実装作業**:
-  - 10話以上の長編シリーズ（120カット以上）を一括エクスポートする際、JSZip や Base64 デコード処理でブラウザのヒープメモリが急激に圧迫されてクラッシュしないか検証し、安全な処理フローを担保してください。
-
-### 4. TypeScript 完全パス (Zero Errors) & バンドル検証
-- **検証作業**:
-  - `npx tsc --noEmit` で型エラーが 0 件であることを確認。
-  - `npm run build`（`node scripts/build.mjs`）でエラーなくバンドルが完了することを確認。
+## 🚫 Boundary Constraints (絶対遵守の境界規約)
+The following constraints must be strictly adhered to:
+1. **Do NOT delete episode artifact image data (成果物画像データの消去禁止 - 最重要)**:
+   - In `productionPipelines.ts` (`cleanupEpisodeMemory`), NEVER set `ep.coverBase64`, `ep.masterAnchorBase64`, or `ep.characterTurnaroundBase64` to `undefined`.
+2. **NO PackageDownloadModal (ダウンロード完了モーダルの永久廃止)**:
+   - Do NOT introduce any popups or completion download modals.
+3. **Keep `lastFrameImageMediaId` commented out**:
+   - In `src/services/useVideoGeneration.ts`, keep `lastFrameImageMediaId` disabled to avoid 2-point morphing collapse.
+4. **Preserve existing UI fixes**:
+   - Preserve `createPortal` for the cover preview modal in `EpisodeSection.tsx` and Esc key support.
+5. **Zero TypeScript Errors & Successful Build**:
+   - `npx tsc --noEmit` MUST pass with 0 errors.
+   - `npm run build` (`node scripts/build.mjs`) MUST bundle cleanly without errors.
 
 ---
 
-## 🛠️ 成果物の納品
-- 修正完了後、すべての検証を通過した状態で Pull Request を作成してください。
+## 🛠️ Implementation Plan
+
+### 1. Light Theme Color Palette
+- Base background: `bg-[#f8fafc]` (slate-50) or `bg-white`
+- Primary text: `text-slate-900` (`#0f172a`), secondary text: `text-slate-600` (`#475569`)
+- Panel & Card background: `bg-white`, borders: `border-slate-200` (or `border-slate-300`)
+- Accent badges & buttons:
+  - Amber: `bg-amber-50 text-amber-700 border-amber-200`
+  - Purple: `bg-purple-50 text-purple-700 border-purple-200`
+  - Emerald: `bg-emerald-50 text-emerald-700 border-emerald-200`
+  - Blue/Indigo: `bg-indigo-50 text-indigo-700 border-indigo-200`
+- Scrollbars: Update `.dark-scrollbar` to clean slate/gray scrollbars (`#cbd5e1` thumb).
+
+### 2. Top Navigation Bar (`src/components/StudioHeader.tsx` or integrated in `App.tsx`)
+Create or integrate a fixed header component at the top of `App.tsx`:
+- **Height**: ~56px–64px, `bg-white border-b border-slate-200 px-4 flex items-center justify-between z-40`
+- **Left section**:
+  - Logo: `Studio Pro` with amber icon
+  - Production Mode Dropdown: clean styled dropdown with current mode badge
+- **Center section**:
+  - Theme Selector (`settings.theme`) + Edit button
+  - Taste Selector (`settings.taste`) + JSON Edit button
+- **Right section**:
+  - Start / Abort CTA button: High visibility (e.g. `bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl shadow-sm`)
+  - Folder (Archive) button
+  - Trash (Clear all) button
+  - Logs toggle button (showing log count or pulsing dot if active)
+
+### 3. Reorganized Sidebar (`src/components/StudioSidebar.tsx`)
+- Adjust width: `w-[440px]` with `border-r border-slate-200 bg-[#f8fafc]`
+- Remove duplicate Mode, Theme, Taste, and Start buttons that are now in the Top Header.
+- Keep and polish:
+  - **Reference Vault**: large clean upload & reference card list
+  - **Multi-Panel Toggle**: clean styled card
+  - **Production Volume Accordion**: Image model, parallel count, episode count, cut count, video ratio
+  - **Automation & Pipeline Accordion**: Toggle switches with clear light-mode styles (`bg-slate-200` off, `bg-indigo-600` on)
+
+### 4. Right Slide-In Log Drawer (`src/components/StudioLogDrawer.tsx` or updated `StudioLogs.tsx`)
+- Container: Fixed right side `fixed right-0 top-0 bottom-0 w-[440px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out`
+- Slide animation: `translate-x-0` when open, `translate-x-full` when closed.
+- Top of drawer:
+  - Title: "実行ログ (Studio Logs)"
+  - Action buttons: Copy clipboard, Clear, Close (✕)
+- Body:
+  - Monospace or clean Sans scrollable log list with color-coded badges (`[INFO]`, `[SUCCESS]`, `[ERROR]`, `[PROCESS]`).
+  - Dark/Charcoal console pane or Crisp Light console pane with high readability.
+  - Auto-scroll to bottom on new logs.
+- Edge handle: A subtle floating badge/tab on the right edge of the screen so user can click to pop it open anytime.
+
+### 5. Main Content Area & Episode Cards
+- Update `App.tsx` main scrollable container to light background (`bg-[#f1f5f9]` or `bg-[#ffffff]`).
+- Ensure `EpisodeSection.tsx` and `CutCard.tsx` styles harmonize with the light theme:
+  - Card background: `bg-white`, border: `border-slate-200`, shadow: `shadow-sm`
+  - Text colors: `text-slate-800`, `text-slate-600`
+  - Action buttons: light styled with high contrast
+
+---
+
+## 🚀 Verification & Delivery
+1. Run `npx tsc --noEmit` and resolve any type mismatches.
+2. Run `npm run build` (`node scripts/build.mjs`) to ensure bundle generation succeeds.
+3. Automatically submit the Pull Request and mark the mission complete.
