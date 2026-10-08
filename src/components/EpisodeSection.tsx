@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Episode, Cut, VideoModelType } from '../types';
 import { PillButton } from './Primitives';
 import { CutCard } from './CutCard';
@@ -36,18 +37,18 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
     <div className={`border rounded-xl transition-all duration-300 ${
       isMv ? 'bg-purple-950/20 border-purple-500/30' : 'bg-white/5 border-white/10'
     } ${isExpanded ? 'p-4 flex flex-col gap-4' : 'px-3.5 py-2'}`}>
-      {previewImage && (
+      {previewImage && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[99999] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 pt-16 pb-8 animate-in fade-in duration-200 overflow-y-auto"
+          className="fixed inset-0 z-[999999] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 select-none animate-in fade-in duration-200"
           onClick={() => setPreviewImage(null)}
         >
           <div 
-            className="relative flex flex-col items-center bg-[#18181c] border border-white/20 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.95)] overflow-hidden shrink-0 max-w-[90vw]" 
-            style={{ maxHeight: 'calc(100vh - 120px)' }}
+            className="relative flex flex-col items-center bg-[#18181c] border border-white/20 rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.95)] overflow-hidden shrink-0 max-w-[92vw] sm:max-w-[85vw] my-auto animate-in zoom-in-95 duration-150" 
+            style={{ maxHeight: 'calc(100vh - 60px)' }}
             onClick={e => e.stopPropagation()}
           >
             {/* モーダルヘッダー（常に上部に固定表示・ブラウザ枠外へはみ出さない） */}
-            <div className="w-full flex items-center justify-between px-4 py-2.5 bg-[#22222a] border-b border-white/10 shrink-0">
+            <div className="w-full flex items-center justify-between px-4 py-3 bg-[#22222a] border-b border-white/10 shrink-0">
               <div className="flex items-center gap-2 min-w-0 pr-3">
                 <span className="text-teal-400 text-sm material-symbols-outlined">zoom_in</span>
                 <span className="text-xs font-bold text-white/90 truncate">{previewImage.title}</span>
@@ -55,23 +56,24 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
               <button 
                 type="button"
                 onClick={() => setPreviewImage(null)}
-                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 flex items-center gap-1 text-white/80 hover:text-white cursor-pointer text-xs font-bold transition-colors shrink-0"
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 flex items-center gap-1.5 text-white/80 hover:text-white cursor-pointer text-xs font-bold transition-colors shrink-0"
               >
                 <span className="material-symbols-outlined text-[16px]">close</span>
                 <span>閉じる (Esc)</span>
               </button>
             </div>
-            {/* 画像本体（9:16縦長でも画面内に100%収まるサイズ制限） */}
-            <div className="flex-1 min-h-0 p-3 flex items-center justify-center bg-black/70 overflow-hidden">
+            {/* 画像本体（9:16縦長でも16:9横長でも画面内に100%収まり、ヘッダーを押し出さない） */}
+            <div className="flex-1 min-h-0 p-3 sm:p-4 flex items-center justify-center bg-black/70 overflow-hidden w-full">
               <img 
                 src={previewImage.src} 
                 alt={previewImage.title} 
                 className="w-auto h-auto max-w-full object-contain rounded-xl border border-white/10 shadow-lg" 
-                style={{ maxHeight: 'calc(100vh - 200px)' }}
+                style={{ maxHeight: 'calc(100vh - 140px)' }}
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ヘッダー行（常に1行でコンパクトに表示） */}
