@@ -14,13 +14,15 @@ import {
   VIDEO_RATIO_OPTIONS,
   PRODUCTION_MODES
 } from '../constants';
-import { StudioLogs, LogEntry } from './StudioLogs';
+
 import { ReferenceVault } from './ReferenceVault';
 import { getAllReferenceAssets } from '../services/db';
-import { ThemeEditorModal } from './ThemeEditorModal';
-import { loadCustomThemes, CustomThemeMap } from '../services/themeStorage';
-import { TasteEditorModal } from './TasteEditorModal';
-import { loadCustomTastes, CustomTasteMap } from '../services/tasteStorage';
+
+
+
+
+
+import { LogEntry } from './StudioLogs';
 
 export { PRODUCTION_MODES };
 
@@ -28,25 +30,13 @@ interface StudioSidebarProps {
   settings: GeneratorSettings;
   setSettings: React.Dispatch<React.SetStateAction<GeneratorSettings>>;
   isProducing: boolean;
-  onStart: () => void;
-  onAbort: () => void;
-  onClear: () => void;
-  onOpenArchive: () => void;
-  onResumeSeries?: (manifest: any) => void;
-  activeSeriesManifest?: any;
-  logs: LogEntry[];
   onAddLog: (msg: string, type?: LogEntry['type']) => void;
 }
 
 export const StudioSidebar: React.FC<StudioSidebarProps> = ({
-  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onResumeSeries, activeSeriesManifest, logs, onAddLog
+  settings, setSettings, isProducing, onAddLog
 }) => {
   const [referenceAssets, setReferenceAssets] = useState<ReferenceAsset[]>([]);
-  const [customThemes, setCustomThemes] = useState<CustomThemeMap>(() => loadCustomThemes());
-  const [customTastes, setCustomTastes] = useState<CustomTasteMap>(() => loadCustomTastes());
-  const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
-  const [isTasteEditorOpen, setIsTasteEditorOpen] = useState(false);
-  const resumeFileRef = useRef<HTMLInputElement | null>(null);
 
   const refreshAssets = async () => {
     const assets = await getAllReferenceAssets();
@@ -113,7 +103,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     switch (settings.productionMode) {
       case 'mv':
         return {
-          className: 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-900/40 border border-purple-400/50',
+          className: 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-slate-900 shadow-purple-900/40 border border-purple-400/50',
           icon: 'music_note',
           label: `🎵 音楽MVを生成 (${settings.episodeCount || 1}曲 / 各12カット)`
         };
@@ -125,13 +115,13 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         };
       case 'quotes':
         return {
-          className: 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 hover:from-emerald-500 hover:to-teal-500 text-white shadow-teal-900/40 border border-teal-400/50',
+          className: 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 hover:from-emerald-500 hover:to-teal-500 text-slate-900 shadow-teal-900/40 border border-teal-400/50',
           icon: 'history_edu',
           label: `📜 偉人名言Shortsを生成 (${settings.episodeCount || 1}本 / 縦書き墨文字)`
         };
       case 'folklore':
         return {
-          className: 'bg-gradient-to-r from-rose-900 via-purple-900 to-red-950 hover:from-rose-800 hover:to-purple-800 text-white shadow-red-900/50 border border-red-500/50',
+          className: 'bg-gradient-to-r from-rose-900 via-purple-900 to-red-950 hover:from-rose-800 hover:to-purple-800 text-slate-900 shadow-red-900/50 border border-red-500/50',
           icon: 'visibility',
           label: `👻 怪異・考察動画を生成 (${settings.episodeCount || 1}本 / 不穏グリッチ)`
         };
@@ -143,7 +133,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         };
       case 'style-matrix':
         return {
-          className: 'bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white shadow-rose-900/40 border border-pink-400/50',
+          className: 'bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-slate-900 shadow-rose-900/40 border border-pink-400/50',
           icon: 'palette',
           label: `🎨 画風比較を開始 (${settings.episodeCount || 3}画風 / 各2枚)`
         };
@@ -173,75 +163,12 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   ].filter(Boolean).join('+') || '通常';
 
   return (
-    <div className="w-[380px] border-r border-white/10 flex flex-col p-2.5 shrink-0 bg-[#121212] z-10 shadow-2xl h-full overflow-hidden">
-      {/* ── 最上部固定ヘッダーエリア（スクロールしても絶対に隠れない） ── */}
-      <div className="flex flex-col gap-2 shrink-0 pb-2.5 border-b border-white/10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-amber-500">movie_edit</span>
-            <h1 className="text-lg font-black italic tracking-tighter uppercase">Studio Pro</h1>
-          </div>
-          <button onClick={onOpenArchive} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/10" title="アーカイブ">
-            <span className="material-symbols-outlined text-[18px]">folder</span>
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <SectionLabel>制作モード（YouTubeバズ特化ジャンル）</SectionLabel>
-          <FieldDropdown 
-            label="制作モード選択"
-            value={currentModeDef.label}
-            options={PRODUCTION_MODES.map(m => m.label)}
-            onChange={label => {
-              const matched = PRODUCTION_MODES.find(m => m.label === label);
-              if (matched) handleModeChange(matched.value);
-            }}
-            disabled={isProducing}
-          />
-        </div>
-
-        {/* モード固有固定インフォエリア（高さ一定で切替時のガタつきを防止） */}
-        <div className="min-h-[46px] flex flex-col justify-center">
-          {settings.productionMode === 'episodes' && activeSeriesManifest ? (
-            <div className="flex items-center justify-between bg-white/5 p-2 rounded-xl border border-white/10">
-              <div className="flex flex-col">
-                <span className="text-[11px] font-bold text-gray-300">連載レジューム</span>
-                <span className="text-[9px] text-gray-400">
-                  『{activeSeriesManifest.seriesTitle}』({activeSeriesManifest.completedEpisodeIds?.length || 0}/{activeSeriesManifest.totalEpisodes}話完了)
-                </span>
-              </div>
-              <button 
-                type="button" 
-                disabled={isProducing}
-                onClick={() => resumeFileRef.current?.click()}
-                className="px-2.5 py-1 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[14px]">file_open</span>
-                読込
-              </button>
-            </div>
-          ) : (
-            <div className={`flex items-center justify-between px-3 py-1.5 rounded-xl border ${currentModeDef.colorClass}`}>
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="material-symbols-outlined text-[16px] shrink-0">{currentModeDef.icon}</span>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-bold truncate">{currentModeDef.desc}</span>
-                  <span className="text-[9px] opacity-75 truncate">演出: {currentModeDef.telopNote}</span>
-                </div>
-              </div>
-              <span className="text-[9px] px-2 py-0.5 rounded-md bg-white/10 font-bold border border-white/10 shrink-0">
-                {currentModeDef.badge}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
+    <div className="w-[440px] border-r border-slate-200 flex flex-col p-2.5 shrink-0 bg-slate-50 z-10 shadow-sm h-full overflow-hidden">
       {/* ── 中央スクロールエリア（各項目アコーディオン） ── */}
       <div className="flex flex-col gap-2 overflow-y-auto pr-1 dark-scrollbar flex-1 py-2">
         
         {/* ① 世界観・画風設定 アコーディオン */}
-        <div className={`flex flex-col rounded-xl border border-white/10 bg-white/[0.02] transition-all ${isWorldOpen ? 'overflow-visible relative z-30' : 'overflow-hidden'}`}>
+        <div className={`flex flex-col rounded-xl border border-slate-200 bg-white transition-all ${isWorldOpen ? 'overflow-visible relative z-30' : 'overflow-hidden'}`}>
           <button
             type="button"
             onClick={() => setIsWorldOpen(!isWorldOpen)}
@@ -295,7 +222,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               />
               
               <div className="flex items-center justify-between mt-0.5">
-                <label className="text-[11px] font-black text-gray-400 uppercase tracking-wider">画風・テイスト</label>
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">画風・テイスト</label>
                 <button
                   type="button"
                   onClick={() => setIsTasteEditorOpen(true)}
@@ -323,14 +250,14 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                     checked={!!settings.isMultiPanel}
                     onChange={e => setSettings(s => ({ ...s, isMultiPanel: e.target.checked }))}
                     disabled={isProducing}
-                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-gray-600 bg-black/50 cursor-pointer accent-purple-500"
+                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 bg-slate-200 cursor-pointer accent-purple-500"
                   />
                   <div className="flex flex-col">
-                    <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[15px] text-purple-400">auto_stories</span>
                       マンガ風コマ割り (Multi-Panel)
                     </span>
-                    <span className="text-[9.5px] text-gray-400 font-normal">
+                    <span className="text-[9.5px] text-slate-500 font-normal">
                       AIが1コマ〜変形コマ割りを自由に演出
                     </span>
                   </div>
@@ -341,28 +268,28 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         </div>
 
         {/* ② 制作ボリューム・配分 アコーディオン */}
-        <div className={`flex flex-col rounded-xl border border-white/10 bg-white/[0.02] transition-all ${isVolumeOpen ? 'overflow-visible relative z-20' : 'overflow-hidden'}`}>
+        <div className={`flex flex-col rounded-xl border border-slate-200 bg-white transition-all ${isVolumeOpen ? 'overflow-visible relative z-20' : 'overflow-hidden'}`}>
           <button
             type="button"
             onClick={() => setIsVolumeOpen(!isVolumeOpen)}
-            className="w-full flex items-center justify-between p-2.5 bg-white/[0.04] hover:bg-white/[0.08] transition-colors cursor-pointer select-none text-left"
+            className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer select-none text-left"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className="material-symbols-outlined text-[16px] text-amber-400 shrink-0">tune</span>
-              <span className="text-[11px] font-black text-white/90 uppercase tracking-wider truncate">制作ボリューム・配分</span>
+              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider truncate">制作ボリューム・配分</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
                 {settings.episodeCount}曲 / 先行{settings.previewCutCount}枚
               </span>
-              <span className={`material-symbols-outlined text-[18px] text-gray-400 transition-transform duration-200 ${isVolumeOpen ? 'rotate-180' : ''}`}>
+              <span className={`material-symbols-outlined text-[18px] text-slate-500 transition-transform duration-200 ${isVolumeOpen ? 'rotate-180' : ''}`}>
                 expand_more
               </span>
             </div>
           </button>
 
           {isVolumeOpen && (
-            <div className="p-2.5 flex flex-col gap-2.5 border-t border-white/5 animate-in fade-in duration-200">
+            <div className="p-2.5 flex flex-col gap-2.5 border-t border-slate-200 animate-in fade-in duration-200">
               <FieldDropdown label="画像モデル" value={settings.imageModel} options={IMAGE_MODELS.map(m => m.label)} onChange={v => setSettings(s => ({ ...s, imageModel: v }))} disabled={isProducing} />
               
               <div className="grid grid-cols-2 gap-2">
@@ -401,28 +328,28 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         </div>
 
         {/* ③ 自動化＆Veoパイプライン アコーディオン */}
-        <div className={`flex flex-col rounded-xl border border-white/10 bg-white/[0.02] transition-all ${isPipelineOpen ? 'overflow-visible relative z-10' : 'overflow-hidden'}`}>
+        <div className={`flex flex-col rounded-xl border border-slate-200 bg-white transition-all ${isPipelineOpen ? 'overflow-visible relative z-10' : 'overflow-hidden'}`}>
           <button
             type="button"
             onClick={() => setIsPipelineOpen(!isPipelineOpen)}
-            className="w-full flex items-center justify-between p-2.5 bg-white/[0.04] hover:bg-white/[0.08] transition-colors cursor-pointer select-none text-left"
+            className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer select-none text-left"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className="material-symbols-outlined text-[16px] text-emerald-400 shrink-0">smart_toy</span>
-              <span className="text-[11px] font-black text-white/90 uppercase tracking-wider truncate">自動化＆パイプライン</span>
+              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider truncate">自動化＆パイプライン</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
                 {pipelineBadge}
               </span>
-              <span className={`material-symbols-outlined text-[18px] text-gray-400 transition-transform duration-200 ${isPipelineOpen ? 'rotate-180' : ''}`}>
+              <span className={`material-symbols-outlined text-[18px] text-slate-500 transition-transform duration-200 ${isPipelineOpen ? 'rotate-180' : ''}`}>
                 expand_more
               </span>
             </div>
           </button>
 
           {isPipelineOpen && (
-            <div className="p-2.5 flex flex-col gap-1.5 border-t border-white/5 animate-in fade-in duration-200 bg-white/[0.01]">
+            <div className="p-2.5 flex flex-col gap-1.5 border-t border-slate-200 animate-in fade-in duration-200 bg-slate-50">
               {settings.productionMode !== 'style-matrix' && (
                 <ToggleSwitch label="🎬 動画まで自動完走" checked={settings.autoVideo} onChange={v => setSettings(s => ({ ...s, autoVideo: v }))} />
               )}
@@ -460,79 +387,6 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
 
       </div>
 
-      {/* ── 最下部固定操作エリア（スクロールに関係なく常時可視化！） ── */}
-      <div className="shrink-0 flex flex-col gap-1.5 pt-2 pb-0.5 border-t border-white/10 bg-[#121212] z-20 shadow-[0_-8px_16px_rgba(0,0,0,0.4)]">
-        {isProducing ? (
-          <PillButton 
-            variant="filled" 
-            className="h-11 bg-red-600 hover:bg-red-500 text-white font-black uppercase tracking-widest animate-pulse shadow-lg shadow-red-900/50" 
-            onClick={() => {
-              console.warn('🛑 [FlowTool UI] 「緊急停止 (Abort)」ボタンが押下されました。');
-              onAbort();
-            }} 
-            icon={<span className="material-symbols-outlined">stop_circle</span>}
-          >
-            🛑 緊急停止 (Abort)
-          </PillButton>
-        ) : (
-          <button 
-            type="button"
-            disabled={isProducing}
-            onClick={() => {
-              console.log(`🔘 [FlowTool UI] 「${startBtn.label}」ボタンが押下されました。`);
-              onStart();
-            }}
-            className={`w-full h-11 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shadow-lg active:scale-[0.99] ${startBtn.className}`}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              {startBtn.icon}
-            </span>
-            <span>{startBtn.label}</span>
-          </button>
-        )}
-        <PillButton 
-          variant="outline" 
-          className="text-red-400 h-7.5 text-xs hover:bg-red-500/10" 
-          onClick={() => {
-            console.log('🔘 [FlowTool UI] 「全消去」ボタンが押下されました。');
-            onClear();
-          }} 
-          icon={<span className="material-symbols-outlined text-[15px]">delete</span>}
-        >
-          全消去
-        </PillButton>
-
-        {/* ログエリア: デフォルトはスリム(36px)に折りたたんで最新1行プレビュー表示、クリックで即展開 */}
-        <StudioLogs logs={logs} onAddLog={onAddLog} isProducing={isProducing} defaultCollapsed={true} />
-      </div>
-
-      <ThemeEditorModal
-        isOpen={isThemeEditorOpen}
-        onClose={() => setIsThemeEditorOpen(false)}
-        currentMode={settings.productionMode}
-        modeLabel={currentModeDef.label}
-        onThemesUpdated={(updatedList) => {
-          setCustomThemes(prev => ({
-            ...prev,
-            [settings.productionMode]: updatedList
-          }));
-          if (updatedList.length > 0 && !updatedList.includes(settings.theme)) {
-            setSettings(s => ({ ...s, theme: updatedList[0], era: updatedList[0] }));
-          }
-        }}
-      />
-
-      <TasteEditorModal
-        isOpen={isTasteEditorOpen}
-        onClose={() => setIsTasteEditorOpen(false)}
-        onTastesUpdated={(updatedTastes) => {
-          setCustomTastes(updatedTastes);
-          const tasteKeys = Object.keys(updatedTastes);
-          if (tasteKeys.length > 0 && !tasteKeys.includes(settings.taste)) {
-            setSettings(s => ({ ...s, taste: tasteKeys[0] }));
-          }
-        }}
-      />
     </div>
   );
 };

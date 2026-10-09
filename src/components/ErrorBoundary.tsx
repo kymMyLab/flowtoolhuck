@@ -26,11 +26,11 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="flex h-screen w-screen bg-[#0e0e0e] text-white select-none items-center justify-center p-8">
-          <div className="bg-[#1a1a1a] p-8 rounded-2xl border border-red-500/30 max-w-[600px] w-full text-center">
+        <div className="flex h-screen w-screen bg-slate-50 text-slate-900 select-none items-center justify-center p-8">
+          <div className="bg-white p-8 rounded-2xl border border-red-200 max-w-[600px] w-full text-center">
             <span className="material-symbols-outlined text-red-500 text-6xl mb-4">error</span>
             <h1 className="text-2xl font-bold mb-4 text-red-400">予期せぬエラーが発生しました</h1>
-            <p className="text-white/70 mb-6 text-sm">
+            <p className="text-slate-900/70 mb-6 text-sm">
               画面の描画中にエラーが発生しました。リロードして再度お試しください。<br/>
               (Error: {this.state.error?.message || 'Unknown'})
             </p>

@@ -53,7 +53,12 @@ npm run jules -- "動画生成パイプラインのエラーハンドリング�
 npm run jules -- --status <sessionId>
 ```
 
-### 4. 直近セッション一覧
+### 4. 実行中セッションへの返答・追加指示（メッセージ送信）
+```powershell
+npm run jules -- --send <sessionId> "問題ないので続けて"
+```
+
+### 5. 直近セッション一覧
 ```powershell
 npm run jules -- --list
 ```

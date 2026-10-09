@@ -35,7 +35,7 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
 
   return (
     <div className={`border rounded-xl transition-all duration-300 ${
-      isMv ? 'bg-purple-950/20 border-purple-500/30' : 'bg-white/5 border-white/10'
+      isMv ? 'bg-purple-950/20 border-purple-500/30' : 'bg-white/5 border-slate-200'
     } ${isExpanded ? 'p-4 flex flex-col gap-4' : 'px-3.5 py-2'}`}>
       {previewImage && typeof document !== 'undefined' && createPortal(
         <div 
@@ -43,31 +43,31 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
           onClick={() => setPreviewImage(null)}
         >
           <div 
-            className="relative flex flex-col items-center bg-[#18181c] border border-white/20 rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.95)] overflow-hidden shrink-0 max-w-[92vw] sm:max-w-[85vw] my-auto animate-in zoom-in-95 duration-150" 
+            className="relative flex flex-col items-center bg-white border border-slate-200 rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.95)] overflow-hidden shrink-0 max-w-[92vw] sm:max-w-[85vw] my-auto animate-in zoom-in-95 duration-150" 
             style={{ maxHeight: 'calc(100vh - 60px)' }}
             onClick={e => e.stopPropagation()}
           >
             {/* モーダルヘッダー（常に上部に固定表示・ブラウザ枠外へはみ出さない） */}
-            <div className="w-full flex items-center justify-between px-4 py-3 bg-[#22222a] border-b border-white/10 shrink-0">
+            <div className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200 shrink-0">
               <div className="flex items-center gap-2 min-w-0 pr-3">
                 <span className="text-teal-400 text-sm material-symbols-outlined">zoom_in</span>
-                <span className="text-xs font-bold text-white/90 truncate">{previewImage.title}</span>
+                <span className="text-xs font-bold text-slate-800 truncate">{previewImage.title}</span>
               </div>
               <button 
                 type="button"
                 onClick={() => setPreviewImage(null)}
-                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 flex items-center gap-1.5 text-white/80 hover:text-white cursor-pointer text-xs font-bold transition-colors shrink-0"
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 flex items-center gap-1.5 text-slate-700 hover:text-slate-900 cursor-pointer text-xs font-bold transition-colors shrink-0"
               >
                 <span className="material-symbols-outlined text-[16px]">close</span>
                 <span>閉じる (Esc)</span>
               </button>
             </div>
             {/* 画像本体（9:16縦長でも16:9横長でも画面内に100%収まり、ヘッダーを押し出さない） */}
-            <div className="flex-1 min-h-0 p-3 sm:p-4 flex items-center justify-center bg-black/70 overflow-hidden w-full">
+            <div className="flex-1 min-h-0 p-3 sm:p-4 flex items-center justify-center bg-slate-100 overflow-hidden w-full">
               <img 
                 src={previewImage.src} 
                 alt={previewImage.title} 
-                className="w-auto h-auto max-w-full object-contain rounded-xl border border-white/10 shadow-lg" 
+                className="w-auto h-auto max-w-full object-contain rounded-xl border border-slate-200 shadow-lg" 
                 style={{ maxHeight: 'calc(100vh - 140px)' }}
               />
             </div>
@@ -85,7 +85,7 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
           <span className={`material-symbols-outlined text-lg shrink-0 ${isMv ? 'text-purple-400' : 'text-amber-400'}`}>
             {cardIcon}
           </span>
-          <h3 className="text-xs font-black tracking-wider uppercase text-white/90 shrink-0">
+          <h3 className="text-xs font-black tracking-wider uppercase text-slate-800 shrink-0">
             {cardTitle}
           </h3>
           
@@ -158,7 +158,7 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
           )}
           <button 
             type="button" 
-            className="flex items-center gap-0.5 text-[10px] font-bold text-white/50 hover:text-white px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors"
+            className="flex items-center gap-0.5 text-[10px] font-bold text-slate-500 hover:text-slate-900 px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors"
           >
             <span>{isExpanded ? '閉じる' : '詳細'}</span>
             <span className="material-symbols-outlined text-[14px]">
@@ -173,7 +173,7 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
         <div className="flex flex-col gap-4 animate-in fade-in duration-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-bold text-white/30 uppercase tracking-tighter">
+              <span className="text-[10px] font-bold text-slate-900/30 uppercase tracking-tighter">
                 {isMv ? 'MVビジュアルコンセプト・情景美（アンニュイ演出）'
                   : mode === 'trivia' ? '科学的メカニズム・歴史的ウラ側の検証'
                   : mode === 'quotes' ? '名言の思想的背景・時代文脈'
@@ -181,10 +181,10 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                   : mode === 'craft' ? '職人の技術革新・歴史的背景'
                   : '作品世界観・時代分析'}
               </span>
-              <p className="text-xs text-white/80 leading-relaxed italic">{ep.eraAnalysis || "分析データ収集中..."}</p>
+              <p className="text-xs text-slate-700 leading-relaxed italic">{ep.eraAnalysis || "分析データ収集中..."}</p>
             </div>
             <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-bold text-white/30 uppercase tracking-tighter">
+              <span className="text-[10px] font-bold text-slate-900/30 uppercase tracking-tighter">
                 {isMv ? 'ムード阻害・禁止要素 (Strictly Forbidden)' : '禁止要素 (Strictly Forbidden)'}
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -195,7 +195,7 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                     </span>
                   ))
                 ) : (
-                  <span className="text-[10px] text-white/20 italic">特になし</span>
+                  <span className="text-[10px] text-slate-900/20 italic">特になし</span>
                 )}
               </div>
             </div>
@@ -209,15 +209,15 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                   <span className="material-symbols-outlined text-[14px]">badge</span>
                   キャラクター統一アンカー (Character Consistency Anchors)
                 </span>
-                <span className="text-[9px] text-white/40">全カットの顔・骨格・衣装の完全一致を参照中</span>
+                <span className="text-[9px] text-slate-500">全カットの顔・骨格・衣装の完全一致を参照中</span>
               </div>
               <div className="flex items-center gap-3 overflow-x-auto py-1">
                 {ep.characterTurnaroundBase64 && (
-                  <div className="flex items-center gap-2.5 bg-black/40 border border-amber-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
+                  <div className="flex items-center gap-2.5 bg-white border border-amber-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
                     <img 
                       src={formatDataUri(ep.characterTurnaroundBase64)} 
                       alt="三面図 Turnaround Sheet" 
-                      className="w-12 h-12 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
+                      className="w-12 h-12 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-slate-200" 
                       onClick={() => {
                         setPreviewImage({
                           src: formatDataUri(ep.characterTurnaroundBase64),
@@ -231,16 +231,16 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                         <span className="text-[11px] font-bold text-amber-300">3面設計図シート</span>
                         <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-400 text-[8px] font-bold rounded">Turnaround</span>
                       </div>
-                      <span className="text-[9px] text-white/50 leading-tight mt-0.5">正面・側面・背面の360°基準</span>
+                      <span className="text-[9px] text-slate-500 leading-tight mt-0.5">正面・側面・背面の360°基準</span>
                     </div>
                   </div>
                 )}
                 {ep.masterAnchorBase64 && (
-                  <div className="flex items-center gap-2.5 bg-black/40 border border-blue-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
+                  <div className="flex items-center gap-2.5 bg-white border border-blue-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
                     <img 
                       src={formatDataUri(ep.masterAnchorBase64)} 
                       alt="マスターアンカー Master Anchor" 
-                      className="w-12 h-12 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
+                      className="w-12 h-12 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-slate-200" 
                       onClick={() => {
                         setPreviewImage({
                           src: formatDataUri(ep.masterAnchorBase64),
@@ -254,16 +254,16 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                         <span className="text-[11px] font-bold text-blue-300">マスターアンカー</span>
                         <span className="px-1.5 py-0.2 bg-blue-500/20 text-blue-400 text-[8px] font-bold rounded">Cut 1 Fix</span>
                       </div>
-                      <span className="text-[9px] text-white/50 leading-tight mt-0.5">全カット固定参照</span>
+                      <span className="text-[9px] text-slate-500 leading-tight mt-0.5">全カット固定参照</span>
                     </div>
                   </div>
                 )}
                 {ep.coverBase64 && (
-                  <div className="flex items-center gap-2.5 bg-black/40 border border-teal-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
+                  <div className="flex items-center gap-2.5 bg-white border border-teal-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
                     <img 
                       src={formatDataUri(ep.coverBase64)} 
                       alt="インフォグラフィック扉絵" 
-                      className="w-8 h-12 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-white/10" 
+                      className="w-8 h-12 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform border border-slate-200" 
                       onClick={() => {
                         setPreviewImage({
                           src: formatDataUri(ep.coverBase64),
@@ -277,17 +277,17 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                         <span className="text-[11px] font-bold text-teal-300">インフォグラフィック扉絵</span>
                         <span className="px-1.5 py-0.2 bg-teal-500/20 text-teal-400 text-[8px] font-bold rounded">9:16 Cover</span>
                       </div>
-                      <span className="text-[9px] text-white/50 leading-tight mt-0.5">世界観適応 高CTRポスター</span>
+                      <span className="text-[9px] text-slate-500 leading-tight mt-0.5">世界観適応 高CTRポスター</span>
                     </div>
                   </div>
                 )}
                 {ep.characterDna && (
-                  <div className="flex flex-col justify-center px-3 py-1 bg-white/5 border border-white/10 rounded-xl min-w-0 max-w-md shrink-0">
+                  <div className="flex flex-col justify-center px-3 py-1 bg-white/5 border border-slate-200 rounded-xl min-w-0 max-w-md shrink-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold text-amber-400">固定主人公DNA</span>
-                      <span className="px-1.5 py-0.2 bg-white/10 text-white/60 text-[8px] font-bold rounded">Protagonist</span>
+                      <span className="px-1.5 py-0.2 bg-white/10 text-slate-600 text-[8px] font-bold rounded">Protagonist</span>
                     </div>
-                    <span className="text-[10px] text-white/80 line-clamp-2 leading-tight mt-0.5" title={ep.characterDna}>
+                    <span className="text-[10px] text-slate-700 line-clamp-2 leading-tight mt-0.5" title={ep.characterDna}>
                       {ep.characterDna}
                     </span>
                   </div>
@@ -324,19 +324,19 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
 
   return (
     <section className={`flex flex-col gap-5 animate-slide-in transition-opacity duration-700 ${isPending ? 'opacity-30' : 'opacity-100'}`}>
-      <div className="flex flex-col border-b border-white/10 pb-4 gap-3">
+      <div className="flex flex-col border-b border-slate-200 pb-4 gap-3">
         {/* 最上段: 上にタイトル（全幅でゆったり表示）、下にアクションボタン群を整列 */}
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="font-black italic uppercase tracking-tight text-white leading-tight text-lg sm:text-xl md:text-2xl break-words">
+              <h2 className="font-black italic uppercase tracking-tight text-slate-900 leading-tight text-lg sm:text-xl md:text-2xl break-words">
                 {ep.titleJp || '無題'}
               </h2>
               {ep.isDone && <span className="material-symbols-outlined text-green-500 font-bold text-lg" title="制作完了">check_circle</span>}
               {ep.isGenerating && <div className="w-4 h-4 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin shrink-0" />}
             </div>
             {ep.titleEn && (
-              <span className="text-[11px] text-white/40 uppercase tracking-widest font-mono">
+              <span className="text-[11px] text-slate-500 uppercase tracking-widest font-mono">
                 {ep.titleEn}
               </span>
             )}
@@ -379,19 +379,19 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
             </PillButton>
             <PillButton 
               variant="filled" 
-              className="h-8 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs border border-indigo-400/50 whitespace-nowrap shrink-0" 
+              className="h-8 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-slate-900 font-black text-xs border border-indigo-400/50 whitespace-nowrap shrink-0" 
               disabled={ep.isExportingMovie || ep.isGenerating || isPending} 
               onClick={() => onExportFullMovie(ep.id)} 
-              icon={ep.isExportingMovie ? <div className="w-3.5 h-3.5 border-2 border-white/10 border-t-white rounded-full animate-spin" /> : <span className="material-symbols-outlined text-sm">movie</span>}
+              icon={ep.isExportingMovie ? <div className="w-3.5 h-3.5 border-2 border-slate-200 border-t-white rounded-full animate-spin" /> : <span className="material-symbols-outlined text-sm">movie</span>}
             >
               動画結合 (MP4)
             </PillButton>
             <PillButton 
               variant="outline" 
-              className="h-8 px-3 border-white/10 hover:border-white/30 text-white/50 hover:text-white font-bold text-xs whitespace-nowrap shrink-0" 
+              className="h-8 px-3 border-slate-200 hover:border-white/30 text-slate-500 hover:text-slate-900 font-bold text-xs whitespace-nowrap shrink-0" 
               disabled={ep.isGeneratingRemainingImages || ep.isGenerating || isPending} 
               onClick={() => onGenerateRemaining(ep.id)} 
-              icon={ep.isGeneratingRemainingImages ? <div className="w-3.5 h-3.5 border-2 border-white/10 border-t-white rounded-full animate-spin" /> : <span className="material-symbols-outlined text-sm">palette</span>}
+              icon={ep.isGeneratingRemainingImages ? <div className="w-3.5 h-3.5 border-2 border-slate-200 border-t-white rounded-full animate-spin" /> : <span className="material-symbols-outlined text-sm">palette</span>}
             >
               残り描画
             </PillButton>
@@ -406,7 +406,7 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
             </PillButton>
             <PillButton 
               variant="outline" 
-              className="h-8 px-3 border-white/20 hover:border-white/40 text-white/70 hover:text-white font-bold text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer" 
+              className="h-8 px-3 border-slate-200 hover:border-white/40 text-slate-600 hover:text-slate-900 font-bold text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer" 
               disabled={isPending}
               onClick={() => onDownloadZip(ep)} 
               icon={<span className="material-symbols-outlined text-sm">download</span>}

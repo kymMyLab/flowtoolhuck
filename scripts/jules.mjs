@@ -145,6 +145,23 @@ async function listSessions() {
   }
 }
 
+async function sendMessage(sessionId, message) {
+  const cleanId = sessionId.replace(/^sessions\//, '');
+  console.log(`💬 Sending message to session: ${cleanId}...`);
+  const payload = JSON.stringify({ prompt: message });
+  const res = await apiRequest({
+    path: `/v1alpha/sessions/${cleanId}:sendMessage`,
+    method: 'POST'
+  }, payload);
+
+  if (res.status === 200) {
+    console.log('✅ Message sent successfully! Jules resumed execution.');
+    return res.data;
+  } else {
+    console.error('❌ Failed to send message:', res.status, res.data || res.raw);
+  }
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -156,6 +173,12 @@ async function main() {
   const statusIdx = args.indexOf('--status');
   if (statusIdx !== -1 && args[statusIdx + 1]) {
     await getSessionStatus(args[statusIdx + 1]);
+    return;
+  }
+
+  const sendIdx = args.findIndex(a => a === '--send' || a === '--reply' || a === '--msg');
+  if (sendIdx !== -1 && args[sendIdx + 1] && args[sendIdx + 2]) {
+    await sendMessage(args[sendIdx + 1], args[sendIdx + 2]);
     return;
   }
 

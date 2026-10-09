@@ -3,6 +3,7 @@ import { ConfirmationModal } from './components/Primitives';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
 import { ArchiveDrawer } from './components/ArchiveDrawer';
 import { StudioSidebar } from './components/StudioSidebar';
+import { StudioHeader } from './components/StudioHeader';
 import { EpisodeSection } from './components/EpisodeSection';
 import { LogEntry } from './components/StudioLogs';
 import { Cut, GeneratorSettings, VideoModelType, Episode } from './types';
@@ -24,6 +25,12 @@ export default function App() {
   const [stories, setStories] = useState<StoryRecord[]>([]);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
+  const [isLogDrawerOpen, setIsLogDrawerOpen] = useState(false);
+  const [customThemes, setCustomThemes] = useState(() => { try { return JSON.parse(localStorage.getItem('customThemes') || '{}') || {}; } catch { return {}; } });
+  const [customTastes, setCustomTastes] = useState(() => { try { return JSON.parse(localStorage.getItem('customTastes') || '{}') || {}; } catch { return {}; } });
+  const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
+  const [isTasteEditorOpen, setIsTasteEditorOpen] = useState(false);
+  const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
 
   // マウント時にDevToolsコンソールへ準備完了バナーと制作構成を出力
@@ -113,14 +120,30 @@ export default function App() {
     }
   }, [addLog, activeSeriesManifest, logs, updateEpisode]);
 
-  const handleResumeSeries = useCallback(async (manifest: any) => {
+  const handleResumeSeries = useCallback(async (e: React.ChangeEvent<HTMLInputElement> | any) => {
+    let manifest = e;
+    if (e?.target?.files) {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        manifest = JSON.parse(text);
+        if (!manifest.seriesTitle || !manifest.episodesPlan) {
+          addLog('❌ 有効なシリーズ設定ファイル(JSON)ではありません。', 'error');
+          return;
+        }
+      } catch (err: any) {
+        addLog(`❌ JSON読み込み失敗: ${err.message}`, 'error');
+        return;
+      }
+    }
     if (manifest.settings) {
       setSettings(prev => ({ ...prev, ...manifest.settings }));
     }
     await resumeSeries(manifest, (assetId: number) => {
       setSettings(prev => ({ ...prev, selectedAssetId: assetId }));
     });
-  }, [resumeSeries]);
+  }, [resumeSeries, addLog]);
 
   const updateCutWrapped = useCallback((epId: number, cutId: number, updates: Partial<Cut>) => {
     // ナレーションが更新された場合はテロップテキストとハイライトも自動同期（演出設定は保持）
@@ -154,9 +177,28 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen w-screen bg-[#0e0e0e] text-white select-none">
-      <StudioSidebar settings={settings} setSettings={setSettings} isProducing={isProducing} onStart={startProduction} onAbort={abortProduction} onClear={() => setIsTrashModalOpen(true)} onOpenArchive={() => setArchiveOpen(true)} onResumeSeries={handleResumeSeries} activeSeriesManifest={activeSeriesManifest} logs={logs} onAddLog={addLog} />
-      <div className="flex-1 overflow-y-auto p-8 bg-[#080808] dark-scrollbar">
+      <div className="flex flex-col h-screen w-screen bg-slate-50 text-slate-900 select-none overflow-hidden">
+        <StudioHeader 
+          settings={settings}
+          setSettings={setSettings}
+          isProducing={isProducing}
+          onStart={startProduction}
+          onAbort={abortProduction}
+          onClear={() => setIsTrashModalOpen(true)}
+          onOpenArchive={() => setArchiveOpen(true)}
+          onToggleLogs={() => setIsLogDrawerOpen(prev => !prev)}
+          customThemes={customThemes}
+          customTastes={customTastes}
+          onOpenThemeEditor={() => setIsThemeEditorOpen(true)}
+          onOpenTasteEditor={() => setIsTasteEditorOpen(true)}
+          activeSeriesManifest={activeSeriesManifest}
+          onResumeClick={() => resumeFileRef.current?.click()}
+          isLogDrawerOpen={isLogDrawerOpen}
+        />
+        <div className="flex flex-1 overflow-hidden relative">
+          <StudioSidebar settings={settings} setSettings={setSettings} isProducing={isProducing} onAddLog={addLog} />
+          
+          <div className="flex-1 overflow-y-auto p-8 bg-slate-100 dark-scrollbar relative">
         <div className="max-w-[1300px] mx-auto flex flex-col gap-16">
           {episodes.map(ep => (
             <EpisodeSection 
@@ -189,6 +231,7 @@ export default function App() {
           {episodes.length === 0 && <div className="h-[60vh] flex flex-col items-center justify-center opacity-20 gap-4"><span className="material-symbols-outlined text-[120px]">movie_edit</span><p className="text-xl font-black uppercase tracking-widest italic">Studio Ready</p></div>}
         </div>
       </div>
+
       {previewingCutData && (() => {
         const ep = episodes.find(e => e.id === previewingCutData.epId);
         const cuts = ep?.cuts || [];
@@ -239,9 +282,19 @@ export default function App() {
           />
         );
       })()}
-      <ArchiveDrawer isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} stories={stories} onRemake={(s) => { setSettings(prev => ({ ...prev, country: s.country, era: s.era, theme: s.theme })); setArchiveOpen(false); }} />
-      <ConfirmationModal isOpen={isTrashModalOpen} title="全消去" message="制作中のデータを消去します。" onConfirm={() => { clearEpisodes(); setIsTrashModalOpen(false); }} onCancel={() => setIsTrashModalOpen(false)} />
-    </div>
+          
+          <StudioLogs 
+            logs={logs} 
+            onAddLog={addLog} 
+            isProducing={isProducing} 
+            isOpen={isLogDrawerOpen} 
+            onClose={() => setIsLogDrawerOpen(false)} 
+          />
+        </div>
+        <ArchiveDrawer isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} stories={stories} onRemake={(s) => { setSettings(prev => ({ ...prev, country: s.country, era: s.era, theme: s.theme })); setArchiveOpen(false); }} />
+        <ConfirmationModal isOpen={isTrashModalOpen} title="全消去" message="制作中のデータを消去します。" onConfirm={() => { clearEpisodes(); setIsTrashModalOpen(false); }} onCancel={() => setIsTrashModalOpen(false)} />
+        <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
+      </div>
     </ErrorBoundary>
   );
 }

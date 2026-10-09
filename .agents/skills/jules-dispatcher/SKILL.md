@@ -36,6 +36,9 @@ npm run jules -- "Investigate and fix memory leak in browserVideoService.ts"
 # Check session status
 npm run jules -- --status <sessionId>
 
+# Send message / reply to an active session
+npm run jules -- --send <sessionId> "問題ないので続けて"
+
 # List recent sessions
 npm run jules -- --list
 ```
