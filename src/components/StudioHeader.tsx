@@ -113,19 +113,19 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             groups={themeConfig.groups}
             onChange={v => setSettings(s => ({ ...s, theme: v, era: v }))} 
             disabled={isProducing} 
-            className="w-[200px]"
+            className="w-[280px]"
           />
           <button
             type="button"
             onClick={onOpenThemeEditor}
             disabled={isProducing}
-            className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200 flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 active:bg-amber-200 border border-amber-200 flex items-center justify-center transition-colors shadow-sm cursor-pointer"
             title="テーマ編集"
           >
-            <span className="material-symbols-outlined text-[16px]">edit</span>
+            <span className="material-symbols-outlined text-[18px]">edit</span>
           </button>
         </div>
-        <div className="w-px h-8 bg-slate-200 mx-2"></div>
+        <div className="w-px h-8 bg-slate-200 mx-1"></div>
         <div className="flex items-center gap-2">
           <FieldDropdown 
             label="画風・テイスト" 
@@ -133,16 +133,16 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             options={Object.keys(customTastes)} 
             onChange={v => setSettings(s => ({ ...s, taste: v }))} 
             disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId} 
-            className="w-[180px]"
+            className="w-[230px]"
           />
           <button
             type="button"
             onClick={onOpenTasteEditor}
             disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId}
-            className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 flex items-center justify-center transition-colors disabled:opacity-40"
+            className="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 active:bg-purple-200 border border-purple-200 flex items-center justify-center transition-colors disabled:opacity-40 shadow-sm cursor-pointer"
             title="画風プロンプト編集(JSON)"
           >
-            <span className="material-symbols-outlined text-[16px]">data_object</span>
+            <span className="material-symbols-outlined text-[18px]">data_object</span>
           </button>
         </div>
       </div>

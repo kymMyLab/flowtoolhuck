@@ -97,13 +97,13 @@ export const ReferenceVault: React.FC<ReferenceVaultProps> = ({
           onDragLeave={() => setIsDragging(false)}
           onDrop={onDrop}
           className={`
-            shrink-0 w-14 h-14 border border-dashed rounded-lg flex flex-col items-center justify-center transition-all cursor-pointer
-            ${isDragging ? 'border-amber-500 bg-amber-500/10' : 'border-white/10 hover:border-white/30 hover:bg-white/5'}
+            shrink-0 w-14 h-14 border border-dashed rounded-lg flex flex-col items-center justify-center transition-all cursor-pointer shadow-sm
+            ${isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 hover:border-indigo-500 hover:bg-slate-100 bg-white'}
             ${disabled ? 'opacity-30 cursor-not-allowed' : ''}
           `}
         >
-          <span className="material-symbols-outlined text-[16px] text-white/40">add</span>
-          <span className="text-[6px] font-black text-white/30 uppercase tracking-tighter text-center leading-none">UP / PASTE</span>
+          <span className="material-symbols-outlined text-[18px] text-indigo-600">add</span>
+          <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter text-center leading-none mt-0.5">追加/貼付</span>
           <input 
             type="file" ref={fileInputRef} className="hidden" accept="image/*" 
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} 
@@ -116,29 +116,29 @@ export const ReferenceVault: React.FC<ReferenceVaultProps> = ({
             key={asset.id}
             onClick={() => !disabled && onSelect(selectedId === asset.id ? undefined : asset.id)}
             className={`
-              relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all cursor-pointer group
-              ${selectedId === asset.id ? 'border-amber-500 shadow-md scale-105' : 'border-white/5 opacity-60 hover:opacity-100'}
+              relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all cursor-pointer group shadow-sm
+              ${selectedId === asset.id ? 'border-indigo-600 ring-2 ring-indigo-200 scale-105' : 'border-slate-200 opacity-80 hover:opacity-100 hover:border-slate-300'}
               ${disabled ? 'pointer-events-none' : ''}
             `}
           >
             <img src={`data:${asset.mimeType};base64,${asset.base64}`} className="w-full h-full object-cover" />
             {selectedId === asset.id && (
-              <div className="absolute inset-0 bg-amber-500/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-white text-[12px] font-black">check_circle</span>
+              <div className="absolute inset-0 bg-indigo-600/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-white text-[16px] font-black drop-shadow">check_circle</span>
               </div>
             )}
             <button 
               onClick={(e) => handleDelete(e, asset.id!)}
-              className="absolute top-0 right-0 p-0.5 bg-black/60 text-white/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-0 right-0 p-0.5 bg-black/60 text-white hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              <span className="material-symbols-outlined text-[10px]">close</span>
+              <span className="material-symbols-outlined text-[12px]">close</span>
             </button>
           </div>
         ))}
 
         {assets.length === 0 && !isDragging && (
-          <div className="flex items-center px-2 h-14 opacity-10">
-             <span className="text-[8px] font-bold uppercase tracking-widest italic">Vault Empty</span>
+          <div className="flex items-center px-2 h-14 opacity-50">
+             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">画像なし (未設定)</span>
           </div>
         )}
       </div>
