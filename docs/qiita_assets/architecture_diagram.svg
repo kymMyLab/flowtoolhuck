@@ -1,0 +1,424 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1690" width="100%" height="auto" style="max-width: 1200px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Roboto, sans-serif;">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#070c18" />
+      <stop offset="25%" stop-color="#0c1322" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="75%" stop-color="#111827" />
+      <stop offset="100%" stop-color="#080e1a" />
+    </linearGradient>
+
+    <!-- Zone Background Gradients -->
+    <linearGradient id="leftZoneGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4338ca" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0.02" />
+    </linearGradient>
+    <linearGradient id="centerZoneGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#0369a1" stop-opacity="0.02" />
+    </linearGradient>
+    <linearGradient id="rightZoneGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.02" />
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.08" />
+    </linearGradient>
+
+    <!-- Cards and Elements Gradients -->
+    <linearGradient id="mainCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="cloudBoxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+    <linearGradient id="speechBubbleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#2e1065" />
+    </linearGradient>
+    <linearGradient id="goalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#047857" />
+      <stop offset="50%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+
+    <!-- Central Vertical Pipe Gradient -->
+    <linearGradient id="pipeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="25%" stop-color="#818cf8" />
+      <stop offset="60%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+
+    <!-- Glowing Filters -->
+    <filter id="shadowHeavy" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+    <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="glowPurple" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Arrow Markers -->
+    <marker id="arrowRightCloud" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#34d399" />
+    </marker>
+    <marker id="arrowBackPipe" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+  </defs>
+
+  <!-- ── 1. BACKGROUND CANVAS ───────────────────────────────────── -->
+  <rect x="2" y="2" width="1196" height="1686" rx="28" fill="url(#bgGrad)" stroke="#334155" stroke-width="1.5" filter="url(#shadowHeavy)" />
+
+  <!-- ── 2. THREE COLUMNS AMBIENT BACKDROPS ─────────────────────── -->
+  <!-- Left Column: AI Agents -->
+  <rect x="24" y="136" width="350" height="1384" rx="20" fill="url(#leftZoneGrad)" stroke="#6366f1" stroke-width="1" stroke-dasharray="6 4" opacity="0.4" />
+  <!-- Center Column: Pipeline -->
+  <rect x="390" y="136" width="420" height="1384" rx="20" fill="url(#centerZoneGrad)" stroke="#0284c7" stroke-width="1" opacity="0.3" />
+  <!-- Right Column: Google Cloud -->
+  <rect x="826" y="136" width="350" height="1384" rx="20" fill="url(#rightZoneGrad)" stroke="#10b981" stroke-width="1" stroke-dasharray="6 4" opacity="0.4" />
+
+  <!-- ── 3. COLUMN HEADERS ─────────────────────────────────────── -->
+  <!-- Header Left -->
+  <rect x="44" y="146" width="310" height="32" rx="16" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.2" />
+  <text x="199" y="167" font-size="12" font-weight="900" fill="#c7d2fe" text-anchor="middle">🤖 【エージェント】自律思考・セリフ</text>
+
+  <!-- Header Center -->
+  <rect x="425" y="146" width="350" height="32" rx="16" fill="#0c4a6e" stroke="#38bdf8" stroke-width="1.2" />
+  <text x="600" y="167" font-size="12" font-weight="900" fill="#e0f2fe" text-anchor="middle">🏭 【パイプライン】メイン量産幹線（直列フロー）</text>
+
+  <!-- Header Right -->
+  <rect x="846" y="146" width="310" height="32" rx="16" fill="#064e3b" stroke="#34d399" stroke-width="1.2" />
+  <text x="1001" y="167" font-size="12" font-weight="900" fill="#a7f3d0" text-anchor="middle">☁️ 【Google Cloud】API実行＆拡張</text>
+
+  <!-- ── 4. MAIN TITLE BAR ─────────────────────────────────────── -->
+  <text x="50" y="46" font-size="12" font-weight="800" fill="#38bdf8" letter-spacing="2">3-TIER AUTONOMOUS PIPELINE WITH DISTRIBUTED CLOUD INVOCATION</text>
+  <text x="50" y="74" font-size="22" font-weight="900" fill="#f8fafc">【超自律型動画量産パイプライン】エージェント思考 ➔ 中央幹線 ➔ Cloud連携</text>
+  <text x="50" y="96" font-size="13.5" font-weight="700" fill="#38bdf8">💡 例）「葛飾北斎・超写実肉筆浮世絵 ＆ 鳥獣人物戯画」で歴史動画を完全自動生成する場合</text>
+  <text x="50" y="116" font-size="12" fill="#94a3b8">左のエージェントが自律思考・演出判断し、中央のパイプを下降しながら、右のGoogle Cloudへ並列API通信で高速生成。</text>
+
+  <!-- ── 5. CENTRAL VERTICAL PIPE (中央を貫く光る幹線) ────────── -->
+  <line x1="600" y1="190" x2="600" y2="1590" stroke="url(#pipeGrad)" stroke-width="8" stroke-linecap="round" opacity="0.85" filter="url(#glowCyan)" />
+  <line x1="600" y1="190" x2="600" y2="1590" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.6" stroke-dasharray="8 12" />
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       STAGE 0: 主様（クリエイター：作業時間3秒）
+       ══════════════════════════════════════════════════════════════ -->
+  <!-- [CENTER CARD 0] -->
+  <g transform="translate(415, 200)">
+    <rect x="0" y="0" width="370" height="96" rx="14" fill="url(#mainCardGrad)" stroke="#475569" stroke-width="1.5" filter="url(#shadowHeavy)" />
+    <circle cx="185" cy="0" r="16" fill="#0284c7" stroke="#38bdf8" stroke-width="3" filter="url(#glowCyan)" />
+    <text x="185" y="5" font-size="13" font-weight="900" fill="#fff" text-anchor="middle">0</text>
+
+    <rect x="16" y="18" width="160" height="20" rx="5" fill="#0284c7" />
+    <text x="22" y="32" font-size="10.5" font-weight="800" fill="#ffffff">👑 主様（人間）</text>
+    <text x="184" y="33" font-size="11" font-weight="700" fill="#f43f5e">【作業時間：わずか3秒】</text>
+
+    <text x="16" y="58" font-size="14" font-weight="800" fill="#f8fafc">脚本を書きたくないでござる！選ぶだけ</text>
+    <text x="16" y="78" font-size="11.5" fill="#94a3b8">プルダウンから選んで「夜間一括生成」を押して寝る。</text>
+  </g>
+
+  <!-- [LEFT AGENT 0: 段差をつけて下側に配置、右上へ吹き出し＆指示ビーム] -->
+  <g transform="translate(44, 230)">
+    <rect x="0" y="0" width="310" height="96" rx="12" fill="url(#speechBubbleGrad)" stroke="#818cf8" stroke-width="1.2" filter="url(#glowPurple)" />
+    <!-- Diagonal bubble pointer reaching up-right towards center card -->
+    <polygon points="310,25 332,15 310,38" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.2" />
+    <line x1="309" y1="26" x2="309" y2="37" stroke="#1e1b4b" stroke-width="2" />
+
+    <text x="14" y="24" font-size="12" font-weight="900" fill="#c7d2fe">🤖 企画エージェントのつぶやき：</text>
+    <text x="14" y="46" font-size="11.5" font-weight="700" fill="#ffffff">「おっ、主様が『江戸・歴史人情』の</text>
+    <text x="14" y="64" font-size="11.5" font-weight="700" fill="#ffffff">テーマをポチったぞ！ここからは我々の出番。</text>
+    <text x="14" y="82" font-size="11" fill="#a5b4fc">さあ、Google Cloud へリクエスト送信だ！」</text>
+  </g>
+  <!-- Diagonal upward directive spark from Left Agent 0 to Center 0 -->
+  <path d="M 354,250 C 378,245 390,230 415,225" fill="none" stroke="#818cf8" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrowBackPipe)" />
+
+  <!-- [RIGHT GCP 0: 段差をつけてやや高く配置し見下ろす形に] -->
+  <g transform="translate(846, 185)">
+    <rect x="0" y="0" width="310" height="74" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1" filter="url(#shadowHeavy)" />
+    <text x="14" y="26" font-size="11.5" font-weight="800" fill="#38bdf8">📡 クラウド常駐・待受ゲートウェイ</text>
+    <text x="14" y="48" font-size="10.5" fill="#94a3b8">スタジオからの生成キューをミリ秒待機中...</text>
+    <text x="14" y="64" font-size="9" fill="#34d399">⚡ スタンバイ完了・即時オートスケール準備OK</text>
+  </g>
+  <!-- Center 0 down to Cloud 0 queue pointer -->
+  <path d="M 785,248 C 810,248 820,235 846,230" fill="none" stroke="#64748b" stroke-width="1.8" stroke-dasharray="4 4" marker-end="url(#arrowRightCloud)" />
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       STAGE 1: 企画・脚本自律エージェント ＆ GCP Vertex AI
+       ══════════════════════════════════════════════════════════════ -->
+  <!-- [CENTER CARD 1] -->
+  <g transform="translate(415, 370)">
+    <rect x="0" y="0" width="370" height="110" rx="14" fill="url(#mainCardGrad)" stroke="#0284c7" stroke-width="1.5" filter="url(#shadowHeavy)" />
+    <circle cx="185" cy="0" r="16" fill="#0369a1" stroke="#38bdf8" stroke-width="3" filter="url(#glowCyan)" />
+    <text x="185" y="5" font-size="13" font-weight="900" fill="#fff" text-anchor="middle">1</text>
+
+    <rect x="16" y="18" width="180" height="20" rx="5" fill="#0369a1" />
+    <text x="22" y="32" font-size="10.5" font-weight="800" fill="#ffffff">🤖 企画・脚本自律エージェント</text>
+
+    <text x="16" y="58" font-size="13.5" font-weight="800" fill="#f8fafc">12カット起承転結＆脚本を自律生成</text>
+    <text x="16" y="76" font-size="11" fill="#cbd5e1">・冒頭2秒の強力フック演出 ＆ 金文字キーワード</text>
+    <text x="16" y="94" font-size="11" fill="#cbd5e1">・全カットのナレーション原稿とテロップ文を自動設計</text>
+  </g>
+
+  <!-- [LEFT AGENT 1: 段差で下にシフト (y=410)、右上へ伸びるポインター] -->
+  <g transform="translate(44, 410)">
+    <rect x="0" y="0" width="310" height="130" rx="12" fill="url(#speechBubbleGrad)" stroke="#818cf8" stroke-width="1.2" filter="url(#glowPurple)" />
+    <!-- Bubble Pointer pointing diagonally UP-RIGHT towards center (y=395) -->
+    <polygon points="310,25 334,10 310,40" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.2" />
+    <line x1="309" y1="26" x2="309" y2="39" stroke="#1e1b4b" stroke-width="2" />
+
+    <text x="14" y="24" font-size="12" font-weight="900" fill="#c7d2fe">🤖 企画エージェントの思考：</text>
+    <text x="14" y="48" font-size="11.5" font-weight="700" fill="#ffffff">「主様が選んだお題だな！</text>
+    <text x="14" y="66" font-size="11.5" font-weight="700" fill="#ffffff">Gemini Flash をキックして、冒頭で</text>
+    <text x="14" y="84" font-size="11.5" font-weight="700" fill="#ffffff">引きつける12カットの起承転結を一撃で</text>
+    <text x="14" y="102" font-size="11.5" font-weight="700" fill="#ffffff">書き下ろしたぞ！監督、演出頼んだ！」</text>
+  </g>
+  <!-- Diagonal upward directive spark from Left Agent 1 to Center 1 -->
+  <path d="M 354,420 C 378,410 392,395 415,390" fill="none" stroke="#818cf8" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrowBackPipe)" />
+
+  <!-- [RIGHT GCP 1: 高さを上にオフセット (y=330) して斜め上空のクラウドへダイナミック連携] -->
+  <!-- [DYNAMIC ARCH BEAMS: CENTER ➔ RIGHT GCP (Vertex AI 呼出: 大きく右斜め上へアーチ)] -->
+  <path d="M 785,395 C 805,395 820,365 846,360" fill="none" stroke="#34d399" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrowRightCloud)" />
+  <!-- [RETURN BEAM: GCP ➔ CENTER (生成台本返還: 右斜め上から中央へ急降下返還)] -->
+  <path d="M 846,400 C 825,415 815,445 785,445" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrowBackPipe)" />
+
+  <g transform="translate(846, 330)">
+    <rect x="0" y="0" width="310" height="135" rx="12" fill="url(#cloudBoxGrad)" stroke="#10b981" stroke-width="1.5" filter="url(#shadowHeavy)" />
+    <rect x="14" y="12" width="140" height="20" rx="4" fill="#047857" />
+    <text x="20" y="26" font-size="10" font-weight="900" fill="#a7f3d0">☁️ Vertex AI (Gemini)</text>
+    <text x="160" y="27" font-size="9" fill="#6ee7b7">【API通信・受領】</text>
+
+    <text x="14" y="52" font-size="13" font-weight="800" fill="#f8fafc">Gemini Flash 超高速推論</text>
+    <text x="14" y="70" font-size="10.5" fill="#a7f3d0">マルチモーダル台本・12カット演出の爆速生成</text>
+
+    <!-- Enterprise Injection Box -->
+    <rect x="10" y="86" width="290" height="38" rx="6" fill="#2e1065" stroke="#a855f7" stroke-width="1" stroke-dasharray="4 2" />
+    <text x="16" y="102" font-size="9" font-weight="800" fill="#e9d5ff">🏢 エンタープライズならココに挟む！</text>
+    <text x="16" y="117" font-size="9.5" fill="#c4b5fd">【Cloud Run】API Gateway＆実行基盤で即時スケール</text>
+  </g>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       STAGE 2: 監督・プロンプト調律エージェント (STUDIO PRO コア)
+       ══════════════════════════════════════════════════════════════ -->
+  <!-- [CENTER CARD 2] -->
+  <g transform="translate(415, 600)">
+    <rect x="0" y="0" width="370" height="116" rx="14" fill="url(#mainCardGrad)" stroke="#6366f1" stroke-width="1.5" filter="url(#shadowHeavy)" />
+    <circle cx="185" cy="0" r="16" fill="#4338ca" stroke="#818cf8" stroke-width="3" filter="url(#glowCyan)" />
+    <text x="185" y="5" font-size="13" font-weight="900" fill="#fff" text-anchor="middle">2</text>
+
+    <rect x="16" y="18" width="200" height="20" rx="5" fill="#4f46e5" />
+    <text x="22" y="32" font-size="10.5" font-weight="800" fill="#ffffff">🎬 監督・プロンプト調律エージェント</text>
+
+    <text x="16" y="56" font-size="13.5" font-weight="800" fill="#f8fafc">6層プロンプト調律 ＆ アンカー完全同期</text>
+    <text x="16" y="73" font-size="10" font-weight="700" fill="#fcd34d">【例：葛飾北斎・超写実肉筆 ＆ 鳥獣戯画を生成する場合】</text>
+    <text x="16" y="90" font-size="11" fill="#cbd5e1">・生漉奉書紙の繊維感、天然顔料（藍・べんがら）を固定</text>
+    <text x="16" y="106" font-size="11" fill="#cbd5e1">・カメラが寄っても引いてもキャラ崩壊を12カット完全阻止</text>
+  </g>
+
+  <!-- [LEFT AGENT 2: 段差で下にシフト (y=640)、右上へ伸びるポインター] -->
+  <g transform="translate(44, 640)">
+    <rect x="0" y="0" width="310" height="136" rx="12" fill="url(#speechBubbleGrad)" stroke="#818cf8" stroke-width="1.2" filter="url(#glowPurple)" />
+    <!-- Diagonal bubble pointer reaching up-right towards center (y=620) -->
+    <polygon points="310,25 334,10 310,40" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.2" />
+    <line x1="309" y1="26" x2="309" y2="39" stroke="#1e1b4b" stroke-width="2" />
+
+    <text x="14" y="24" font-size="12" font-weight="900" fill="#c7d2fe">🎬 監督エージェントの叫び：</text>
+    <text x="14" y="48" font-size="11.5" font-weight="700" fill="#ffffff">「キャラ崩壊は絶対に許さん！</text>
+    <text x="14" y="66" font-size="11.5" font-weight="700" fill="#ffffff">直前カットの手漉き和紙の繊維感と</text>
+    <text x="14" y="84" font-size="11.5" font-weight="700" fill="#ffffff">天然鉱物顔料（藍・べんがら）のアンカーを</text>
+    <text x="14" y="102" font-size="11.5" font-weight="700" fill="#ffffff">次カットへガチガチに固定したぞ！</text>
+    <text x="14" y="120" font-size="11" fill="#a5b4fc">よし、Google Cloud へ一斉発射だ！」</text>
+  </g>
+  <!-- Diagonal upward directive spark from Left Agent 2 to Center 2 -->
+  <path d="M 354,650 C 378,640 392,625 415,620" fill="none" stroke="#818cf8" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrowBackPipe)" />
+
+  <!-- [RIGHT GCP 2: 調律パラメータ待受 (y=570: やや高く配置)] -->
+  <g transform="translate(846, 565)">
+    <rect x="0" y="0" width="310" height="96" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1" filter="url(#shadowHeavy)" />
+    <rect x="14" y="12" width="180" height="18" rx="4" fill="#1e293b" />
+    <text x="18" y="25" font-size="10" font-weight="900" fill="#38bdf8">🔄 調律ステートマシン待受</text>
+    <text x="14" y="50" font-size="11" font-weight="700" fill="#f8fafc">・画風ネガティブガードレール自動付与</text>
+    <text x="14" y="68" font-size="10.5" fill="#94a3b8">・Veo動画生成用のシネマティックPrompt構築完了</text>
+    <text x="14" y="86" font-size="9" fill="#6ee7b7">➔ 並列生成クラスタへパラメータ流し込み準備</text>
+  </g>
+  <!-- Curved dynamic beam between Center 2 and Right 2 -->
+  <path d="M 785,630 C 810,630 820,595 846,590" fill="none" stroke="#6366f1" stroke-width="2.2" stroke-dasharray="5 3" marker-end="url(#arrowRightCloud)" />
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       STAGE 3: Google Cloud 最先端生成AIエンジン群 (並列API実行)
+       ══════════════════════════════════════════════════════════════ -->
+  <!-- [CENTER CARD 3] -->
+  <g transform="translate(415, 830)">
+    <rect x="0" y="0" width="370" height="150" rx="14" fill="url(#mainCardGrad)" stroke="#10b981" stroke-width="1.5" filter="url(#shadowHeavy)" />
+    <circle cx="185" cy="0" r="16" fill="#047857" stroke="#34d399" stroke-width="3" filter="url(#glowGreen)" />
+    <text x="185" y="5" font-size="13" font-weight="900" fill="#fff" text-anchor="middle">3</text>
+
+    <rect x="16" y="18" width="220" height="20" rx="5" fill="#065f46" />
+    <text x="22" y="32" font-size="10.5" font-weight="800" fill="#ffffff">☁️ Google Cloud 生成エンジン群</text>
+
+    <text x="16" y="58" font-size="13.5" font-weight="800" fill="#f8fafc">非同期ストリーミング並列実行</text>
+    <text x="16" y="78" font-size="11" fill="#cbd5e1">🎥 <tspan font-weight="bold" fill="#34d399">Google Veo 3.1</tspan>: 次世代動画生成</text>
+    <text x="16" y="96" font-size="11" fill="#cbd5e1">🎵 <tspan font-weight="bold" fill="#38bdf8">厳選BGM ＆ ダッキング</tspan>: 音声連動音量制御</text>
+    <text x="16" y="114" font-size="11" fill="#cbd5e1">🎨 <tspan font-weight="bold" fill="#fcd34d">Nano Banana 2.1</tspan>: 北斎肉筆・戯画超写実作画</text>
+    <text x="16" y="132" font-size="10" fill="#94a3b8">※右のGoogle Cloudへ並列ビーム送信 ➔ アセット帰還</text>
+  </g>
+
+  <!-- [LEFT AGENT 3: 段差で下にシフト (y=870)、右上へ伸びるポインター] -->
+  <g transform="translate(44, 870)">
+    <rect x="0" y="0" width="310" height="150" rx="12" fill="url(#speechBubbleGrad)" stroke="#818cf8" stroke-width="1.2" filter="url(#glowPurple)" />
+    <!-- Diagonal bubble pointer reaching up-right towards center (y=850) -->
+    <polygon points="310,25 334,10 310,40" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.2" />
+    <line x1="309" y1="26" x2="309" y2="39" stroke="#1e1b4b" stroke-width="2" />
+
+    <text x="14" y="24" font-size="12" font-weight="900" fill="#c7d2fe">📡 オーケストレーターの号令：</text>
+    <text x="14" y="48" font-size="11.5" font-weight="700" fill="#ffffff">「全モデルへ一斉送信完了！</text>
+    <text x="14" y="66" font-size="11.5" font-weight="700" fill="#ffffff">Google Veo でカメラモーション動画を生成、</text>
+    <text x="14" y="84" font-size="11.5" font-weight="700" fill="#ffffff">Nano Banana 2.1で北斎肉筆を高精細作画！</text>
+    <text x="14" y="102" font-size="11.5" font-weight="700" fill="#ffffff">APIレート制限も監視中、順調に</text>
+    <text x="14" y="120" font-size="11.5" font-weight="700" fill="#ffffff">ストリーミングでアセットが帰還しているぞ！」</text>
+  </g>
+  <!-- Diagonal upward directive spark from Left Agent 3 to Center 3 -->
+  <path d="M 354,880 C 378,870 392,855 415,850" fill="none" stroke="#818cf8" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrowBackPipe)" />
+
+  <!-- [RIGHT GCP 3: 高さを上にオフセット (y=780) して斜め上空のクラスタへアーチビーム] -->
+  <!-- [BEAM: CENTER ➔ RIGHT GCP (Veo / Imagen 並列発射: 右斜め上へ)] -->
+  <path d="M 785,860 C 805,860 820,810 846,805" fill="none" stroke="#34d399" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowRightCloud)" />
+  <path d="M 785,885 C 805,885 820,835 846,830" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowRightCloud)" />
+  <!-- [RETURN BEAM: GCP ➔ CENTER (映像・画像アセット帰還: 右上から中央へダイナミック降下)] -->
+  <path d="M 846,870 C 825,895 815,925 785,925" fill="none" stroke="#34d399" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowBackPipe)" />
+
+  <!-- [RIGHT GCP 3: Google Veo & Imagen & Cloud Tasks] -->
+  <g transform="translate(846, 780)">
+    <rect x="0" y="0" width="310" height="175" rx="12" fill="url(#cloudBoxGrad)" stroke="#10b981" stroke-width="1.5" filter="url(#shadowHeavy)" />
+    <rect x="14" y="12" width="160" height="20" rx="4" fill="#047857" />
+    <text x="20" y="26" font-size="10" font-weight="900" fill="#a7f3d0">☁️ Google Cloud Engine</text>
+    <text x="180" y="27" font-size="9" fill="#6ee7b7">【並列API処理】</text>
+
+    <text x="14" y="52" font-size="12.5" font-weight="800" fill="#f8fafc">🎥 Google Veo 3.1（動画生成 / 8秒）</text>
+    <text x="14" y="70" font-size="11" fill="#cbd5e1">🎨 Nano Banana 2.1/Pro（Imagen高精細作画）</text>
+    <text x="14" y="88" font-size="11" fill="#cbd5e1">🖌️ 北斎肉筆・鳥獣戯画の画風アンカー生成</text>
+
+    <!-- Enterprise Injection Box -->
+    <rect x="10" y="106" width="290" height="54" rx="6" fill="#2e1065" stroke="#a855f7" stroke-width="1" stroke-dasharray="4 2" />
+    <text x="16" y="122" font-size="9" font-weight="800" fill="#e9d5ff">🏢 エンタープライズならココに挟む！</text>
+    <text x="16" y="136" font-size="9.5" font-weight="700" fill="#c4b5fd">【Google Cloud TTS ＆ Cloud Tasks】</text>
+    <text x="16" y="150" font-size="9" fill="#ddd6fe">音声合成並列実行 ＆ 指数バックオフで429制限回避</text>
+  </g>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       STAGE 4: 自動映像合成＆テロップ焼き込み (WebCodecs & Canvas)
+       ══════════════════════════════════════════════════════════════ -->
+  <!-- [CENTER CARD 4] -->
+  <g transform="translate(415, 1100)">
+    <rect x="0" y="0" width="370" height="130" rx="14" fill="url(#mainCardGrad)" stroke="#a855f7" stroke-width="1.5" filter="url(#shadowHeavy)" />
+    <circle cx="185" cy="0" r="16" fill="#581c87" stroke="#c084fc" stroke-width="3" filter="url(#glowCyan)" />
+    <text x="185" y="5" font-size="13" font-weight="900" fill="#fff" text-anchor="middle">4</text>
+
+    <rect x="16" y="18" width="220" height="20" rx="5" fill="#7e22ce" />
+    <text x="22" y="32" font-size="10.5" font-weight="800" fill="#ffffff">🎬 自動映像合成 ＆ レンダリング</text>
+
+    <text x="16" y="58" font-size="13.5" font-weight="800" fill="#f8fafc">WebCodecs ＆ Canvas Engine</text>
+    <text x="16" y="78" font-size="11" fill="#cbd5e1">・音声長×Ken Burns×動的テロップ完全同期</text>
+    <text x="16" y="96" font-size="11" fill="#cbd5e1">・キネティックタイポグラフィ ＆ 動的VFX付与</text>
+    <text x="16" y="114" font-size="11" fill="#a7f3d0">・YouTube Shorts（9:16）＆ 本編横画面（16:9）出力</text>
+  </g>
+
+  <!-- [LEFT AGENT 4: 段差で下にシフト (y=1130)、右上へ伸びるポインター] -->
+  <g transform="translate(44, 1130)">
+    <rect x="0" y="0" width="310" height="150" rx="12" fill="url(#speechBubbleGrad)" stroke="#818cf8" stroke-width="1.2" filter="url(#glowPurple)" />
+    <!-- Diagonal bubble pointer reaching up-right towards center (y=1115) -->
+    <polygon points="310,25 334,10 310,40" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.2" />
+    <line x1="309" y1="26" x2="309" y2="39" stroke="#1e1b4b" stroke-width="2" />
+
+    <text x="14" y="24" font-size="12" font-weight="900" fill="#c7d2fe">⚙️ 音響・同期エージェントの報告：</text>
+    <text x="14" y="48" font-size="11.5" font-weight="700" fill="#ffffff">「全アセットの同期照合完了！</text>
+    <text x="14" y="66" font-size="11.5" font-weight="700" fill="#ffffff">ナレーションWAV長に合わせてKen Burns</text>
+    <text x="14" y="84" font-size="11.5" font-weight="700" fill="#ffffff">パン時間とテロップをミリ秒単位で同期！</text>
+    <text x="14" y="102" font-size="11.5" font-weight="700" fill="#ffffff">音ズレ（ドリフト）ゼロで一気に焼き込み、</text>
+    <text x="14" y="120" font-size="11.5" font-weight="700" fill="#ffffff">YouTube Shortsと横動画の2本を同時出力だ！」</text>
+  </g>
+  <!-- Diagonal upward directive spark from Left Agent 4 to Center 4 -->
+  <path d="M 354,1140 C 378,1130 392,1115 415,1110" fill="none" stroke="#818cf8" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrowBackPipe)" />
+
+  <!-- [RIGHT GCP 4: 高さを上にオフセット (y=1050) して斜め上空のGCSストレージへアーチ] -->
+  <!-- [BEAM: CENTER ➔ RIGHT GCP (GCSキャッシュ・保存: 右斜め上へアーチ)] -->
+  <path d="M 785,1130 C 805,1130 820,1085 846,1080" fill="none" stroke="#34d399" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrowRightCloud)" />
+
+  <!-- [RIGHT GCP 4: Cloud Storage (GCS)] -->
+  <g transform="translate(846, 1050)">
+    <rect x="0" y="0" width="310" height="130" rx="12" fill="url(#cloudBoxGrad)" stroke="#10b981" stroke-width="1.5" filter="url(#shadowHeavy)" />
+    <rect x="14" y="12" width="160" height="20" rx="4" fill="#047857" />
+    <text x="20" y="26" font-size="10" font-weight="900" fill="#a7f3d0">☁️ Cloud Storage (GCS)</text>
+    <text x="180" y="27" font-size="9" fill="#6ee7b7">【キャッシュ・配信】</text>
+
+    <text x="14" y="52" font-size="13" font-weight="800" fill="#f8fafc">大容量アセット保管庫 ＆ 冪等性</text>
+    <text x="14" y="70" font-size="10.5" fill="#a7f3d0">カット単位の中間生成物をキャッシュ</text>
+
+    <!-- Enterprise Injection Box -->
+    <rect x="10" y="86" width="290" height="34" rx="6" fill="#2e1065" stroke="#a855f7" stroke-width="1" stroke-dasharray="4 2" />
+    <text x="16" y="100" font-size="9" font-weight="800" fill="#e9d5ff">🏢 エンタープライズならココに挟む！</text>
+    <text x="16" y="113" font-size="9.5" fill="#c4b5fd">障害時も未完了カットから正確にピンポイント復帰</text>
+  </g>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       STAGE 5: GOAL (成果物) 朝起きたら完成している！
+       ══════════════════════════════════════════════════════════════ -->
+  <!-- [CENTER CARD 5: GOAL] -->
+  <g transform="translate(415, 1370)">
+    <rect x="0" y="0" width="370" height="100" rx="16" fill="url(#goalGrad)" stroke="#34d399" stroke-width="2" filter="url(#shadowHeavy)" />
+    <circle cx="185" cy="0" r="18" fill="#059669" stroke="#34d399" stroke-width="3" filter="url(#glowGreen)" />
+    <text x="185" y="6" font-size="14" font-weight="900" fill="#fff" text-anchor="middle">★</text>
+
+    <text x="185" y="36" font-size="16" font-weight="900" fill="#ffffff" text-anchor="middle">🏁 GOAL：朝起きたら動画が50本完成！</text>
+    <text x="185" y="60" font-size="12" font-weight="700" fill="#ecfdf5" text-anchor="middle">人間は布団で寝ていただけ。プロンプト崩壊ゼロ！</text>
+    <text x="185" y="80" font-size="11" fill="#d1fae5" text-anchor="middle">整然と並んだMP4パッケージをYouTubeへ即時投稿可能</text>
+  </g>
+
+  <!-- [LEFT AGENT 5: 全エージェント集合完了セリフ] -->
+  <g transform="translate(44, 1360)">
+    <rect x="0" y="0" width="310" height="120" rx="12" fill="url(#speechBubbleGrad)" stroke="#34d399" stroke-width="1.5" filter="url(#glowGreen)" />
+    <polygon points="310,50 326,58 310,66" fill="#1e1b4b" stroke="#34d399" stroke-width="1.5" />
+    <line x1="309" y1="51" x2="309" y2="65" stroke="#1e1b4b" stroke-width="2" />
+
+    <text x="14" y="24" font-size="12" font-weight="900" fill="#6ee7b7">🎉 全エージェント一同より：</text>
+    <text x="14" y="48" font-size="12" font-weight="800" fill="#ffffff">「主様、人間関与ゼロで完走です！</text>
+    <text x="14" y="68" font-size="11.5" font-weight="700" fill="#ffffff">Google Cloud API群を高速並列コールし、</text>
+    <text x="14" y="88" font-size="11.5" font-weight="700" fill="#ffffff">全50本の動画アセンブリが完了しました！」</text>
+    <text x="14" y="106" font-size="10.5" fill="#a7f3d0">（主様は選んで寝ていただけ 💤）</text>
+  </g>
+
+  <!-- [RIGHT GCP 5: 成果物バケット保管完了] -->
+  <g transform="translate(846, 1375)">
+    <rect x="0" y="0" width="310" height="90" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="1.5" />
+    <text x="14" y="26" font-size="12" font-weight="800" fill="#34d399">📦 成果物パッケージ保管完了</text>
+    <text x="14" y="48" font-size="11" fill="#cbd5e1">・ローカルフォルダ: `outputs/episodes_50/`</text>
+    <text x="14" y="66" font-size="11" fill="#cbd5e1">・GCSバケット: `gs://video-factory-prod/`</text>
+  </g>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BOTTOM SUMMARY BANNER
+       ══════════════════════════════════════════════════════════════ -->
+  <g transform="translate(44, 1540)">
+    <rect x="0" y="0" width="1112" height="84" rx="16" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.8" filter="url(#shadowHeavy)" />
+    <text x="30" y="32" font-size="14" font-weight="900" fill="#e0e7ff">🏛️ 設計総括：自律エージェント ✕ パイプライン幹線 ✕ Google Cloud</text>
+    <text x="30" y="55" font-size="12" font-weight="800" fill="#38bdf8">◆ 完全ゼロタッチ制作 ： <tspan font-weight="normal" fill="#cbd5e1">主様はテーマ選定（3秒）のみ。脚本・演出・画風アンカー固定はエージェントが自律完結。</tspan></text>
+    <text x="30" y="73" font-size="12" font-weight="800" fill="#34d399">◆ Google Cloud 直結量産 ： <tspan font-weight="normal" fill="#cbd5e1">Veo 3.1 ＆ Imagen ＆ Gemini の高並列APIコールにより、夜間50本〜大規模スケールアウト。</tspan></text>
+  </g>
+
+</svg>

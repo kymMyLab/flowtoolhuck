@@ -1,7 +1,7 @@
 import { TASTES } from '../constants';
 
-const STORAGE_KEY = 'flowtool_custom_tastes_v4';
-const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v3', 'flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
+const STORAGE_KEY = 'flowtool_custom_tastes_v5';
+const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v4', 'flowtool_custom_tastes_v3', 'flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
 
 export type CustomTasteMap = Record<string, string>;
 
