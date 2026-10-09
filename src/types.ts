@@ -180,6 +180,7 @@ export interface GeneratorSettings {
   superBackoff?: boolean;
   selectedAssetId?: number;
   isMultiPanel?: boolean;
+  aspectRatio?: '9:16' | '1:1' | '16:9';
 
   // 三面図パイプライン設定
   enableTurnaroundSheet?: boolean;

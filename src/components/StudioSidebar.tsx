@@ -132,6 +132,17 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             <div className="p-3 flex flex-col gap-3 border-t border-slate-200 animate-in fade-in duration-200">
               <FieldDropdown label="画像モデル" value={settings.imageModel} options={IMAGE_MODELS.map(m => m.label)} onChange={v => setSettings(s => ({ ...s, imageModel: v }))} disabled={isProducing} />
               
+              <SegmentedToggle 
+                label="作画アスペクト比" 
+                value={settings.aspectRatio || '9:16'} 
+                onChange={v => setSettings(s => ({ ...s, aspectRatio: v as any }))} 
+                items={[
+                  { value: '9:16', label: '📱 9:16 (縦動画)' },
+                  { value: '1:1', label: '⬛ 1:1 (正方形マスター)' },
+                  { value: '16:9', label: '🖥️ 16:9 (横動画)' }
+                ]} 
+              />
+              
               <div className="grid grid-cols-2 gap-2.5">
                 <NumberChoice label="並列数" value={settings.parallelCount} options={[1, 2, 3, 4]} onChange={v => setSettings(s => ({ ...s, parallelCount: v }))} />
                 <NumberChoice 

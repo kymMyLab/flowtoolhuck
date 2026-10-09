@@ -338,9 +338,14 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         imageModelUsed: modelDef.label
       });
 
+      const chosenRatio = settings.aspectRatio || DEFAULT_ASPECT_RATIO || '9:16';
+      const safeAspectRatio = (chosenRatio === '1:1' || chosenRatio === '16:9' || chosenRatio === '9:16') ? chosenRatio : '9:16';
+
       let safePrompt = finalPrompt && /[a-zA-Z0-9]/.test(finalPrompt) ? finalPrompt : 'Cinematic scene, high quality';
+      if (safeAspectRatio === '1:1') {
+        safePrompt += ', balanced centered composition, ample negative space around subject, safe for 16:9 and 9:16 cropping';
+      }
       const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
-      const safeAspectRatio = (DEFAULT_ASPECT_RATIO === '16:9' || DEFAULT_ASPECT_RATIO === '9:16') ? DEFAULT_ASPECT_RATIO : '16:9';
 
       const res = await callWithRetry<any>(
         () => Flow.generate.image({ 
@@ -469,9 +474,14 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         activeReferenceRef.current
       );
 
+      const chosenRatio = settings.aspectRatio || DEFAULT_ASPECT_RATIO || '9:16';
+      const safeAspectRatio = (chosenRatio === '1:1' || chosenRatio === '16:9' || chosenRatio === '9:16') ? chosenRatio : '9:16';
+
       let safePrompt = finalPrompt && /[a-zA-Z0-9]/.test(finalPrompt) ? finalPrompt : 'Cinematic finale scene, high quality';
+      if (safeAspectRatio === '1:1') {
+        safePrompt += ', balanced centered composition, ample negative space around subject, safe for 16:9 and 9:16 cropping';
+      }
       const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
-      const safeAspectRatio = (DEFAULT_ASPECT_RATIO === '16:9' || DEFAULT_ASPECT_RATIO === '9:16') ? DEFAULT_ASPECT_RATIO : '16:9';
 
       const res = await callWithRetry<any>(
         () => Flow.generate.image({
