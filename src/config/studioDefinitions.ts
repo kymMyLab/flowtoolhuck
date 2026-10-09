@@ -58,19 +58,19 @@ export interface VideoModelDefinition {
 
 export const VIDEO_MODELS_REGISTRY: VideoModelDefinition[] = [
   { 
-    id: 'veo-lite', 
-    name: 'Veo 3.1 - Lite', 
-    label: 'Veo 3.1 Lite（8秒 / 5pt）★コスパ最強', 
-    defaultDuration: 8, 
-    costPoints: 5,
+    id: 'omni-flash', 
+    name: 'Omni 1.1 Flash', 
+    label: 'Omni 1.1 Flash（4秒 / 15pt）⚡高品質・安定', 
+    defaultDuration: 4, 
+    costPoints: 15,
     isDefault: true 
   },
   { 
-    id: 'omni-flash', 
-    name: 'Omni 1.1 Flash', 
-    label: 'Omni 1.1 Flash（4秒 / 15pt）⚡高速', 
-    defaultDuration: 4, 
-    costPoints: 15 
+    id: 'veo-lite', 
+    name: 'Veo 3.1 - Lite', 
+    label: 'Veo 3.1 Lite（8秒 / 5pt）★コスパ重視', 
+    defaultDuration: 8, 
+    costPoints: 5 
   },
   { 
     id: 'veo-fast', 

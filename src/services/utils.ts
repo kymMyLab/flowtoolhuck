@@ -250,7 +250,7 @@ export function createDefaultCut(id: number, narration = '', prompt = '', isSele
     isGeneratingImage: false,
     isGeneratingVideo: false,
     isQueued: false,
-    targetVideoModel: 'veo-lite',
+    targetVideoModel: 'omni-flash',
     isSelectedForVideo: isSelected
   };
 }

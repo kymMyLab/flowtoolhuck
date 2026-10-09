@@ -227,7 +227,7 @@ export default function App() {
                     forbiddenKeywordsEn: epFound?.forbiddenKeywordsEn
                   });
                 } else if (type === 'video' && cutFound) {
-                  generateVideo(eId, cId, (cutFound.targetVideoModel === 'none' ? 'veo-lite' : cutFound.targetVideoModel) as VideoModelType);
+                  generateVideo(eId, cId, (cutFound.targetVideoModel === 'none' ? 'omni-flash' : cutFound.targetVideoModel) as VideoModelType);
                 }
               }} 
             />
