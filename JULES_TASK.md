@@ -1,110 +1,89 @@
-# Jules Pro Autonomous Mission: Studio Pro Light Theme & Layout Overhaul
+# 🚀 Jules Mission: Autonomous Qiita Technical Article Generation
 
-**Project**: FlowTool (Studio Pro - MV & Cinematic Video Production System)  
-**Target Environment**: Chrome DevTools Mount / Single ESM Web App Bundle  
-**Branch**: `main`  
-**Updated**: 2026-10-09  
+## 📌 Mission Objective
+You are tasked with authoring an extraordinary, professional-grade Qiita technical article (saved as `docs/articles/200_video_pipeline_qiita.md`) that documents an autonomous, high-throughput video production pipeline.
 
----
-
-## 🎯 Mission Overview
-The user requested a major UI/UX layout overhaul of FlowTool Studio Pro with three primary goals:
-1. **Light Theme Transformation (白ベース・黒文字)**:
-   - Migrate the overall UI from the current pitch-black theme (`#0e0e0e` / `#121212`) to a crisp, high-contrast, modern Light Theme (`#ffffff` / `#f8fafc` background with `#0f172a` / `#1e293b` text).
-   - Ensure cards, borders (`border-slate-200`), badges, and text remain sharp, professional, and visually stunning.
-2. **Top Navigation Control Bar (上部トップバーの新設と機能移動)**:
-   - Free up the cluttered sidebar by moving core project settings to a sleek horizontal Top Navigation Bar across the top of the screen:
-     - **Left**: Studio Pro Logo + Production Mode Selector (with badge/info).
-     - **Center**: Worldview / Theme & Taste / Style dropdowns with edit modal triggers.
-     - **Right**: Primary Action CTA (✨ Start Production / Abort button) + Utility icons (Archive 📁, Trash 🗑️, Logs Drawer Toggle 📄).
-3. **Sidebar Expansion & Reorganization (サイドバー幅拡大とスッキリ化)**:
-   - Expand sidebar width from `380px` to `440px` (or `460px`) for spacious, comfortable controls.
-   - Retain only: Reference Vault (character/style reference images), Multi-Panel comic toggle, Production Volume (parallel count, episode count, cut count, video ratio), and Automation/Pipeline toggles.
-4. **Slide-in Right Log Drawer (右側スライドイン・ログドロワー「にょきっ」と出現)**:
-   - Instead of the current bottom-pinned logs, implement a sleek slide-in drawer on the right side of the screen (`transform: translateX(...)` animation).
-   - Hidden by default. Smoothly slides in from the right edge when clicking the "Logs" button in the top bar or a floating right-edge handle.
-   - Includes close button (✕), copy-to-clipboard, auto-scroll to latest log, and log filter badges.
-
-**IMPORTANT AUTONOMY INSTRUCTION**:  
-**DO NOT pause for questions, plan approval, or feedback.** Proceed directly from planning to implementation, run type checks and build, and create a Pull Request automatically.
+The article must follow the exact structure, tags, tone, and technical depth demonstrated in the reference articles located in `docs/qiita_references/` (specifically `170_qiita.md` and `191_qiita.md`).
 
 ---
 
-## 🚫 Boundary Constraints (絶対遵守の境界規約)
-The following constraints must be strictly adhered to:
-1. **Do NOT delete episode artifact image data (成果物画像データの消去禁止 - 最重要)**:
-   - In `productionPipelines.ts` (`cleanupEpisodeMemory`), NEVER set `ep.coverBase64`, `ep.masterAnchorBase64`, or `ep.characterTurnaroundBase64` to `undefined`.
-2. **NO PackageDownloadModal (ダウンロード完了モーダルの永久廃止)**:
-   - Do NOT introduce any popups or completion download modals.
-3. **Keep `lastFrameImageMediaId` commented out**:
-   - In `src/services/useVideoGeneration.ts`, keep `lastFrameImageMediaId` disabled to avoid 2-point morphing collapse.
-4. **Preserve existing UI fixes**:
-   - Preserve `createPortal` for the cover preview modal in `EpisodeSection.tsx` and Esc key support.
-5. **Zero TypeScript Errors & Successful Build**:
-   - `npx tsc --noEmit` MUST pass with 0 errors.
-   - `npm run build` (`node scripts/build.mjs`) MUST bundle cleanly without errors.
+## 🔐 CRITICAL SECRECY & PRESENTATION CONSTRAINTS (STRICT)
+
+1. **NEVER Mention Google Flow or Internal Hacks**:
+   - Do **NOT** mention "Google Flow", "Flow WebUI", "iframe mount", "Tampermonkey", "DevTools console hack", or any DOM injection / hacking.
+   - The article must present the system as a **custom-built, proprietary React/TypeScript Studio UI ("STUDIO PRO")** seamlessly orchestrating with **Google Cloud Platform (Cloud Run, Cloud Pub/Sub, Cloud Tasks, GCS, and Vertex AI)**.
+
+2. **Irreproducible Technical Superiority (圧倒的技術力とブラックボックス演出)**:
+   - Convey overwhelming architectural brilliance and technical depth.
+   - Reveal architectural diagrams (Mermaid), TypeScript interface schemas, asynchronous queue state machine designs, and error recovery policies.
+   - Explicitly note that the core prompt conditioning engine and multimodal continuity state machine are proprietary IP / trade secrets, ensuring that while readers are amazed, they cannot easily clone the full implementation.
+
+3. **Viral Appeal & Catchy Narrative**:
+   - Title theme: **「朝起きたら動画が50本出来ている」全自動映像工場**.
+   - Target audience: Engineers, AI practitioners, creators, and cloud architects seeking massive automation with cinema-grade output quality.
 
 ---
 
-## 🛠️ Implementation Plan
+## 🖼️ Media Assets to Embed
+The following screenshots are prepared in `docs/qiita_assets/`. You must embed them using clean HTML `<img>` tags matching the style in `docs/qiita_references/170_qiita.md`:
 
-### 1. Light Theme Color Palette
-- Base background: `bg-[#f8fafc]` (slate-50) or `bg-white`
-- Primary text: `text-slate-900` (`#0f172a`), secondary text: `text-slate-600` (`#475569`)
-- Panel & Card background: `bg-white`, borders: `border-slate-200` (or `border-slate-300`)
-- Accent badges & buttons:
-  - Amber: `bg-amber-50 text-amber-700 border-amber-200`
-  - Purple: `bg-purple-50 text-purple-700 border-purple-200`
-  - Emerald: `bg-emerald-50 text-emerald-700 border-emerald-200`
-  - Blue/Indigo: `bg-indigo-50 text-indigo-700 border-indigo-200`
-- Scrollbars: Update `.dark-scrollbar` to clean slate/gray scrollbars (`#cbd5e1` thumb).
-
-### 2. Top Navigation Bar (`src/components/StudioHeader.tsx` or integrated in `App.tsx`)
-Create or integrate a fixed header component at the top of `App.tsx`:
-- **Height**: ~56px–64px, `bg-white border-b border-slate-200 px-4 flex items-center justify-between z-40`
-- **Left section**:
-  - Logo: `Studio Pro` with amber icon
-  - Production Mode Dropdown: clean styled dropdown with current mode badge
-- **Center section**:
-  - Theme Selector (`settings.theme`) + Edit button
-  - Taste Selector (`settings.taste`) + JSON Edit button
-- **Right section**:
-  - Start / Abort CTA button: High visibility (e.g. `bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl shadow-sm`)
-  - Folder (Archive) button
-  - Trash (Clear all) button
-  - Logs toggle button (showing log count or pulsing dot if active)
-
-### 3. Reorganized Sidebar (`src/components/StudioSidebar.tsx`)
-- Adjust width: `w-[440px]` with `border-r border-slate-200 bg-[#f8fafc]`
-- Remove duplicate Mode, Theme, Taste, and Start buttons that are now in the Top Header.
-- Keep and polish:
-  - **Reference Vault**: large clean upload & reference card list
-  - **Multi-Panel Toggle**: clean styled card
-  - **Production Volume Accordion**: Image model, parallel count, episode count, cut count, video ratio
-  - **Automation & Pipeline Accordion**: Toggle switches with clear light-mode styles (`bg-slate-200` off, `bg-indigo-600` on)
-
-### 4. Right Slide-In Log Drawer (`src/components/StudioLogDrawer.tsx` or updated `StudioLogs.tsx`)
-- Container: Fixed right side `fixed right-0 top-0 bottom-0 w-[440px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out`
-- Slide animation: `translate-x-0` when open, `translate-x-full` when closed.
-- Top of drawer:
-  - Title: "実行ログ (Studio Logs)"
-  - Action buttons: Copy clipboard, Clear, Close (✕)
-- Body:
-  - Monospace or clean Sans scrollable log list with color-coded badges (`[INFO]`, `[SUCCESS]`, `[ERROR]`, `[PROCESS]`).
-  - Dark/Charcoal console pane or Crisp Light console pane with high readability.
-  - Auto-scroll to bottom on new logs.
-- Edge handle: A subtle floating badge/tab on the right edge of the screen so user can click to pop it open anytime.
-
-### 5. Main Content Area & Episode Cards
-- Update `App.tsx` main scrollable container to light background (`bg-[#f1f5f9]` or `bg-[#ffffff]`).
-- Ensure `EpisodeSection.tsx` and `CutCard.tsx` styles harmonize with the light theme:
-  - Card background: `bg-white`, border: `border-slate-200`, shadow: `shadow-sm`
-  - Text colors: `text-slate-800`, `text-slate-600`
-  - Action buttons: light styled with high contrast
+1. `docs/qiita_assets/01_studio_pro_overview.png`:
+   - Top eye-catch & system overview.
+   - Caption: "自作動画制作スタジオ『STUDIO PRO』ダッシュボード：12カット並列オーケストレーションと絵コンテ・プロンプト一括調律画面"
+2. `docs/qiita_assets/02_cut_editor_detail.jpg`:
+   - Cut Editor detail screen.
+   - Caption: "『CUT EDITOR PRO』：カットごとのテロップ設計、金文字強調キーワード抽出、カメラワーク・トランジション演出、プロンプトインスペクタ"
+3. `docs/qiita_assets/03_style_matrix_multi.png`:
+   - Style matrix generation.
+   - Caption: "マルチ画風マトリックス比較エンジン：単一の脚本から複数の世界観（ネオ・エンブレム、日常系、浮世絵等）を並列シミュレーション"
+4. `docs/qiita_assets/04_style_matrix_ukiyoe.png`:
+   - Traditional & artistic style variations.
+   - Caption: "画風バリエーション検証：ゆる浮世絵・戯画調、アール・ヌーヴォー調における歴史的カットの表現力検証"
 
 ---
 
-## 🚀 Verification & Delivery
-1. Run `npx tsc --noEmit` and resolve any type mismatches.
-2. Run `npm run build` (`node scripts/build.mjs`) to ensure bundle generation succeeds.
-3. Automatically submit the Pull Request and mark the mission complete.
+## 📖 Case Study Topic: "英国発祥のカレーがなぜ国民食に？奇跡の進化録"
+- Use this exact historical documentary scenario as the running example throughout the article.
+- Highlight the **"Leonardo da Vinci Ancient Manuscript & Ghibli-esque Workshop Animation"** aesthetic used in the screenshots:
+  - Ancient naval charts, sepia ink hatching, drafting compasses, magnifying glasses, and a young apprentice engineer analyzing the steam-rising blueprint of curry on rice.
+  - Explain how the pipeline maintains character consistency (the young drafting boy with round spectacles) across multiple camera angles (wide shot, close-up, medium).
+
+---
+
+## 📐 Required Article Structure (Follow `docs/qiita_references/` 100%)
+
+The generated file `docs/articles/200_video_pipeline_qiita.md` must include:
+
+1. `<!-- GTE_PUBLISHED: false -->`
+2. `<!-- 000 タイトル定義 -->`
+   `# 【全自動映像工場】「朝起きたら動画が50本出来ている」を実現する、Google Cloud × 自作UIによる超自律型動画量産パイプライン`
+3. `<!-- 001 冒頭イメージ画像挿入エリア -->` (`01_studio_pro_overview.png`)
+4. `<!-- 002 導入部：背景となる課題とシステム化の動機 -->`
+   - Humorous yet relatable motivation: The sheer exhaustion of manual video editing, keyframe synchronization, subtitle timing, and prompt fatigue. The dream of sleeping while the cloud factory churns out 50 high-retention video packages.
+5. `<!-- 003 本記事の概要（3行まとめ） -->`
+   - 1. 解決する課題 (Prompt drift & video editing time sink)
+   - 2. 採用したアーキテクチャ (React STUDIO PRO × Cloud Run × Pub/Sub × Vertex AI)
+   - 3. 実証成果 (50 video pipelines generated overnight with zero prompt collapse)
+6. `<!-- 100 🏗️ 1. アーキテクチャ概要 -->`
+   - Detailed Mermaid flowchart showing the symmetric architecture:
+     - `subgraph Local ["💻 ローカル開発・スタジオUI (青背景)"]`
+     - `subgraph Google_Cloud ["☁️ Google Cloud サーバーレス映像生成基盤 (緑背景)"]`
+7. `<!-- 200 🎬 2. 12カット連続性保証：マルチモーダル調律ステートマシン -->`
+   - Embed `02_cut_editor_detail.jpg`.
+   - Explain how camera angles, dynamic multi-panels, Ken Burns pacing, and subtitle text tokens are compiled into a unified generation payload.
+8. `<!-- 300 🎨 3. 画風マトリックス検証とプロンプト・インスペクタ -->`
+   - Embed `03_style_matrix_multi.png` and `04_style_matrix_ukiyoe.png`.
+   - Explain automated style injection, palette temperature tuning, and negative prompt guardrails.
+9. `<!-- 400 ⚡ 4. スケーラビリティと耐障害性：非同期キューと指数バックオフ -->`
+   - Handling rate limits (429 Too Many Requests), distributed Cloud Tasks retries, and generation idempotency.
+10. `<!-- 500 ⚠️ ハマりポイント注意 -->`
+    - Deep technical gotchas: Video diffusion temporal jitter, audio-subtitle drift, aspect-ratio safe-zone cropping (1:1 master to 9:16 / 16:9).
+11. `<!-- 600 🏁 まとめと今後の展望 -->`
+    - High-level wrap-up, celebrating full pipeline autonomy.
+
+---
+
+## 🛠️ Verification & Deliverables
+1. Write the full markdown to `docs/articles/200_video_pipeline_qiita.md`.
+2. Ensure markdown formatting, Mermaid syntax, and HTML image tags are 100% valid.
+3. Commit and prepare a clean Pull Request.
