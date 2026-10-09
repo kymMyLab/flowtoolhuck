@@ -139,7 +139,19 @@ export const TASTES: Record<string, string> = {
     "Anime sketch style, delicate clean line art, muted pastel color palette, warm beige tones, minimalist flat coloring, soft natural ambient lighting, cozy relaxed Lo-Fi atmosphere, indie music video aesthetic, poetic unhurried mood, beautiful subtle artistic composition",
 
   "🌃 劇場版フラットセル・夜景ティール (Cinematic Flat Cel Teal Anime)":
-    "Cinematic anime movie aesthetic, clean crisp ink lineart, authentic flat cel shading, muted dark teal environmental background, subtle sharp rim light, high-impact cinematic contrast, elegant restrained color grading, theatrical anime feature film key frame finish"
+    "Cinematic anime movie aesthetic, clean crisp ink lineart, authentic flat cel shading, muted dark teal environmental background, subtle sharp rim light, high-impact cinematic contrast, elegant restrained color grading, theatrical anime feature film key frame finish",
+
+  "📐 サイバー・テクニカル・ブループリント (Cyber Technical Blueprint)":
+    "Intricate technical blueprint schematic of an advanced quantum machine and architectural cross-section, glowing holographic cyan and amber HUD vector overlays, ultra-precise CAD wireframe lines, deep navy blue blueprint grid paper aesthetic, industrial patent schematic render, volumetric laser light rays, ultra-clean engineering laboratory aesthetic, 8k resolution",
+
+  "🔬 ナショジオ・超深度マクロ自然科学 (NatGeo Macro Science & Crystal)":
+    "Extreme macro cinematic photograph of iridescent bismuth crystal growing in dark laboratory, hyper-detailed crystalline molecular geometry, translucent light refractions and prism caustics, National Geographic science documentary aesthetic, dark moody background with pinpoint rim lighting, 8k octane render, hyperrealistic natural science visual",
+
+  "🏛️ バウハウス・幾何学キネティックアート (Bauhaus Geometric Kinetic)":
+    "Minimalist Bauhaus kinetic sculpture, floating geometric brass spheres and matte concrete monoliths, frosted glass shadows, elegant brutalist gallery lighting, Swiss graphic design aesthetic, high-contrast abstract architectural balance, ultra-clean commercial look",
+
+  "📜 ダ・ヴィンチ古代手稿・飛行機械スケッチ (Da Vinci Codex & Antique Sketch)":
+    "Authentic Leonardo da Vinci codex manuscript sketch, complex flying ornithopter mechanism and astronomical clockwork, sepia aged parchment paper texture, vintage brown fountain ink linework, Renaissance engineering studies, anatomical and mechanical notations, museum archival illustration"
 };
 
 import {
