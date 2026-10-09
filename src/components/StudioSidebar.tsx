@@ -1,15 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { SectionLabel, PillButton, FieldDropdown, SegmentedToggle, ToggleSwitch, NumberChoice } from './Primitives';
+import React, { useState, useEffect } from 'react';
+import { FieldDropdown, SegmentedToggle, ToggleSwitch, NumberChoice } from './Primitives';
 import { GeneratorSettings, ReferenceAsset, ProductionMode } from '../types';
 import { 
-  THEMES, 
-  THEME_CATEGORIES, 
-  MV_THEMES, 
-  TRIVIA_THEMES, 
-  QUOTES_THEMES, 
-  FOLKLORE_THEMES, 
-  CRAFT_THEMES, 
-  TASTES, 
   IMAGE_MODELS, 
   VIDEO_RATIO_OPTIONS,
   PRODUCTION_MODES
@@ -17,11 +9,6 @@ import {
 
 import { ReferenceVault } from './ReferenceVault';
 import { getAllReferenceAssets } from '../services/db';
-
-
-
-
-
 import { LogEntry } from './StudioLogs';
 
 export { PRODUCTION_MODES };
@@ -63,29 +50,29 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
       {/* ── 中央スクロールエリア（各項目アコーディオン） ── */}
       <div className="flex flex-col gap-2 overflow-y-auto pr-1 dark-scrollbar flex-1 py-2">
         
-        {/* ① 世界観・画風設定 アコーディオン */}
+        {/* ① リファレンス・作画演出 アコーディオン */}
         <div className={`flex flex-col rounded-xl border border-slate-200 bg-white transition-all ${isWorldOpen ? 'overflow-visible relative z-30' : 'overflow-hidden'}`}>
           <button
             type="button"
             onClick={() => setIsWorldOpen(!isWorldOpen)}
-            className="w-full flex items-center justify-between p-2.5 bg-white/[0.04] hover:bg-white/[0.08] transition-colors cursor-pointer select-none text-left"
+            className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer select-none text-left"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="material-symbols-outlined text-[16px] text-purple-400 shrink-0">palette</span>
-              <span className="text-[11px] font-black text-white/90 uppercase tracking-wider truncate">世界観・画風設定</span>
+              <span className="material-symbols-outlined text-[16px] text-purple-600 shrink-0">face</span>
+              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider truncate">リファレンス・作画演出</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 max-w-[120px] truncate">
-                {settings.theme ? (settings.theme.length > 8 ? settings.theme.slice(0, 8) + '…' : settings.theme) : '未設定'}
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-bold border border-purple-200 max-w-[120px] truncate">
+                {settings.selectedAssetId ? 'リファレンス適用中' : '未設定'}
               </span>
-              <span className={`material-symbols-outlined text-[18px] text-gray-400 transition-transform duration-200 ${isWorldOpen ? 'rotate-180' : ''}`}>
+              <span className={`material-symbols-outlined text-[18px] text-slate-500 transition-transform duration-200 ${isWorldOpen ? 'rotate-180' : ''}`}>
                 expand_more
               </span>
             </div>
           </button>
           
           {isWorldOpen && (
-            <div className="p-2.5 flex flex-col gap-2.5 border-t border-white/5 animate-in fade-in duration-200">
+            <div className="p-2.5 flex flex-col gap-2.5 border-t border-slate-200 animate-in fade-in duration-200">
               <ReferenceVault 
                 assets={referenceAssets} 
                 selectedId={settings.selectedAssetId} 
@@ -95,62 +82,19 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 disabled={isProducing}
               />
 
-              <div className="flex items-center justify-between mt-0.5">
-                <SectionLabel>{themeConfig.label}</SectionLabel>
-                <button
-                  type="button"
-                  onClick={() => setIsThemeEditorOpen(true)}
-                  disabled={isProducing}
-                  className="px-2 py-0.5 text-[10px] rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1 transition-colors cursor-pointer"
-                  title="テーマ一覧をWebUI上で編集・追加・保存"
-                >
-                  <span className="material-symbols-outlined text-[12px]">edit</span>
-                  編集・追加
-                </button>
-              </div>
-              <FieldDropdown 
-                label={themeConfig.label} 
-                value={settings.theme} 
-                options={themeConfig.options}
-                groups={themeConfig.groups}
-                onChange={v => setSettings(s => ({ ...s, theme: v, era: v }))} 
-                disabled={isProducing} 
-              />
-              
-              <div className="flex items-center justify-between mt-0.5">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">画風・テイスト</label>
-                <button
-                  type="button"
-                  onClick={() => setIsTasteEditorOpen(true)}
-                  disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId}
-                  className="px-2 py-0.5 text-[10px] rounded-md bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-40"
-                  title="画風プロンプト一覧をJSONで直接編集・追加・保存"
-                >
-                  <span className="material-symbols-outlined text-[12px]">edit</span>
-                  編集・追加 (JSON)
-                </button>
-              </div>
-              <FieldDropdown 
-                label="" 
-                value={settings.productionMode === 'style-matrix' ? '🎨 全画風マトリクス比較（自動）' : (settings.selectedAssetId ? '🎨 参照画像の画風同期中' : settings.taste)} 
-                options={Object.keys(customTastes)} 
-                onChange={v => setSettings(s => ({ ...s, taste: v }))} 
-                disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId} 
-              />
-
               {/* マンガ風コマ割り（マルチパネル）トグル */}
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/25 text-purple-300 transition-all select-none hover:bg-purple-500/15">
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 transition-all select-none hover:bg-purple-100/70">
                 <label className="flex items-center gap-2.5 cursor-pointer flex-1">
                   <input
                     type="checkbox"
                     checked={!!settings.isMultiPanel}
                     onChange={e => setSettings(s => ({ ...s, isMultiPanel: e.target.checked }))}
                     disabled={isProducing}
-                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 bg-slate-200 cursor-pointer accent-purple-500"
+                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 bg-white cursor-pointer accent-purple-600"
                   />
                   <div className="flex flex-col">
                     <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[15px] text-purple-400">auto_stories</span>
+                      <span className="material-symbols-outlined text-[15px] text-purple-600">auto_stories</span>
                       マンガ風コマ割り (Multi-Panel)
                     </span>
                     <span className="text-[9.5px] text-slate-500 font-normal">
