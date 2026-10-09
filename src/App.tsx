@@ -5,7 +5,7 @@ import { ArchiveDrawer } from './components/ArchiveDrawer';
 import { StudioSidebar } from './components/StudioSidebar';
 import { StudioHeader } from './components/StudioHeader';
 import { EpisodeSection } from './components/EpisodeSection';
-import { LogEntry } from './components/StudioLogs';
+import { StudioLogs, LogEntry } from './components/StudioLogs';
 import { Cut, GeneratorSettings, VideoModelType, Episode } from './types';
 import { THEMES, TASTES, IMAGE_MODELS, VIDEO_MODELS } from './constants';
 import { createLogMessage } from './services/utils';
