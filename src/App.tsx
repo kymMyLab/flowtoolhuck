@@ -14,6 +14,10 @@ import { downloadZip, triggerBrowserDownload, savePackageFile } from './services
 import { useStudioProduction } from './services/useStudioProduction';
 import { extractHighlights } from './services/directorService';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { loadCustomThemes } from './services/themeStorage';
+import { loadCustomTastes } from './services/tasteStorage';
+import { ThemeEditorModal } from './components/ThemeEditorModal';
+import { TasteEditorModal } from './components/TasteEditorModal';
 
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
@@ -26,8 +30,8 @@ export default function App() {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
   const [isLogDrawerOpen, setIsLogDrawerOpen] = useState(false);
-  const [customThemes, setCustomThemes] = useState(() => { try { return JSON.parse(localStorage.getItem('customThemes') || '{}') || {}; } catch { return {}; } });
-  const [customTastes, setCustomTastes] = useState(() => { try { return JSON.parse(localStorage.getItem('customTastes') || '{}') || {}; } catch { return {}; } });
+  const [customThemes, setCustomThemes] = useState(() => loadCustomThemes());
+  const [customTastes, setCustomTastes] = useState(() => loadCustomTastes());
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
   const [isTasteEditorOpen, setIsTasteEditorOpen] = useState(false);
   const resumeFileRef = useRef<HTMLInputElement>(null);
@@ -293,6 +297,22 @@ export default function App() {
         </div>
         <ArchiveDrawer isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} stories={stories} onRemake={(s) => { setSettings(prev => ({ ...prev, country: s.country, era: s.era, theme: s.theme })); setArchiveOpen(false); }} />
         <ConfirmationModal isOpen={isTrashModalOpen} title="全消去" message="制作中のデータを消去します。" onConfirm={() => { clearEpisodes(); setIsTrashModalOpen(false); }} onCancel={() => setIsTrashModalOpen(false)} />
+        <ThemeEditorModal 
+          isOpen={isThemeEditorOpen} 
+          onClose={() => setIsThemeEditorOpen(false)} 
+          currentMode={settings.productionMode} 
+          modeLabel={settings.productionMode} 
+          onThemesUpdated={(updatedList) => {
+            setCustomThemes(prev => ({ ...prev, [settings.productionMode]: updatedList }));
+          }} 
+        />
+        <TasteEditorModal 
+          isOpen={isTasteEditorOpen} 
+          onClose={() => setIsTasteEditorOpen(false)} 
+          onTastesUpdated={(updatedTastes) => {
+            setCustomTastes(updatedTastes);
+          }} 
+        />
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
       </div>
     </ErrorBoundary>

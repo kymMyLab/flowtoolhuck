@@ -1,7 +1,7 @@
 import React from 'react';
 import { FieldDropdown, PillButton } from './Primitives';
 import { GeneratorSettings, ProductionMode } from '../types';
-import { PRODUCTION_MODES, THEMES, MV_THEMES, TRIVIA_THEMES, QUOTES_THEMES, CRAFT_THEMES, THEME_CATEGORIES } from '../constants';
+import { PRODUCTION_MODES, THEMES, MV_THEMES, TRIVIA_THEMES, QUOTES_THEMES, CRAFT_THEMES, THEME_CATEGORIES, TASTES } from '../constants';
 import { CustomThemeMap } from '../services/themeStorage';
 
 interface StudioHeaderProps {
@@ -127,14 +127,20 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         </div>
         <div className="w-px h-8 bg-slate-200 mx-1"></div>
         <div className="flex items-center gap-2">
-          <FieldDropdown 
-            label="画風・テイスト" 
-            value={settings.productionMode === 'style-matrix' ? '🎨 マトリクス比較中' : (settings.selectedAssetId ? '🎨 参照画像同期中' : settings.taste)} 
-            options={Object.keys(customTastes)} 
-            onChange={v => setSettings(s => ({ ...s, taste: v }))} 
-            disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId} 
-            className="w-[230px]"
-          />
+          {(() => {
+            const tasteKeys = Object.keys(customTastes || {});
+            const tasteOptions = tasteKeys.length > 0 ? tasteKeys : Object.keys(TASTES);
+            return (
+              <FieldDropdown 
+                label="画風・テイスト" 
+                value={settings.productionMode === 'style-matrix' ? '🎨 マトリクス比較中' : (settings.selectedAssetId ? '🎨 参照画像同期中' : settings.taste)} 
+                options={tasteOptions} 
+                onChange={v => setSettings(s => ({ ...s, taste: v }))} 
+                disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId} 
+                className="w-[260px]"
+              />
+            );
+          })()}
           <button
             type="button"
             onClick={onOpenTasteEditor}

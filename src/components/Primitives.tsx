@@ -129,7 +129,7 @@ export const FieldDropdown: React.FC<{
                 ))}
               </div>
             ))
-          ) : (
+          ) : options.length > 0 ? (
             options.map((opt) => {
               const optVal = typeof opt === 'string' ? opt : opt.value;
               const optLabel = typeof opt === 'string' ? opt : opt.label;
@@ -149,6 +149,8 @@ export const FieldDropdown: React.FC<{
                 </button>
               );
             })
+          ) : (
+            <div className="p-3 text-xs text-slate-400 text-center font-medium">選択肢がありません</div>
           )}
         </div>
       )}
