@@ -152,12 +152,12 @@ export async function runAutonomousVideoPipeline(config: PipelineConfig): Promis
 🤖 企画エージェント ───[ 演出意図・フック考案 ]───▶ 🏭 メイン量産幹線 ───[ 推論リクエスト ]───▶ ☁️ Gemini Flash
 ```
 
-<img src="../qiita_assets/06_shinsengumi_board_flow.png" alt="12カット並列オーケストレーション：『豪雨の宿命・壬生の夜に哭く誠の刃』全カットのキャラ崩れゼロ連続性" style="max-width: 100% !important; height: auto !important; display: block; margin: 2.5rem auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+<img src="../qiita_assets/06_shinsengumi_board_flow.png" alt="STUDIO PRO 制作ボリューム・配分と自動化パイプライン設定：『新選組・壬生浪士の挽歌』×『葛飾北斎・超写実肉筆浮世絵』" style="max-width: 100% !important; height: auto !important; display: block; margin: 2.5rem auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
 
 * **🏭 パイプライン幹線（処理内容）**:
   選定されたテーマから、12カット構成の起承転結シナリオ、冒頭2秒のフック演出、各カットのナレーション原稿、金文字強調キーワード抽出、および絵コンテ演出意図を含む構造化JSONスキーマを自律生成します。
   
-  上図は、実際にGemini Flashによって一瞬で生成された第1話**『豪雨の宿命・壬生の夜に哭く誠の刃（FATEFUL TORRENT: THE MIDNIGHT BLADE OF MIBU）』**の12カットオーケストレーション画面です。
+  STUDIO PRO上でパイプライン制御トグルと制作ボリュームを設定し生成を開始すると、Gemini Flashによって一瞬で以下の12カット構成データ（第1話**『豪雨の宿命・壬生の夜に哭く誠の刃（FATEFUL TORRENT: THE MIDNIGHT BLADE OF MIBU）』**）が自律生成されます。
 
 #### 💡 実際に自律生成された12カット構造化JSONスキーマ実例
 ```json
