@@ -53,6 +53,46 @@
 上図の通り、AIエージェントたちに自律的に思考・判断を行わせて、パイプライン幹線をベルトコンベアのように下降しながら、Google Cloud（Veo / Imagen / Gemini）へリクエストが並列にAPI通信して処理結果が戻ってくる設計になっています。
 
 「人間がAIツールをカチカチ操作する」のではなく、**「人間はテーマを選んで寝るだけで、エージェント群が自律的に全工程を完走し、クラウドの計算資源をフルパワーで叩き切る」**――これが本システムの基本思想です。
+
+### 💡 自律型パイプライン幹線のオーケストレーション概念コード
+本システムの中核である「人間がテーマを選んだ後、各エージェントが自律的に連携して完成パッケージまで完走するロジック」を抽象化した概念コードが以下です。
+
+```typescript
+/**
+ * 💡【概念コード】自律型動画量産パイプラインのオーケストレーション概要
+ * 人間の3秒操作をトリガーに、各専門エージェントが直列・並列にタスクを完走するメインフロー
+ */
+export async function runAutonomousVideoPipeline(config: PipelineConfig): Promise<VideoPackage> {
+  // 1. 【企画エージェント】テーマから12カットの起承転結・フック・演出意図を高速推論
+  const storyboard = await PlanningAgent.createStoryboard({
+    theme: config.selectedTheme,       // "新選組・壬生浪士の挽歌"
+    aesthetic: config.selectedAesthetic // "葛飾北斎・超写実肉筆浮世絵"
+  });
+
+  // 2. 【監督エージェント】全カットへ「6層プロンプト調律（画風＆キャラDNA）」を一括バインド
+  const tunedStory = await DirectorAgent.applyPromptTuning(storyboard, {
+    anchorPalette: ["deep_indigo", "tea_stained_washi"],
+    costumeDNA: "asagi_haori_dandaraya",
+    veoInterpolation: true // Start/After ペア生成フラグ
+  });
+
+  // 3. 【生成エージェント群】12カットの作画・Veo動画・音声を非同期ストリーミングで高並列消化
+  const assetJobs = tunedStory.cuts.map(async (cut) => {
+    const [visuals, audio] = await Promise.all([
+      VisualAgent.generateAssets(cut),        // Nano Banana作画 & Veoシネマティック映像
+      AudioAgent.generateVoice(cut.narration) // ナレーション音声 & 自動ダッキング計算
+    ]);
+    return { ...cut, visuals, audio };
+  });
+  const renderedCuts = await Promise.all(assetJobs);
+
+  // 4. 【合成・品質検証】WebCodecs/Canvasでミリ秒同期 ＆ 成果物パッケージング
+  return await AssemblyEngine.buildFinalPackage(renderedCuts, {
+    aspectRatio: config.aspectRatio, // 9:16 Shorts / 16:9 自動セーフゾーン
+    generatePoster: true            // 特大扉絵ポスター自動生成
+  });
+}
+```
 <!-- 100 🏗️ 1. アーキテクチャ概要：3軸協調型・自律パイプライン -->
 
 ---
@@ -85,7 +125,7 @@
   2. **三面図先行生成（360°キャラ崩れ防止）**: 12カットの本編作画を開始する前に、キャラクターの正面・側面・背面（三面図）を先行確定し、全カットにDNAアンカーとして注入。
   3. **1Cut2枚生成（Veo補間用 Start/After絵）**: 1カットにつき動作の開始絵（Start）と終了絵（After）の2枚をペア生成し、動画拡散モデル（Veo）のフレーム間補間精度を極限まで高める。
   4. **三面図自動承認（無人完走）**: 本来は人間の目視チェックが必要なキャラ設計図を、品質検証エージェントが自律承認し、夜間に一切停止せず完走。
-  5. **象徴アイテムカット（人なしシーン挿入）**: 物語の背景や世界観を象徴する情景・静物のインサートカットを自律判定で挟み込み、映像のリズムと情緒的な「間（ま）」を演出。
+  5. **象徴アイテムカット**: 物語の背景や世界観を象徴する情景・静物のインサートカットを自律判定で挟み込み、映像のリズムと情緒的な「間（ま）」を演出。
 
 * **🤖 自律エージェントの思考（セリフ）**:
   > 「主様が『新選組・壬生浪士の挽歌』と『葛飾北斎・超写実肉筆浮世絵』をポチられたぞ！
