@@ -5,7 +5,7 @@
 <!-- 000 タイトル定義 -->
 
 <!-- 001 冒頭イメージ画像挿入エリア -->
-<img src="../qiita_assets/01_studio_pro_overview.png" alt="自作動画制作スタジオ『STUDIO PRO』ダッシュボード：12カット並列オーケストレーションと絵コンテ・プロンプト一括調律画面" style="max-width: 100% !important; height: auto !important; display: block; margin: 0 auto 2.5rem auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+<img src="../qiita_assets/06_shinsengumi_board_flow.png" alt="自作動画制作スタジオ『STUDIO PRO』ダッシュボード：新選組・北斎肉筆浮世絵 12カット並列オーケストレーション画面" style="max-width: 100% !important; height: auto !important; display: block; margin: 0 auto 2.5rem auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
 <!-- 001 冒頭イメージ画像挿入エリア -->
 
 <!-- 002 導入部：背景となる課題とシステム化の動機 -->
@@ -262,9 +262,6 @@ interface MultimodalAgentState {
   - **🎥 映像生成（Google Veo 3.1 / Omni 1.1）**: 次世代動画拡散モデル。パン・ズーム・チルト等の滑らかなシネマティックカメラモーション動画（8秒）を生成し、映像に圧倒的なダイナミズムを付与。
   - **🎵 音響＆BGM自動ダッキング制御**: 世界観に合わせた和風劇伴BGMを自動選定し、ナレーション発話タイミングに合わせてBGM音量を自動で-18dB減衰（ダッキング）させ、発話終了後に自然にフェード復帰。
 
-<img src="../qiita_assets/03_style_matrix_multi.png" alt="マルチ画風マトリックス比較エンジン：単一の脚本から複数の世界観（ネオ・エンブレム、日常系、浮世絵等）を並列シミュレーション" style="max-width: 100% !important; height: auto !important; display: block; margin: 2.5rem auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-
-<img src="../qiita_assets/04_style_matrix_ukiyoe.png" alt="画風バリエーション検証：ゆる浮世絵・戯画調、アール・ヌーヴォー調における歴史的カットの表現力検証" style="max-width: 100% !important; height: auto !important; display: block; margin: 2.5rem auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
 
 * **🤖 自律エージェントの思考（セリフ）**:
   > 「全システム、フルスロットル！Veo 3.1とNano Banana 2.1/Proを同時並行で駆動せよ！
