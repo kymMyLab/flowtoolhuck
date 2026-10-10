@@ -112,7 +112,7 @@
 
 
   <!-- ══════════════════════════════════════════════════════════════
-       STAGE 0: 主様（クリエイター：作業時間3秒）
+       STAGE 0: プロデューサー（P）（クリエイター：作業時間3秒）
        ══════════════════════════════════════════════════════════════ -->
   <!-- [CENTER CARD 0] -->
   <g transform="translate(415, 200)">
@@ -121,7 +121,7 @@
     <text x="185" y="5" font-size="13" font-weight="900" fill="#fff" text-anchor="middle">0</text>
 
     <rect x="16" y="18" width="160" height="20" rx="5" fill="#0284c7" />
-    <text x="22" y="32" font-size="10.5" font-weight="800" fill="#ffffff">👑 主様（人間）</text>
+    <text x="22" y="32" font-size="10.5" font-weight="800" fill="#ffffff">👑 プロデューサー（P）</text>
     <text x="184" y="33" font-size="11" font-weight="700" fill="#f43f5e">【作業時間：わずか3秒】</text>
 
     <text x="16" y="58" font-size="14" font-weight="800" fill="#f8fafc">脚本を書きたくないでござる！選ぶだけ</text>
@@ -136,7 +136,7 @@
     <line x1="309" y1="26" x2="309" y2="37" stroke="#1e1b4b" stroke-width="2" />
 
     <text x="14" y="24" font-size="12" font-weight="900" fill="#c7d2fe">🤖 企画エージェントのつぶやき：</text>
-    <text x="14" y="46" font-size="11.5" font-weight="700" fill="#ffffff">「おっ、主様が『江戸・歴史人情』の</text>
+    <text x="14" y="46" font-size="11.5" font-weight="700" fill="#ffffff">「おっ、Pが『江戸・歴史人情』の</text>
     <text x="14" y="64" font-size="11.5" font-weight="700" fill="#ffffff">テーマをポチったぞ！ここからは我々の出番。</text>
     <text x="14" y="82" font-size="11" fill="#a5b4fc">さあ、Google Cloud へリクエスト送信だ！」</text>
   </g>
@@ -179,7 +179,7 @@
     <line x1="309" y1="26" x2="309" y2="39" stroke="#1e1b4b" stroke-width="2" />
 
     <text x="14" y="24" font-size="12" font-weight="900" fill="#c7d2fe">🤖 企画エージェントの思考：</text>
-    <text x="14" y="48" font-size="11.5" font-weight="700" fill="#ffffff">「主様が選んだお題だな！</text>
+    <text x="14" y="48" font-size="11.5" font-weight="700" fill="#ffffff">「Pが選んだお題だな！</text>
     <text x="14" y="66" font-size="11.5" font-weight="700" fill="#ffffff">Gemini Flash をキックして、冒頭で</text>
     <text x="14" y="84" font-size="11.5" font-weight="700" fill="#ffffff">引きつける12カットの起承転結を一撃で</text>
     <text x="14" y="102" font-size="11.5" font-weight="700" fill="#ffffff">書き下ろしたぞ！監督、演出頼んだ！」</text>
@@ -386,7 +386,7 @@
 
     <text x="185" y="36" font-size="16" font-weight="900" fill="#ffffff" text-anchor="middle">🏁 GOAL：朝起きたら動画が50本完成！</text>
     <text x="185" y="60" font-size="12" font-weight="700" fill="#ecfdf5" text-anchor="middle">人間は布団で寝ていただけ。プロンプト崩壊ゼロ！</text>
-    <text x="185" y="80" font-size="11" fill="#d1fae5" text-anchor="middle">整然と並んだMP4パッケージをYouTubeへ即時投稿可能</text>
+    <text x="185" y="80" font-size="11" fill="#d1fae5" text-anchor="middle">MP4・SRT・特大扉絵ポスターの即時納品パッケージ</text>
   </g>
 
   <!-- [LEFT AGENT 5: 全エージェント集合完了セリフ] -->
@@ -396,10 +396,10 @@
     <line x1="309" y1="51" x2="309" y2="65" stroke="#1e1b4b" stroke-width="2" />
 
     <text x="14" y="24" font-size="12" font-weight="900" fill="#6ee7b7">🎉 全エージェント一同より：</text>
-    <text x="14" y="48" font-size="12" font-weight="800" fill="#ffffff">「主様、人間関与ゼロで完走です！</text>
+    <text x="14" y="48" font-size="12" font-weight="800" fill="#ffffff">「P、人間関与ゼロで完走です！</text>
     <text x="14" y="68" font-size="11.5" font-weight="700" fill="#ffffff">Google Cloud API群を高速並列コールし、</text>
-    <text x="14" y="88" font-size="11.5" font-weight="700" fill="#ffffff">全50本の動画アセンブリが完了しました！」</text>
-    <text x="14" y="106" font-size="10.5" fill="#a7f3d0">（主様は選んで寝ていただけ 💤）</text>
+    <text x="14" y="88" font-size="11.5" font-weight="700" fill="#ffffff">全50本の動画＆特大扉絵が完成しました！」</text>
+    <text x="14" y="106" font-size="10.5" fill="#a7f3d0">（Pは選んで寝ていただけ 💤）</text>
   </g>
 
   <!-- [RIGHT GCP 5: 成果物バケット保管完了] -->
@@ -417,7 +417,7 @@
   <g transform="translate(44, 1540)">
     <rect x="0" y="0" width="1112" height="84" rx="16" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.8" filter="url(#shadowHeavy)" />
     <text x="30" y="32" font-size="14" font-weight="900" fill="#e0e7ff">🏛️ 設計総括：自律エージェント ✕ パイプライン幹線 ✕ Google Cloud</text>
-    <text x="30" y="55" font-size="12" font-weight="800" fill="#38bdf8">◆ 完全ゼロタッチ制作 ： <tspan font-weight="normal" fill="#cbd5e1">主様はテーマ選定（3秒）のみ。脚本・演出・画風アンカー固定はエージェントが自律完結。</tspan></text>
+    <text x="30" y="55" font-size="12" font-weight="800" fill="#38bdf8">◆ 完全ゼロタッチ制作 ： <tspan font-weight="normal" fill="#cbd5e1">Pはテーマ選定（3秒）のみ。脚本・演出・画風アンカー固定はエージェントが自律完結。</tspan></text>
     <text x="30" y="73" font-size="12" font-weight="800" fill="#34d399">◆ Google Cloud 直結量産 ： <tspan font-weight="normal" fill="#cbd5e1">Veo 3.1 ＆ Imagen ＆ Gemini の高並列APIコールにより、夜間50本〜大規模スケールアウト。</tspan></text>
   </g>
 
