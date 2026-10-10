@@ -444,7 +444,7 @@
     <text x="30" y="32" font-size="14" font-weight="900" fill="#e0e7ff">🏛️ 設計総括：自律エージェント ✕ パイプライン幹線 ✕ Google Cloud</text>
     <text x="30" y="55" font-size="12" font-weight="800" fill="#38bdf8">◆ 完全ゼロタッチ制作 ： <tspan font-weight="normal" fill="#cbd5e1">Pはテーマ選定（3秒）のみ。脚本・演出・画風アンカー固定・特大扉絵までエージェントが自律完結。</tspan></text>
     <text x="30" y="73" font-size="12" font-weight="800" fill="#34d399">◆ Google Cloud 直結量産 ： <tspan font-weight="normal" fill="#cbd5e1">Veo 3.1 ＆ Imagen ＆ Gemini の高並列APIコールにより、夜間バッチから大規模スケールアウト。</tspan></text>
-    <text x="30" y="89" font-size="11" font-weight="700" fill="#fcd34d">◆ 現場の教訓（Gotchas） ： <tspan font-weight="normal" fill="#cbd5e1">ブラウザOOMの限界を突破するため、本番環境は Cloud Pub/Sub ＆ Cloud Run で完全クラウドオフロード。</tspan></text>
+    <text x="30" y="89" font-size="11" font-weight="700" fill="#fcd34d">◆ 作っていて得た教訓（Gotchas） ： <tspan font-weight="normal" fill="#cbd5e1">ブラウザOOMの限界を突破するため、本番環境は Cloud Pub/Sub ＆ Cloud Run で完全クラウドオフロード。</tspan></text>
   </g>
 
 </svg>
