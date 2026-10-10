@@ -263,7 +263,7 @@ export async function runAutonomousVideoPipeline(config: PipelineConfig): Promis
   1. **Layer 1: グローバル画風アンカー**: 北斎肉筆画、生漉奉書紙の繊維感、天然顔料（藍・べんがら）、茶染めの経年古雅セピア、擦れ墨筆。
   2. **Layer 2: キャラクターDNAアンカー**: 新選組浅葱色羽織、山形ダンダラ模様、月代・髷、若き精悍な剣士の顔立ち。
   3. **Layer 3: 環境・ライティング調律**: 激しい豪雨、瓦屋根から滴る雨水、水たまりに反射する提灯の灯り、夜の陰影コントラスト。
-  4. **Layer 4: カメラワーク＆構図アンカー**: 俯瞰ハイアングル（High-angle landscape view looking down from above...）。
+  4. **Layer 4: カメラワーク＆構図アンカー**: 俯瞰ハイアングルや視線誘導（High-angle landscape view looking down from above...）。
   5. **Layer 5: ネガティブガードレールの自動付与**: デジタルCG感、白フチ・余白フレーム、現代的衣服、手ブレ・作画崩れを完全排除。
   6. **Layer 6: Veo補間用 Start/After 2枚構図アンカー**: 8秒間のシネマティックカメラモーションに対応する始点と終点のベクトル整合性。
 
@@ -298,8 +298,8 @@ interface MultimodalAgentState {
 * **☁️ Google Cloud の役割**:
   調律されたマルチモーダル・パラメータ群を後続のImagen/Veo API向けに事前バリデーション。
 
-* **🏢 【エンタープライズにするならココに挟む！】**: **Vertex AI Feature Store / Agent Engine**
-  > 演出プロンプトや世界観アンカー変数を **Vertex AI Feature Store** および **Agent Engine** にナレッジとして蓄積。チーム全体でキャラクター設定やスタイル定義をバージョン管理し、組織横断で安定した画風コンテキストを共有可能にします。
+* **🏢 【エンタープライズにするならココに挟む！】**: **Vertex AI Feature Store / Vertex AI Search ＆ Agent Builder**
+  > 演出プロンプトや世界観アンカー変数を **Vertex AI Feature Store** や **Vertex AI Search / Agent Builder（Agent Engine）** にナレッジ・コンテキストとして蓄積。チーム全体でキャラクター設定やスタイル定義をバージョン管理し、組織横断で安定した画風コンテキストを共有可能にします。
 
 ---
 
@@ -314,7 +314,7 @@ interface MultimodalAgentState {
 
   本パイプラインの真骨頂は、**「Veo 3.1（映像）と Nano Banana 2.1/Pro（作画）のハイブリッド使い分け戦略」**です：
   - **🎨 高精細作画（Nano Banana 2.1/Pro・Google Imagen技術）**: 各カットのキービジュアルおよびアンカー画像を生成。奉書紙の繊維感と擦れ墨、八木邸の瓦を打つ雨粒の飛沫を極限までリアルに描写。
-  - **🎥 映像生成（Google Veo 3.1 / Omni 1.1）**: 次世代動画拡散モデル。パン・ズーム・チルト等の滑らかなシネマティックカメラモーション動画（8秒）を生成し、映像に圧倒的なダイナミズムを付与。
+  - **🎥 映像生成（Google Veo 3.1 / Omni 1.1）**: 次世代動画生成モデル。パン・ズーム・チルト等の滑らかなシネマティックカメラモーション動画（8秒）を生成し、映像に圧倒的なダイナミズムを付与。
   - **🎵 音響＆BGM自動ダッキング制御**: 世界観に合わせた和風劇伴BGMを自動選定し、ナレーション発話タイミングに合わせてBGM音量を自動で-18dB減衰（ダッキング）させ、発話終了後に自然にフェード復帰。
 
 
@@ -330,7 +330,7 @@ interface MultimodalAgentState {
   - **Text-to-Speech (TTS)**: 高品位な日本語ナレーション音声の合成。
 
 * **🏢 【エンタープライズにするならココに挟む！】**: **Google Cloud Text-to-Speech (TTS) ＆ Cloud Tasks ＆ Cloud Pub/Sub**
-  > 音声ナレーションを **Google Cloud Text-to-Speech (TTS)** で完全自動合成します。この際、APIレートリミット（`429 Too Many Requests`）を回避するため、前段に **Cloud Pub/Sub** と **Cloud Tasks** の分散キューを挟みます。これによりリクエストを自動で吸収し、指数バックオフ（Exponential Backoff）で自動平滑化する耐障害性設計を実現し、深夜に50本〜数千本の動画生成が走ってもジョブ破綻をゼロにします。
+  > 音声ナレーションを **Google Cloud Text-to-Speech (TTS)** で完全自動合成します。この際、APIレートリミット（`429 Too Many Requests`）やクォータ（Quota）枯渇を回避するため、前段に **Cloud Pub/Sub** と **Cloud Tasks** の分散キュー（バッファ）を挟みます。Pub/Subによるイベント吸収とCloud Tasksのレート制御（Rate Limits / Max Dispatches Per Second）を組み合わせることで、指数バックオフとともにトラフィックを完璧に平滑化し、深夜に50本〜数千本の動画生成が走ってもジョブ破綻をゼロにします。
 
 ---
 
