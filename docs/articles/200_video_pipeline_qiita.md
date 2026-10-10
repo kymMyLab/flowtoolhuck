@@ -54,7 +54,7 @@
 *※ 例：「葛飾北斎・超写実肉筆浮世絵 × 新選組・壬生浪士の挽歌（『豪雨の宿命・壬生の夜に哭く誠の刃』）」で歴史短編動画を50本一括自動生成する場合*
 
 <div align="center" style="margin: 2.5rem 0;">
-  <img src="../qiita_assets/architecture_diagram.svg" alt="超自律型動画量産パイプライン：エージェント思考 ➔ 中央幹線 ➔ GCP連携 設計図" style="max-width: 100% !important; height: auto !important; display: block; margin: 0 auto; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+  <img src="../qiita_assets/architecture_diagram.png" alt="超自律型動画量産パイプライン：エージェント思考 ➔ 中央幹線 ➔ GCP連携 設計図" style="max-width: 100% !important; height: auto !important; display: block; margin: 0 auto; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
 </div>
 
 上図の通り、AIエージェントたちに自律的に思考・判断を行わせて、パイプライン幹線をベルトコンベアのように下降しながら、Google Cloud（Veo / Imagen / Gemini）へリクエストが並列にAPI通信して処理結果が戻ってくる設計になっています。
