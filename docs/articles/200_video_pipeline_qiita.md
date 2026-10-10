@@ -127,6 +127,11 @@ export async function runAutonomousVideoPipeline(config: PipelineConfig): Promis
   4. **三面図自動承認（無人完走）**: 本来は人間の目視チェックが必要なキャラ設計図を、品質検証エージェントが自律承認し、夜間に一切停止せず完走。
   5. **象徴アイテムカット**: 物語の背景や世界観を象徴する情景・静物のインサートカットを自律判定で挟み込み、映像のリズムと情緒的な「間（ま）」を演出。
 
+<div align="center" style="margin: 2.5rem 0;">
+  <img src="../qiita_assets/09_shinsengumi_three_views.png" alt="自律生成された新選組若き剣士の三面図アンカー（正面・側面・背面）：全12カットのキャラ崩壊を物理的に防ぐDNA設計図" style="max-width: 90% !important; height: auto !important; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+  <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">▲ 自律生成されたキャラクター三面図（正面・側面・背面）。本編作画前にこのDNAアンカーを確定させることで、カットごとに顔や衣装が変わる「プロンプトドリフト（Prompt Drift）」を完全根絶する。</p>
+</div>
+
 * **🤖 自律エージェントの思考（セリフ）**:
   > 「主様が『新選組・壬生浪士の挽歌』と『葛飾北斎・超写実肉筆浮世絵』をポチられたぞ！
   > 主様は『脚本は1行も書きたくないでござる！』とおっしゃっている。ここからは完全に我々の独壇場だ。
