@@ -1,4 +1,6 @@
 <!-- GTE_PUBLISHED: false -->
+<!-- QIITA_TAGS: GoogleCloud, VertexAI, 生成AI, Veo, React -->
+<!-- ALT_TAGS: TypeScript, CloudRun -->
 
 <!-- 000 タイトル定義 -->
 # 【AIエージェント×動画量産パイプライン】自動がいい！！「起きたら動画が50本出来ている」を実現するため、Google Cloud（Veo / Vertex AI）でマルチメディア工場を建設してみる
