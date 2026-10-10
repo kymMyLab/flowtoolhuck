@@ -78,13 +78,10 @@ export async function runAutonomousVideoPipeline(config: PipelineConfig): Promis
     veoInterpolation: true // Start/After ペア生成フラグ
   });
 
-  // 3. 【生成エージェント群】12カットの作画・Veo動画・音声を非同期ストリーミングで高並列消化
+  // 3. 【生成エージェント群】12カットの作画・Veo動画を非同期ストリーミングで高並列消化
   const assetJobs = tunedStory.cuts.map(async (cut) => {
-    const [visuals, audio] = await Promise.all([
-      VisualAgent.generateAssets(cut),        // Nano Banana (Imagen技術) 作画 & Veoシネマティック映像
-      AudioAgent.generateVoice(cut.narration) // ナレーション音声 & 自動ダッキング計算
-    ]);
-    return { ...cut, visuals, audio };
+    const visuals = await VisualAgent.generateAssets(cut); // Nano Banana (Imagen技術) 作画 & Veoシネマティック映像（ネイティブ同期音響含む）
+    return { ...cut, visuals };
   });
   const renderedCuts = await Promise.all(assetJobs);
 
@@ -305,34 +302,31 @@ interface MultimodalAgentState {
 
 ---
 
-### 【Stage 3】高並列アセット生成フェーズ：作画 ＆ 映像 ＆ 音響のマルチオーケストレーション
+### 【Stage 3】高並列アセット生成フェーズ：作画 ＆ 映像（同期音響）のマルチオーケストレーション
 
 ```
-🤖 音響・生成エージェント ───[ 並列ストリーミング ]───▶ 🏭 メイン量産幹線 ───[ 並列API叩き込み ]───▶ ☁️ Veo / Imagen / TTS
+🤖 生成エージェント ───[ 並列ストリーミング ]───▶ 🏭 メイン量産幹線 ───[ 並列API叩き込み ]───▶ ☁️ Veo / Imagen
 ```
 
 * **🏭 パイプライン幹線（処理内容）**:
-  調律済みパラメータに基づき、12カット分の画像・動画・音声を非同期ストリーミングで高並列オーケストレーションします。
+  調律済みパラメータに基づき、12カット分の画像・動画を非同期ストリーミングで高並列オーケストレーションします。
 
-  本パイプラインの真骨頂は、**「Veo 3.1（映像）と Nano Banana 2.1/Pro（作画）のハイブリッド使い分け戦略」**です：
+  本パイプラインの真骨頂は、**「Veo 3.1（映像＆同期音響）と Nano Banana 2.1/Pro（作画）のハイブリッド使い分け戦略」**です：
   - **🎨 高精細作画（Nano Banana 2.1/Pro・Google Imagen技術）**: 各カットのキービジュアルおよびアンカー画像を生成。奉書紙の繊維感と擦れ墨、八木邸の瓦を打つ雨粒の飛沫を極限までリアルに描写。
-  - **🎥 映像生成（Google Veo 3.1 / Omni 1.1）**: 次世代動画生成モデル。パン・ズーム・チルト等の滑らかなシネマティックカメラモーション動画（8秒）を生成し、映像に圧倒的なダイナミズムを付与。
-  - **🎵 音響＆BGM自動ダッキング制御**: 世界観に合わせた和風劇伴BGMを自動選定し、ナレーション発話タイミングに合わせてBGM音量を自動で-18dB減衰（ダッキング）させ、発話終了後に自然にフェード復帰。
+  - **🎥 映像＆音響生成（Google Veo 3.1 / Omni 1.1）**: 次世代動画生成モデル。パン・ズーム・チルト等の滑らかなシネマティックカメラモーション動画（8秒）を生成。Veo自体がシーンに同期した臨場感あふれる環境音・劇伴オーディオを一体生成できるため、外部の音響編集なしでも単体でリッチなショート動画が即座に成立します。
 
 
 * **🤖 自律エージェントの思考（セリフ）**:
   > 「全システム、フルスロットル！Veo 3.1とNano Banana 2.1/Proを同時並行で駆動せよ！
-  > 8秒動画のシネマティックカメラモーション（パン・ズーム）はVeoに任せ、キービジュアルはImagen技術の超高精細作画で並列受信だ！
-  > BGMは壬生の夜の緊迫感に合わせて選定し、ナレーション発話時には自動で音量ダッキングを仕込むぞ！
-  > 映像も音響も妥協は一切なしだ！」
+  > 8秒動画のシネマティックカメラモーション（パン・ズーム）と同期音響はVeoに任せ、キービジュアルはImagen技術の超高精細作画で並列受信だ！
+  > 映像も世界観も妥協は一切なしだ！」
 
 * **☁️ Google Cloud の役割**:
-  - **Veo 3.1 (Google Veo)**: 8秒の滑らかなシネマティック動画生成。
+  - **Veo 3.1 (Google Veo)**: 8秒の滑らかなシネマティック動画および同期オーディオの一体生成。
   - **Nano Banana 2.1/Pro (Imagen技術)**: 奉書紙の繊維感と擦れ墨を極限まで再現するキービジュアル作画。
-  - **Text-to-Speech (TTS)**: 高品位な日本語ナレーション音声の合成。
 
-* **🏢 【エンタープライズにするならココに挟む！】**: **Google Cloud Text-to-Speech (TTS) ＆ Cloud Tasks ＆ Cloud Pub/Sub**
-  > 音声ナレーションを **Google Cloud Text-to-Speech (TTS)** で完全自動合成します。この際、APIレートリミット（`429 Too Many Requests`）やクォータ（Quota）枯渇を回避するため、前段に **Cloud Pub/Sub** と **Cloud Tasks** の分散キュー（バッファ）を挟みます。Pub/Subによるイベント吸収とCloud Tasksのレート制御（Rate Limits / Max Dispatches Per Second）を組み合わせることで、指数バックオフとともにトラフィックを完璧に平滑化し、深夜に50本〜数千本の動画生成が走ってもジョブ破綻をゼロにします。
+* **🏢 【エンタープライズにするならココに挟む！】**: **外部BGM統合 ＆ Google Cloud Text-to-Speech (TTS) ＆ Cloud Tasks ＆ Cloud Pub/Sub**
+  > 基本パイプラインはVeo単体のリッチな音響付き動画生成で十分完結しますが、**「全話共通のテーマ曲を一貫して流したい」「独立したナレーション発話時にBGM音量を自動で-18dB下げるプロ仕様のダッキング制御を組みたい」といった高度な番組演出へ拡張する場合**は、**Google Cloud Text-to-Speech (TTS)** と外部オーディオパイプラインを前段に挟みます。この際、APIレートリミット（`429 Too Many Requests`）やクォータ（Quota）枯渇を回避するため、前段に **Cloud Pub/Sub** と **Cloud Tasks** の分散キュー（バッファ）を配置。Cloud Tasksのレート制御（Rate Limits / Max Dispatches Per Second）を組み合わせることで、指数バックオフとともにトラフィックを完璧に平滑化し、大規模バッチでも破綻しない音響オーケストレーションを実現します。
 
 ---
 
