@@ -72,7 +72,7 @@
 👑 主様（人間） ───[ テーマ選定：3秒 ]───▶ 🏭 メイン量産幹線 ───[ Payload送信 ]───▶ ☁️ Google Cloud
 ```
 
-<img src="../qiita_assets/05_studio_pipeline_controls.png" alt="自律化＆パイプライン制御トグル群：指数バックオフ・三面図先行・1Cut2枚Veo補間・無人完走スイッチ" style="max-width: 100% !important; height: auto !important; display: block; margin: 2.5rem auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+<img src="../qiita_assets/05_theme_taste_selection.png" alt="テーマと画風の選定ドロップダウン：『新選組・壬生浪士の挽歌』×『葛飾北斎・超写実肉筆浮世絵』を選択するだけ（作業時間3秒）" style="max-width: 100% !important; height: auto !important; display: block; margin: 2.5rem auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
 
 * **🏭 パイプライン幹線（処理内容）**:
   STUDIO PROのUI上で、主様（人間）がドロップダウンから『世界観：⚔️ 新選組・壬生浪士の挽歌（誠の旗の下に）』と『画風：🌊 葛飾北斎・超写実肉筆浮世絵』を選択し、「ドラマ生成開始」ボタンを押下するだけで処理がキックされます。
