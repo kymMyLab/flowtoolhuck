@@ -1,7 +1,7 @@
 export function safeJsonParse<T>(raw: any, defaultValue: T = {} as T): T {
   if (!raw) return defaultValue;
 
-  // すでにパース済みのオブジェクトであればそのまま返す
+  // すでにパース済みのオブジェクトまたは配列であればそのまま返す
   if (typeof raw === 'object' && raw !== null && !('text' in raw)) {
     return raw as T;
   }
@@ -20,25 +20,43 @@ export function safeJsonParse<T>(raw: any, defaultValue: T = {} as T): T {
     }
   }
 
-  if (!text || typeof text !== 'string' || !text.trim() || !text.includes('{')) {
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    return defaultValue;
+  }
+
+  const cleanText = text.replace(/```json\n?|```/g, '').trim();
+
+  // 配列またはオブジェクトの開始位置を検出
+  const firstBrace = cleanText.indexOf('{');
+  const firstBracket = cleanText.indexOf('[');
+
+  if (firstBrace === -1 && firstBracket === -1) {
     return defaultValue;
   }
 
   try {
-    const cleanText = text.replace(/```json\n?|```/g, '').trim();
-    const firstBrace = cleanText.indexOf('{');
-    const lastBrace = cleanText.lastIndexOf('}');
-    
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-      return defaultValue;
+    // 配列が外側にある場合 ([...])
+    if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+      const lastBracket = cleanText.lastIndexOf(']');
+      if (lastBracket > firstBracket) {
+        const jsonStr = cleanText.slice(firstBracket, lastBracket + 1);
+        return JSON.parse(jsonStr) as T;
+      }
     }
-    
-    const jsonStr = cleanText.slice(firstBrace, lastBrace + 1);
-    return JSON.parse(jsonStr) as T;
+
+    // オブジェクトが外側にある場合 ({...})
+    if (firstBrace !== -1) {
+      const lastBrace = cleanText.lastIndexOf('}');
+      if (lastBrace > firstBrace) {
+        const jsonStr = cleanText.slice(firstBrace, lastBrace + 1);
+        return JSON.parse(jsonStr) as T;
+      }
+    }
   } catch (err) {
     console.warn('JSON Parse Error:', err);
-    return defaultValue;
   }
+
+  return defaultValue;
 }
 
 /** 

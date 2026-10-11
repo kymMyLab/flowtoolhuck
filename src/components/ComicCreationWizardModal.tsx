@@ -216,25 +216,34 @@ ${selectedCustomTastes.map((key, i) => `候補 ${i + 1} 枠: 「${key}」 (英�
 `;
       }
 
-      const prompt = `あなたは世界的人気漫画の編集長兼アートディレクターです。
-以下の世界観テーマに最高にマッチする、全くアプローチの異なる【5種類の画風・テイスト】と、それぞれの画風を極限まで活かした魅力的な【主人公キャラクター案】を5組考案してください。
+      const prompt = `あなたは世界的大ヒット漫画を生み出す天才漫画編集長兼アートディレクターです。
+以下の【世界観テーマ】に深く根ざした、全くアプローチの異なる【5種類の画風・テイスト】と、それぞれの画風を極限まで活かした魅力的な【主人公キャラクター案】を5組考案してください。
 
 【世界観テーマ】: ${selectedTheme}
 ${customTastesInstruction}
 
+【キャラクター考案の最重要ガイドライン】:
+- 世界観テーマ「${selectedTheme}」のジャンル・空気感・情緒を忠実に尊重してください。
+- 現代社会派・人間ドラマ・介護・日常系（例: 8050問題、老老介護、ブラック企業、家族愛、下町人情など）の場合：
+  ★絶対に武器や魔法、サイバースーツ、ファンタジーの肩書（求道者、切り込み役、トリックスター等）を付けないでください！
+  ★実在のリアルな職業や立場（例: 孤軍奮闘する長男、限界を迎えた介護従事者、見守る幼馴染、訪問看護師、心優しきケースワーカー等）として考案してください。
+  ★画風も白黒劇画、淡彩水彩、細線画、ジブリ調の温もりある日常描写など、テーマの重みや哀愁、ぬくもりを表現できる画風にしてください。
+- 歴史・時代劇の場合はその時代の身分・職業（町火消し、岡っ引き、看板娘など）、ファンタジー・バトルの場合のみ相応の戦士や魔法使いにしてください。
+
 【出力要件】
-世界観テーマ「${selectedTheme}」の魅力を多角的に引き出す5組の「画風×主人公」を考案してください。
-以下の厳密なJSON配列形式（Markdownコードブロックなしの純粋なJSON配列）で出力してください:
-[
-  {
-    "id": "cand_1",
-    "tasteName": "世界観にマッチする独創的画風名 (日本語)",
-    "tastePromptEn": "Detailed English art style prompt matching the tasteName, masterpiece",
-    "name": "主人公の名前 (肩書)",
-    "concept": "性格、信念、武器や特徴（日本語2行程度）",
-    "dnaPromptEn": "Detailed English character appearance prompt: gender, age, facial features, striking eyes, expressive hairstyle, signature attire matching ${selectedTheme}"
-  }
-]`;
+以下のキーを持つ厳密なJSON形式（Markdownのコードブロックなし）で出力してください:
+{
+  "candidates": [
+    {
+      "id": "cand_1",
+      "tasteName": "世界観にマッチする独創的画風名 (日本語)",
+      "tastePromptEn": "Detailed English art style prompt matching the tasteName, masterpiece",
+      "name": "主人公の名前 (立場・肩書)",
+      "concept": "性格、信念、日常での立場や抱える葛藤（日本語2行程度）",
+      "dnaPromptEn": "Detailed English character appearance prompt: gender, age, realistic hairstyle, expressive eyes, everyday or authentic clothing matching ${selectedTheme}"
+    }
+  ]
+}`;
 
       let initialCandidates: TurnaroundCandidate[] = [];
 
@@ -247,10 +256,15 @@ ${customTastesInstruction}
           5
         );
         const text = res?.text || (typeof res === 'string' ? res : '');
-        const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-        const list = safeJsonParse<any[]>(cleaned, []);
+        const parsed = safeJsonParse<any>(text, null);
+        let list: any[] = [];
+        if (Array.isArray(parsed)) {
+          list = parsed;
+        } else if (parsed && Array.isArray(parsed.candidates)) {
+          list = parsed.candidates;
+        }
 
-        if (Array.isArray(list) && list.length >= 3) {
+        if (list.length >= 3) {
           initialCandidates = list.map((item, idx) => {
             const isUserPick = isCustomMode && idx < selectedCustomTastes.length;
             const tasteName = isUserPick ? selectedCustomTastes[idx] : (item.tasteName || `画風案 ${idx + 1}`);
@@ -260,8 +274,8 @@ ${customTastesInstruction}
               tasteName,
               tastePromptEn,
               name: item.name || `主人公 ${idx + 1}`,
-              concept: item.concept || `${selectedTheme}の世界を駆ける主人公`,
-              dnaPromptEn: item.dnaPromptEn || `A striking anime character matching ${selectedTheme}`,
+              concept: item.concept || `${selectedTheme}の世界を生きる主人公`,
+              dnaPromptEn: item.dnaPromptEn || `A striking authentic character matching ${selectedTheme}`,
               status: 'idle' as const,
               isUserSpecified: isUserPick,
             };
@@ -272,40 +286,149 @@ ${customTastesInstruction}
         onAddLog(`⚠️ AIテキスト考案が一時応答待ちのため、世界観「${selectedTheme}」に最適化した候補を動的構築して三面図作画を開始します`, 'warning');
       }
 
-      // 候補が空の場合（エラー時含む）は、ユーザー指定画風またはテーマに合わせた動的フォールバックを自動生成
+      // 候補が空の場合（エラー時含む）は、世界観テーマのジャンルに最適化した動的フォールバックを自動生成
       if (initialCandidates.length === 0) {
+        const themeLower = selectedTheme.toLowerCase();
+        const isSocialOrDaily = /介護|8050|年金|ブラック|社内|不倫|平成|昭和|日常|生活|孤独|社会|家族|就職/.test(selectedTheme);
+        const isEdoOrHistorical = /江戸|幕末|新選組|大名|侍|武士|吉原|長屋|明治|大正/.test(selectedTheme);
+
+        interface ArchetypeDef {
+          name: string;
+          concept: string;
+          dna: string;
+          tasteKey?: string;
+        }
+
+        let fallbackArchetypes: ArchetypeDef[] = [];
+
+        if (isSocialOrDaily) {
+          fallbackArchetypes = [
+            {
+              name: '孤軍奮闘する家族 (長男/当事者)',
+              concept: '日々の葛藤と親への想いを抱え、現実と静かに向き合い続ける実直な主人公',
+              dna: 'Japanese ordinary adult, tired yet gentle and determined eyes, simple modest casual clothes, realistic everyday life setting',
+              tasteKey: '白黒劇画・超絶インクマンガ (Seinen manga realist ink)'
+            },
+            {
+              name: '現場を支えるケアマネジャー',
+              concept: '制度の限界に悩みながらも、利用者の尊厳を守るため奔走する温かい主人公',
+              dna: 'Japanese care manager, kind empathetic expression, neat practical work clothes with cardigan, holding clipboard',
+              tasteKey: 'ノスタルジック水彩・淡彩画 (Nostalgic watercolor drama)'
+            },
+            {
+              name: '人生の哀愁を背負う老親',
+              concept: '衰えゆく体と子への負い目に揺れながら、過去の誇りを胸に生きる主人公',
+              dna: 'Elderly Japanese person, weathered gentle face with deep wrinkles, nostalgic demeanor, soft indoor attire',
+              tasteKey: '📜 レトロ淡彩アトリエ・極細線画 (Nostalgic Faded Pastel Whisper-Line)'
+            },
+            {
+              name: '街を駆ける福祉相談員',
+              concept: '孤立した家庭を見過ごせず、粘り強く対話を重ねて希望を紡ぐ主人公',
+              dna: 'Compassionate social worker, youthful focused gaze, durable practical outerwear, friendly approachable presence',
+              tasteKey: 'スタジオジブリ風・日常温もり手描き (Ghibli nostalgic everyday slice-of-life)'
+            },
+            {
+              name: '静かに見守る隣人・理解者',
+              concept: '言葉少なに温かい差し入れや声をかけ、孤立を防ぐ地域の光となる主人公',
+              dna: 'Friendly neighborhood resident, warm welcoming smile, cozy traditional home knitwear, calming aura',
+              tasteKey: '劇場版フラットセル・夜景 (Cinematic flat cell night mood)'
+            },
+          ];
+        } else if (isEdoOrHistorical) {
+          fallbackArchetypes = [
+            {
+              name: '人情深き町職人',
+              concept: '命を張った心意気と腕一本で仲間を支える江戸っ子気質の主人公',
+              dna: 'Edo period craftsman, spirited confident smile, authentic hanten coat and headband, sturdy physique',
+              tasteKey: '白黒劇画・超絶インクマンガ (Seinen manga realist ink)'
+            },
+            {
+              name: '鋭い眼光の岡っ引き',
+              concept: '事件の背後にある闇を暴くため十手を握る、信念と哀愁の主人公',
+              dna: 'Edo period detective okappiki, sharp observant eyes, traditional kimono and haori, holding jitte',
+              tasteKey: '📜 レトロ淡彩アトリエ・極細線画 (Nostalgic Faded Pastel Whisper-Line)'
+            },
+            {
+              name: '刀を捨てた風来浪人',
+              concept: '過去を隠し町人たちを陰から守る、飄々として情に厚い剣客',
+              dna: 'Wandering ronin samurai, relaxed gentle expression, worn traveling kimono, straw hat',
+              tasteKey: '浮世絵・木版画調 (Ukiyo-e woodblock print)'
+            },
+            {
+              name: '長屋を照らす看板娘',
+              concept: 'どんな困難にも負けず皆を元気づける、明るく聡明な主人公',
+              dna: 'Edo period merchant girl, cheerful radiant smile, elegant retro patterned kimono, apron',
+              tasteKey: 'ノスタルジック水彩・淡彩画 (Nostalgic watercolor drama)'
+            },
+            {
+              name: '夜を駆ける義賊・調査官',
+              concept: '弱者の涙をぬぐうため、夜の闇に紛れて悪事を暴く孤高の主人公',
+              dna: 'Stealthy investigator, dark covert ninja-style travel clothing, vigilant resolute eyes',
+              tasteKey: '劇場版フラットセル・夜景 (Cinematic flat cell night mood)'
+            },
+          ];
+        } else {
+          fallbackArchetypes = [
+            {
+              name: '熱き信念の探求者',
+              concept: '強い正義感と不屈の闘志で道を切り開く情熱的な主人公',
+              dna: 'Anime hero protagonist, fiery determined eyes, distinctive iconic adventurer outfit',
+              tasteKey: '王道少年漫画・ダイナミック劇画 (Classic Shonen battle ink)'
+            },
+            {
+              name: '冷静沈着な影の策士',
+              concept: '知略と観察眼で危機を打開する孤高の実力派主人公',
+              dna: 'Sharp intelligent anime strategist, calm penetrating gaze, sleek tailored attire',
+              tasteKey: '白黒劇画・超絶インクマンガ (Seinen manga realist ink)'
+            },
+            {
+              name: '運命を継ぐ癒やし手',
+              concept: '秘められた力を宿し、人々を慈しみ導く心優しき主人公',
+              dna: 'Gentle anime mystic, ethereal kind eyes, flowing ceremonial robes, warm presence',
+              tasteKey: '📜 レトロ淡彩アトリエ・極細線画 (Nostalgic Faded Pastel Whisper-Line)'
+            },
+            {
+              name: '歴戦の重厚な守護者',
+              concept: '己の掟に従い大切な者を守り抜く歴戦の主人公',
+              dna: 'Battle-hardened veteran, stalwart sturdy demeanor, rugged functional armor coat',
+              tasteKey: 'ダークファンタジー・重厚厚塗り (Dark fantasy heavy painterly)'
+            },
+            {
+              name: '機転のトリックスター',
+              concept: '圧倒的な機転とスピードで常識を覆す快活な主人公',
+              dna: 'Charismatic clever trickster, cheeky confident smirk, modern stylish agile outfit',
+              tasteKey: 'サイバー・テクニカル・ブループリント (Cyber blueprint style)'
+            },
+          ];
+        }
+
         const allTasteKeys = Object.keys(availableTastes);
         const shuffledTastes = [...allTasteKeys].sort(() => Math.random() - 0.5);
 
-        const fallbackArchetypes = [
-          { name: '不屈の切り込み役', concept: '強い正義感と不屈の闘志で道を切り開く情熱的な主人公' },
-          { name: '影の策士・調査官', concept: '冷静沈着に事件の真相を暴く孤高の主人公' },
-          { name: '神秘の継承者', concept: '秘められた力を宿し、人々を癒やし導く心優しき主人公' },
-          { name: '歴戦の重装求道者', concept: '己の掟に従い重い宿命と向き合う歴戦の主人公' },
-          { name: '新時代のトリックスター', concept: '圧倒的な機転とスピードで常識を覆す現代風主人公' },
-        ];
-
         initialCandidates = Array.from({ length: 5 }, (_, idx) => {
           const isUserPick = isCustomMode && idx < selectedCustomTastes.length;
+          const arch = fallbackArchetypes[idx];
           let tasteName = '';
           let tastePromptEn = '';
 
           if (isUserPick) {
             tasteName = selectedCustomTastes[idx];
             tastePromptEn = availableTastes[tasteName] || 'anime masterpiece';
+          } else if (arch.tasteKey && availableTastes[arch.tasteKey]) {
+            tasteName = arch.tasteKey;
+            tastePromptEn = availableTastes[tasteName];
           } else {
             tasteName = shuffledTastes[idx % shuffledTastes.length] || `画風案 ${idx + 1}`;
             tastePromptEn = availableTastes[tasteName] || 'anime masterpiece';
           }
 
-          const arch = fallbackArchetypes[idx];
           return {
             id: `cand_${idx + 1}`,
             tasteName,
             tastePromptEn,
             name: `${arch.name}`,
-            concept: `${selectedTheme}の世界で${arch.concept}`,
-            dnaPromptEn: `A striking anime protagonist matching ${selectedTheme}, expressive determined eyes, detailed attire matching ${tasteName}`,
+            concept: `${selectedTheme}の中で、${arch.concept}`,
+            dnaPromptEn: `${arch.dna}, matching world setting of ${selectedTheme}`,
             status: 'idle' as const,
             isUserSpecified: isUserPick,
           };
