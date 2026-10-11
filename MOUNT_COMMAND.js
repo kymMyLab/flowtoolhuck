@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@fc41643/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[画風の任意指定(1〜5個)＋AI補完・三面図自動作画・1〜50話コミック一括プロデュース]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@4453e3b/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[レトロ淡彩アトリエ画風・リス魔女追加・即時画面遷移＆固定フッターナビ]'); });
