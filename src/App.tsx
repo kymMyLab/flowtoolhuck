@@ -332,41 +332,7 @@ export default function App() {
           
           <div className="flex-1 overflow-y-auto p-8 bg-slate-100 dark-scrollbar relative">
         <div className="max-w-[1300px] mx-auto flex flex-col gap-12">
-          {/* 🎬 待機中誘導バナー（大前提確定後やスタンバイ状態で未作画カットがある場合） */}
-          {isWaitingForStart && (
-            <div 
-              onClick={startProduction}
-              className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 border-2 border-purple-400 rounded-2xl p-4.5 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in text-white cursor-pointer hover:border-pink-400 transition-all group"
-              title="クリック、または右上の【③ 作成開始】を押して本編作成をスタート"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-purple-500/20 border border-purple-400/50 flex items-center justify-center text-purple-300 shrink-0 group-hover:scale-105 transition-transform">
-                  <span className="material-symbols-outlined text-2xl text-pink-400 animate-pulse">pending_actions</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-pink-500 text-white animate-pulse shadow-xs">
-                      STANDBY / 待機中
-                    </span>
-                    <h2 className="text-white font-black text-sm tracking-tight">
-                      {activeSeriesManifest?.seriesTitle 
-                        ? `『${activeSeriesManifest.seriesTitle}』のスタンバイ完了！` 
-                        : 'プロットと絵コンテのスタンバイが完了しています'}
-                    </h2>
-                  </div>
-                  <p className="text-purple-200/90 text-xs mt-1">
-                    ここをクリック、または右上の光る【③ 作成開始】を押すと本編作画がスタートします。
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-pink-600/80 border border-pink-400 text-white text-xs font-bold group-hover:bg-pink-500 group-hover:scale-105 transition-all shadow-md">
-                  <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                  <span>クリックして作画スタート</span>
-                </div>
-              </div>
-            </div>
-          )}
+
 
           {episodes.map(ep => (
             <EpisodeSection 
