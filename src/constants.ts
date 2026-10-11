@@ -111,6 +111,9 @@ export const TASTES: Record<string, string> = {
   "🍸 ラグジュアリー・ソシャゲ美麗キービジュアル (High-End Gacha Splash Art)":
     "High-end Japanese anime key visual, refined mature young-adult anime aesthetic, gacha splash art style, elegant mature proportions, sleek jawline, alluring expressive almond-shaped eyes, sophisticated beauty, not childlike, not overly cartoonish, polished digital illustration with fine tinted lines, deep layered gradient shadows, fine fabric texture, shimmering highlights and jewelry, rich ambient lighting with warm amber glow, soft cinematic rim light on silhouette, high-fidelity luxury anime key frame finish",
 
+  "🍷 青年誌カバー・艶麗アイライン＆ソリッドセル (Modern Seinen Manga Cover Art)":
+    "Masterpiece anime illustration in modern seinen manga cover style, high-end anime aesthetic, mature and seductive charm, distinctly not childlike, refined adult manga aesthetic, prominent face with sharp delicate V-shaped chin and slender jawline, mesmerizing eyes with thick heavy dark upper eyeliner and dense eyelashes, sharp-edged two-tone cel shading with lineless internal shapes carved purely by contrasting color planes without internal lines, saturated warm amber fringe at shadow borders, dramatic intimate lighting, warm dim ambient bokeh, polished high-contrast modern comic cover illustration finish",
+
   "🧪⚡ ネオ・バーチャル・ポップ (Neo Virtual Pop Anime)":
     "High-energy anime music video (AMV) aesthetic, virtual pop star style, dynamic composition, ultra-fine delicate ink lines, fragile thin linework, no bold lines, expressive sparkling eyes, intricate character design with diverse hairstyles, iridescent surfaces, vibrant pastel and neon color palette, dramatic chromatic aberration, particle effects, lens flares, polished highly detailed 2D anime finish",
 

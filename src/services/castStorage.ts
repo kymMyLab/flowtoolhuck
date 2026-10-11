@@ -1,7 +1,7 @@
 import { MangaProject, CastCharacter, ExpressionType, CastExpression } from '../types';
 
-const STORAGE_KEY = 'flowtool_manga_project_v2';
-const OLD_STORAGE_KEY = 'flowtool_manga_project_v1';
+const STORAGE_KEY = 'flowtool_manga_project_v3';
+const OLD_STORAGE_KEYS = ['flowtool_manga_project_v2', 'flowtool_manga_project_v1'];
 
 export const EXPRESSION_METAS: Record<ExpressionType, { label: string; promptModifierEn: string; icon: string }> = {
   neutral: { 
@@ -100,6 +100,12 @@ export const DEFAULT_MANGA_PROJECT: MangaProject = {
       'protagonist',
       'A glamorous slender kemonomimi woman with cat ears and flowing blonde hair, elegant 6-head-tall mature proportions, sleek jawline, alluring expressive almond-shaped eyes with vivid crimson irises, wearing an exquisite modern cocktail dress with fine lace fabric texture, shimmering jewelry, sophisticated beauty'
     ),
+    createDefaultCastCharacter(
+      'char_jazz_noir',
+      'バーの小悪魔・ノワール (黒髪猫耳)',
+      'protagonist',
+      'A gorgeous alluring catgirl with short messy jet-black hair and fluffy cat ears, sharp delicate V-shaped chin and slender jawline, mesmerizing almond-shaped eyes with thick dark upper eyeliner and glowing deep ruby-red irises, seductive teasing half-smile, wearing a chic off-shoulder black dress and ornate gold rings, mature seductive charm'
+    ),
   ],
 };
 
@@ -109,8 +115,11 @@ export const DEFAULT_MANGA_PROJECT: MangaProject = {
 export function loadMangaProject(): MangaProject {
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw && OLD_STORAGE_KEY) {
-      raw = localStorage.getItem(OLD_STORAGE_KEY);
+    if (!raw) {
+      for (const oldKey of OLD_STORAGE_KEYS) {
+        raw = localStorage.getItem(oldKey);
+        if (raw) break;
+      }
     }
 
     if (!raw) {
