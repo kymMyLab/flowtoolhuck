@@ -377,7 +377,9 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
 
   // 既存エピソードがある場合は上書きせず、末尾に追記（継続追加）する
   const existingEpisodes = episodesRef.current || [];
-  const existingMaxId = existingEpisodes.length > 0 ? Math.max(...existingEpisodes.map(e => e.id)) : 0;
+  // 画像が生成済みのエピソードのみを完了済みとみなし、未生成の枠があればそこから開始する
+  const completedEpisodes = existingEpisodes.filter(e => e.cuts.some(c => !!(c.imageBase64 || c.imageMediaId)));
+  const existingMaxId = completedEpisodes.length > 0 ? Math.max(...completedEpisodes.map(e => e.id)) : 0;
   const startEpIndex = existingMaxId + 1;
   const endEpIndex = existingMaxId + totalEpCount;
   const isContinuing = existingMaxId > 0;
@@ -720,8 +722,13 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     if (manifest.completedEpisodeIds.includes(epId)) continue;
     if (isAbortedRef.current) break;
 
+    const isMv = settings.isMvMode || settings.productionMode === 'mv';
+    const isManga = settings.isMangaMode || settings.productionMode === 'manga';
+    const effectiveMode = settings.productionMode || (isMv ? 'mv' : isManga ? 'manga' : 'episodes');
+    const unitLabel = isMv ? '曲' : '話';
+
     try {
-      addLog(`📖 【第${epId}話】「${currentPlan.titleJp}」の脚本・時代考証をAIに執筆依頼中...`, 'process');
+      addLog(`📖 【第${epId}${unitLabel}】「${currentPlan.titleJp}」の脚本・演出構成をAIに執筆依頼中...`, 'process');
       updateEpisode(epId, { isGenerating: true });
 
       const sharedScript = await generateSafeEpisodeScript({
@@ -730,17 +737,17 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         country: settings.country,
         theme: settings.theme,
         era: settings.era,
-        isMangaMode: settings.isMangaMode,
-        isMvMode: settings.isMvMode,
+        isMangaMode: isManga,
+        isMvMode: isMv,
         taste: settings.taste,
-        productionMode: 'episodes',
+        productionMode: effectiveMode,
         isMultiPanel: settings.isMultiPanel,
         superBackoff: settings.superBackoff,
         abortCheck: () => isAbortedRef.current,
         addLog
       });
 
-      addLog(`✨ 【第${epId}話】脚本＆時代考証が完成！（考証: ${sharedScript.eraAnalysisJp?.slice(0, 24) || '完了'}...）`, 'success');
+      addLog(`✨ 【第${epId}${unitLabel}】脚本＆演出構成が完成！（考証: ${sharedScript.eraAnalysisJp?.slice(0, 24) || '完了'}...）`, 'success');
 
       const seriesCutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12);
       const episodeCuts: Cut[] = Array.from({ length: seriesCutsCount }, (_, j) => {
@@ -749,14 +756,14 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         const plot = cutData.basicPlot || '';
         const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
         cut.panelLayout = cutData.panelLayout || (settings.isMultiPanel ? 'dynamic-multi' : 'single');
-        const preset = getStoryboardPreset(j + 1, false, settings.isMangaMode);
+        const preset = getStoryboardPreset(j + 1, isMv, isManga);
         cut.shotScale = preset.scale;
         cut.cinematicAngle = preset.angle;
-        const cwDef = resolveRecommendedCameraWorkAndKenBurns(j + 1, 'episodes', false, settings.isMangaMode);
+        const cwDef = resolveRecommendedCameraWorkAndKenBurns(j + 1, effectiveMode, isMv, isManga);
         cut.cameraWork = cwDef.id;
         cut.cameraMotion = cwDef.motionPrompt;
         cut.kenBurnsPreset = cwDef.recommendedKenBurns;
-        const dramaStaging = resolveRecommendedTelopStaging(j + 1, false, false, undefined, 'episodes');
+        const dramaStaging = resolveRecommendedTelopStaging(j + 1, isMv, false, undefined, effectiveMode);
         Object.assign(cut.telop, dramaStaging);
         cut.telop.highlights = extractHighlights(narration, cutData.highlights || sharedScript.highlightWords);
 
@@ -791,13 +798,13 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         highlightWords: sharedScript.highlightWords || [], cuts: episodeCuts,
         characterTurnaroundMediaId: turnaroundMediaId,
         characterTurnaroundBase64: turnaroundBase64,
-        taste: settings.taste, era: settings.era, theme: settings.theme, productionMode: 'episodes'
+        taste: settings.taste, era: settings.era, theme: settings.theme, productionMode: effectiveMode, isMvMode: isMv
       });
 
-      addLog(`🎨 【第${epId}話】先行プレビュー ${settings.previewCutCount} カットの描画タスクを開始...（並列度: ${settings.parallelCount}）`, 'process');
+      addLog(`🎨 【第${epId}${unitLabel}】先行プレビュー ${settings.previewCutCount} カットの描画タスクを開始...（並列度: ${settings.parallelCount}）`, 'process');
       const currentEp = episodesRef.current.find(e => e.id === epId)!;
       await runTasks(buildCutTasks(currentEp, episodeCuts.slice(0, settings.previewCutCount)));
-      addLog(`🎉 【第${epId}話】「${currentPlan.titleJp}」の先行プレビュー制作が完了しました！`, 'success');
+      addLog(`🎉 【第${epId}${unitLabel}】「${currentPlan.titleJp}」の先行プレビュー制作が完了しました！`, 'success');
 
       // ★インフォグラフィック扉絵（9:16特大ポスター）を全自動生成！
       await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epId) || currentEp);

@@ -698,6 +698,14 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         return;
       }
 
+      // ★ 最重要: ①大前提プロデュース設計図（seriesManifestRef.current）が存在する場合
+      // どのモード（mv、manga、episodes等）であっても、ユーザーが①で決定したプロット・配役・話数に沿って
+      // 画面上に展開されているエピソード（第1話/第1曲から順に）を確実に作画する！
+      if (seriesManifestRef.current && (seriesManifestRef.current.episodesPlan?.length || 0) > 0) {
+        await runSeriesProduction(pipelineContext);
+        return;
+      }
+
       const curMode = settings.productionMode || (settings.isMvMode ? 'mv' : 'episodes');
       if (curMode in SHORTS_CONFIG_MAP) {
         await runShortsBatchProduction(pipelineContext, curMode);
