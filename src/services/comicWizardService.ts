@@ -213,13 +213,13 @@ ${modeSpecificCharDirective}
           name: '街を駆ける福祉相談員',
           concept: '孤立した家庭を見過ごせず、粘り強く対話を重ねて希望を紡ぐ主人公',
           dna: 'Compassionate social worker, youthful focused gaze, durable practical outerwear, friendly approachable presence',
-          tasteKey: 'スタジオジブリ風・日常温もり手描き (Ghibli nostalgic everyday slice-of-life)'
+          tasteKey: '📜 レトロ淡彩アトリエ・極細線画 (Nostalgic Faded Pastel Whisper-Line)'
         },
         {
           name: '静かに見守る隣人・理解者',
           concept: '言葉少なに温かい差し入れや声をかけ、孤立を防ぐ地域の光となる主人公',
           dna: 'Kind neighborhood resident, warm welcoming smile, ordinary home clothes, humble gentle atmosphere',
-          tasteKey: '新海誠風・美麗光彩アニメ (Makoto Shinkai luminous anime)'
+          tasteKey: '✨ エモーショナル・シネマティック・スカイ (Emotional Cinematic Sky Anime)'
         }
       ];
     } else if (isEdoOrHistorical) {
@@ -228,19 +228,19 @@ ${modeSpecificCharDirective}
           name: '腕利きの若き職人・町火消し',
           concept: '情に厚く曲がったことが大嫌い、町の危機に真っ先に飛び込む江戸っ子',
           dna: 'Spirited Edo period Japanese artisan, sharp lively eyes, traditional hanten coat with rolled sleeves',
-          tasteKey: '浮世絵・木版画 (Authentic Ukiyo-e woodblock print)'
+          tasteKey: '🌊 葛飾北斎・超写実肉筆浮世絵 (Hyper-Realistic Hokusai Nikuhitsu Ukiyo-e)'
         },
         {
           name: '訳ありの浪人・用心棒',
           concept: '過去を語らず町外れに佇むが、弱者を救うため静かに太刀を抜く剣客',
           dna: 'Wandering masterless samurai, calm piercing gaze, weathered dark kimono, tied hair',
-          tasteKey: '白黒劇画・超絶インクマンガ (Seinen manga realist ink)'
+          tasteKey: '🖋 白黒劇画・超絶インクマンガ (Intense Monochrome Manga)'
         },
         {
           name: '下町の看板娘・小町',
           concept: '持ち前の明るさと機転で長屋の揉め事を次々に解決する町の太陽',
           dna: 'Charming Edo town maiden, bright lively smile, colorful cotton kimono with apron',
-          tasteKey: 'ノスタルジック水彩・淡彩画 (Nostalgic watercolor drama)'
+          tasteKey: '🌸 日常系萌えアニメ・ハッチングチーク (Moe Daily Hatching Blush Anime)'
         },
         {
           name: '観察眼鋭き町医者・蘭方医',
@@ -252,7 +252,7 @@ ${modeSpecificCharDirective}
           name: '闇夜を駆ける義賊・情報屋',
           concept: '昼はしがない瓦版売り、夜は悪徳商人の不正を暴く裏の英雄',
           dna: 'Clever street informer, quick witted smirk, agile dark haori coat and headband',
-          tasteKey: '新海誠風・美麗光彩アニメ (Makoto Shinkai luminous anime)'
+          tasteKey: '✨ エモーショナル・シネマティック・スカイ (Emotional Cinematic Sky Anime)'
         }
       ];
     } else {
@@ -261,13 +261,13 @@ ${modeSpecificCharDirective}
           name: '希望を胸に歩む若き主人公',
           concept: '壁にぶつかりながらも、自らの信念を信じて一歩ずつ前進する主人公',
           dna: 'Expressive youthful character, passionate hopeful eyes, distinctive personal costume matching the setting',
-          tasteKey: '新海誠風・美麗光彩アニメ (Makoto Shinkai luminous anime)'
+          tasteKey: '✨ エモーショナル・シネマティック・スカイ (Emotional Cinematic Sky Anime)'
         },
         {
           name: '経験豊かな導き手・守護者',
           concept: '豊富な経験と包容力で周囲を支え、困難の打開策を見出す頼もしい存在',
           dna: 'Reliable experienced figure, calm steady eyes, well-worn dependable practical attire',
-          tasteKey: 'スタジオジブリ風・日常温もり手描き (Ghibli nostalgic everyday slice-of-life)'
+          tasteKey: '📜 レトロ淡彩アトリエ・極細線画 (Nostalgic Faded Pastel Whisper-Line)'
         },
         {
           name: '孤高の信念を貫く探求者',

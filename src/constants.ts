@@ -170,9 +170,6 @@ export const TASTES: Record<string, string> = {
   "🍷 青年誌カバー・艶麗アイライン＆ソリッドセル (Modern Seinen Manga Cover Art)":
     "Masterpiece anime illustration in modern seinen manga cover style, high-end anime aesthetic, refined mature and charismatic charm, elegant modern graphic novel aesthetic, prominent face with sharp delicate V-shaped chin and slender jawline, mesmerizing eyes with thick heavy dark upper eyeliner and dense eyelashes, sharp-edged two-tone cel shading with lineless internal shapes carved purely by contrasting color planes without internal lines, saturated warm amber fringe at shadow borders, dramatic cinematic moody lighting, warm dim ambient bokeh, polished high-contrast modern comic cover illustration finish",
 
-  "🧪⚡ ネオ・バーチャル・ポップ (Neo Virtual Pop Anime)":
-    "High-energy anime music video (AMV) aesthetic, virtual pop star style, dynamic composition, ultra-fine delicate ink lines, fragile thin linework, no bold lines, expressive sparkling eyes, intricate character design with diverse hairstyles, iridescent surfaces, vibrant pastel and neon color palette, dramatic chromatic aberration, particle effects, lens flares, polished highly detailed 2D anime finish",
-
   "🎨 レトロモダン・ネオ・ジャポニスム (Retro-Modern Neo-Japonisme)":
     "Sophisticated Japanese retro-modern illustration, neo-japonisme aesthetic, ultra-clean ultra-fine delicate ink line art, fragile thin linework, no bold lines, highly stylized character design, dramatic dynamic composition with heavy focus on depth of field, rich high-contrast color palette (deep cyan, warm golds, muted reds), intricate gold filigree patterns, subtle matte and glossy textures blended, explosive glitter and particle effects, dramatic volumetric lighting, cinematic lens flares, highly detailed vintage poster art finish, optimized for catchy visual impact",
 
@@ -199,9 +196,6 @@ export const TASTES: Record<string, string> = {
 
   "👑 アール・ヌーヴォー・宮廷エレガンス (Art Nouveau Imperial Elegance)":
     "Masterpiece Alphonse Mucha inspired Art Nouveau anime illustration, elegant imperial court aesthetics, ultra-fine delicate golden ink contours, fragile thin linework, no bold lines, expressive gorgeous character design, cascading flowing hair, intricate gold filigree and botanical lace motifs gently blended into the background, translucent silk drapery, luminous porcelain skin, soft diffused museum lighting, vibrant amber and emerald palette, seamless full-bleed composition, edge-to-edge artwork, absolutely NO frame, NO borders, NO arch window",
-
-  "🎴 ネオ・エンブレム・カードアート (Modern High-End Anime Card Art)":
-    "High-end Japanese anime character card art aesthetic, ultra-fine crisp ink line art, fragile thin linework, no bold lines, sharp cel shading with rich dimensional gradient shadows, highly intricate costume and texture details, dynamic low-angle composition with subtle forced foreshortening, dramatic cinematic rim lighting, luminous floating light particles, full-bleed edge-to-edge seamless artwork, polished 2D key visual finish",
 
   "🌸 日常系萌えアニメ・ハッチングチーク (Moe Daily Hatching Blush Anime)":
     "Authentic Japanese TV anime aesthetic, high-end slice-of-life anime style, ultra-fine delicate ink lines, simple expressive anime eyes, vertical blush lines on cheeks, hatching blush, separated subtle blush, soft natural skin tones, charming character design, gentle warm school life atmosphere, vibrant clean anime color palette, polished 2D digital cel animation finish",

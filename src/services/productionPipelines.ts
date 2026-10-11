@@ -273,7 +273,7 @@ export const SHORTS_CONFIG_MAP: Record<string, { label: string; unit: string; ic
 
 /**
  * ── 1. 画風比較（Style Matrix）制作パイプライン ──
- * 同じ物語の脚本で、最大N種類の画風（Anime, Cyberpunk, Ghibli等）を同時に比較生成
+ * 同じ物語の脚本で、最大N種類の画風を同時に比較生成
  */
 export async function runStyleMatrixProduction(ctx: ProductionPipelineContext): Promise<void> {
   const { settings, addLog, isAbortedRef, episodesRef, setEpisodes, updateEpisode, runTasks, buildCutTasks } = ctx;

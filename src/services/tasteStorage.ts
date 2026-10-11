@@ -1,30 +1,53 @@
 import { TASTES } from '../constants';
 
-const STORAGE_KEY = 'flowtool_custom_tastes_v11';
-const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v10', 'flowtool_custom_tastes_v9', 'flowtool_custom_tastes_v8', 'flowtool_custom_tastes_v7', 'flowtool_custom_tastes_v6', 'flowtool_custom_tastes_v5', 'flowtool_custom_tastes_v4', 'flowtool_custom_tastes_v3', 'flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
+const STORAGE_KEY = 'flowtool_custom_tastes_v12';
+const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v11', 'flowtool_custom_tastes_v10', 'flowtool_custom_tastes_v9', 'flowtool_custom_tastes_v8', 'flowtool_custom_tastes_v7', 'flowtool_custom_tastes_v6', 'flowtool_custom_tastes_v5', 'flowtool_custom_tastes_v4', 'flowtool_custom_tastes_v3', 'flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
+
+const DEPRECATED_KEYS = [
+  '🧪⚡ ネオ・バーチャル・ポップ (Neo Virtual Pop Anime)',
+  '🎴 ネオ・エンブレム・カードアート (Modern High-End Anime Card Art)',
+  '新海誠風・美麗光彩アニメ (Makoto Shinkai luminous anime)',
+  'スタジオジブリ風・日常温もり手描き (Ghibli nostalgic everyday slice-of-life)'
+];
 
 export type CustomTasteMap = Record<string, string>;
 
 export const DEFAULT_TASTES: CustomTasteMap = { ...TASTES };
+
+function cleanTastes(rawMap: any): CustomTasteMap {
+  const result: CustomTasteMap = { ...DEFAULT_TASTES };
+  if (typeof rawMap === 'object' && rawMap !== null) {
+    for (const [k, v] of Object.entries(rawMap)) {
+      if (!DEPRECATED_KEYS.includes(k) && typeof v === 'string') {
+        result[k] = v;
+      }
+    }
+  }
+  // デフォルトプリセットは最新版で上書き
+  for (const [k, v] of Object.entries(DEFAULT_TASTES)) {
+    result[k] = v;
+  }
+  for (const depKey of DEPRECATED_KEYS) {
+    delete result[depKey];
+  }
+  return result;
+}
 
 /**
  * localStorage からカスタム画風一覧を取得（無ければデフォルト値を返却）
  */
 export function loadCustomTastes(): CustomTasteMap {
   try {
-    // 旧キャッシュが存在すれば新デフォルトとマージしてv11へ移行
+    // 旧キャッシュが存在すれば新デフォルトとマージしてv12へ移行
     for (const oldKey of OLD_STORAGE_KEYS) {
       const oldRaw = localStorage.getItem(oldKey);
       if (oldRaw) {
         try {
           const oldParsed = JSON.parse(oldRaw);
-          if (typeof oldParsed === 'object' && oldParsed !== null) {
-            // プリセットキーは新しい安全定義で上書きし、ユーザー独自追加キーのみ保持
-            const merged = { ...oldParsed, ...DEFAULT_TASTES };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged, null, 2));
-            localStorage.removeItem(oldKey);
-            return merged;
-          }
+          const cleaned = cleanTastes(oldParsed);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned, null, 2));
+          localStorage.removeItem(oldKey);
+          return cleaned;
         } catch (_) {}
         localStorage.removeItem(oldKey);
       }
@@ -36,12 +59,8 @@ export function loadCustomTastes(): CustomTasteMap {
       return { ...DEFAULT_TASTES };
     }
     const parsed = JSON.parse(raw);
-    if (typeof parsed === 'object' && parsed !== null && Object.keys(parsed || {}).length > 0) {
-      // プリセットキーは最新の安全定義で上書き
-      const merged = { ...parsed, ...DEFAULT_TASTES };
-      return merged;
-    }
-    return { ...DEFAULT_TASTES };
+    const cleaned = cleanTastes(parsed);
+    return cleaned;
   } catch (e) {
     console.warn('Failed to load custom tastes from localStorage, fallback to defaults', e);
     return { ...DEFAULT_TASTES };
