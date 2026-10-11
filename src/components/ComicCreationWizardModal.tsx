@@ -1600,35 +1600,30 @@ ${subRoleGuidance}
 
               {/* Series Plot Container */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-3 shadow-2xs">
-                <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-2 min-h-[36px]">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-indigo-500 text-sm">history_edu</span>
                     <h4 className="text-xs font-bold text-slate-800">
-                      シリーズ起承転結プロット {episodesPlan.length > 0 ? `(全 ${episodeCount} 話構成 / ${displayedEpisodes.length}話表示)` : `(全 ${episodeCount} 話設定中)`}
+                      シリーズ構成プロット {episodesPlan.length > 0 ? `(全 ${episodeCount} ${currentModeConfig.unit}構成 / ${displayedEpisodes.length}${currentModeConfig.unit}表示)` : `(全 ${episodeCount} ${currentModeConfig.unit}設定中)`}
                     </h4>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleGenerateStoryPlan(currentCandidate, episodeCount)}
-                    disabled={isGeneratingPlan}
-                    style={{
-                      backgroundColor: episodesPlan.length === 0 ? '#4f46e5' : '#eef2ff',
-                      color: episodesPlan.length === 0 ? '#ffffff' : '#4338ca',
-                      borderColor: episodesPlan.length === 0 ? '#4338ca' : '#c7d2fe',
-                    }}
-                    className="px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-md hover:brightness-110 active:scale-95 cursor-pointer border select-none"
-                  >
-                    <span className={`material-symbols-outlined text-[16px] ${isGeneratingPlan ? 'animate-spin' : ''}`}>
-                      {isGeneratingPlan ? 'autorenew' : (episodesPlan.length === 0 ? 'auto_awesome' : 'refresh')}
-                    </span>
-                    <span>
-                      {isGeneratingPlan 
-                        ? '全話プロット構築中...' 
-                        : (episodesPlan.length === 0 
-                            ? `✨ 全${episodeCount}話のプロットをAI生成する` 
-                            : `🔄 全${episodeCount}話でプロット再生成`)}
-                    </span>
-                  </button>
+
+                  {/* プロット生成後のみ右上に「再生成」ボタンを1個だけ表示（未生成時は中央の特大ボタン1個に統一） */}
+                  {episodesPlan.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateStoryPlan(currentCandidate, episodeCount)}
+                      disabled={isGeneratingPlan}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 cursor-pointer"
+                    >
+                      <span className={`material-symbols-outlined text-[15px] ${isGeneratingPlan ? 'animate-spin' : ''}`}>
+                        {isGeneratingPlan ? 'autorenew' : 'refresh'}
+                      </span>
+                      <span>
+                        {isGeneratingPlan ? '再構築中...' : `🔄 全${episodeCount}${currentModeConfig.unit}でプロット再生成`}
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 {/* 話数変更時のリマインダー */}
@@ -1636,14 +1631,14 @@ ${subRoleGuidance}
                   <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 flex items-center justify-between text-xs text-amber-800">
                     <span className="flex items-center gap-1.5 font-bold">
                       <span className="material-symbols-outlined text-amber-600 text-sm">warning</span>
-                      話数が【全 {episodeCount} 話】に変更されました。最新プロットを再作成するには右上の「プロット再生成」を押してください。
+                      設定が【全 {episodeCount} {currentModeConfig.unit}】に変更されました。最新プロットを反映するには右上の「再生成」を押してください。
                     </span>
                   </div>
                 )}
 
                 {seriesTitle && (
                   <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">確定連載タイトル</span>
+                    <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">確定タイトル</span>
                     <h3 className="text-sm font-black text-slate-900">『{seriesTitle}』</h3>
                     {overallSynopsis && (
                       <p className="text-xs text-slate-600 leading-relaxed mt-0.5">{overallSynopsis}</p>
@@ -1658,7 +1653,7 @@ ${subRoleGuidance}
                     <div className="flex flex-col gap-1">
                       <p className="text-sm font-bold text-slate-800">プロットはまだ生成されていません</p>
                       <p className="text-xs text-slate-500 max-w-md">
-                        上の設定で<strong>連載話数（全{episodeCount}話）</strong>と<strong>作画カット数（{cutsPerEpisode}Cut）</strong>を自由に決めた後、下のボタンを押してください。
+                        上の設定で<strong>ボリューム（全{episodeCount}{currentModeConfig.unit}）</strong>と<strong>作画カット数（{cutsPerEpisode}Cut）</strong>を決めた後、下のボタンを押してください。
                       </p>
                     </div>
                     <button
@@ -1677,7 +1672,7 @@ ${subRoleGuidance}
                       <span>
                         {isGeneratingPlan 
                           ? 'AIが全話プロットを構築中...' 
-                          : `✨ 全${episodeCount}話の起承転結プロットをAI生成する`}
+                          : `✨ 全${episodeCount}${currentModeConfig.unit}のプロットをAI生成する`}
                       </span>
                     </button>
                   </div>
