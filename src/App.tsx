@@ -165,7 +165,7 @@ export default function App() {
     totalEpisodes: number;
     cutsPerEpisode: number;
   }) => {
-    addLog(`🚀 コミック一冊分プロデュース開始: 『${payload.manifest.seriesTitle}』(全${payload.totalEpisodes}話 × ${payload.cutsPerEpisode}Cut)`, 'success');
+    addLog(`🎯 大前提プロデュース設定を確定: 『${payload.manifest.seriesTitle}』(全${payload.totalEpisodes}話 × ${payload.cutsPerEpisode}Cut)`, 'success');
 
     // 1. キャスト台帳を更新
     const allCharacters = [payload.protagonist, ...payload.subCharacters];
@@ -190,16 +190,14 @@ export default function App() {
       episodeCount: payload.totalEpisodes,
     }));
 
-    // 3. シリーズ設計図を復元注入
+    // 3. シリーズ設計図を復元注入（主人公三面図をマスター参照画像としてセット）
     await resumeSeries(payload.manifest, (assetId) => {
       setSettings(prev => ({ ...prev, selectedAssetId: assetId }));
     });
 
-    // 4. 連載制作を自動スタート
-    setTimeout(() => {
-      startProduction();
-    }, 500);
-  }, [mangaProject, handleUpdateMangaProject, resumeSeries, startProduction, addLog]);
+    // 4. 自動スタートはせず画面を閉じ、サイドバーでアスペクト比等の確認を促す
+    addLog(`✨ 大前提（三面図・配役・全話プロット）が確定しました！サイドバーで【作画アスペクト比】や【動画化割合】を確認後、ヘッダーの【③ 作成開始】を押してください。`, 'info');
+  }, [mangaProject, handleUpdateMangaProject, resumeSeries, addLog]);
 
   const handleDownloadZip = useCallback(async (ep: Episode) => {
     const filename = ep.packageZipFilename || `Episode_${ep.id}_Package.zip`;

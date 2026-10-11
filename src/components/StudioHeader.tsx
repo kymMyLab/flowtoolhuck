@@ -120,24 +120,36 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           type="button"
           disabled={isProducing}
           onClick={onOpenComicWizard}
-          className="h-10 px-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 hover:brightness-110 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0 whitespace-nowrap"
-          title="主人公三面図・配役・全話プロットを事前決定し、作品の方向性を確立（大前提設定）"
+          className={`h-10 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
+            activeSeriesManifest 
+              ? 'bg-gradient-to-r from-purple-700 via-indigo-600 to-emerald-600 text-white ring-2 ring-purple-400/50'
+              : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 hover:brightness-110 text-white'
+          }`}
+          title={
+            activeSeriesManifest
+              ? `大前提プロデュース設定済: 『${activeSeriesManifest.seriesTitle || '連載'}』(クリックで再編集)`
+              : '主人公三面図・配役・全話プロットを事前決定し、作品の方向性を確立（大前提設定）'
+          }
         >
-          <span className="material-symbols-outlined text-[18px]">auto_stories</span>
+          <span className="material-symbols-outlined text-[18px]">
+            {activeSeriesManifest ? 'verified' : 'auto_stories'}
+          </span>
           <span>① プロデュース</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-black">
-            大前提
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+            activeSeriesManifest ? 'bg-emerald-400 text-emerald-950' : 'bg-white/20 text-white'
+          }`}>
+            {activeSeriesManifest ? '大前提: 確定済 ✓' : '大前提'}
           </span>
         </button>
       )}
 
       <div className="w-px h-7 bg-slate-200 shrink-0"></div>
 
-      {/* ② 次にお任せエリア (モード・テーマ・画風を今まで通り自由に選べる) */}
+      {/* ② 次にざっくり設定エリア (モード・テーマ・画風を今まで通り自由に選べる) */}
       <div className="flex items-center gap-2 p-1 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 rounded-xl border border-emerald-300/90 shadow-2xs shrink-0">
         <div className="flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-100/90 px-2 py-1 rounded-lg border border-emerald-300/80 whitespace-nowrap shadow-2xs">
-          <span className="material-symbols-outlined text-sm text-emerald-600">casino</span>
-          <span>② お任せ設定</span>
+          <span className="material-symbols-outlined text-sm text-emerald-600">tune</span>
+          <span>② ざっくり設定</span>
         </div>
 
         {/* 制作モード（ドラマ連番など） */}

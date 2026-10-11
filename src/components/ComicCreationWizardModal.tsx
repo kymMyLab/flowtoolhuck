@@ -1579,27 +1579,34 @@ ${customTastesInstruction}
             )}
 
             {step === 3 && (
-              <button
-                type="button"
-                onClick={handleLaunch}
-                disabled={isGeneratingPlan || episodesPlan.length === 0}
-                style={{
-                  color: isGeneratingPlan || episodesPlan.length === 0 ? '#94a3b8' : '#ffffff'
-                }}
-                className={`px-7 py-3 rounded-xl text-xs font-black flex items-center gap-2 transition-all select-none ${
-                  isGeneratingPlan || episodesPlan.length === 0
-                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
-                    : 'bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-lg hover:shadow-xl cursor-pointer transform hover:scale-102'
-                }`}
-                title={episodesPlan.length === 0 ? '先にプロットをAI生成してください' : '連載をスタート'}
-              >
-                <span className="material-symbols-outlined text-lg">rocket_launch</span>
-                <span>
-                  {episodesPlan.length === 0
-                    ? `⚠️ 先にプロットを生成してください（${cutsPerEpisode}Cut × 全${episodeCount}話）`
-                    : `🚀 この設定（大前提）を適用して制作スタート！（${cutsPerEpisode}Cut × 全${episodeCount}話）`}
-                </span>
-              </button>
+              <div className="flex flex-col items-end gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleLaunch}
+                  disabled={isGeneratingPlan || episodesPlan.length === 0}
+                  style={{
+                    color: isGeneratingPlan || episodesPlan.length === 0 ? '#94a3b8' : '#ffffff'
+                  }}
+                  className={`px-7 py-3 rounded-xl text-xs font-black flex items-center gap-2 transition-all select-none ${
+                    isGeneratingPlan || episodesPlan.length === 0
+                      ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                      : 'bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-lg hover:shadow-xl cursor-pointer transform hover:scale-102'
+                  }`}
+                  title={episodesPlan.length === 0 ? '先にプロットをAI生成してください' : '大前提プロデュース設定を確定して画面を閉じます'}
+                >
+                  <span className="material-symbols-outlined text-lg">check_circle</span>
+                  <span>
+                    {episodesPlan.length === 0
+                      ? `⚠️ 先にプロットを生成してください（${cutsPerEpisode}Cut × 全${episodeCount}話）`
+                      : `✅ この設定を大前提として確定する（全${episodeCount}話 × ${cutsPerEpisode}Cut）`}
+                  </span>
+                </button>
+                {episodesPlan.length > 0 && (
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    ※ 確定するとモーダルが閉じます。サイドバーでアスペクト比や動画化を確認後、【③ 作成開始】を押してください。
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
