@@ -165,14 +165,14 @@ export async function renderFullEpisodeMovie(
         globalTime += 1 / fps;
       }
     }
+  } finally {
+    canvasSource.close();
+    await output.finalize();
+
+    ctx.clearRect(0, 0, width, height);
+    outputCanvas.width = 0;
+    outputCanvas.height = 0;
   }
-
-  canvasSource.close();
-  await output.finalize();
-
-  ctx.clearRect(0, 0, width, height);
-  outputCanvas.width = 0;
-  outputCanvas.height = 0;
 
   return new Blob([output.target.buffer!], { type: 'video/mp4' });
 }

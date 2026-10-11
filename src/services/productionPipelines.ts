@@ -77,7 +77,16 @@ export function createPipelineCut(
 /**
  * 1話完了時のクリーンアップ処理（メモリリーク対策用）
  */
-function cleanupEpisodeMemory() {
+function cleanupEpisodeMemory(ep?: Episode, updateEpisode?: (id: number, updates: Partial<Episode>) => void) {
+  if (ep && updateEpisode) {
+    const cleanedCuts = ep.cuts.map(c => ({
+      ...c,
+      imageBase64: undefined,
+      endFrameImageBase64: undefined,
+      videoBase64: undefined
+    }));
+    updateEpisode(ep.id, { cuts: cleanedCuts });
+  }
   if (typeof window !== 'undefined' && (window as any).gc) {
     try { (window as any).gc(); } catch (e) {}
   }
@@ -565,7 +574,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       }
     }
     await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
-    cleanupEpisodeMemory();
+    cleanupEpisodeMemory(freshEp, updateEpisode);
   }
 
   if (!isAbortedRef.current) {
@@ -888,7 +897,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         }
       }
       await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
-      cleanupEpisodeMemory();
+      cleanupEpisodeMemory(freshEp, updateEpisode);
     } catch (epErr: any) {
       addLog(`⚠️ 第 ${epId} 話の生成中にエラーが発生しました。スキップして次へ進みます: ${formatErrorMessage(epErr)}`, 'warning');
       updateEpisode(epId, { isGenerating: false, error: '生成中断' });
