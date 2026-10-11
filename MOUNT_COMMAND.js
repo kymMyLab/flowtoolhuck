@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@6c6ea70/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[斜めスラッシュ・L字・インセット・パノラマ・縦横ランダム変形コマ割り対応]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@099603d/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[作成開始ボタン一本化＆UIスッキリ統合]'); });
