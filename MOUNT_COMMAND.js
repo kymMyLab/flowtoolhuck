@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@0b69461/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[プロットボタン単一化・重複解消]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@7bc92f7/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[待機中の③光るボタン＆待機誘導バナー追加]'); });
