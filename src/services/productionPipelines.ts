@@ -10,6 +10,7 @@ import {
   resolveImageModel
 } from '../constants';
 import { getStoryboardPreset } from './promptEngine';
+import { loadCustomTastes } from './tasteStorage';
 import { createDefaultCut, isCutSelectedForVideo, safeJsonParse, callWithRetry, formatErrorMessage } from './utils';
 import { saveStory } from './db';
 import { downloadZip, renderCoverBase64 } from './exportService';
@@ -277,7 +278,8 @@ export const SHORTS_CONFIG_MAP: Record<string, { label: string; unit: string; ic
 export async function runStyleMatrixProduction(ctx: ProductionPipelineContext): Promise<void> {
   const { settings, addLog, isAbortedRef, episodesRef, setEpisodes, updateEpisode, runTasks, buildCutTasks } = ctx;
 
-  const allTasteKeys = Object.keys(TASTES);
+  const customTastes = loadCustomTastes();
+  const allTasteKeys = Object.keys({ ...TASTES, ...customTastes });
   const targetTastes = allTasteKeys.slice(0, settings.episodeCount);
   addLog(`🎨 【画風比較モード】同じ物語で ${targetTastes.length} 種類の画風を同時生成・比較します！`, 'process');
 

@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@dbdfa73/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[待機バナー完全撤廃・単一操作版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@d029582/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[buildCompactScriptPrompt参照エラー完全解消版]'); });

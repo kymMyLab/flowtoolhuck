@@ -4,8 +4,10 @@ import { GeneratorSettings, ReferenceAsset, ProductionMode } from '../types';
 import { 
   IMAGE_MODELS, 
   VIDEO_RATIO_OPTIONS,
-  PRODUCTION_MODES
+  PRODUCTION_MODES,
+  TASTES
 } from '../constants';
+import { loadCustomTastes } from '../services/tasteStorage';
 
 import { ReferenceVault } from './ReferenceVault';
 import { getAllReferenceAssets } from '../services/db';
@@ -150,7 +152,16 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                   value={settings.episodeCount} 
                   options={
                     settings.productionMode === 'style-matrix' 
-                      ? [3, 5, 8, 10] 
+                      ? (() => {
+                          const totalTastesCount = Object.keys({ ...TASTES, ...loadCustomTastes() }).length;
+                          const base = [3, 5, 10, 20];
+                          const list = base.filter(n => n < totalTastesCount);
+                          const res = [...list, totalTastesCount];
+                          if (!res.includes(settings.episodeCount)) {
+                            return [...res, settings.episodeCount].sort((a, b) => a - b);
+                          }
+                          return res;
+                        })()
                       : (() => {
                           const base = [1, 2, 4, 10, 20, 50];
                           if (!base.includes(settings.episodeCount)) {
@@ -159,7 +170,13 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                           return base;
                         })()
                   } 
-                  formatLabel={v => settings.productionMode === 'style-matrix' && v === 10 ? '10種 (全)' : `${v}${settings.productionMode === 'mv' ? '曲' : (settings.productionMode === 'style-matrix' ? '種' : (settings.productionMode === 'episodes' ? '話' : '本'))}`}
+                  formatLabel={v => {
+                    if (settings.productionMode === 'style-matrix') {
+                      const totalTastesCount = Object.keys({ ...TASTES, ...loadCustomTastes() }).length;
+                      return v >= totalTastesCount ? `${v}種 (全)` : `${v}種`;
+                    }
+                    return `${v}${settings.productionMode === 'mv' ? '曲' : (settings.productionMode === 'episodes' ? '話' : '本')}`;
+                  }}
                   onChange={v => setSettings(s => ({ ...s, episodeCount: v }))} 
                 />
               </div>
