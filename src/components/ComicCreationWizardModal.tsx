@@ -1080,12 +1080,17 @@ ${customTastesInstruction}
                     type="button"
                     onClick={handleGenerate5Candidates}
                     disabled={isBrainstormingCandidates || activeGeneratingIndex !== null}
-                    className="w-full py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 disabled:opacity-50 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                    style={{ color: isBrainstormingCandidates || activeGeneratingIndex !== null ? '#475569' : '#ffffff' }}
+                    className={`w-full py-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all select-none ${
+                      isBrainstormingCandidates || activeGeneratingIndex !== null
+                        ? 'bg-slate-200 text-slate-600 border border-slate-300 shadow-none cursor-wait'
+                        : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:brightness-110 active:brightness-95 text-white shadow-md hover:shadow-lg cursor-pointer'
+                    }`}
                   >
                     <span className={`material-symbols-outlined text-lg ${isBrainstormingCandidates || activeGeneratingIndex !== null ? 'animate-spin' : ''}`}>
                       {isBrainstormingCandidates || activeGeneratingIndex !== null ? 'autorenew' : 'palette'}
                     </span>
-                    <span>
+                    <span className="font-extrabold tracking-wide">
                       {isBrainstormingCandidates 
                         ? '最適な画風＆主人公設定をAI考案中...' 
                         : activeGeneratingIndex !== null 
@@ -1292,7 +1297,12 @@ ${customTastesInstruction}
                   type="button"
                   onClick={() => handleGenerateAllFaces()}
                   disabled={isGeneratingFaces}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  style={{ color: isGeneratingFaces ? '#94a3b8' : '#ffffff' }}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all select-none ${
+                    isGeneratingFaces
+                      ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                      : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 active:brightness-95 text-white shadow-sm hover:shadow-md cursor-pointer'
+                  }`}
                 >
                   <span className={`material-symbols-outlined text-sm ${isGeneratingFaces ? 'animate-spin' : ''}`}>
                     {isGeneratingFaces ? 'autorenew' : 'auto_awesome'}
@@ -1635,7 +1645,14 @@ ${customTastesInstruction}
                 type="button"
                 onClick={() => handleProceedToStep2()}
                 disabled={!currentCandidate || !currentCandidate.turnaroundBase64}
-                className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:from-emerald-700 hover:to-purple-700 disabled:opacity-40 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-md transition-all transform hover:scale-102 cursor-pointer"
+                style={{
+                  color: !currentCandidate || !currentCandidate.turnaroundBase64 ? '#94a3b8' : '#ffffff'
+                }}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all select-none ${
+                  !currentCandidate || !currentCandidate.turnaroundBase64
+                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                    : 'bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-md hover:shadow-lg cursor-pointer transform hover:scale-102'
+                }`}
               >
                 <span>この主人公で決定し、起承転結の顔（喜怒哀楽）へ</span>
                 <span className="material-symbols-outlined text-base">arrow_forward</span>
@@ -1647,7 +1664,14 @@ ${customTastesInstruction}
                 type="button"
                 onClick={handleProceedToStep3}
                 disabled={isGeneratingFaces}
-                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+                style={{
+                  color: isGeneratingFaces ? '#94a3b8' : '#ffffff'
+                }}
+                className={`px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all select-none ${
+                  isGeneratingFaces
+                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-sm hover:shadow-md cursor-pointer'
+                }`}
               >
                 <span>次へ：お友達・サブキャラ配役</span>
                 <span className="material-symbols-outlined text-base">arrow_forward</span>
@@ -1659,7 +1683,14 @@ ${customTastesInstruction}
                 type="button"
                 onClick={handleProceedToStep4}
                 disabled={isGeneratingSubs}
-                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+                style={{
+                  color: isGeneratingSubs ? '#94a3b8' : '#ffffff'
+                }}
+                className={`px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all select-none ${
+                  isGeneratingSubs
+                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-sm hover:shadow-md cursor-pointer'
+                }`}
               >
                 <span>次へ：全話プロット構築＆連載設定</span>
                 <span className="material-symbols-outlined text-base">arrow_forward</span>
@@ -1671,7 +1702,14 @@ ${customTastesInstruction}
                 type="button"
                 onClick={handleLaunch}
                 disabled={isGeneratingPlan}
-                className="px-7 py-3 bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:from-emerald-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-lg transition-all transform hover:scale-102 cursor-pointer"
+                style={{
+                  color: isGeneratingPlan ? '#94a3b8' : '#ffffff'
+                }}
+                className={`px-7 py-3 rounded-xl text-xs font-black flex items-center gap-2 transition-all select-none ${
+                  isGeneratingPlan
+                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                    : 'bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-lg hover:shadow-xl cursor-pointer transform hover:scale-102'
+                }`}
               >
                 <span className="material-symbols-outlined text-lg">rocket_launch</span>
                 <span>🚀 コミック一冊分の自動制作をスタート！（30Cut × 全{episodeCount}話）</span>
