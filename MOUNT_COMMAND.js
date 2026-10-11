@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@fa23548/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[ジャンル連動型キャラ考案＆JSONパース完全修正＆起承転結表情対応]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@eae36f5/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[ボタンホバー＆非活性時白飛び完全修正済み]'); });
