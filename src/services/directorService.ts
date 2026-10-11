@@ -1062,6 +1062,15 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   );
 
   let scriptRes: any;
+  const scriptStartTime = Date.now();
+  let scriptHeartbeat: any = null;
+  if (addLog) {
+    scriptHeartbeat = setInterval(() => {
+      const elapsed = Math.round((Date.now() - scriptStartTime) / 1000);
+      addLog(`⏳ 【第${epId}話】AI思考＆執筆中...（${elapsed}秒経過: 場面展開・カット割りを生成中）`, 'process');
+    }, 5000);
+  }
+
   try {
     scriptRes = await callWithRetry<any>(
       () => Flow.generate.text(scriptPrompt),
@@ -1078,11 +1087,19 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
         abortCheck
       }
     );
+    if (addLog) {
+      const elapsed = ((Date.now() - scriptStartTime) / 1000).toFixed(1);
+      addLog(`📥 【第${epId}話】AI脚本応答を受信（応答時間: ${elapsed}秒 / 演出解析中...）`, 'process');
+    }
   } catch (err: any) {
     const errMsg = err?.message || String(err);
     console.warn(`[Script Fallback for Episode ${epId}] API混雑のため安全構成フォールバックを適用:`, errMsg);
     if (addLog) addLog(`✨ 第${epId}話 サーバー混雑のため、世界観に最適化された安全構成脚本で即座に制作を開始します！`, 'process');
+  } finally {
+    if (scriptHeartbeat) clearInterval(scriptHeartbeat);
+  }
 
+  if (!scriptRes) {
     return {
       titleJp: currentPlan.titleJp,
       titleEn: currentPlan.titleEn,

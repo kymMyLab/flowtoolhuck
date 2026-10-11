@@ -1,4 +1,4 @@
-import { runStyleMatrixProduction, runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP } from './productionPipelines';
+import { runStyleMatrixProduction, runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensureInfographicCover } from './productionPipelines';
 import { useRef, useCallback } from 'react';
 import { Flow } from 'flow-sdk';
 import { Episode, Cut, GeneratorSettings, VideoModelType, GenerationTask, SeriesManifest } from '../types';
@@ -111,6 +111,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       };
     });
     setEpisodes(resumedEpisodes);
+    episodesRef.current = resumedEpisodes;
 
     if (manifest.referenceAsset && manifest.referenceAsset.base64) {
       try {
@@ -258,8 +259,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       const task = tasks[i];
       const existingCut = episodesRef.current.find(e => e.id === task.epId)?.cuts.find(c => c.id === task.cutId);
       
-      updateCut(task.epId, task.cutId, { isDirecting: true });
-
       // オンデマンド演出（directShot）で直前カットとの対比・構図・詳細プロンプトを即座に生成
       const directResult = await directShot(
         task,
@@ -275,7 +274,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       const antiPreviousNegative = directResult.negativePrompt || '';
 
       updateCut(task.epId, task.cutId, { 
-        isDirecting: false,
         promptEn,
         shotScale,
         cinematicAngle,
@@ -514,75 +512,24 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     if (isAbortedRef.current) return;
     const ep = episodesRef.current.find(e => e.id === epId);
     if (!ep) return;
-
-    updateEpisode(epId, { isGeneratingCover: true });
-    const modelDef = resolveImageModel(settings.imageModel);
-    addLog(`🎨 Ep.${epId}: 「${cleanEpisodeTitle(ep.titleJp)}」世界観適応インフォグラフィック扉絵（9:16特大ポスター）をAI描画中...`, 'process');
-
-    try {
-      const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
-        titleJp: cleanEpisodeTitle(ep.titleJp),
-        titleEn: cleanEpisodeTitleEn(ep.titleEn),
-        coverCatchphraseJp: cleanEpisodeTitle(ep.coverCatchphraseJp),
-        coverCatchphraseEn: cleanEpisodeTitleEn(ep.coverCatchphraseEn),
-        theme: ep.theme || settings.theme,
-        era: ep.era || settings.era,
-        taste: ep.taste || settings.taste,
-        country: settings.country,
-        productionMode: ep.productionMode || settings.productionMode,
-        characterDna: ep.characterDna,
-        styleDna: activeReferenceRef.current?.styleDna,
-        forbiddenAnachronisms: ep.forbiddenAnachronisms,
-        authenticAttireEn: ep.authenticAttireEn
-      });
-
-      // 参照画像があれば渡す（Cut 1マスターアンカー、または三面図、または手動リファレンス）
-      const refMediaIds: string[] = [];
-      if (ep.masterAnchorMediaId) {
-        refMediaIds.push(ep.masterAnchorMediaId);
-      } else if (ep.characterTurnaroundMediaId) {
-        refMediaIds.push(ep.characterTurnaroundMediaId);
-      } else if (activeReferenceRef.current?.mediaId) {
-        refMediaIds.push(activeReferenceRef.current.mediaId);
-      }
-
-      let safePrompt = coverPromptObj.promptEn && /[a-zA-Z0-9]/.test(coverPromptObj.promptEn) ? coverPromptObj.promptEn : 'Cinematic poster, high quality';
-      const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
-      const safeAspectRatio = (DEFAULT_ASPECT_RATIO === '16:9' || DEFAULT_ASPECT_RATIO === '9:16') ? DEFAULT_ASPECT_RATIO : '16:9';
-
-      const res = await callWithRetry<any>(
-        () => Flow.generate.image({
-          prompt: safePrompt,
-          negativePrompt: coverPromptObj.negativePromptEn,
-          modelDisplayName: safeModelName,
-          aspectRatio: safeAspectRatio as any,
-          referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
-        }),
-        (attempt, max, delay, err) => {
-          addLog(`⚠️ Ep.${epId}: 扉絵生成リトライ (${attempt}/${max})... (理由: ${formatErrorMessage(err)})`, 'warning');
-        },
-        {
-          maxRetries: 4,
-          timeoutMs: 90000,
-          timeoutLabel: '扉絵生成',
-          superBackoff: settings.superBackoff,
-          abortCheck: () => isAbortedRef.current
-        }
-      );
-
-      updateEpisode(epId, {
-        coverMediaId: res.mediaId,
-        coverBase64: res.base64,
-        coverPromptEn: coverPromptObj.promptEn,
-        isGeneratingCover: false
-      });
-
-      addLog(`🖼️ Ep.${epId}: インフォグラフィック特大扉絵（9:16特大ポスター）の描画が完了しました！`, 'success');
-    } catch (err: any) {
-      const errorMsg = formatErrorMessage(err);
-      updateEpisode(epId, { isGeneratingCover: false });
-      addLog(`❌ Ep.${epId} 扉絵生成エラー: ${errorMsg}`, 'error');
-    }
+    const pipelineContext = {
+      settings,
+      addLog,
+      logsRef,
+      isAbortedRef,
+      episodesRef,
+      setEpisodes,
+      updateEpisode,
+      runTasks,
+      buildCutTasks,
+      generateVideo,
+      handleBulkVideo,
+      seriesManifestRef,
+      setActiveSeriesManifest,
+      activeReferenceRef,
+      currentAssetRef
+    };
+    await ensureInfographicCover(pipelineContext, ep, true);
   }, [settings, addLog, updateEpisode]);
 
   const handleBulkVideo = async (epId: number) => {

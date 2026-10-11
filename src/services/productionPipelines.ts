@@ -28,6 +28,52 @@ import {
 import { LogEntry } from '../components/StudioLogs';
 
 /**
+ * 脚本データおよび演出レジストリからカットメタデータを単一生成（重複排除・単一責務）
+ */
+export function createPipelineCut(
+  cutIndex: number,
+  cutData: any,
+  sharedScript: any,
+  settings: GeneratorSettings,
+  effectiveMode: string,
+  isMv: boolean,
+  isManga: boolean
+): Cut {
+  const narration = cutData.narrationJp || '';
+  const plot = cutData.basicPlot || '';
+  const cut = createDefaultCut(cutIndex + 1, narration, plot, isCutSelectedForVideo(cutIndex, settings.videoRatio));
+
+  // 多彩なマンガコマ割りローテーション（均等スライス完全排除）
+  const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
+  const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
+    ? cutData.panelLayout
+    : (settings.isMultiPanel ? dynamicLayoutCycle[cutIndex % dynamicLayoutCycle.length] : 'single');
+  cut.panelLayout = chosenLayout;
+
+  const preset = getStoryboardPreset(cutIndex + 1, isMv, isManga);
+  cut.shotScale = preset.scale;
+  cut.cinematicAngle = preset.angle;
+
+  const cwDef = resolveRecommendedCameraWorkAndKenBurns(cutIndex + 1, effectiveMode, isMv, isManga);
+  cut.cameraWork = cwDef.id;
+  cut.cameraMotion = cwDef.motionPrompt;
+  cut.kenBurnsPreset = cwDef.recommendedKenBurns;
+
+  const dramaStaging = resolveRecommendedTelopStaging(cutIndex + 1, isMv, false, undefined, effectiveMode);
+  Object.assign(cut.telop, dramaStaging);
+  cut.telop.highlights = extractHighlights(narration, cutData.highlights || sharedScript.highlightWords);
+
+  // 新仕様: 人物なし物体カット、9分割注視点構図、Veo補間用モーション
+  cut.isObjectOnly = settings.enableObjectCut !== false ? (cutData.isObjectOnly || false) : false;
+  cut.focalPoint = cutData.focalPoint;
+  cut.compositionPrompt = cutData.compositionPrompt;
+  cut.veoMotionPrompt = cutData.veoMotionPrompt;
+  cut.endFramePromptEn = cutData.endFramePlot;
+
+  return cut;
+}
+
+/**
  * 1話完了時のクリーンアップ処理（メモリリーク対策用）
  */
 function cleanupEpisodeMemory() {
@@ -97,16 +143,17 @@ async function ensureCharacterTurnaround(
  * 世界観適応インフォグラフィック扉絵（9:16特大ポスター）を自動生成・登録
  * （Google AI Ultra Direct により、Cut 1マスターアンカーを参照しつつ上部25%看板＋下部被りゼロ配置の本格アートを描画）
  */
-async function ensureInfographicCover(
+export async function ensureInfographicCover(
   ctx: ProductionPipelineContext,
-  ep: Episode
+  ep: Episode,
+  force = false
 ): Promise<{ mediaId?: string; base64?: string; promptEn?: string }> {
-  const { settings, addLog, isAbortedRef, activeReferenceRef, updateEpisode, episodesRef, setEpisodes } = ctx;
+  const { settings, addLog, isAbortedRef, activeReferenceRef, updateEpisode, episodesRef } = ctx;
 
   if (isAbortedRef.current) return {};
 
   const freshEp = episodesRef.current.find(e => e.id === ep.id) || ep;
-  if (freshEp.coverMediaId || freshEp.coverBase64) {
+  if (!force && (freshEp.coverMediaId || freshEp.coverBase64)) {
     return { mediaId: freshEp.coverMediaId, base64: freshEp.coverBase64, promptEn: freshEp.coverPromptEn };
   }
 
@@ -294,26 +341,7 @@ export async function runStyleMatrixProduction(ctx: ProductionPipelineContext): 
 
     baseCutsData = Array.from({ length: CUTS_PER_EPISODE }, (_, j) => {
       const cutData = sharedScript.cuts[j] || {} as any;
-      const narration = cutData.narrationJp || '';
-      const plot = cutData.basicPlot || '';
-      const cutHighlights = cutData.highlights || sharedScript.highlightWords || [];
-      const preset = getStoryboardPreset(j + 1, false, false);
-      const staging = resolveRecommendedTelopStaging(j + 1, false, false, undefined, 'style-matrix');
-      
-      const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
-      cut.shotScale = preset.scale;
-      const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
-      const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
-        ? cutData.panelLayout
-        : (settings.isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single');
-      cut.panelLayout = chosenLayout;
-      const recCw = resolveRecommendedCameraWorkAndKenBurns(j + 1, 'style-matrix', false, false);
-      cut.cameraWork = recCw.id;
-      cut.cameraMotion = recCw.motionPrompt;
-      cut.kenBurnsPreset = recCw.recommendedKenBurns;
-      Object.assign(cut.telop, staging);
-      cut.telop.highlights = extractHighlights(narration, cutHighlights);
-      return cut;
+      return createPipelineCut(j, cutData, sharedScript, settings, 'style-matrix', false, false);
     });
   }
 
@@ -442,34 +470,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     const cutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12, curMode === 'manga' ? 24 : 12);
     const baseCutsData = Array.from({ length: cutsCount }, (_, j) => {
       const cutData = parsed.cuts[j] || {} as any;
-      const narration = cutData.narrationJp || '';
-      const plot = cutData.basicPlot || '';
-      const cutHighlights = cutData.highlights || parsed.highlightWords || [];
-      const preset = getStoryboardPreset(j + 1, curMode === 'mv', curMode === 'manga' || settings.isMangaMode);
-      const staging = resolveRecommendedTelopStaging(j + 1, curMode === 'mv', false, undefined, curMode);
-      
-      const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
-      cut.shotScale = preset.scale;
-      const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
-      const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
-        ? cutData.panelLayout
-        : (settings.isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single');
-      cut.panelLayout = chosenLayout;
-      const recCw = resolveRecommendedCameraWorkAndKenBurns(j + 1, curMode, curMode === 'mv', curMode === 'manga' || settings.isMangaMode);
-      cut.cameraWork = recCw.id;
-      cut.cameraMotion = recCw.motionPrompt;
-      cut.kenBurnsPreset = recCw.recommendedKenBurns;
-      Object.assign(cut.telop, staging);
-      cut.telop.highlights = extractHighlights(narration, cutHighlights);
-
-      // 新仕様: 人物なし物体カット、9分割注視点構図、Veo補間用モーション
-      cut.isObjectOnly = settings.enableObjectCut !== false ? (cutData.isObjectOnly || false) : false;
-      cut.focalPoint = cutData.focalPoint;
-      cut.compositionPrompt = cutData.compositionPrompt;
-      cut.veoMotionPrompt = cutData.veoMotionPrompt;
-      cut.endFramePromptEn = cutData.endFramePlot;
-
-      return cut;
+      return createPipelineCut(j, cutData, parsed, settings, curMode, curMode === 'mv', curMode === 'manga' || settings.isMangaMode);
     });
 
     // 各話固有のお題（サブタイトル）を整形（削除による欠番事故を防ぐため、Vol.Xや第X話などの連番は一切入れない）
@@ -592,19 +593,35 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
 
   if (!seriesManifestRef.current) {
     const isHist = checkIsHistorical(settings.era, settings.theme);
-    const genreLabel = settings.isMvMode ? '音楽MVシリーズ' : settings.isMangaMode ? '漫画シリーズ' : isHist ? '大河ドラマ' : '連続ドラマ';
-    addLog(`📜 全${settings.episodeCount}話の${genreLabel}グランドデザインをAIに策定依頼中... [世界観・テーマ: ${settings.theme}]`, 'process');
-    const designPrompt = buildGrandDesignPrompt(settings.episodeCount, settings.country, settings.theme, settings.era, settings.isMangaMode, settings.isMvMode);
-    const designRes = await callWithRetry<any>(
-      () => Flow.generate.text(designPrompt),
-      (attempt, max, delay) => addLog(`Retrying Grand Design (attempt ${attempt}/${max}) after ${delay} ms...`, 'warning'),
-      5
-    );
+    const isMv = settings.isMvMode || settings.productionMode === 'mv';
+    const isManga = settings.isMangaMode || settings.productionMode === 'manga';
+    const genreLabel = isMv ? '音楽MVシリーズ' : isManga ? '漫画シリーズ' : isHist ? '大河ドラマ' : '連続ドラマ';
+    const totalEps = settings.totalEpisodes || settings.episodeCount || 1;
+    addLog(`📜 全${totalEps}話の${genreLabel}グランドデザインをAIに策定依頼中... [世界観・テーマ: ${settings.theme}]`, 'process');
+    const designPrompt = buildGrandDesignPrompt(totalEps, settings.country, settings.theme, settings.era, isManga, isMv);
+    const designStartTime = Date.now();
+    let designHeartbeat: any = setInterval(() => {
+      const elapsed = Math.round((Date.now() - designStartTime) / 1000);
+      addLog(`⏳ シリーズ設計図をAI思考中...（${elapsed}秒経過: 全${totalEps}話の伏線・プロットを構成中）`, 'process');
+    }, 5000);
+
+    let designRes: any;
+    try {
+      designRes = await callWithRetry<any>(
+        () => Flow.generate.text(designPrompt),
+        (attempt, max, delay) => addLog(`Retrying Grand Design (attempt ${attempt}/${max}) after ${delay} ms...`, 'warning'),
+        5
+      );
+      const elapsed = ((Date.now() - designStartTime) / 1000).toFixed(1);
+      addLog(`📥 シリーズ設計図のAI応答を受信（応答時間: ${elapsed}秒）`, 'process');
+    } finally {
+      clearInterval(designHeartbeat);
+    }
     const design = safeJsonParse<any>(designRes.text, { seriesTitle: 'Untitled Series', overallSynopsis: '', episodesPlan: [] });
 
     seriesManifestRef.current = {
       seriesTitle: design.seriesTitle,
-      totalEpisodes: settings.episodeCount,
+      totalEpisodes: totalEps,
       currentEpisodeId: 1,
       completedEpisodeIds: [],
       overallSynopsis: design.overallSynopsis,
@@ -764,44 +781,27 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       const seriesCutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12);
       const episodeCuts: Cut[] = Array.from({ length: seriesCutsCount }, (_, j) => {
         const cutData = sharedScript.cuts[j] || {} as any;
-        const narration = cutData.narrationJp || '';
-        const plot = cutData.basicPlot || '';
-        const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
-        const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
-          ? cutData.panelLayout
-          : (settings.isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single');
-        cut.panelLayout = chosenLayout;
-        const preset = getStoryboardPreset(j + 1, isMv, isManga);
-        cut.shotScale = preset.scale;
-        cut.cinematicAngle = preset.angle;
-        const cwDef = resolveRecommendedCameraWorkAndKenBurns(j + 1, effectiveMode, isMv, isManga);
-        cut.cameraWork = cwDef.id;
-        cut.cameraMotion = cwDef.motionPrompt;
-        cut.kenBurnsPreset = cwDef.recommendedKenBurns;
-        const dramaStaging = resolveRecommendedTelopStaging(j + 1, isMv, false, undefined, effectiveMode);
-        Object.assign(cut.telop, dramaStaging);
-        cut.telop.highlights = extractHighlights(narration, cutData.highlights || sharedScript.highlightWords);
-
-        // 新仕様: 人物なし物体カット、9分割注視点構図、Veo補間用モーション
-        cut.isObjectOnly = settings.enableObjectCut !== false ? (cutData.isObjectOnly || false) : false;
-        cut.focalPoint = cutData.focalPoint;
-        cut.compositionPrompt = cutData.compositionPrompt;
-        cut.veoMotionPrompt = cutData.veoMotionPrompt;
-        cut.endFramePromptEn = cutData.endFramePlot;
-
-        return cut;
+        return createPipelineCut(j, cutData, sharedScript, settings, effectiveMode, isMv, isManga);
       });
 
       const currentEpObj = episodesRef.current.find(e => e.id === epId);
       if (currentEpObj) {
         currentEpObj.characterDna = sharedScript.characterDna;
       }
-      let turnaroundMediaId = currentEpObj?.characterTurnaroundMediaId;
-      let turnaroundBase64 = currentEpObj?.characterTurnaroundBase64;
+      let turnaroundMediaId = currentEpObj?.characterTurnaroundMediaId || manifest.referenceAsset?.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId;
+      let turnaroundBase64 = currentEpObj?.characterTurnaroundBase64 || manifest.referenceAsset?.characterTurnaroundBase64;
       if (!turnaroundMediaId && currentEpObj) {
         const turnaround = await ensureCharacterTurnaround(ctx, currentEpObj);
         turnaroundMediaId = turnaround.mediaId;
         turnaroundBase64 = turnaround.base64;
+        if (turnaround.mediaId && manifest.referenceAsset) {
+          manifest.referenceAsset.characterTurnaroundMediaId = turnaround.mediaId;
+          manifest.referenceAsset.characterTurnaroundBase64 = turnaround.base64;
+        }
+      }
+      if (turnaroundMediaId && currentEpObj) {
+        currentEpObj.characterTurnaroundMediaId = turnaroundMediaId;
+        currentEpObj.characterTurnaroundBase64 = turnaroundBase64;
       }
 
       const rawTitleJp = (currentPlan.titleJp && !currentPlan.titleJp.match(/^(第\d+話|第\d+曲|Vol\.\d+|Episode\s*\d+|Untitled)/i))
