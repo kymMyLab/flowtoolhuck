@@ -564,6 +564,31 @@ export const triggerBrowserDownload = (blobUrl: string, filename: string): boole
 };
 
 /**
+ * 循環参照やDOMノード（HTMLSpanElement等）を確実に排除する安全なJSON文字列化関数
+ */
+export const safeJsonStringify = (obj: any, indent = 2): string => {
+  const seen = new WeakSet();
+  try {
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        // DOM ノード (nodeType を持つ要素) や React Fiber ノードは除外
+        if (typeof (value as any).nodeType === 'number' || (value as any).$$typeof) {
+          return undefined;
+        }
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+      }
+      return value;
+    }, indent);
+  } catch (err) {
+    console.warn('safeJsonStringify fallback:', err);
+    return '{}';
+  }
+};
+
+/**
  * パッケージのダウンロード
  */
 export const downloadZip = async (
@@ -695,16 +720,25 @@ export const downloadZip = async (
         };
       })
     };
-    folder.file('script.json', JSON.stringify(scriptJson, null, 2));
+
+    try {
+      folder.file('script.json', safeJsonStringify(scriptJson, 2));
+    } catch (e: any) {
+      folder.file('script.json', '{}');
+    }
 
     if (manifest) {
-      folder.file('series_manifest.json', JSON.stringify(manifest, null, 2));
+      try {
+        folder.file('series_manifest.json', safeJsonStringify(manifest, 2));
+      } catch (e: any) {
+        console.warn('series_manifest.json serialization failed, skipping manifest file', e);
+      }
     }
 
     // ログの完全収集: 引数 logs が渡されていない場合でも、グローバルログストアから取得
     const globalLogs = (typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || [];
     const effectiveLogs: LogEntry[] = (logs && logs.length > 0) ? logs : globalLogs;
-    const logLines = effectiveLogs.map(l => l.message);
+    const logLines = effectiveLogs.map(l => (typeof l.message === 'string' ? l.message : String(l.message || '')));
     logLines.push(`[${new Date().toLocaleTimeString('ja-JP')}] 📦 パッケージング完了`);
     folder.file('production_logs.txt', logLines.join('\n'));
 
@@ -737,7 +771,7 @@ export const downloadZip = async (
  */
 export const downloadManifestFile = async (manifest: SeriesManifest, addLog: (msg: string, type?: any) => void) => {
   try {
-    const jsonStr = JSON.stringify(manifest, null, 2);
+    const jsonStr = safeJsonStringify(manifest, 2);
     const bytes = new TextEncoder().encode(jsonStr);
     let binary = '';
     for (let i = 0; i < bytes.byteLength; i++) {
