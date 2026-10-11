@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@e1d479d/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[表情画像上書き完全防止＆スロット表示最適化]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@62d41cd/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[画像拡大Lightbox・物語企画AI10選・三面図16:9・短編マンガ24Cut]'); });
