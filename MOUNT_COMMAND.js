@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@9a3faa7/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[新海/ジブリ名完全排除＆画風スマート集約版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@3d0ad25/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[自動ZIPダウンロード循環参照完全解消版]'); });
