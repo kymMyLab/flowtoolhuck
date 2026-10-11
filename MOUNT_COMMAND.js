@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@62d41cd/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[画像拡大Lightbox・物語企画AI10選・三面図16:9・短編マンガ24Cut]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@959f13c/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[コミック一冊分(30Cut×20話/50話)・世界観選定・三面図・起承転結・サブキャラ自動配役]'); });
