@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@3d0ad25/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[自動ZIPダウンロード循環参照完全解消版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@5ad679c/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[Julesエクスポート堅牢化＆循環参照完全解消版]'); });
