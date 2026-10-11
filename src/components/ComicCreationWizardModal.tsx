@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { THEMES, resolveImageModel } from '../constants';
 import { CastCharacter, SeriesEpisodePlan, SeriesManifest } from '../types';
 import { createDefaultCastCharacter } from '../services/castStorage';
 import { Flow } from 'flow-sdk';
 import { callWithRetry, safeJsonParse, formatErrorMessage } from '../services/utils';
 import { buildGrandDesignPrompt } from '../services/directorService';
+import { loadCustomTastes, CustomTasteMap } from '../services/tasteStorage';
 
 export interface TurnaroundCandidate {
   id: string;
@@ -50,7 +51,13 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
   // Step 1: 世界観テーマ
   const [selectedTheme, setSelectedTheme] = useState<string>(currentTheme || THEMES[0]);
 
-  // Step 1: Geminiが自動選定した「画風5選 × 主人公キャラクター」候補リスト
+  // Step 1: 画風選定モード ('ai_auto': 完全おまかせ, 'custom_pick': ユーザーが任意数指定)
+  const [tasteMode, setTasteMode] = useState<'ai_auto' | 'custom_pick'>('ai_auto');
+  const [availableTastes, setAvailableTastes] = useState<CustomTasteMap>({});
+  const [selectedCustomTastes, setSelectedCustomTastes] = useState<string[]>([]);
+  const [tasteSearchQuery, setTasteSearchQuery] = useState<string>('');
+
+  // Step 1: 5つの画風＆主人公三面図候補
   const [candidates, setCandidates] = useState<TurnaroundCandidate[]>([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [isBrainstormingCandidates, setIsBrainstormingCandidates] = useState(false);
@@ -73,6 +80,22 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
 
   const isGeneratingRef = useRef(false);
 
+  // カスタム画風のロード
+  useEffect(() => {
+    if (isOpen) {
+      const loaded = loadCustomTastes();
+      setAvailableTastes(loaded);
+    }
+  }, [isOpen]);
+
+  // 検索フィルタリングされた画風一覧
+  const filteredTasteKeys = useMemo(() => {
+    const keys = Object.keys(availableTastes);
+    if (!tasteSearchQuery.trim()) return keys;
+    const q = tasteSearchQuery.toLowerCase();
+    return keys.filter(k => k.toLowerCase().includes(q) || (availableTastes[k] || '').toLowerCase().includes(q));
+  }, [availableTastes, tasteSearchQuery]);
+
   if (!isOpen) return null;
 
   // テーマをランダムに選定
@@ -82,24 +105,60 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
     onAddLog(`🎲 世界観テーマをランダム選定しました: 「${randomItem}」`, 'info');
   };
 
+  // 画風の選択・解除トグル (最大5個まで)
+  const handleToggleTaste = (tasteKey: string) => {
+    if (selectedCustomTastes.includes(tasteKey)) {
+      setSelectedCustomTastes(prev => prev.filter(k => k !== tasteKey));
+    } else {
+      if (selectedCustomTastes.length >= 5) {
+        onAddLog('⚠️ 画風は最大5個まで選択できます。不要なものを解除してから追加してください。', 'warning');
+        return;
+      }
+      setSelectedCustomTastes(prev => [...prev, tasteKey]);
+    }
+  };
+
   // 選択中の候補を取得
   const currentCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0];
 
   // =========================================================================
-  // Step 1: 世界観から最適な画風5選をGeminiが選定し、5体の三面図を一括作画
+  // Step 1: 世界観から最適な画風5選（または指定画風＋AI補完）をAI考案し三面図を一括作画
   // =========================================================================
   const handleGenerate5Candidates = async () => {
     if (isBrainstormingCandidates || isGeneratingRef.current) return;
     setIsBrainstormingCandidates(true);
     isGeneratingRef.current = true;
-    onAddLog(`🧠 「${selectedTheme}」に最適な【画風5選 × 主人公三面図】をGeminiがAI自動考案中...`, 'process');
+
+    const userPicksCount = selectedCustomTastes.length;
+    const isCustomMode = tasteMode === 'custom_pick' && userPicksCount > 0;
+
+    onAddLog(
+      isCustomMode 
+        ? `🎨 指定された画風（${userPicksCount}個）を反映し、計5体の【画風×主人公三面図】をAI考案中...`
+        : `🧠 「${selectedTheme}」に最適な【画風5選 × 主人公三面図】をGeminiが自動考案中...`,
+      'process'
+    );
+
+    // ユーザー指定画風のプロンプト指示文
+    let customTastesInstruction = '';
+    if (isCustomMode) {
+      customTastesInstruction = `
+【ユーザーが意図的に指定した画風 (${userPicksCount}個)】:
+${selectedCustomTastes.map((key, i) => `${i + 1}. 「${key}」 (英語プロンプト例: ${availableTastes[key] || 'masterpiece anime style'})`).join('\n')}
+
+【厳守事項】:
+出力する5個の候補のうち、最初の${userPicksCount}個は上記の指定された画風をそのまま「tasteName」および「tastePromptEn」に厳密に採用してください。
+残りの${5 - userPicksCount}個の枠は、世界観テーマ「${selectedTheme}」に最高にマッチする全く異なる魅力的な画風をAIが考案して補完してください。
+`;
+    }
 
     const prompt = `あなたは世界的人気漫画の編集長兼アートディレクターです。
 以下の世界観テーマに最高にマッチする、全くアプローチの異なる【5種類の画風・テイスト】と、それぞれの画風を極限まで活かした魅力的な【主人公キャラクター案】を5組考案してください。
 
 【世界観テーマ】: ${selectedTheme}
+${customTastesInstruction}
 
-【5組のバリエーション要件（被りのない多様な画風）】
+【5組全体の多様性要件（被りのない多彩な画風・人物像）】
 1. 王道少年漫画・ダイナミック劇画（迫力の太線、情熱的）
 2. レトロノワール・シックなセル画風（重厚な影、スタイリッシュ）
 3. エモーショナル水彩・ネオシティポップ（繊細、色彩豊か）
@@ -177,8 +236,8 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
         initialCandidates = [
           {
             id: 'cand_1',
-            tasteName: '🔥 王道少年熱血・ダイナミック劇画',
-            tastePromptEn: 'dynamic shonen manga style, bold black ink lines, high contrast shadows, expressive energetic anime aesthetic, masterpiece',
+            tasteName: isCustomMode && selectedCustomTastes[0] ? selectedCustomTastes[0] : '🔥 王道少年熱血・ダイナミック劇画',
+            tastePromptEn: isCustomMode && selectedCustomTastes[0] && availableTastes[selectedCustomTastes[0]] ? availableTastes[selectedCustomTastes[0]] : 'dynamic shonen manga style, bold black ink lines, high contrast shadows, expressive energetic anime aesthetic, masterpiece',
             name: '疾風の剣士 (熱血型)',
             concept: '不屈の闘志で困難を切り開く主人公。真っ直ぐな瞳と正義感を宿す。',
             dnaPromptEn: `A passionate young anime hero, fiery determined eyes, spiky hair, rugged stylish traveler attire matching ${selectedTheme}`,
@@ -186,8 +245,8 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
           },
           {
             id: 'cand_2',
-            tasteName: '🏮 レトロ・ノワールセル画調',
-            tastePromptEn: 'retro 90s anime cel shading, film grain, deep shadows, cinematic noir lighting, moody aesthetic, masterpiece',
+            tasteName: isCustomMode && selectedCustomTastes[1] ? selectedCustomTastes[1] : '🏮 レトロ・ノワールセル画調',
+            tastePromptEn: isCustomMode && selectedCustomTastes[1] && availableTastes[selectedCustomTastes[1]] ? availableTastes[selectedCustomTastes[1]] : 'retro 90s anime cel shading, film grain, deep shadows, cinematic noir lighting, moody aesthetic, masterpiece',
             name: '影の仕事人 (クール型)',
             concept: '冷静沈着に事件の裏を暴く孤高の主人公。コートと懐中時計がトレードマーク。',
             dnaPromptEn: `A cool analytical anime protagonist, sharp piercing eyes, dark flowing coat, mysterious aura matching ${selectedTheme}`,
@@ -195,8 +254,8 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
           },
           {
             id: 'cand_3',
-            tasteName: '🎨 エモーショナル水彩・ネオシティ',
-            tastePromptEn: 'soft watercolor anime style, pastel gradients, vibrant emotional rim lighting, clean delicate lines, masterpiece',
+            tasteName: isCustomMode && selectedCustomTastes[2] ? selectedCustomTastes[2] : '🎨 エモーショナル水彩・ネオシティ',
+            tastePromptEn: isCustomMode && selectedCustomTastes[2] && availableTastes[selectedCustomTastes[2]] ? availableTastes[selectedCustomTastes[2]] : 'soft watercolor anime style, pastel gradients, vibrant emotional rim lighting, clean delicate lines, masterpiece',
             name: '奇跡の使い手 (神秘型)',
             concept: '隠された力を持ち、人々の心を救う主人公。透明感ある佇まい。',
             dnaPromptEn: `A delicate ethereal anime protagonist, expressive gentle eyes, soft pastel colored hair, ornate modern outfit matching ${selectedTheme}`,
@@ -204,8 +263,8 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
           },
           {
             id: 'cand_4',
-            tasteName: '⚔️ 重厚ダークファンタジー劇画',
-            tastePromptEn: 'dark fantasy manga style, intricate cross-hatching lineart, grim atmospheric lighting, heavy contrast, masterpiece',
+            tasteName: isCustomMode && selectedCustomTastes[3] ? selectedCustomTastes[3] : '⚔️ 重厚ダークファンタジー劇画',
+            tastePromptEn: isCustomMode && selectedCustomTastes[3] && availableTastes[selectedCustomTastes[3]] ? availableTastes[selectedCustomTastes[3]] : 'dark fantasy manga style, intricate cross-hatching lineart, grim atmospheric lighting, heavy contrast, masterpiece',
             name: '宿命の求道者 (重厚型)',
             concept: '重い宿命を背負いながら戦い続ける主人公。鍛え抜かれた肉体と歴戦の傷。',
             dnaPromptEn: `A battle-hardened anime warrior, intense scarred face, weathered mantle, armored details matching ${selectedTheme}`,
@@ -213,8 +272,8 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
           },
           {
             id: 'cand_5',
-            tasteName: '✨ 先進的サイバー・スタイリッシュアニメ',
-            tastePromptEn: 'futuristic modern anime key visual style, crisp sharp linework, vivid accents, sleek high-end anime aesthetic, masterpiece',
+            tasteName: isCustomMode && selectedCustomTastes[4] ? selectedCustomTastes[4] : '✨ 先進的サイバー・スタイリッシュアニメ',
+            tastePromptEn: isCustomMode && selectedCustomTastes[4] && availableTastes[selectedCustomTastes[4]] ? availableTastes[selectedCustomTastes[4]] : 'futuristic modern anime key visual style, crisp sharp linework, vivid accents, sleek high-end anime aesthetic, masterpiece',
             name: '電脳のトリックスター (スマート型)',
             concept: '圧倒的な機転とスピードで敵を翻弄する現代風主人公。ヘッドギアとバイザー。',
             dnaPromptEn: `A stylish sleek anime protagonist, radiant ruby irises, modern tailored jacket with glowing accents matching ${selectedTheme}`,
@@ -496,7 +555,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                 </span>
               </div>
               <p className="text-[11px] text-slate-300">
-                世界観選定 ➔ AI最適画風5選×三面図 ➔ 起承転結(1〜50話) ➔ サブキャラ配役 ➔ 30Cut連載
+                世界観選定 ➔ 最適画風5選×三面図 ➔ 起承転結(1〜50話) ➔ サブキャラ配役 ➔ 30Cut連載
               </p>
             </div>
           </div>
@@ -550,9 +609,9 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200/80 p-3.5 rounded-xl flex items-start gap-3 text-indigo-950 shadow-2xs">
                 <span className="material-symbols-outlined text-indigo-600 mt-0.5 text-xl">auto_fix_high</span>
                 <div className="text-xs leading-relaxed">
-                  <p className="font-bold">世界観・テーマを決めて「AI最適画風5選＆三面図を作画」ボタンを押してください。</p>
+                  <p className="font-bold">世界観を選び、「三面図を一括AI作画」ボタンを押してください。</p>
                   <p className="text-indigo-700 mt-0.5">
-                    Geminiが世界観に最適な「画風テイスト5種 × 主人公設定」を考案し、三面図（正面・側面・背面 / 16:9）を自動作画します。出来上がった5枚の中からお気に入りの1枚を選択してください。
+                    基本は<strong>「AIおまかせ」</strong>で世界観に最適な5画風×三面図を自動作画しますが、<strong>「自分で画風を指定」</strong>で好きな画風を1〜5個ピンポイントで指定することも可能です！
                   </p>
                 </div>
               </div>
@@ -583,21 +642,142 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                       <option key={idx} value={themeItem}>{themeItem}</option>
                     ))}
                   </select>
+                </div>
+              </div>
 
-                  {/* Main Action Trigger */}
+              {/* Taste Selection Mode & Custom Picker */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-3 shadow-2xs">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-indigo-500">palette</span>
+                    画風テイストの決定方法
+                  </label>
+
+                  {/* Mode Switch Tabs */}
+                  <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setTasteMode('ai_auto')}
+                      className={`px-3 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all ${
+                        tasteMode === 'ai_auto'
+                          ? 'bg-white text-indigo-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-xs">casino</span>
+                      🎲 AIおまかせ (最適5選)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTasteMode('custom_pick')}
+                      className={`px-3 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all ${
+                        tasteMode === 'custom_pick'
+                          ? 'bg-white text-indigo-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-xs">checklist</span>
+                      🎯 自分で画風を指定 ({selectedCustomTastes.length}/5)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Custom Pick Panel */}
+                {tasteMode === 'custom_pick' && (
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-2.5 animate-fadeIn">
+                    <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+                      <span className="text-slate-600 font-bold">
+                        好きな画風を <strong>1〜5個</strong> クリックして選択してください（残りはAIが世界観に合わせて自動補完します）:
+                      </span>
+                      {selectedCustomTastes.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCustomTastes([])}
+                          className="text-[11px] text-rose-600 hover:underline font-bold"
+                        >
+                          全選択解除
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Selected Badges */}
+                    {selectedCustomTastes.length > 0 && (
+                      <div className="flex items-center flex-wrap gap-1.5 p-2 bg-white rounded-lg border border-indigo-100">
+                        <span className="text-[10px] font-bold text-indigo-500 mr-1">指定中:</span>
+                        {selectedCustomTastes.map((tKey, idx) => (
+                          <span
+                            key={tKey}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-[11px] font-bold"
+                          >
+                            <span className="w-3.5 h-3.5 rounded-full bg-indigo-600 text-white text-[9px] flex items-center justify-center font-black">
+                              {idx + 1}
+                            </span>
+                            <span className="truncate max-w-[160px]">{tKey}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleTaste(tKey)}
+                              className="text-slate-400 hover:text-rose-600"
+                            >
+                              <span className="material-symbols-outlined text-[13px]">close</span>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Filter Input */}
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-2.5 top-2 text-slate-400 text-sm">search</span>
+                      <input
+                        type="text"
+                        placeholder="画風名やキーワードで絞り込み..."
+                        value={tasteSearchQuery}
+                        onChange={e => setTasteSearchQuery(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 text-slate-800"
+                      />
+                    </div>
+
+                    {/* Tastes Chips List */}
+                    <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-1 bg-white rounded-lg border border-slate-200">
+                      {filteredTasteKeys.map(tKey => {
+                        const isPicked = selectedCustomTastes.includes(tKey);
+                        return (
+                          <button
+                            key={tKey}
+                            type="button"
+                            onClick={() => handleToggleTaste(tKey)}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1 ${
+                              isPicked
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-indigo-50 hover:border-indigo-300'
+                            }`}
+                          >
+                            {isPicked && <span className="material-symbols-outlined text-[13px]">check</span>}
+                            <span>{tKey}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Main Action Trigger */}
+                <div className="pt-2 border-t border-slate-100 flex justify-end">
                   <button
                     onClick={handleGenerate5Candidates}
                     disabled={isBrainstormingCandidates || activeGeneratingIndex !== null}
-                    className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 hover:from-indigo-700 hover:to-amber-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all shrink-0"
+                    className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 hover:from-indigo-700 hover:to-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
                   >
                     <span className={`material-symbols-outlined text-sm ${isBrainstormingCandidates || activeGeneratingIndex !== null ? 'animate-spin' : ''}`}>
                       {isBrainstormingCandidates || activeGeneratingIndex !== null ? 'autorenew' : 'palette'}
                     </span>
                     <span>
                       {isBrainstormingCandidates 
-                        ? '最適な画風5選をAI考案中...' 
+                        ? '最適な画風＆主人公設定をAI考案中...' 
                         : activeGeneratingIndex !== null 
                         ? `三面図を作画中 (${activeGeneratingIndex + 1}/5)...` 
+                        : tasteMode === 'custom_pick' && selectedCustomTastes.length > 0
+                        ? `🎨 指定した画風(${selectedCustomTastes.length}選)＋AI補完で三面図を作画！`
                         : '🎨 最適画風5選＆三面図を一括AI作画！'}
                     </span>
                   </button>
@@ -623,7 +803,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                     <span className="material-symbols-outlined text-4xl text-slate-300">view_carousel</span>
                     <span className="text-xs font-bold text-slate-600">まだ候補が生成されていません</span>
                     <span className="text-[11px] text-slate-500">
-                      上の「🎨 最適画風5選＆三面図を一括AI作画！」ボタンを押すと、Geminiが5種類の最適な画風と主人公三面図を自動作画します。
+                      上の「🎨 三面図を一括AI作画」ボタンを押すと、5種類の画風と主人公三面図が自動作画されます。
                     </span>
                   </div>
                 ) : (
