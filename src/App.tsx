@@ -180,8 +180,7 @@ export default function App() {
     handleUpdateMangaProject(newProject);
 
     // 2. スタジオ設定を大枠仕様に自動同期（ドラマ連番 / 音楽MV / マンガ等）
-    setSettings(prev => ({
-      ...prev,
+    const effectiveSettingsUpdates: Partial<GeneratorSettings> = {
       productionMode: payload.productionMode,
       isMvMode: payload.productionMode === 'mv',
       isMangaMode: payload.productionMode === 'manga',
@@ -190,17 +189,23 @@ export default function App() {
       taste: payload.taste,
       previewCutCount: payload.cutsPerEpisode,
       episodeCount: payload.totalEpisodes,
+      totalEpisodes: payload.totalEpisodes,
+    };
+    setSettings(prev => ({
+      ...prev,
+      ...effectiveSettingsUpdates
     }));
 
     // 3. シリーズ設計図を復元注入（主人公三面図をマスター参照画像としてセット）
     await resumeSeries(payload.manifest, (assetId) => {
+      effectiveSettingsUpdates.selectedAssetId = assetId;
       setSettings(prev => ({ ...prev, selectedAssetId: assetId }));
     });
 
-    // 4. 自動スタートはせず画面を閉じ、サイドバーでアスペクト比等の確認を促す
-    addLog(`⏸️ 【スタンバイ完了・待機中】大前提（三面図・配役・全話プロット）が確定しました！`, 'info');
-    addLog(`👉 左サイドバーで設定（アスペクト比・動画比率等）を確認後、上部ヘッダーでピカピカ光っている【③ 作成開始】を押すと本編の作画がスタートします！`, 'warning');
-  }, [mangaProject, handleUpdateMangaProject, resumeSeries, addLog]);
+    // 4. ウィザードで「連載スタート」を押した後は、二度手間なく直ちに全自動で本編作画を開始！
+    addLog(`🚀 【全自動連載スタート】『${payload.manifest.seriesTitle}』の本編作画を直ちに開始します！`, 'success');
+    await startProduction(effectiveSettingsUpdates);
+  }, [mangaProject, handleUpdateMangaProject, resumeSeries, addLog, startProduction]);
 
   const handleDownloadZip = useCallback(async (ep: Episode) => {
     const filename = ep.packageZipFilename || `Episode_${ep.id}_Package.zip`;
@@ -350,14 +355,14 @@ export default function App() {
                     </h2>
                   </div>
                   <p className="text-purple-200/90 text-xs mt-1">
-                    左サイドバーで設定確認後、右上の光る【③ 作成開始】を押して本編作画をスタートしてください。
+                    ここをクリック、または右上の光る【③ 作成開始】を押すと本編作画がスタートします。
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-purple-200 text-xs font-bold group-hover:bg-pink-600 group-hover:text-white transition-all shadow-sm">
-                  <span>右上のボタンで開始</span>
-                  <span className="material-symbols-outlined text-[16px] text-pink-300 group-hover:text-white">north_east</span>
+                <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-pink-600/80 border border-pink-400 text-white text-xs font-bold group-hover:bg-pink-500 group-hover:scale-105 transition-all shadow-md">
+                  <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                  <span>クリックして作画スタート</span>
                 </div>
               </div>
             </div>

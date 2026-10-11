@@ -570,41 +570,46 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     setIsProducing(false);
   };
 
-  const startProduction = async () => {
+  const startProduction = async (overrideSettings?: Partial<GeneratorSettings>) => {
     if (isProducing) {
       console.warn('⚠️ [FlowTool Studio] すでに制作プロセスが実行中です。');
       return;
     }
+    const effectiveSettings: GeneratorSettings = {
+      ...settings,
+      ...(overrideSettings || {})
+    };
+
     console.log(
       '%c🎬 ▶️ 【全自動プロデュース】処理が開始されました！',
       'background: #10b981; color: #fff; font-weight: bold; font-size: 13px; padding: 4px 8px; border-radius: 4px;'
     );
     console.log('📋 実行パラメータ:', {
-      mode: settings.productionMode || '通常',
-      theme: settings.theme,
-      totalEpisodes: settings.totalEpisodes || settings.episodeCount,
-      taste: settings.taste,
-      aspectRatio: settings.aspectRatio,
-      imageModel: settings.imageModel,
-      videoModel: settings.defaultVideoModel,
-      autoVideo: settings.autoVideo,
-      autoDownload: settings.autoDownload,
-      enableEndFrames: settings.enableEndFrames
+      mode: effectiveSettings.productionMode || '通常',
+      theme: effectiveSettings.theme,
+      totalEpisodes: effectiveSettings.totalEpisodes || effectiveSettings.episodeCount,
+      taste: effectiveSettings.taste,
+      aspectRatio: effectiveSettings.aspectRatio,
+      imageModel: effectiveSettings.imageModel,
+      videoModel: effectiveSettings.defaultVideoModel,
+      autoVideo: effectiveSettings.autoVideo,
+      autoDownload: effectiveSettings.autoDownload,
+      enableEndFrames: effectiveSettings.enableEndFrames
     });
 
     setIsProducing(true);
     isAbortedRef.current = false;
-    addLog(`🎬 【全自動プロデュース開始】モード: ${settings.productionMode || '通常'} / 全${settings.totalEpisodes || settings.episodeCount || 1}話 / テーマ: 「${settings.theme || '未設定'}」`, 'process');
+    addLog(`🎬 【全自動プロデュース開始】モード: ${effectiveSettings.productionMode || '通常'} / 全${effectiveSettings.totalEpisodes || effectiveSettings.episodeCount || 1}話 / テーマ: 「${effectiveSettings.theme || '未設定'}」`, 'process');
 
-    if (settings.selectedAssetId && !activeReferenceRef.current) {
+    if (effectiveSettings.selectedAssetId && !activeReferenceRef.current) {
       try {
         const assets = await getAllReferenceAssets();
-        const asset = assets.find(a => a.id === settings.selectedAssetId);
+        const asset = assets.find(a => a.id === effectiveSettings.selectedAssetId);
         if (asset) {
           currentAssetRef.current = { name: asset.name, base64: asset.base64, mimeType: asset.mimeType };
           addLog('🔍 キャラクターDNA抽出中...', 'process');
           const uploadRes = await Flow.upload({ base64: asset.base64, mimeType: asset.mimeType as 'image/png' | 'image/jpeg' | 'image/webp', name: `Ref: ${asset.name}` });
-          const screeningPrompt = buildCharacterScreeningPrompt(settings.era, settings.country, settings.isMvMode, settings.theme);
+          const screeningPrompt = buildCharacterScreeningPrompt(effectiveSettings.era, effectiveSettings.country, effectiveSettings.isMvMode, effectiveSettings.theme);
           const screenRes = await callWithRetry<any>(
             () => Flow.generate.text(screeningPrompt, { images: [{ base64: asset.base64, mimeType: asset.mimeType }] }),
             (attempt, max, delay) => addLog(`Retrying DNA Analysis (attempt ${attempt}/${max}) after ${delay} ms...`, 'warning'),
@@ -624,7 +629,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     }
 
     const pipelineContext = {
-      settings,
+      settings: effectiveSettings,
       addLog,
       logsRef,
       isAbortedRef,
