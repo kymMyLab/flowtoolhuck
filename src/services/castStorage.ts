@@ -87,6 +87,12 @@ export const DEFAULT_MANGA_PROJECT: MangaProject = {
       'antagonist',
       'A menacing cold swordsman with silver-streaked hair, scar across left cheek, fierce golden eyes, wearing midnight black haori'
     ),
+    createDefaultCastCharacter(
+      'char_witch',
+      '猫耳魔女 (ルナ)',
+      'protagonist',
+      'A cute young anime witch girl with fluffy cat ears and long messy light ash-blonde hair, large gentle golden-yellow eyes, slightly pouty expression, wearing a dark oversized witch hat decorated with ribbons and a bell, dark hooded witch cloak, dark gothic dress, striped thigh-high socks, heavy lace-up combat boots, fluffy dark cat tail'
+    ),
   ],
 };
 

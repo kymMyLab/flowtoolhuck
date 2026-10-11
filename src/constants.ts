@@ -105,6 +105,9 @@ export const THEME_CATEGORIES: ThemeCategory[] = [
 export const THEMES: string[] = THEME_CATEGORIES.flatMap(c => c.items);
 
 export const TASTES: Record<string, string> = {
+  "🌙 ノスタルジック魔女ファンタジー・極細線画 (Retro Fantasy Whisper-Line)":
+    "2D anime illustration, retro fantasy anime style, detailed flat coloring, extremely fine whisper-thin pencil-like outline, ultra-delicate and intricate line art, paper-thin faded subtle linework blending softly with coloring, nostalgic grainy textured flat anime aesthetic, vintage film grain, textured digital painting quality, muted and desaturated color palette, warm floating ember-like particles, soft round glowing bokeh lights, cozy magical atmospheric cinematic lighting",
+
   "🧪⚡ ネオ・バーチャル・ポップ (Neo Virtual Pop Anime)":
     "High-energy anime music video (AMV) aesthetic, virtual pop star style, dynamic composition, ultra-fine delicate ink lines, fragile thin linework, no bold lines, expressive sparkling eyes, intricate character design with diverse hairstyles, iridescent surfaces, vibrant pastel and neon color palette, dramatic chromatic aberration, particle effects, lens flares, polished highly detailed 2D anime finish",
 
