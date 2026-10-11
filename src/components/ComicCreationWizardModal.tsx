@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { THEMES, THEME_CATEGORIES, resolveImageModel } from '../constants';
-import { CastCharacter, SeriesEpisodePlan, SeriesManifest, ExpressionType } from '../types';
+import { CastCharacter, SeriesEpisodePlan, SeriesManifest, ExpressionType, ProductionMode } from '../types';
 import { createDefaultCastCharacter, EXPRESSION_METAS } from '../services/castStorage';
 import { Flow } from 'flow-sdk';
 import { callWithRetry, safeJsonParse, formatErrorMessage } from '../services/utils';
 import { buildGrandDesignPrompt } from '../services/directorService';
 import { loadCustomTastes, CustomTasteMap } from '../services/tasteStorage';
+import { PRODUCTION_MODES_CONFIG, PRODUCTION_MODES_LIST } from '../config/studioDefinitions';
 
 export interface TurnaroundCandidate {
   id: string;
@@ -24,6 +25,7 @@ export interface TurnaroundCandidate {
 export interface ProduceSnapshot {
   version: '1.0';
   timestamp: string;
+  productionMode?: ProductionMode;
   selectedTheme: string;
   tasteMode: 'ai_auto' | 'custom_pick';
   selectedCustomTastes: string[];
@@ -38,17 +40,19 @@ export interface ProduceSnapshot {
   step: 1 | 2 | 3;
 }
 
-// Comic Wizard 3-Step Flow:
-// 1: 世界観選定＆画風5選・三面図
+// Produce Wizard 3-Step Flow:
+// 1: 制作大枠(ジャンル)・世界観選定＆画風5選・三面図
 // 2: お友達・サブキャラ配役
 // 3: 話数選択(1〜50話)＆起承転結プロット＆連載スタート
 
 interface ComicCreationWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
+  currentMode?: ProductionMode;
   currentTheme: string;
   currentTaste: string;
   onLaunchComicSeries: (payload: {
+    productionMode: ProductionMode;
     theme: string;
     taste: string;
     protagonist: CastCharacter;
@@ -63,19 +67,70 @@ interface ComicCreationWizardModalProps {
 export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> = ({
   isOpen,
   onClose,
+  currentMode = 'episodes',
   currentTheme,
   currentTaste,
   onLaunchComicSeries,
   onAddLog,
 }) => {
-  // ステップ管理: 1: 三面図 ➔ 2: サブキャラ ➔ 3: プロット＆連載スタート
+  // ステップ管理: 1: 大枠＆三面図 ➔ 2: サブキャラ ➔ 3: プロット＆連載スタート
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
+  // 制作大枠・ジャンル (Production Mode)
+  const [productionMode, setProductionMode] = useState<ProductionMode>(currentMode || 'episodes');
+
+  // モード定義の取得
+  const currentModeConfig = useMemo(() => {
+    return PRODUCTION_MODES_CONFIG[productionMode] || PRODUCTION_MODES_CONFIG.episodes;
+  }, [productionMode]);
+
+  // モードに応じたテーマ一覧（モード専用テーマがあれば優先、なければTHEMES）
+  const activeThemesList = useMemo(() => {
+    if (currentModeConfig.themes && currentModeConfig.themes.length > 0) {
+      return currentModeConfig.themes;
+    }
+    return THEMES;
+  }, [currentModeConfig]);
+
   // Step 1: 世界観テーマ
-  const [selectedTheme, setSelectedTheme] = useState<string>(currentTheme || THEMES[0]);
+  const [selectedTheme, setSelectedTheme] = useState<string>(currentTheme || activeThemesList[0]);
   // カテゴリ絞り込みフィルタ ('all' または カテゴリ名)
   const [selectedThemeCategory, setSelectedThemeCategory] = useState<string>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // モード変更ハンドラー（大枠選択時、テーマ・話数・カット数を自動連動）
+  const handleModeChange = (newMode: ProductionMode) => {
+    setProductionMode(newMode);
+    const targetConfig = PRODUCTION_MODES_CONFIG[newMode] || PRODUCTION_MODES_CONFIG.episodes;
+    
+    // テーマの同期
+    if (targetConfig.themes && targetConfig.themes.length > 0) {
+      setSelectedTheme(targetConfig.themes[0]);
+    } else if (!THEMES.includes(selectedTheme)) {
+      setSelectedTheme(THEMES[0]);
+    }
+
+    // デフォルト話数・カット数の同期
+    if (newMode === 'mv') {
+      setEpisodeCount(1);
+      setCutsPerEpisode(12);
+    } else if (newMode === 'manga') {
+      setEpisodeCount(1);
+      setCutsPerEpisode(24);
+    } else if (newMode === 'trivia' || newMode === 'quotes' || newMode === 'craft') {
+      setEpisodeCount(1);
+      setCutsPerEpisode(5);
+    } else if (newMode === 'folklore') {
+      setEpisodeCount(1);
+      setCutsPerEpisode(12);
+    } else {
+      // episodes 等
+      setEpisodeCount(4);
+      setCutsPerEpisode(12);
+    }
+
+    onAddLog(`🎬 制作大枠を【${targetConfig.label}】に設定しました（${targetConfig.desc}）`, 'info');
+  };
 
   // プロデュース設定をJSONとしてダウンロード保存
   const handleExportSnapshot = () => {
@@ -83,6 +138,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
       const snapshot: ProduceSnapshot = {
         version: '1.0',
         timestamp: new Date().toISOString(),
+        productionMode,
         selectedTheme,
         tasteMode,
         selectedCustomTastes,
@@ -121,6 +177,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
       try {
         const text = event.target?.result as string;
         const parsed: Partial<ProduceSnapshot> = JSON.parse(text);
+        if (parsed.productionMode) setProductionMode(parsed.productionMode);
         if (parsed.selectedTheme) setSelectedTheme(parsed.selectedTheme);
         if (parsed.tasteMode) setTasteMode(parsed.tasteMode);
         if (Array.isArray(parsed.selectedCustomTastes)) setSelectedCustomTastes(parsed.selectedCustomTastes);
@@ -199,13 +256,32 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
     return episodesPlan.slice(0, episodeCount);
   }, [episodesPlan, episodeCount]);
 
+  // 制作大枠の選択肢一覧
+  const AVAILABLE_PRODUCE_MODES: Array<{
+    value: ProductionMode;
+    label: string;
+    icon: string;
+    badge: string;
+    desc: string;
+  }> = [
+    { value: 'episodes', label: '🎬 ドラマ連番', icon: 'movie', badge: '映画字幕', desc: '重厚なストーリー連載・長編大河ドラマ' },
+    { value: 'mv', label: '🎵 音楽MV', icon: 'music_note', badge: '歌詞テロップ', desc: '楽曲連動・Ado風シネマティックMV' },
+    { value: 'manga', label: '📖 短編マンガ', icon: 'auto_stories', badge: '漫画コマ割り', desc: 'フキダシ・効果音付きの読み切り漫画' },
+    { value: 'trivia', label: '💡 雑学Shorts', icon: 'lightbulb', badge: 'TikTok特化', desc: '冒頭フック＆衝撃オチの解説動画' },
+    { value: 'manzai', label: '🎙️ 漫才・掛け合い', icon: 'record_voice_over', badge: '演芸掛け合い', desc: 'テンポ良いボケ＆ツッコミの掛け合い劇' },
+    { value: 'quotes', label: '📜 偉人・名言', icon: 'history_edu', badge: '格言・哲学', desc: '心に刺さる人生訓・厳粛な縦書き墨文字' },
+    { value: 'folklore', label: '👻 怪異・未解決', icon: 'visibility', badge: '考察・ミステリー', desc: '背筋凍る怪奇譚・深紅ハイライト' },
+    { value: 'craft', label: '🔨 職人技・伝統', icon: 'precision_manufacturing', badge: '至高の手仕事', desc: '神業ディテール・至高のドキュメンタリー' },
+  ];
+
   if (!isOpen) return null;
 
-  // テーマをランダムに選定
+  // テーマをランダムに選定（選択中のモードに応じたテーマリストから選定）
   const handleRandomTheme = () => {
-    const randomItem = THEMES[Math.floor(Math.random() * THEMES.length)];
+    const pool = activeThemesList.length > 0 ? activeThemesList : THEMES;
+    const randomItem = pool[Math.floor(Math.random() * pool.length)];
     setSelectedTheme(randomItem);
-    onAddLog(`🎲 世界観テーマをランダム選定しました: 「${randomItem}」`, 'info');
+    onAddLog(`🎲 【${currentModeConfig.label}】世界観テーマをランダム選定しました: 「${randomItem}」`, 'info');
   };
 
   // 画風の選択・解除トグル (最大5個まで)
@@ -235,7 +311,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
     onAddLog(
       isCustomMode 
         ? `🎨 指定された画風（${userPicksCount}個: ${selectedCustomTastes.join(', ')}）を厳密反映し、計5体の【画風×主人公三面図】をAI考案中...`
-        : `🧠 「${selectedTheme}」に最適な【画風5選 × 主人公三面図】をGeminiが自動考案中...`,
+        : `🧠 【${currentModeConfig.label}】「${selectedTheme}」に最適な【画風5選 × 主人公三面図】をGeminiが自動考案中...`,
       'process'
     );
 
@@ -258,15 +334,35 @@ ${selectedCustomTastes.map((key, i) => `候補 ${i + 1} 枠: 「${key}」 (英�
 `;
       }
 
-      const prompt = `あなたは世界的大ヒット漫画を生み出す天才漫画編集長兼アートディレクターです。
+      // モードに応じた役割とキャラクターガイドライン
+      let modeSpecificRole = '世界的大ヒット作品を生み出す天才エグゼクティブプロデューサー兼アートディレクター';
+      let modeSpecificCharDirective = `世界観テーマ「${selectedTheme}」のジャンル・空気感・情緒を忠実に尊重してください。`;
+      if (productionMode === 'mv') {
+        modeSpecificRole = '世界的トップアーティストのミュージックビデオ(MV)・映像詩を手掛ける天才映像監督兼アートディレクター';
+        modeSpecificCharDirective = `【最重要: 音楽MV特化キャラクター設計】:
+- 楽曲の世界観やエモーショナルな心情（孤独、夜明け、焦燥、希望、疾走感など）を一身に背負う【MVの象徴的ヒロイン／ボーカリスト／アーティスト像】として考案してください。
+- 画面映えする印象的な髪型、瞳の光、夜の街や幻想的空間に映えるアイコニックな衣装・シルエットを持たせてください。`;
+      } else if (productionMode === 'manzai') {
+        modeSpecificRole = 'お笑い・演芸の聖地で数々のレジェンドを生み出してきた名席亭兼プロデューサー';
+        modeSpecificCharDirective = `【最重要: 漫才・掛け合い特化キャラクター設計】:
+- 舞台上でテンポの良い掛け合いを行う演芸コンビ（ボケ役、またはツッコミ役）の中心人物として考案してください。
+- 表情豊かで愛嬌やクセがあり、舞台衣装（スーツ、着物、個性的な普段着など）を着こなす魅力的な人物にしてください。`;
+      } else if (productionMode === 'manga') {
+        modeSpecificRole = '大ヒット連載を次々に立ち上げる伝説の少年・青年マンガ誌の編集長兼アートディレクター';
+        modeSpecificCharDirective = `【最重要: コミック・マンガ特化キャラクター設計】:
+- コマ割りや見開きで圧倒的な存在感を放つ、感情表現豊かで読者の心を掴む主人公キャラクターとして考案してください。`;
+      }
+
+      const prompt = `あなたは${modeSpecificRole}です。
+【制作ジャンル・大枠】: ${currentModeConfig.label} (${currentModeConfig.desc})
 以下の【世界観テーマ】に深く根ざした、全くアプローチの異なる【5種類の画風・テイスト】と、それぞれの画風を極限まで活かした魅力的な【主人公キャラクター案】を5組考案してください。
 
 【世界観テーマ】: ${selectedTheme}
 ${customTastesInstruction}
 
 【キャラクター考案の最重要ガイドライン】:
-- 世界観テーマ「${selectedTheme}」のジャンル・空気感・情緒を忠実に尊重してください。
-- 現代社会派・人間ドラマ・介護・日常系（例: 8050問題、老老介護、ブラック企業、家族愛、下町人情など）の場合：
+${modeSpecificCharDirective}
+- 現代社会派・人間ドラマ・日常系（例: 8050問題、老老介護、ブラック企業、家族愛、下町人情など）の場合：
   ★絶対に武器や魔法、サイバースーツ、ファンタジーの肩書（求道者、切り込み役、トリックスター等）を付けないでください！
   ★実在のリアルな職業や立場（例: 孤軍奮闘する長男、限界を迎えた介護従事者、見守る幼馴染、訪問看護師、心優しきケースワーカー等）として考案してください。
   ★画風も白黒劇画、淡彩水彩、細線画、ジブリ調の温もりある日常描写など、テーマの重みや哀愁、ぬくもりを表現できる画風にしてください。
@@ -568,15 +664,22 @@ ${customTastesInstruction}
     const target = targetCand || currentCandidate;
     if (!target) return;
     setIsGeneratingSubs(true);
-    onAddLog(`👥 主人公「${target.name}」を取り巻くお友達・相棒・宿敵などサブキャラを自動考案中...`, 'process');
+    onAddLog(`👥 【${currentModeConfig.label}】「${target.name}」を取り巻くサブキャラ・相棒を自動考案中...`, 'process');
 
-    const prompt = `あなたは一流の漫画編集者です。
-漫画『${seriesTitle || target.name}』（主人公: 「${target.name}」）のストーリー展開を強力に引き立てる、
-魅力的なサブキャラクター（お友達・相棒、ヒロイン、宿敵・ライバル）を【2〜3名】考案してください。
+    let subRoleGuidance = `作品『${seriesTitle || target.name}』（主人公: 「${target.name}」）のストーリー展開を強力に引き立てる、魅力的なサブキャラクター（お友達・相棒、ヒロイン、宿敵・ライバルなど）を【2〜3名】考案してください。`;
+    if (productionMode === 'mv') {
+      subRoleGuidance = `音楽MV『${seriesTitle || target.name}』（メイン象徴キャラクター: 「${target.name}」）の世界観を深めるサブキャラクター（相棒、バンド仲間、回想に現れる大切な人、または対照的な影の人物など）を【2〜3名】考案してください。`;
+    } else if (productionMode === 'manzai') {
+      subRoleGuidance = `漫才・掛け合い『${seriesTitle || target.name}』で、「${target.name}」とコンビを組む相方（ツッコミ役、またはボケ役）および関係者（舞台関係者や熱狂的ファンなど）を【2〜3名】考案してください。`;
+    }
+
+    const prompt = `あなたは世界的な映像・コミック制作スタジオのキャスティングディレクターです。
+【制作ジャンル・大枠】: ${currentModeConfig.label} (${currentModeConfig.desc})
+${subRoleGuidance}
 
 【世界観テーマ】: ${selectedTheme}
 【画風テイスト】: ${target.tasteName}
-【主人公】: ${target.name} (${target.concept})
+【主人公 / メインキャラクター】: ${target.name} (${target.concept})
 
 【重要】世界観「${selectedTheme}」の日常・社会派・歴史などのジャンルに応じたリアリティを重視してください。
 
@@ -586,13 +689,13 @@ ${customTastesInstruction}
     {
       "name": "キャラクター名 (立場・肩書)",
       "role": "partner",
-      "concept": "主人公との関係性・お友達・相棒としての役割（日本語2行）",
+      "concept": "主人公との関係性・相棒・パートナーとしての役割（日本語2行）",
       "dnaPromptEn": "Detailed English character appearance prompt: gender, age, hair, eyes, distinct clothing matching ${selectedTheme}"
     },
     {
       "name": "キャラクター名 (立場・肩書)",
       "role": "antagonist",
-      "concept": "主人公と対立する宿敵・ライバル・または対立する立場としての役割（日本語2行）",
+      "concept": "主人公と対比をなすライバル・対立者・または別の生き方をする人物としての役割（日本語2行）",
       "dnaPromptEn": "Detailed English character appearance prompt: gender, age, hair, eyes, distinct clothing matching ${selectedTheme}"
     }
   ]
@@ -625,7 +728,7 @@ ${customTastesInstruction}
           );
         });
         setSubCharacters(chars);
-        onAddLog(`✨ サブキャラクター${chars.length}名（お友達・相棒・宿敵）の配役が完了しました！`, 'success');
+        onAddLog(`✨ サブキャラクター${chars.length}名の配役が完了しました！`, 'success');
       } else {
         throw new Error('サブキャラクターの生成に失敗しました');
       }
@@ -655,7 +758,7 @@ ${customTastesInstruction}
   };
 
   // =========================================================================
-  // Step 3: 選択した主人公三面図から起承転結（全1〜50話）ストーリー策定
+  // Step 3: 選択した主人公三面図から起承転結ストーリー策定
   // =========================================================================
   const handleGenerateStoryPlan = async (targetCand?: TurnaroundCandidate, countToUse?: number) => {
     const target = targetCand || currentCandidate;
@@ -663,15 +766,15 @@ ${customTastesInstruction}
 
     const count = countToUse || episodeCount;
     setIsGeneratingPlan(true);
-    onAddLog(`📜 主人公「${target.name}」で【全${count}話】の起承転結ストーリー構成を構築中...`, 'process');
+    onAddLog(`📜 【${currentModeConfig.label}】「${target.name}」で【全${count}${currentModeConfig.unit}】の構成プランを構築中...`, 'process');
 
     const prompt = buildGrandDesignPrompt(
       count,
       '日本',
       selectedTheme,
       target.tasteName,
-      true, // isMangaMode
-      false, // isMvMode
+      productionMode === 'manga',
+      productionMode === 'mv',
       target.dnaPromptEn,
       target.name
     );
@@ -680,7 +783,7 @@ ${customTastesInstruction}
       const res = await callWithRetry<any>(
         () => Flow.generate.text(prompt),
         (attempt, max, delay, err) => {
-          onAddLog(`⚠️ [全話プロット生成] リトライ (${attempt}/${max}) ${Math.round(delay / 1000)}秒待機... (${formatErrorMessage(err)})`, 'warning');
+          onAddLog(`⚠️ [プロット生成] リトライ (${attempt}/${max}) ${Math.round(delay / 1000)}秒待機... (${formatErrorMessage(err)})`, 'warning');
         },
         5
       );
@@ -689,7 +792,7 @@ ${customTastesInstruction}
       const parsed = safeJsonParse<any>(cleaned, null);
 
       if (parsed && Array.isArray(parsed.episodesPlan) && parsed.episodesPlan.length > 0) {
-        setSeriesTitle(parsed.seriesTitle || `${target.name}伝`);
+        setSeriesTitle(parsed.seriesTitle || (productionMode === 'mv' ? `${target.name} MV Collection` : `${target.name}伝`));
         setOverallSynopsis(parsed.overallSynopsis || '');
         
         // 指定話数 count に厳密に同期
@@ -702,29 +805,31 @@ ${customTastesInstruction}
             const epNum = adjustedPlan.length + idx + 1;
             return {
               epNumber: epNum,
-              titleJp: `第${epNum}話 続く戦いと希望`,
-              titleEn: `Episode ${epNum}`,
-              summary: `${target.name}の壮大な冒険の第${epNum}話`
+              titleJp: productionMode === 'mv' ? `Track ${epNum} 続く旋律と情景` : `第${epNum}話 続く戦いと希望`,
+              titleEn: productionMode === 'mv' ? `Track ${epNum}` : `Episode ${epNum}`,
+              summary: `${target.name}の壮大な物語の第${epNum}${currentModeConfig.unit}`
             };
           });
           adjustedPlan = [...adjustedPlan, ...fillers];
         }
         setEpisodesPlan(adjustedPlan);
-        onAddLog(`🎉 コミック連載『${parsed.seriesTitle || target.name}』（全${adjustedPlan.length}話）の起承転結プロットが確定しました！`, 'success');
+        onAddLog(`🎉 『${parsed.seriesTitle || target.name}』（全${adjustedPlan.length}${currentModeConfig.unit}）の構成プロットが確定しました！`, 'success');
       } else {
         throw new Error('ストーリープロットの生成に失敗しました');
       }
     } catch (err: any) {
-      onAddLog(`❌ 起承転結プロット生成エラー: ${formatErrorMessage(err)}`, 'error');
+      onAddLog(`❌ プロット生成エラー: ${formatErrorMessage(err)}`, 'error');
       // フォールバック
       const dummyPlan: SeriesEpisodePlan[] = Array.from({ length: count }, (_, i) => ({
         epNumber: i + 1,
-        titleJp: `第${i + 1}話 ${i < Math.round(count * 0.25) ? '運命の幕開け' : i < Math.round(count * 0.55) ? '深まる謎と試練' : i < Math.round(count * 0.85) ? '最大の激突と転換' : '大団円と未来'}`,
-        titleEn: `Episode ${i + 1} Arc`,
-        summary: `主人公${target.name}が立ち向かう第${i + 1}話の試練と成長`
+        titleJp: productionMode === 'mv' 
+          ? `Track ${i + 1} ${i === 0 ? '静寂の夜明け' : i === count - 1 ? '光の終幕' : '心象のグラデーション'}` 
+          : `第${i + 1}話 ${i < Math.round(count * 0.25) ? '運命の幕開け' : i < Math.round(count * 0.55) ? '深まる謎と試練' : i < Math.round(count * 0.85) ? '最大の激突と転換' : '大団円と未来'}`,
+        titleEn: productionMode === 'mv' ? `Track ${i + 1}` : `Episode ${i + 1}`,
+        summary: `主人公${target.name}が織りなす第${i + 1}${currentModeConfig.unit}の情景とドラマ`
       }));
-      setSeriesTitle(`${target.name}活劇録`);
-      setOverallSynopsis(`${selectedTheme}の世界で${target.name}が仲間と共に織りなす全${count}話の大河ストーリー`);
+      setSeriesTitle(productionMode === 'mv' ? `${target.name} MV Project` : `${target.name}活劇録`);
+      setOverallSynopsis(`${selectedTheme}の世界で${target.name}が仲間と共に織りなす全${count}${currentModeConfig.unit}のストーリー`);
       setEpisodesPlan(dummyPlan);
     } finally {
       setIsGeneratingPlan(false);
@@ -732,7 +837,7 @@ ${customTastesInstruction}
   };
 
   // =========================================================================
-  // Step 3: コミック一冊分（30Cut × 1〜50話）の自動制作をローンチ！
+  // Step 3: 自動制作の設計図を確定・ローンチ！
   // =========================================================================
   const handleLaunch = () => {
     if (!currentCandidate) return;
@@ -753,16 +858,16 @@ ${customTastesInstruction}
 
     // シリーズマニフェストを構築
     const manifest: SeriesManifest = {
-      seriesTitle: seriesTitle || `${currentCandidate.name} 漫画連載`,
+      seriesTitle: seriesTitle || (productionMode === 'mv' ? `${currentCandidate.name} MV Collection` : `${currentCandidate.name} 制作シリーズ`),
       totalEpisodes: episodeCount,
       currentEpisodeId: 1,
       completedEpisodeIds: [],
       overallSynopsis: overallSynopsis || `${selectedTheme}の世界を舞台にした${currentCandidate.name}の壮大な物語`,
       episodesPlan: displayedEpisodes.length > 0 ? displayedEpisodes : Array.from({ length: episodeCount }, (_, i) => ({
         epNumber: i + 1,
-        titleJp: `第${i + 1}話`,
-        titleEn: `Episode ${i + 1}`,
-        summary: `${currentCandidate.name}の物語 第${i + 1}話`
+        titleJp: productionMode === 'mv' ? `Track ${i + 1}` : `第${i + 1}話`,
+        titleEn: productionMode === 'mv' ? `Track ${i + 1}` : `Episode ${i + 1}`,
+        summary: `${currentCandidate.name}の物語 第${i + 1}${currentModeConfig.unit}`
       })),
       referenceAsset: currentCandidate.turnaroundBase64 ? {
         name: `${currentCandidate.name} (三面図マスター)`,
@@ -776,12 +881,14 @@ ${customTastesInstruction}
         taste: currentCandidate.tasteName,
         episodeCount: episodeCount,
         previewCutCount: cutsPerEpisode,
-        isMangaMode: true,
-        isMultiPanel: true,
+        isMangaMode: productionMode === 'manga',
+        isMultiPanel: productionMode === 'manga',
+        productionMode: productionMode,
       }
     };
 
     onLaunchComicSeries({
+      productionMode,
       theme: selectedTheme,
       taste: currentCandidate.tasteName,
       protagonist: mainProtagonist,
@@ -855,7 +962,7 @@ ${customTastesInstruction}
         {/* Step Progress Bar */}
         <div className="px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold shrink-0">
           {[
-            { num: 1, label: '① 世界観＆主人公三面図' },
+            { num: 1, label: '① 制作大枠＆主人公三面図' },
             { num: 2, label: '② お友達・相棒配役' },
             { num: 3, label: '③ 話数・プロット＆方向性確定' },
           ].map(s => {
@@ -883,18 +990,73 @@ ${customTastesInstruction}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 bg-slate-50/50 flex flex-col gap-4">
           
           {/* ========================================================
-              STEP 1: 世界観テーマ選定 ＆ 画風5選×三面図AI作画
+              STEP 1: 制作大枠選定 ＆ 世界観 ＆ 画風5選×三面図AI作画
              ======================================================== */}
           {step === 1 && (
             <div className="flex flex-col gap-4 animate-fadeIn">
               
+              {/* Production Mode Selector Section (大枠選択) */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-3 shadow-2xs">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-sm text-indigo-600">category</span>
+                      ① 制作大枠・ジャンル (Production Mode)
+                    </label>
+                    <span className="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200/60 font-bold">
+                      ※ 選択したジャンルに合わせてテーマ・話数・AI演出が全自動で最適化されます
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-bold text-slate-500">
+                    現在の大枠: <span className="text-indigo-600 font-extrabold">{currentModeConfig.label}</span>
+                  </div>
+                </div>
+
+                {/* 大枠カード一覧 */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {AVAILABLE_PRODUCE_MODES.map((mode) => {
+                    const isSelected = productionMode === mode.value;
+                    return (
+                      <button
+                        key={mode.value}
+                        type="button"
+                        onClick={() => handleModeChange(mode.value)}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative flex flex-col gap-1 ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-indigo-50/90 to-purple-50/90 border-indigo-500 ring-2 ring-indigo-500/30 shadow-xs'
+                            : 'bg-slate-50/60 hover:bg-slate-100/80 border-slate-200 hover:border-slate-300 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black flex items-center gap-1 text-slate-900">
+                            <span className="material-symbols-outlined text-[16px] text-indigo-600">{mode.icon}</span>
+                            {mode.label}
+                          </span>
+                          {isSelected && (
+                            <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                              ✓
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-500 line-clamp-1 leading-snug">
+                          {mode.desc}
+                        </span>
+                        <span className="inline-block text-[9px] px-1.5 py-0.5 rounded bg-slate-200/70 text-slate-700 font-bold w-fit mt-0.5">
+                          {mode.badge}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Guidance Box */}
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200/80 p-3.5 rounded-xl flex items-start gap-3 text-indigo-950 shadow-2xs">
                 <span className="material-symbols-outlined text-indigo-600 mt-0.5 text-xl">auto_fix_high</span>
                 <div className="text-xs leading-relaxed">
-                  <p className="font-bold">世界観を選び、「三面図を一括AI作画」ボタンを押してください。</p>
+                  <p className="font-bold">制作大枠と世界観を選び、「三面図を一括AI作画」ボタンを押してください。</p>
                   <p className="text-indigo-700 mt-0.5">
-                    基本は<strong>「AIおまかせ」</strong>で世界観に最適な5画風×三面図を自動作画しますが、<strong>「自分で画風を指定」</strong>で好きな画風を1〜5個ピンポイント指定することも可能です！
+                    基本は<strong>「AIおまかせ」</strong>で大枠に最適な5画風×三面図を自動作画しますが、<strong>「自分で画風を指定」</strong>で好きな画風を1〜5個ピンポイント指定することも可能です！
                     上部の<strong>「JSON保存」「JSON読込」</strong>で、設定内容をいつでもローカルにバックアップ・復元できます。
                   </p>
                 </div>
@@ -906,10 +1068,10 @@ ${customTastesInstruction}
                   <div className="flex items-center gap-2">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-sm text-amber-500">public</span>
-                      世界観・テーマ (World Theme)
+                      {currentModeConfig.themeLabel || '世界観・テーマ'} ({currentModeConfig.label})
                     </label>
                     <span className="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200/60 font-semibold">
-                      ※ 1つの世界観から1〜50話の大河連載を展開可能
+                      ※ 選択した世界観から全話・全トラックの大河連載を展開可能
                     </span>
                   </div>
                   <button
@@ -932,45 +1094,63 @@ ${customTastesInstruction}
                         : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                     }`}
                   >
-                    すべて ({THEMES.length})
+                    すべて ({activeThemesList.length})
                   </button>
-                  {THEME_CATEGORIES.map((cat, idx) => {
-                    const isSelected = selectedThemeCategory === cat.category;
-                    const shortLabel = cat.category.split(' ')[0] + ' ' + cat.category.split(' ')[1];
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setSelectedThemeCategory(cat.category)}
-                        className={`px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-indigo-600 text-white shadow-xs'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                        }`}
-                        title={cat.category}
-                      >
-                        {shortLabel} ({cat.items.length})
-                      </button>
-                    );
-                  })}
+                  {/* ジャンル区切りフィルタ・タブ (ドラマ・通常時のみ表示、モード専用テーマがある時は専用バッジ) */}
+                  {(!currentModeConfig.themes || currentModeConfig.themes.length === 0) ? (
+                    THEME_CATEGORIES.map((cat, idx) => {
+                      const isSelected = selectedThemeCategory === cat.category;
+                      const shortLabel = cat.category.split(' ')[0] + ' ' + cat.category.split(' ')[1];
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedThemeCategory(cat.category)}
+                          className={`px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-indigo-600 text-white shadow-xs'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                          }`}
+                          title={cat.category}
+                        >
+                          {shortLabel} ({cat.items.length})
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-200 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                      {currentModeConfig.label} に特化した厳選テーマ（全{currentModeConfig.themes.length}選）
+                    </span>
+                  )}
                 </div>
 
-                {/* 世界観ドロップダウン（optgroupでカテゴリごとに明確に区切り表示） */}
+                {/* 世界観ドロップダウン（モード固有テーマ または カテゴリ別テーマ） */}
                 <div className="flex items-center gap-3">
                   <select
                     value={selectedTheme}
                     onChange={e => setSelectedTheme(e.target.value)}
                     className="flex-1 px-3 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 font-bold leading-relaxed cursor-pointer"
                   >
-                    {THEME_CATEGORIES.filter(c => selectedThemeCategory === 'all' || selectedThemeCategory === c.category).map((cat, cIdx) => (
-                      <optgroup key={cIdx} label={`━━━ ${cat.category} ━━━`} className="font-extrabold text-indigo-900 bg-slate-100 py-1">
-                        {cat.items.map((themeItem, idx) => (
+                    {currentModeConfig.themes && currentModeConfig.themes.length > 0 ? (
+                      <optgroup label={`━━━ ${currentModeConfig.label} 厳選テーマ一覧 ━━━`} className="font-extrabold text-indigo-900 bg-slate-100 py-1">
+                        {currentModeConfig.themes.map((themeItem, idx) => (
                           <option key={idx} value={themeItem} className="text-slate-800 bg-white font-medium py-1">
                             {themeItem}
                           </option>
                         ))}
                       </optgroup>
-                    ))}
+                    ) : (
+                      THEME_CATEGORIES.filter(c => selectedThemeCategory === 'all' || selectedThemeCategory === c.category).map((cat, cIdx) => (
+                        <optgroup key={cIdx} label={`━━━ ${cat.category} ━━━`} className="font-extrabold text-indigo-900 bg-slate-100 py-1">
+                          {cat.items.map((themeItem, idx) => (
+                            <option key={idx} value={themeItem} className="text-slate-800 bg-white font-medium py-1">
+                              {themeItem}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>
@@ -1350,9 +1530,9 @@ ${customTastesInstruction}
               <div className="bg-amber-50/70 border border-amber-200/80 p-3.5 rounded-xl flex items-start gap-3 text-amber-950 shadow-2xs">
                 <span className="material-symbols-outlined text-amber-600 mt-0.5 text-xl">tune</span>
                 <div className="text-xs leading-relaxed">
-                  <p className="font-bold">制作ボリューム（話数・カット数）を設定し、全話プロットを確定します。</p>
+                  <p className="font-bold">【{currentModeConfig.label}】制作ボリューム（{currentModeConfig.unit}数・カット数）を設定し、全体の構成プロットを確定します。</p>
                   <p className="text-amber-800 mt-0.5">
-                    1話〜50話の連載に対応。制作時に<strong>【マンガ風コマ割り】</strong>をONにすれば変形マルチコマ漫画に、OFFなら本格シネマドラマとして制作されます。
+                    大枠「{currentModeConfig.label}」に沿った演出・テロップ（{currentModeConfig.telopNote}）で制作されます。
                   </p>
                 </div>
               </div>
@@ -1363,10 +1543,10 @@ ${customTastesInstruction}
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-sm text-indigo-500">format_list_numbered</span>
-                      連載話数 (Volume)
+                      制作ボリューム ({currentModeConfig.unit}数)
                     </label>
                     <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                      全 {episodeCount} 話
+                      全 {episodeCount} {currentModeConfig.unit}
                     </span>
                   </div>
                   <input
@@ -1378,11 +1558,11 @@ ${customTastesInstruction}
                     className="w-full accent-indigo-600 cursor-pointer"
                   />
                   <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold px-0.5">
-                    <button type="button" onClick={() => handleEpisodeCountChange(1)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 1 ? 'text-indigo-600 font-black underline' : ''}`}>1話 (読切)</button>
-                    <button type="button" onClick={() => handleEpisodeCountChange(2)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 2 ? 'text-indigo-600 font-black underline' : ''}`}>2話 (前後編)</button>
-                    <button type="button" onClick={() => handleEpisodeCountChange(4)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 4 ? 'text-indigo-600 font-black underline' : ''}`}>4話 (起承転結)</button>
-                    <button type="button" onClick={() => handleEpisodeCountChange(10)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 10 ? 'text-indigo-600 font-black underline' : ''}`}>10話</button>
-                    <button type="button" onClick={() => handleEpisodeCountChange(20)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 20 ? 'text-indigo-600 font-black underline' : ''}`}>20話 (中編)</button>
+                    <button type="button" onClick={() => handleEpisodeCountChange(1)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 1 ? 'text-indigo-600 font-black underline' : ''}`}>1{currentModeConfig.unit} {productionMode === 'mv' ? '(単曲)' : '(読切)'}</button>
+                    <button type="button" onClick={() => handleEpisodeCountChange(2)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 2 ? 'text-indigo-600 font-black underline' : ''}`}>2{currentModeConfig.unit}</button>
+                    <button type="button" onClick={() => handleEpisodeCountChange(4)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 4 ? 'text-indigo-600 font-black underline' : ''}`}>4{currentModeConfig.unit} {productionMode === 'mv' ? '(EP盤)' : '(起承転結)'}</button>
+                    <button type="button" onClick={() => handleEpisodeCountChange(10)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 10 ? 'text-indigo-600 font-black underline' : ''}`}>10{currentModeConfig.unit}</button>
+                    <button type="button" onClick={() => handleEpisodeCountChange(20)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 20 ? 'text-indigo-600 font-black underline' : ''}`}>20{currentModeConfig.unit}</button>
                   </div>
                 </div>
 
@@ -1390,14 +1570,14 @@ ${customTastesInstruction}
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-sm text-purple-500">movie</span>
-                      1話あたりの作画カット数
+                      1{currentModeConfig.unit}あたりの作画カット数
                     </label>
                     <span className="text-xs font-extrabold text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
                       {cutsPerEpisode} Cut
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[12, 24, 30].map(cnt => (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[5, 12, 24, 30].map(cnt => (
                       <button
                         key={cnt}
                         type="button"
@@ -1408,12 +1588,12 @@ ${customTastesInstruction}
                             : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                         }`}
                       >
-                        {cnt} Cut {cnt === 30 ? '🔥 標準' : ''}
+                        {cnt} Cut {cnt === (productionMode === 'mv' ? 12 : 30) ? '★' : ''}
                       </button>
                     ))}
                   </div>
                   <span className="text-[10px] text-slate-500 leading-tight">
-                    ※ 『マンガ風コマ割り』ON時は1カット内に2〜5コマが自動配置されます。OFF時は1カット1枚のシネマ作画になります。
+                    ※ 大枠「{currentModeConfig.label}」の推奨カット数に合わせて設定できます。
                   </span>
                 </div>
               </div>

@@ -179,13 +179,15 @@ export default function App() {
     };
     handleUpdateMangaProject(newProject);
 
-    // 2. スタジオ設定をコミック仕様に自動同期（ドラマ連番・漫画コマ割りON・30Cut・話数）
+    // 2. スタジオ設定を大枠仕様に自動同期（ドラマ連番 / 音楽MV / マンガ等）
     setSettings(prev => ({
       ...prev,
-      productionMode: 'episodes',
+      productionMode: payload.productionMode,
+      isMvMode: payload.productionMode === 'mv',
+      isMangaMode: payload.productionMode === 'manga',
+      isMultiPanel: payload.productionMode === 'manga',
       theme: payload.theme,
       taste: payload.taste,
-      isMultiPanel: true,
       previewCutCount: payload.cutsPerEpisode,
       episodeCount: payload.totalEpisodes,
     }));
@@ -440,6 +442,7 @@ export default function App() {
           <ComicCreationWizardModal
             isOpen={isComicWizardOpen}
             onClose={() => setIsComicWizardOpen(false)}
+            currentMode={settings.productionMode}
             currentTheme={settings.theme}
             currentTaste={settings.taste}
             onLaunchComicSeries={handleLaunchComicSeries}
