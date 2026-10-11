@@ -79,9 +79,10 @@ export async function renderFullEpisodeMovie(
     console.error('Intro cover render failed', e);
   }
 
-  for (let i = 0; i < episode.cuts.length; i++) {
-    const cut = episode.cuts[i];
-    onProgress(i + 1, episode.cuts.length);
+  try {
+    for (let i = 0; i < episode.cuts.length; i++) {
+      const cut = episode.cuts[i];
+      onProgress(i + 1, episode.cuts.length);
 
     if (cut.videoBase64) {
       const video = document.createElement('video');
@@ -166,13 +167,14 @@ export async function renderFullEpisodeMovie(
       }
     }
   }
+} finally {
+  try { canvasSource.close(); } catch (_) {}
+  try { await output.finalize(); } catch (_) {}
 
-  canvasSource.close();
-  await output.finalize();
-
-  ctx.clearRect(0, 0, width, height);
-  outputCanvas.width = 0;
-  outputCanvas.height = 0;
+    ctx.clearRect(0, 0, width, height);
+    outputCanvas.width = 0;
+    outputCanvas.height = 0;
+  }
 
   return new Blob([output.target.buffer!], { type: 'video/mp4' });
 }

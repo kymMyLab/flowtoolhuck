@@ -88,7 +88,7 @@ export function useVideoGeneration({
           const waitStr = formatDurationMs(delay);
           const errMsg = formatErrorMessage(err);
           if (isSuper) {
-            addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
+            addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/4] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
           } else {
             addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
           }

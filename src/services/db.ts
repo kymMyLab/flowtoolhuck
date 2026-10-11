@@ -56,11 +56,18 @@ export const saveStory = async (story: StoryRecord): Promise<number | null> => {
   if (!story.titleJp || story.titleJp.trim() === '' || story.titleJp === 'undefined') {
     return null;
   }
+
+  // ブラウザのIndexedDBクォータ制限超過を防ぐため、誤って巨大なBase64等が混入した場合は除去する
+  const safeStory = { ...story };
+  if (safeStory.metadata && typeof safeStory.metadata === 'string' && safeStory.metadata.length > 1024 * 1024) {
+    safeStory.metadata = JSON.stringify({ warning: 'metadata stripped due to size limit' });
+  }
+
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
-    const request = store.add(story);
+    const request = store.add(safeStory);
     request.onsuccess = () => resolve(request.result as number);
     request.onerror = () => reject(request.error);
   });
