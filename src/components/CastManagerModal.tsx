@@ -236,7 +236,13 @@ ${tasteInstruction}
 ]`;
 
     try {
-      const res = await Flow.generate.text(prompt);
+      const res = await callWithRetry<any>(
+        () => Flow.generate.text(prompt),
+        (attempt, max, delay, err) => {
+          onAddLog(`⚠️ 物語企画ブレスト リトライ (${attempt}/${max}) ${Math.round(delay / 1000)}秒後... (${formatErrorMessage(err)})`, 'warning');
+        },
+        5
+      );
       const text = res?.text || (typeof res === 'string' ? res : '');
       const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
       const concepts = safeJsonParse<MangaStoryConcept[]>(cleaned, []);

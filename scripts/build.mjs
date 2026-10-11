@@ -86,7 +86,20 @@ async function runBuild() {
     if (!fs.existsSync(targetDistDir)) {
       fs.mkdirSync(targetDistDir, { recursive: true });
     }
-    // 個別にコピー（rmSyncを避け、上書きコピー）
+    // 古いチャンクファイルの整理（ローカルビルド側にない過去のハッシュファイルを削除）
+    const targetChunksDir = path.join(targetDistDir, 'chunks');
+    const localChunksDir = path.join(localDistDir, 'chunks');
+    if (fs.existsSync(targetChunksDir) && fs.existsSync(localChunksDir)) {
+      const activeChunkNames = new Set(fs.readdirSync(localChunksDir));
+      for (const oldFile of fs.readdirSync(targetChunksDir)) {
+        if (!activeChunkNames.has(oldFile)) {
+          try {
+            fs.unlinkSync(path.join(targetChunksDir, oldFile));
+          } catch {}
+        }
+      }
+    }
+    // コピー実行
     copySync(localDistDir, targetDistDir);
     const bundleStat = fs.statSync(path.join(targetDistDir, 'bundle.js'));
     log(`Successfully copied dist/ (including split chunks) to workspace. Router bundle.js: ${(bundleStat.size / 1024).toFixed(1)} KB`);

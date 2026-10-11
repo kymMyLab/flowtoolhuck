@@ -215,8 +215,10 @@ ${customTastesInstruction}
     try {
       const res = await callWithRetry<any>(
         () => Flow.generate.text(prompt),
-        undefined,
-        2
+        (attempt, max, delay, err) => {
+          onAddLog(`⚠️ [画風&キャラ考案] リトライ (${attempt}/${max}) ${Math.round(delay / 1000)}秒待機... (${formatErrorMessage(err)})`, 'warning');
+        },
+        5
       );
       const text = res?.text || (typeof res === 'string' ? res : '');
       const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -397,8 +399,10 @@ ${customTastesInstruction}
     try {
       const res = await callWithRetry<any>(
         () => Flow.generate.text(prompt),
-        undefined,
-        4
+        (attempt, max, delay, err) => {
+          onAddLog(`⚠️ [全話プロット生成] リトライ (${attempt}/${max}) ${Math.round(delay / 1000)}秒待機... (${formatErrorMessage(err)})`, 'warning');
+        },
+        5
       );
       const text = res?.text || (typeof res === 'string' ? res : '');
       const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -476,8 +480,10 @@ ${customTastesInstruction}
     try {
       const res = await callWithRetry<any>(
         () => Flow.generate.text(prompt),
-        undefined,
-        3
+        (attempt, max, delay, err) => {
+          onAddLog(`⚠️ [サブキャラ考案] リトライ (${attempt}/${max}) ${Math.round(delay / 1000)}秒待機... (${formatErrorMessage(err)})`, 'warning');
+        },
+        5
       );
       const text = res?.text || (typeof res === 'string' ? res : '');
       const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
