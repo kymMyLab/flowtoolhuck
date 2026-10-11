@@ -632,18 +632,30 @@ export const downloadZip = async (
     for (const c of ep.cuts) {
       // Start絵
       if (c.imageBase64) {
-        const cleanImg = c.imageBase64.split('base64,').pop() || c.imageBase64;
-        folder.file(`cut_${c.id}.png`, cleanImg, { base64: true });
+        try {
+          const cleanImg = c.imageBase64.split('base64,').pop() || c.imageBase64;
+          folder.file(`cut_${c.id}.png`, cleanImg, { base64: true });
+        } catch (e) {
+          console.warn(`Failed to inject start image for cut ${c.id}:`, e);
+        }
       }
       // After絵（Veo補間用 到達点フレーム）
       if (c.endFrameImageBase64) {
-        const cleanEndImg = c.endFrameImageBase64.split('base64,').pop() || c.endFrameImageBase64;
-        folder.file(`cut_${c.id}_after.png`, cleanEndImg, { base64: true });
+        try {
+          const cleanEndImg = c.endFrameImageBase64.split('base64,').pop() || c.endFrameImageBase64;
+          folder.file(`cut_${c.id}_after.png`, cleanEndImg, { base64: true });
+        } catch (e) {
+          console.warn(`Failed to inject end frame image for cut ${c.id}:`, e);
+        }
       }
       // 生成動画
       if (c.videoBase64) {
-        const cleanVid = c.videoBase64.split('base64,').pop() || c.videoBase64;
-        folder.file(`cut_${c.id}.mp4`, cleanVid, { base64: true });
+        try {
+          const cleanVid = c.videoBase64.split('base64,').pop() || c.videoBase64;
+          folder.file(`cut_${c.id}.mp4`, cleanVid, { base64: true });
+        } catch (e) {
+          console.warn(`Failed to inject video for cut ${c.id}:`, e);
+        }
       }
       // Event loop breather to prevent UI freeze and allow GC during heavy batch exports
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -652,12 +664,20 @@ export const downloadZip = async (
     // 2. キャラクター基準マスターアセット（三面図、Cut 1マスターアンカー）
     const turnaroundBase64 = ep.characterTurnaroundBase64 || manifest?.referenceAsset?.base64;
     if (turnaroundBase64) {
-      const cleanTurnaround = turnaroundBase64.split('base64,').pop() || turnaroundBase64;
-      folder.file('character_turnaround.png', cleanTurnaround, { base64: true });
+      try {
+        const cleanTurnaround = turnaroundBase64.split('base64,').pop() || turnaroundBase64;
+        folder.file('character_turnaround.png', cleanTurnaround, { base64: true });
+      } catch (e) {
+        console.warn('Failed to inject turnaround asset:', e);
+      }
     }
     if (ep.masterAnchorBase64) {
-      const cleanMaster = ep.masterAnchorBase64.split('base64,').pop() || ep.masterAnchorBase64;
-      folder.file('master_anchor.png', cleanMaster, { base64: true });
+      try {
+        const cleanMaster = ep.masterAnchorBase64.split('base64,').pop() || ep.masterAnchorBase64;
+        folder.file('master_anchor.png', cleanMaster, { base64: true });
+      } catch (e) {
+        console.warn('Failed to inject master anchor asset:', e);
+      }
     }
     
     addLog(`📝 SRT字幕ファイルを生成中...`, 'info');
