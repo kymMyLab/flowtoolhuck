@@ -607,18 +607,24 @@ export const downloadZip = async (
     for (const c of ep.cuts) {
       // Start絵
       if (c.imageBase64) {
+        try {
         const cleanImg = c.imageBase64.replace(/^data:[^;]+;base64,/, '');
         folder.file(`cut_${c.id}.png`, cleanImg, { base64: true });
+        } catch (e) { console.warn("Failed start image for cut " + c.id, e); }
       }
       // After絵（Veo補間用 到達点フレーム）
       if (c.endFrameImageBase64) {
+        try {
         const cleanEndImg = c.endFrameImageBase64.replace(/^data:[^;]+;base64,/, '');
         folder.file(`cut_${c.id}_after.png`, cleanEndImg, { base64: true });
+        } catch (e) { console.warn("Failed end image for cut " + c.id, e); }
       }
       // 生成動画
       if (c.videoBase64) {
+        try {
         const cleanVid = c.videoBase64.replace(/^data:[^;]+;base64,/, '');
         folder.file(`cut_${c.id}.mp4`, cleanVid, { base64: true });
+        } catch (e) { console.warn("Failed video for cut " + c.id, e); }
       }
       // Event loop breather to prevent UI freeze and allow GC during heavy batch exports
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -627,12 +633,16 @@ export const downloadZip = async (
     // 2. キャラクター基準マスターアセット（三面図、Cut 1マスターアンカー）
     const turnaroundBase64 = ep.characterTurnaroundBase64 || manifest?.referenceAsset?.base64;
     if (turnaroundBase64) {
+      try {
       const cleanTurnaround = turnaroundBase64.replace(/^data:[^;]+;base64,/, '');
       folder.file('character_turnaround.png', cleanTurnaround, { base64: true });
+      } catch (e) { console.warn("Failed turnaround", e); }
     }
     if (ep.masterAnchorBase64) {
+      try {
       const cleanMaster = ep.masterAnchorBase64.replace(/^data:[^;]+;base64,/, '');
       folder.file('master_anchor.png', cleanMaster, { base64: true });
+      } catch (e) { console.warn("Failed master anchor", e); }
     }
     
     addLog(`📝 SRT字幕ファイルを生成中...`, 'info');
@@ -640,26 +650,32 @@ export const downloadZip = async (
 
     if (ep.coverBase64) {
       addLog(`🖼️ 世界観適応インフォグラフィック扉絵を格納中...`, 'info');
-      const cleanCover = ep.coverBase64.replace(/^data:[^;]+;base64,/, '');
-      folder.file('cover.png', cleanCover, { base64: true });
+      try {
+        const cleanCover = ep.coverBase64.replace(/^data:[^;]+;base64,/, '');
+        folder.file('cover.png', cleanCover, { base64: true });
+      } catch (e) { console.warn('Failed cover base64', e); }
     } else {
       addLog(`🖼️ YouTube用超ド迫力扉絵を合成中...`, 'info');
-      const coverCanvas = await renderCoverCanvas(ep);
-      const coverBlob = await (coverCanvas instanceof OffscreenCanvas 
-        ? coverCanvas.convertToBlob({ type: 'image/png' }) 
-        : new Promise<Blob>(r => (coverCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
-      folder.file('cover.png', coverBlob);
-      if (coverCanvas instanceof OffscreenCanvas) {
-        const coverCtx = coverCanvas.getContext('2d');
-        if (coverCtx) coverCtx.clearRect(0, 0, coverCanvas.width, coverCanvas.height);
-        coverCanvas.width = 0;
-        coverCanvas.height = 0;
-      } else {
-        const cvs = coverCanvas as HTMLCanvasElement;
-        const coverCtx = cvs.getContext('2d');
-        if (coverCtx) coverCtx.clearRect(0, 0, cvs.width, cvs.height);
-        cvs.width = 0;
-        cvs.height = 0;
+      try {
+        const coverCanvas = await renderCoverCanvas(ep);
+        const coverBlob = await (coverCanvas instanceof OffscreenCanvas
+          ? coverCanvas.convertToBlob({ type: 'image/png' })
+          : new Promise<Blob>(r => (coverCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
+        if (coverBlob) folder.file('cover.png', coverBlob);
+        if (coverCanvas instanceof OffscreenCanvas) {
+          const coverCtx = coverCanvas.getContext('2d');
+          if (coverCtx) coverCtx.clearRect(0, 0, coverCanvas.width, coverCanvas.height);
+          coverCanvas.width = 0;
+          coverCanvas.height = 0;
+        } else {
+          const cvs = coverCanvas as HTMLCanvasElement;
+          const coverCtx = cvs.getContext('2d');
+          if (coverCtx) coverCtx.clearRect(0, 0, cvs.width, cvs.height);
+          cvs.width = 0;
+          cvs.height = 0;
+        }
+      } catch (err: any) {
+        addLog(`⚠️ 扉絵の合成に失敗しましたが、処理を継続します: ${err.message}`, 'warning');
       }
     }
     

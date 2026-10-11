@@ -557,6 +557,9 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
       const res = await downloadZip(freshEp, addLog, undefined, currentLogs);
       if (res) {
+        if (freshEp.packageZipBlobUrl) {
+          try { URL.revokeObjectURL(freshEp.packageZipBlobUrl); } catch (_) {}
+        }
         updateEpisode(epIndex, {
           packageZipBlobUrl: res.blobUrl,
           packageZipFilename: res.filename,
@@ -880,6 +883,9 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
         const res = await downloadZip(freshEp, addLog, manifest, currentLogs);
         if (res) {
+          if (freshEp.packageZipBlobUrl) {
+            try { URL.revokeObjectURL(freshEp.packageZipBlobUrl); } catch (_) {}
+          }
           updateEpisode(epId, {
             packageZipBlobUrl: res.blobUrl,
             packageZipFilename: res.filename,
