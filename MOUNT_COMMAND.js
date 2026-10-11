@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@8adaad0/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[新画風＆猫耳魔女キャスト搭載]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@f9c2e51/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[ソシャゲ美麗キービジュアル＆客船の麗人キャスト搭載]'); });
