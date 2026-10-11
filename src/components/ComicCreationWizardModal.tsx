@@ -105,26 +105,11 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
   // 選択中の候補を取得
   const currentCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0];
 
-  // 表示用エピソードプラン：episodeCountと100%同期（2話指定なら厳密に2話分のみ）
+  // 表示用エピソードプラン：生成済みの場合のみepisodeCountに合わせてスライス
   const displayedEpisodes = useMemo(() => {
     if (episodesPlan.length === 0) return [];
-    if (episodesPlan.length >= episodeCount) {
-      return episodesPlan.slice(0, episodeCount);
-    }
-    const diff = episodeCount - episodesPlan.length;
-    const fillers: SeriesEpisodePlan[] = Array.from({ length: diff }, (_, idx) => {
-      const epNum = episodesPlan.length + idx + 1;
-      const progress = epNum / episodeCount;
-      const phase = progress < 0.3 ? '運命の幕開け' : progress < 0.6 ? '深まる謎と試練' : progress < 0.85 ? '最大の激突と転換' : '大団円と未来';
-      return {
-        epNumber: epNum,
-        titleJp: `第${epNum}話 ${phase}`,
-        titleEn: `Episode ${epNum}`,
-        summary: `主人公${currentCandidate?.name || '主人公'}が挑む第${epNum}話の展開`
-      };
-    });
-    return [...episodesPlan, ...fillers];
-  }, [episodesPlan, episodeCount, currentCandidate?.name]);
+    return episodesPlan.slice(0, episodeCount);
+  }, [episodesPlan, episodeCount]);
 
   if (!isOpen) return null;
 
@@ -569,41 +554,16 @@ ${customTastesInstruction}
     }
   };
 
-  // 話数スライダー変更時の即時同期ハンドラー
+  // 話数スライダー変更ハンドラー（勝手な自動生成はせず、値の変更のみ）
   const handleEpisodeCountChange = (newCount: number) => {
     const validCount = Math.max(1, Math.min(50, newCount));
     setEpisodeCount(validCount);
-    setEpisodesPlan(prev => {
-      if (prev.length === 0) return prev;
-      if (prev.length >= validCount) {
-        return prev.slice(0, validCount);
-      }
-      // 不足分を即座に補完
-      const currentLen = prev.length;
-      const additional: SeriesEpisodePlan[] = Array.from({ length: validCount - currentLen }, (_, idx) => {
-        const epNum = currentLen + idx + 1;
-        const progress = epNum / validCount;
-        const phaseName = progress < 0.3 ? '運命の幕開け' : progress < 0.6 ? '深まる謎と試練' : progress < 0.85 ? '最大の激突と転換' : '大団円と未来';
-        return {
-          epNumber: epNum,
-          titleJp: `第${epNum}話 ${phaseName}`,
-          titleEn: `Episode ${epNum} Arc`,
-          summary: `主人公${currentCandidate?.name || '主人公'}が挑む第${epNum}話の試練と成長`
-        };
-      });
-      return [...prev, ...additional];
-    });
   };
 
   // Step 2 ➔ Step 3（話数＆全話プロット）へ進む
   const handleProceedToStep3 = () => {
     setStep(3);
-    onAddLog(`📜 全${episodeCount}話の起承転結ストーリー構成へ進みます`, 'info');
-    if (episodesPlan.length === 0) {
-      setTimeout(() => {
-        handleGenerateStoryPlan(currentCandidate, episodeCount);
-      }, 150);
-    }
+    onAddLog(`📜 Step 3: 話数・カット割りを設定し、プロット生成を行ってください`, 'info');
   };
 
   // =========================================================================
@@ -1302,21 +1262,41 @@ ${customTastesInstruction}
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-indigo-500 text-sm">history_edu</span>
                     <h4 className="text-xs font-bold text-slate-800">
-                      全 {episodeCount} 話 連載プロット構成 ({displayedEpisodes.length}話分)
+                      シリーズ起承転結プロット {episodesPlan.length > 0 ? `(全 ${episodeCount} 話構成 / ${displayedEpisodes.length}話表示)` : `(全 ${episodeCount} 話設定中)`}
                     </h4>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleGenerateStoryPlan(currentCandidate, episodeCount)}
                     disabled={isGeneratingPlan}
-                    className="px-3 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                    className={`px-4 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                      episodesPlan.length === 0
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:brightness-110 animate-pulse'
+                        : 'bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700'
+                    }`}
                   >
-                    <span className={`material-symbols-outlined text-xs ${isGeneratingPlan ? 'animate-spin' : ''}`}>
-                      {isGeneratingPlan ? 'autorenew' : 'refresh'}
+                    <span className={`material-symbols-outlined text-sm ${isGeneratingPlan ? 'animate-spin' : ''}`}>
+                      {isGeneratingPlan ? 'autorenew' : (episodesPlan.length === 0 ? 'auto_awesome' : 'refresh')}
                     </span>
-                    <span>{isGeneratingPlan ? '全話プロット再構築中...' : `全${episodeCount}話でプロット再生成`}</span>
+                    <span>
+                      {isGeneratingPlan 
+                        ? '全話プロット構築中...' 
+                        : (episodesPlan.length === 0 
+                            ? `✨ 全${episodeCount}話のプロットをAI生成する` 
+                            : `🔄 全${episodeCount}話でプロット再生成`)}
+                    </span>
                   </button>
                 </div>
+
+                {/* 話数変更時のリマインダー */}
+                {episodesPlan.length > 0 && episodesPlan.length !== episodeCount && (
+                  <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 flex items-center justify-between text-xs text-amber-800">
+                    <span className="flex items-center gap-1.5 font-bold">
+                      <span className="material-symbols-outlined text-amber-600 text-sm">warning</span>
+                      話数が【全 {episodeCount} 話】に変更されました。最新プロットを再作成するには右上の「プロット再生成」を押してください。
+                    </span>
+                  </div>
+                )}
 
                 {seriesTitle && (
                   <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 flex flex-col gap-1">
@@ -1328,20 +1308,30 @@ ${customTastesInstruction}
                   </div>
                 )}
 
-                {/* Episodes Plan List */}
-                <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
-                  {displayedEpisodes.map((ep) => (
-                    <div key={ep.epNumber} className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200/80 flex items-start gap-2.5 transition-colors">
-                      <span className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[10px] font-black shrink-0 mt-0.5">
-                        第 {ep.epNumber} 話
-                      </span>
-                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                        <span className="text-xs font-bold text-slate-800">{ep.titleJp}</span>
-                        <p className="text-[11px] text-slate-500 leading-snug line-clamp-1">{ep.summary}</p>
+                {/* Episodes Plan List or Placeholder Guide */}
+                {episodesPlan.length === 0 ? (
+                  <div className="py-8 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-center gap-2">
+                    <span className="material-symbols-outlined text-3xl text-indigo-400">history_edu</span>
+                    <p className="text-xs font-bold text-slate-700">プロットはまだ生成されていません</p>
+                    <p className="text-[11px] text-slate-500 max-w-md">
+                      上の設定で<strong>連載話数（全{episodeCount}話）</strong>と<strong>作画カット数（{cutsPerEpisode}Cut）</strong>を自由に決めた後、右上の<strong>「✨ 全{episodeCount}話のプロットをAI生成する」</strong>ボタンを押してください。
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+                    {displayedEpisodes.map((ep) => (
+                      <div key={ep.epNumber} className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200/80 flex items-start gap-2.5 transition-colors">
+                        <span className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[10px] font-black shrink-0 mt-0.5">
+                          第 {ep.epNumber} 話
+                        </span>
+                        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                          <span className="text-xs font-bold text-slate-800">{ep.titleJp}</span>
+                          <p className="text-[11px] text-slate-500 leading-snug line-clamp-1">{ep.summary}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             </div>
@@ -1430,18 +1420,23 @@ ${customTastesInstruction}
               <button
                 type="button"
                 onClick={handleLaunch}
-                disabled={isGeneratingPlan}
+                disabled={isGeneratingPlan || episodesPlan.length === 0}
                 style={{
-                  color: isGeneratingPlan ? '#94a3b8' : '#ffffff'
+                  color: isGeneratingPlan || episodesPlan.length === 0 ? '#94a3b8' : '#ffffff'
                 }}
                 className={`px-7 py-3 rounded-xl text-xs font-black flex items-center gap-2 transition-all select-none ${
-                  isGeneratingPlan
+                  isGeneratingPlan || episodesPlan.length === 0
                     ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
                     : 'bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-lg hover:shadow-xl cursor-pointer transform hover:scale-102'
                 }`}
+                title={episodesPlan.length === 0 ? '先にプロットをAI生成してください' : '連載をスタート'}
               >
                 <span className="material-symbols-outlined text-lg">rocket_launch</span>
-                <span>🚀 コミック一冊分の自動制作をスタート！（30Cut × 全{episodeCount}話）</span>
+                <span>
+                  {episodesPlan.length === 0
+                    ? `⚠️ 先にプロットを生成してください（${cutsPerEpisode}Cut × 全${episodeCount}話）`
+                    : `🚀 コミック一冊分の自動制作をスタート！（${cutsPerEpisode}Cut × 全${episodeCount}話）`}
+                </span>
               </button>
             )}
           </div>
