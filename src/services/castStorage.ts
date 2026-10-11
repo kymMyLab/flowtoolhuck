@@ -112,6 +112,12 @@ export const DEFAULT_MANGA_PROJECT: MangaProject = {
       'protagonist',
       'A tiny chubby young anime witch girl with blunt straight-cut fringe bangs, messy longer light ash-blonde hair, large half-closed drowsy unamused sullen teal-blue eyes, slightly grumpy pouty expression, two large fluffy furry animal ears sprouting naturally from head sides below hat brim, a massive bushy heavily textured furry squirrel tail, oversized floppy dark purple-black witch hat decorated with gold stars and large ribbon badge, roomy dark hooded witch cloak, dark dress, patterned tights, chunky lace-up boots'
     ),
+    createDefaultCastCharacter(
+      'char_pouty_squirrel_witch',
+      'リス魔女 (パッツンジト目・単一尻尾固定)',
+      'protagonist',
+      'A tiny chubby young anime witch girl with blunt straight-cut fringe bangs, messy spiky ash-blonde hair, large half-closed drowsy unamused sullen teal-blue eyes, slightly grumpy cynical pout, two large fluffy furry animal ears sprouting naturally from head sides, strictly ONE single massive bushy heavily textured furry squirrel tail curving to the right side (strictly one tail, asymmetrical), oversized floppy dark witch hat decorated with gold stars and ribbon badge, dark hooded witch cloak, dark dress, chunky boots'
+    ),
   ],
 };
 

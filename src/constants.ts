@@ -169,7 +169,34 @@ export const TASTES: Record<string, string> = {
     "Authentic Leonardo da Vinci codex manuscript sketch, complex flying ornithopter mechanism and astronomical clockwork, sepia aged parchment paper texture, vintage brown fountain ink linework, Renaissance engineering studies, anatomical and mechanical notations, museum archival illustration",
 
   "📜 レトロ淡彩アトリエ・極細線画 (Nostalgic Faded Pastel Whisper-Line)":
-    "2D anime illustration, retro fantasy anime style, detailed flat coloring, extremely fine whisper-thin pencil-like outline, ultra-delicate and intricate line art with paper-thin slightly rough borders blending softly with colors, grainy heavily textured flat anime aesthetic, vintage film grain, rustic soft digital painting quality, muted and desaturated color palette with warm faded natural pastel tones (soft beige, pale orange, muted green, faded browns), gentle natural daylight paper-like warmth, cluttered atmospheric lived-in details, natural camera-grain overlay"
+    "2D anime illustration, retro nostalgic hand-drawn anime style, detailed flat coloring, extremely fine whisper-thin pencil-like outline, ultra-delicate and intricate line art with paper-thin slightly rough borders blending softly with colors, grainy heavily textured flat anime aesthetic, vintage film grain, rustic soft digital painting quality, muted and desaturated color palette with warm faded natural pastel tones (soft beige, pale orange, muted green, faded browns), gentle natural daylight paper-like warmth, cluttered atmospheric lived-in details, natural camera-grain overlay",
+
+  "📼 90s平成深夜アニメ・セル画キャプチャ (90s Retro Cel Animation CRT)":
+    "A grainy candid retro 2D anime screenshot in 1990s vintage cel animation style, captured in a nostalgia-heavy low-contrast 4:3-inspired cinematic view, analog film grain, natural hand-painted cel imperfections, visible VHS-tape scanlines, slight chromatic aberration and color bleeding at borders, CRT television display artifacts, subtle dark brown ink contours, faded desaturated analog color grading, soft ambient halation",
+
+  "🖋️ 昭和怪異ホラー・カケアミ劇画 (Vintage Japanese Horror Crosshatch)":
+    "Vintage Japanese horror manga illustration style, 1970s retro graphic art, heavily stylized vintage print aesthetic, rough black ink linework with authentic dip pen texture and ink bleed, dense hand-drawn crosshatching and fine screentone shading, printed on aged yellowed tea-stained vintage pulp paper texture, severe desaturation with sepia, off-white, and charcoal blacks, eerie Showa-era dark folklore mood",
+
+  "⚡ Y2Kストリート・太線ポップステッカー (Bold Line Y2K Pop Sticker)":
+    "Vibrant 2000s Y2K street fashion anime illustration, bold graphic sticker art style, extremely thick bold solid black ink outlines, vibrant punchy flat saturated pop colors, sharp high-contrast cel shading with dramatic comic pop-art highlights, dynamic wide-angle fisheye lens perspective, crisp vector-like graphic finish, clean halftone dot accents, urban graffiti backdrop",
+
+  "🕯️ ダークゴシック童話・ペン画版画 (Dark Gothic Fairytale Engraving)":
+    "Dark fantasy gothic fairytale storybook illustration, antique crosshatch engraving art style, intricate pen-and-ink linework with dense crosshatching, scratchy etched woodblock aesthetic, monochrome base with muted desaturated jewel tones (faded plum, moss green, tarnished gold accents), aged parchment texture, high contrast chiaroscuro with elongated spindly shadows, whimsical macabre atmosphere",
+
+  "🌸 70s-80sレトロ少女漫画・水彩ロマンス (Vintage Shoujo Watercolor Romance)":
+    "Vintage 1970s-1980s shoujo manga color illustration, nostalgic watercolor aesthetic, delicate ink contours with soft watercolor bleed and feathering, muted warm pastel palette (lavender, peach, dusty rose), luminous retro anime eyes with hand-drawn star highlights and dense lashes, soft colored-pencil textures and paper grain, dreamy floating bubbles and floral petals",
+
+  "🔮 中世タロット・ゴシック木版画 (Antique Medieval Tarot Woodcut)":
+    "Antique medieval tarot card illustration, dark gothic woodcut engraving print art style, high-contrast monochrome ink illustration with aged gold leaf accents, intricate linework reminiscent of vintage woodblock prints and Aubrey Beardsley ink drawings, crisp crosshatching, framed within an ornate vintage baroque occult border frame with mystical sun and moon motifs, aged yellowed parchment paper",
+
+  "🧶 フェルト＆クレイ・ストップモーション人形劇 (Tactile Claymation & Felt Puppet)":
+    "Charming tactile stop-motion puppet animation still, claymation and wool-felt puppet art style, macro miniature photography, visible handcrafted textures including soft wool fuzz, delicate clay fingerprints, tiny fabric stitching, miniature tilt-shift depth of field with soft blurred background, cinematic warm studio lighting with tiny physical shadows, cozy attic diorama",
+
+  "🎨 リソグラフ版ズレ＆2色刷りグラフィック (Risograph Print Two-Tone Indie MV)":
+    "Stylized risograph print anime illustration, limited color screenprint art style, indie music video graphic aesthetic, authentic risograph texture with intentional slight misregistration and color misalignment, visible coarse halftone grain, ink roller texture, bold minimalist color palette strictly limited to vibrant fluorescent warm orange and deep muted navy/teal duotone against rough art paper, crisp graphic linework",
+
+  "✂️ 立体ペーパーカット・極彩色シャドウシアター (Layered Papercut Shadow Theater)":
+    "Intricate multi-layered papercut illustration, shadow puppet theater aesthetic, 3D papercraft art style, handcrafted layered cut-paper diorama, distinct visible paper textures, sharp laser-cut paper edges with subtle cast drop shadows between overlapping layers creating physical depth, dramatic theatrical backlit illumination shining through translucent colored paper layers (stained-glass effect), rich jewel-tone color palette (emerald green, deep amethyst violet, glowing amber gold)"
 };
 
 import {

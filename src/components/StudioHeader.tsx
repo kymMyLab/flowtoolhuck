@@ -79,29 +79,11 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   const startBtn = getStartButtonConfig();
 
   return (
-    <header className="h-[64px] bg-white border-b border-slate-200 px-3.5 flex items-center justify-between gap-3 shrink-0 z-40 relative shadow-sm overflow-x-auto">
-      {/* Left: Logo & Mode */}
-      <div className="flex items-center gap-3 shrink-0">
-        <div className="flex items-center gap-1.5 text-slate-800">
-          <span className="material-symbols-outlined text-amber-500 text-2xl">movie_edit</span>
-          <h1 className="text-base font-black italic tracking-tighter uppercase whitespace-nowrap">Studio Pro</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <FieldDropdown 
-            label=""
-            value={currentModeDef.label}
-            options={PRODUCTION_MODES.map(m => m.label)}
-            onChange={label => {
-              const matched = PRODUCTION_MODES.find(m => m.label === label);
-              if (matched) handleModeChange(matched.value);
-            }}
-            disabled={isProducing}
-            className="w-[145px]"
-          />
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold border border-slate-200 whitespace-nowrap">
-            {currentModeDef.badge}
-          </span>
-        </div>
+    <header className="h-[64px] bg-white border-b border-slate-200 px-3.5 flex items-center justify-between gap-3 shrink-0 z-40 relative shadow-sm">
+      {/* Left: Logo */}
+      <div className="flex items-center gap-2 shrink-0 text-slate-800">
+        <span className="material-symbols-outlined text-amber-500 text-2xl">movie_edit</span>
+        <h1 className="text-base font-black italic tracking-tighter uppercase whitespace-nowrap">Studio Pro</h1>
       </div>
 
       <div className="w-px h-7 bg-slate-200 shrink-0"></div>
@@ -125,12 +107,32 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
       <div className="w-px h-7 bg-slate-200 shrink-0"></div>
 
-      {/* ② 次にお任せエリア (お任せと言いつつ今まで通り選べる) */}
+      {/* ② 次にお任せエリア (モード・テーマ・画風を今まで通り自由に選べる) */}
       <div className="flex items-center gap-2 p-1 bg-slate-50/80 rounded-xl border border-slate-200/80 shrink-0">
         <div className="flex items-center gap-1 text-[11px] font-black text-slate-500 px-1 whitespace-nowrap">
           <span className="material-symbols-outlined text-sm text-indigo-500">casino</span>
           <span>② お任せ設定</span>
         </div>
+
+        {/* 制作モード（ドラマ連番など） */}
+        <div className="flex items-center gap-1.5">
+          <FieldDropdown 
+            label=""
+            value={currentModeDef.label}
+            options={PRODUCTION_MODES.map(m => m.label)}
+            onChange={label => {
+              const matched = PRODUCTION_MODES.find(m => m.label === label);
+              if (matched) handleModeChange(matched.value);
+            }}
+            disabled={isProducing}
+            className="w-[130px]"
+          />
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white text-slate-700 font-bold border border-slate-200 whitespace-nowrap shadow-2xs">
+            {currentModeDef.badge}
+          </span>
+        </div>
+
+        <div className="w-px h-6 bg-slate-200 shrink-0"></div>
 
         {/* テーマ選択 */}
         <div className="flex items-center gap-1">
@@ -141,7 +143,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             groups={themeConfig.groups}
             onChange={v => setSettings(s => ({ ...s, theme: v, era: v }))} 
             disabled={isProducing} 
-            className="w-[200px]"
+            className="w-[180px]"
           />
           <button
             type="button"
@@ -168,7 +170,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                 options={tasteOptions} 
                 onChange={v => setSettings(s => ({ ...s, taste: v }))} 
                 disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId} 
-                className="w-[190px]"
+                className="w-[170px]"
               />
             );
           })()}
