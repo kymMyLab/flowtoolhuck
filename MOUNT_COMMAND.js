@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@099603d/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[作成開始ボタン一本化＆UIスッキリ統合]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@b35ec75/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[徹底リファクタリング・重複排除・リアルタイム思考ハートビートログ搭載]'); });
