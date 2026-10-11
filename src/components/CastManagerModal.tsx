@@ -2,6 +2,9 @@ import React, { useState, useRef } from 'react';
 import { MangaProject, CastCharacter, ExpressionType, CastExpression } from '../types';
 import { EXPRESSION_METAS, createDefaultCastCharacter, exportProjectJson, importProjectJson } from '../services/castStorage';
 import { PrimaryButton, SecondaryButton, SectionLabel } from './Primitives';
+import { Flow } from 'flow-sdk';
+import { resolveImageModel } from '../constants';
+import { callWithRetry, formatErrorMessage } from '../services/utils';
 
 interface CastManagerModalProps {
   isOpen: boolean;
@@ -109,38 +112,47 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // 単一表情のAI自動生成 (Flow.generate.image を直接呼出)
+  // 単一表情のAI自動生成 (Flow.generate.image を呼出)
   const handleGenerateExpression = async (expType: ExpressionType) => {
     if (!currentChar) return;
     const exp = currentChar.expressions[expType];
-    const fullPrompt = `${currentChar.dnaPromptEn}, ${exp.promptModifierEn}, high aesthetic anime manga character portrait, vivid sharp line art, clean background, masterpiece`;
+    const fullPrompt = `${currentChar.dnaPromptEn}, ${exp.promptModifierEn}, high aesthetic anime manga character bust-up portrait, vivid sharp clean line art, clean simple background, masterpiece, centered composition`;
+    const safeNegative = 'worst quality, normal quality, lowres, deformed, distorted, bad anatomy, bad hands, blurry';
     
     setGeneratingExp(expType);
     onAddLog(`🎨 ${currentChar.name} [${exp.label}] をAI生成中...`, 'process');
 
     try {
-      const flowObj = (window as any).Flow || (window as any).__FLOW__?.Flow;
-      if (flowObj?.generate?.image) {
-        const res = await flowObj.generate.image({
+      const modelDef = resolveImageModel();
+      const safeModelName = modelDef?.name || '🍌 Nano Banana 2';
+
+      const res = await callWithRetry<any>(
+        () => Flow.generate.image({
           prompt: fullPrompt,
-          aspectRatio: '1:1',
-          modelDisplayName: 'imagen-3.0-generate-002'
+          negativePrompt: safeNegative,
+          aspectRatio: '9:16',
+          modelDisplayName: safeModelName,
+        }),
+        (attempt, max, delay, err) => {
+          onAddLog(`⚠️ AI作画リトライ (${attempt}/${max}) ${Math.round(delay / 1000)}秒後... (理由: ${formatErrorMessage(err)})`, 'warning');
+        },
+        3
+      );
+
+      const base64 = res?.base64 || res?.image?.base64;
+      const mediaId = res?.mediaId || res?.image?.mediaId;
+
+      if (base64) {
+        updateExpression(expType, { 
+          imageBase64: base64,
+          mediaId: mediaId 
         });
-        if (res?.image?.base64) {
-          updateExpression(expType, { 
-            imageBase64: res.image.base64,
-            mediaId: res.image.mediaId 
-          });
-          onAddLog(`✅ ${currentChar.name} [${exp.label}] の生成に成功しました！`, 'success');
-        } else {
-          throw new Error('画像データが返却されませんでした');
-        }
+        onAddLog(`✅ ${currentChar.name} [${exp.label}] の生成に成功しました！`, 'success');
       } else {
-        // スタンドアロン/シム環境
-        onAddLog('⚠️ Flow SDKが利用できない環境のため、手動アップロードをご利用ください', 'warning');
+        throw new Error('画像データが返却されませんでした');
       }
     } catch (err: any) {
-      onAddLog(`❌ 表情生成エラー: ${err?.message || err}`, 'error');
+      onAddLog(`❌ 表情生成エラー: ${formatErrorMessage(err)}`, 'error');
     } finally {
       setGeneratingExp(null);
     }
@@ -153,8 +165,13 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
     onAddLog(`🚀 ${currentChar.name} の喜怒哀楽（6表情）を一括生成開始...`, 'process');
 
     const expTypes = Object.keys(EXPRESSION_METAS) as ExpressionType[];
-    for (const expType of expTypes) {
+    for (let i = 0; i < expTypes.length; i++) {
+      const expType = expTypes[i];
       await handleGenerateExpression(expType);
+      if (i < expTypes.length - 1) {
+        // レートリミット対策として1.5秒待機
+        await new Promise(r => setTimeout(r, 1500));
+      }
     }
 
     setIsBulkGenerating(false);
