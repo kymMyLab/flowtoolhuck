@@ -198,7 +198,8 @@ export default function App() {
     });
 
     // 4. 自動スタートはせず画面を閉じ、サイドバーでアスペクト比等の確認を促す
-    addLog(`✨ 大前提（三面図・配役・全話プロット）が確定しました！サイドバーで【作画アスペクト比】や【動画化割合】を確認後、ヘッダーの【③ 作成開始】を押してください。`, 'info');
+    addLog(`⏸️ 【スタンバイ完了・待機中】大前提（三面図・配役・全話プロット）が確定しました！`, 'info');
+    addLog(`👉 左サイドバーで設定（アスペクト比・動画比率等）を確認後、上部ヘッダーでピカピカ光っている【③ 作成開始】を押すと本編の作画がスタートします！`, 'warning');
   }, [mangaProject, handleUpdateMangaProject, resumeSeries, addLog]);
 
   const handleDownloadZip = useCallback(async (ep: Episode) => {
@@ -288,6 +289,9 @@ export default function App() {
     }
   }, [refreshStories]);
 
+  const hasPendingCuts = episodes.some(ep => ep.cuts.some(c => c.status === 'pending' || c.status === 'standby'));
+  const isWaitingForStart = !isProducing && (!!activeSeriesManifest || (episodes.length > 0 && hasPendingCuts));
+
   return (
     <ErrorBoundary>
       <div className="flex flex-col h-screen w-screen bg-slate-50 text-slate-900 select-none overflow-hidden">
@@ -310,12 +314,49 @@ export default function App() {
           activeSeriesManifest={activeSeriesManifest}
           onResumeClick={() => resumeFileRef.current?.click()}
           isLogDrawerOpen={isLogDrawerOpen}
+          isWaitingForStart={isWaitingForStart}
         />
         <div className="flex flex-1 overflow-hidden relative">
           <StudioSidebar settings={settings} setSettings={setSettings} isProducing={isProducing} onAddLog={addLog} />
           
           <div className="flex-1 overflow-y-auto p-8 bg-slate-100 dark-scrollbar relative">
-        <div className="max-w-[1300px] mx-auto flex flex-col gap-16">
+        <div className="max-w-[1300px] mx-auto flex flex-col gap-12">
+          {/* 🎬 待機中誘導バナー（大前提確定後やスタンバイ状態で未作画カットがある場合） */}
+          {isWaitingForStart && (
+            <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 border-2 border-purple-400 rounded-2xl p-5 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in text-white">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-400/50 flex items-center justify-center text-purple-300 shrink-0">
+                  <span className="material-symbols-outlined text-2xl animate-spin" style={{ animationDuration: '4s' }}>pending_actions</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-pink-500 text-white animate-pulse shadow-xs">
+                      STANDBY / 待機中
+                    </span>
+                    <h2 className="text-white font-black text-sm tracking-tight">
+                      {activeSeriesManifest?.seriesTitle 
+                        ? `『${activeSeriesManifest.seriesTitle}』のスタンバイ完了！` 
+                        : 'プロットと絵コンテのスタンバイが完了しています'}
+                    </h2>
+                  </div>
+                  <p className="text-purple-200/90 text-xs mt-1">
+                    左サイドバーで【アスペクト比】や【動画化割合】等の最終確認後、右上の光る【③ 作成開始】または右のボタンを押して本編作画をスタートしてください。
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={startProduction}
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 hover:from-purple-400 hover:via-pink-400 hover:to-indigo-400 text-white font-black text-sm shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:shadow-[0_0_30px_rgba(217,70,239,0.9)] transition-all cursor-pointer flex items-center gap-2 active:scale-95 animate-pulse"
+                >
+                  <span className="material-symbols-outlined text-xl">play_circle</span>
+                  <span>③ 今すぐ本編を作成開始</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {episodes.map(ep => (
             <EpisodeSection 
               key={ep.id} ep={ep} onGenerateRemaining={handleGenerateRemaining} onBulkVideo={handleBulkVideo} onBulkBrowserVideo={handleBulkBrowserVideo} onExportFullMovie={handleExportFullMovie} onDownloadZip={handleDownloadZip} onAnimateRequest={generateVideo} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onUpdateCut={updateCutWrapped} onBulkRerollTelop={handleBulkRerollTelop} onGenerateCover={generateInfographicCover} onRetry={(type, eId, cId) => {

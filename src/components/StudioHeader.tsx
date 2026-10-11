@@ -24,10 +24,11 @@ interface StudioHeaderProps {
   activeSeriesManifest?: any;
   onResumeClick?: () => void;
   isLogDrawerOpen: boolean;
+  isWaitingForStart?: boolean;
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
-  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenCastModal, onOpenComicWizard, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen
+  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenCastModal, onOpenComicWizard, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen, isWaitingForStart = false
 }) => {
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -226,7 +227,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
       <div className="w-px h-7 bg-slate-200 shrink-0"></div>
 
-      {/* ③ 最重要メインアクション: 作成開始ボタン (絶対に画面外に見切れない位置に配置) */}
+      {/* ③ 最重要メインアクション: 作成開始ボタン (待機中はピカピカ光って誘導) */}
       <div className="flex items-center gap-1.5 shrink-0">
         {isProducing ? (
           <button 
@@ -242,11 +243,28 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             type="button"
             disabled={isProducing}
             onClick={onStart}
-            className={`h-10 px-4.5 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none shadow-md hover:shadow-lg active:scale-95 shrink-0 whitespace-nowrap cursor-pointer ${startBtn.className}`}
-            title="設定された内容（大前提またはざっくり）で作成を開始します"
+            className={`h-10 px-4.5 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shrink-0 whitespace-nowrap relative ${
+              (activeSeriesManifest || isWaitingForStart)
+                ? 'ring-4 ring-pink-400 ring-offset-2 animate-pulse shadow-[0_0_25px_rgba(236,72,153,0.8)] brightness-110 !bg-gradient-to-r !from-indigo-600 !via-purple-600 !to-pink-600 text-white hover:brightness-125 hover:scale-105 active:scale-95'
+                : `shadow-md hover:shadow-lg active:scale-95 ${startBtn.className}`
+            }`}
+            title={(activeSeriesManifest || isWaitingForStart) ? "スタンバイ完了！クリックして本編の作成を開始します" : "設定された内容で作成を開始します"}
           >
-            <span className="material-symbols-outlined text-[18px]">{startBtn.icon}</span>
+            {(activeSeriesManifest || isWaitingForStart) && (
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-80"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-pink-500 border border-white"></span>
+              </span>
+            )}
+            <span className="material-symbols-outlined text-[18px]">
+              {(activeSeriesManifest || isWaitingForStart) ? 'play_arrow' : startBtn.icon}
+            </span>
             <span>③ 作成開始</span>
+            {(activeSeriesManifest || isWaitingForStart) && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-md bg-white text-purple-700 font-black text-[10px] shadow-2xs tracking-tighter">
+                START ▶
+              </span>
+            )}
           </button>
         )}
 
