@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@c661e50/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[サムネイル扉絵＆タイトルの第●話・起承転結タグ完全根絶]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@6c6ea70/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[斜めスラッシュ・L字・インセット・パノラマ・縦横ランダム変形コマ割り対応]'); });
