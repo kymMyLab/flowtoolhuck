@@ -1149,16 +1149,6 @@ ${customTastesInstruction}
                   </span>
                   <span>サブキャラを再考案（リロール）</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={handleProceedToStep3}
-                  disabled={isGeneratingSubs}
-                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:brightness-110 active:brightness-95 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-md transition-all cursor-pointer"
-                >
-                  <span>このキャストで決定し、全話プロット構築へ ➔</span>
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
               </div>
 
             </div>
