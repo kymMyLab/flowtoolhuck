@@ -1,7 +1,7 @@
 import { TASTES } from '../constants';
 
-const STORAGE_KEY = 'flowtool_custom_tastes_v10';
-const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v9', 'flowtool_custom_tastes_v8', 'flowtool_custom_tastes_v7', 'flowtool_custom_tastes_v6', 'flowtool_custom_tastes_v5', 'flowtool_custom_tastes_v4', 'flowtool_custom_tastes_v3', 'flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
+const STORAGE_KEY = 'flowtool_custom_tastes_v11';
+const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v10', 'flowtool_custom_tastes_v9', 'flowtool_custom_tastes_v8', 'flowtool_custom_tastes_v7', 'flowtool_custom_tastes_v6', 'flowtool_custom_tastes_v5', 'flowtool_custom_tastes_v4', 'flowtool_custom_tastes_v3', 'flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
 
 export type CustomTasteMap = Record<string, string>;
 
@@ -12,14 +12,15 @@ export const DEFAULT_TASTES: CustomTasteMap = { ...TASTES };
  */
 export function loadCustomTastes(): CustomTasteMap {
   try {
-    // 旧キャッシュが存在すれば新デフォルトとマージしてv3へ移行
+    // 旧キャッシュが存在すれば新デフォルトとマージしてv11へ移行
     for (const oldKey of OLD_STORAGE_KEYS) {
       const oldRaw = localStorage.getItem(oldKey);
       if (oldRaw) {
         try {
           const oldParsed = JSON.parse(oldRaw);
           if (typeof oldParsed === 'object' && oldParsed !== null) {
-            const merged = { ...DEFAULT_TASTES, ...oldParsed };
+            // プリセットキーは新しい安全定義で上書きし、ユーザー独自追加キーのみ保持
+            const merged = { ...oldParsed, ...DEFAULT_TASTES };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(merged, null, 2));
             localStorage.removeItem(oldKey);
             return merged;
@@ -36,8 +37,8 @@ export function loadCustomTastes(): CustomTasteMap {
     }
     const parsed = JSON.parse(raw);
     if (typeof parsed === 'object' && parsed !== null && Object.keys(parsed || {}).length > 0) {
-      // 新規デフォルト画風が未登録なら安全に補完マージ
-      const merged = { ...DEFAULT_TASTES, ...parsed };
+      // プリセットキーは最新の安全定義で上書き
+      const merged = { ...parsed, ...DEFAULT_TASTES };
       return merged;
     }
     return { ...DEFAULT_TASTES };

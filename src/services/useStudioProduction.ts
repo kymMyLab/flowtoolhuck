@@ -11,6 +11,7 @@ import {
   resolveRecommendedTelopStaging
 } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs } from './utils';
+import { sanitizePromptForGoogleSafety } from './promptEngine';
 import { getAllReferenceAssets } from './db';
 import { renderFullEpisodeMovie, renderKenBurnsVideo } from './browserVideoService';
 import { renderCoverBase64 } from './exportService';
@@ -347,31 +348,68 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       }
       const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
 
-      const res = await callWithRetry<any>(
-        () => Flow.generate.image({ 
-          prompt: safePrompt,
-          negativePrompt: finalNegative, 
-          modelDisplayName: safeModelName,
-          aspectRatio: safeAspectRatio as any,
-          referenceImageMediaIds 
-        }),
-        (attempt, max, delay, err, isSuper) => {
-          const waitStr = formatDurationMs(delay);
-          const errMsg = formatErrorMessage(err);
-          if (isSuper) {
-            addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
-          } else {
-            addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
+      let res: any;
+      try {
+        res = await callWithRetry<any>(
+          () => Flow.generate.image({ 
+            prompt: safePrompt,
+            negativePrompt: finalNegative, 
+            modelDisplayName: safeModelName,
+            aspectRatio: safeAspectRatio as any,
+            referenceImageMediaIds 
+          }),
+          (attempt, max, delay, err, isSuper) => {
+            const waitStr = formatDurationMs(delay);
+            const errMsg = formatErrorMessage(err);
+            if (isSuper) {
+              addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
+            } else {
+              addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
+            }
+          },
+          {
+            maxRetries: 5,
+            timeoutMs: 90000,
+            timeoutLabel: '画像生成',
+            superBackoff: settings.superBackoff,
+            abortCheck: () => isAbortedRef.current
           }
-        },
-        {
-          maxRetries: 5,
-          timeoutMs: 90000,
-          timeoutLabel: '画像生成',
-          superBackoff: settings.superBackoff,
-          abortCheck: () => isAbortedRef.current
+        );
+      } catch (firstErr: any) {
+        const errMsg = formatErrorMessage(firstErr);
+        const isPolicyError = errMsg.includes('ポリシー') || errMsg.includes('POLICY') || errMsg.includes('SAFETY') || errMsg.includes('BLOCKED');
+        
+        if (isPolicyError && !isAbortedRef.current) {
+          addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: Googleセーフティ保護を検知。プロンプトを自動クレンジング＆安全版で即時再生成します...`, 'warning');
+          
+          // 装飾や過激な単語を削ぎ落とし、純粋な構図・画風・シーン描写のみのプロンプトを構築
+          const ultraSafePrompt = sanitizePromptForGoogleSafety(safePrompt)
+            .replace(/\b(seductive|seductively|adult|intimate|childlike|sensual|erotic|provocative|naked|nude)\b/gi, 'artistic')
+            .replace(/,\s*,/g, ',')
+            .trim();
+
+          res = await callWithRetry<any>(
+            () => Flow.generate.image({ 
+              prompt: ultraSafePrompt,
+              negativePrompt: '', // ネガティブの誤衝突を防ぐためクリア
+              modelDisplayName: safeModelName,
+              aspectRatio: safeAspectRatio as any,
+              referenceImageMediaIds 
+            }),
+            (attempt, max, delay, err) => {
+              addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: セーフモード再試行中 (${attempt}/${max})...`, 'warning');
+            },
+            {
+              maxRetries: 2,
+              timeoutMs: 90000,
+              timeoutLabel: '安全プロンプト画像生成',
+              abortCheck: () => isAbortedRef.current
+            }
+          );
+        } else {
+          throw firstErr;
         }
-      );
+      }
       updateCut(epId, cutId, { 
         imageMediaId: res.mediaId, 
         imageBase64: res.base64, 

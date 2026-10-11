@@ -204,10 +204,13 @@ export async function callWithRetry<T>(
     } catch (err: any) {
       const msg = formatErrorMessage(err).toUpperCase();
       
-      // 即死エラー（セーフティ、ブロック、引数エラー）はリトライしない
+      // 即死エラー（セーフティ、ブロック、ポリシー違反、引数エラー）は無駄な待機リトライをせず即座に上位ハンドラへ投げる
       if (
         msg.includes('SAFETY') || 
         msg.includes('BLOCKED') || 
+        msg.includes('ポリシー') || 
+        msg.includes('POLICY') || 
+        msg.includes('違反') || 
         msg.includes('INVALID_ARGUMENT') || 
         msg.includes('PERMISSION_DENIED') ||
         msg.includes('400')
