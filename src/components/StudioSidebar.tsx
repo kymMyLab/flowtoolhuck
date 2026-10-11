@@ -120,7 +120,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold border border-amber-200">
-                {settings.episodeCount}曲 / 先行{settings.previewCutCount}枚
+                {settings.episodeCount}{settings.productionMode === 'mv' ? '曲' : '話'} / 先行{settings.previewCutCount}枚
               </span>
               <span className={`material-symbols-outlined text-[20px] text-slate-400 transition-transform duration-200 ${isVolumeOpen ? 'rotate-180 text-amber-500' : ''}`}>
                 expand_more
@@ -148,7 +148,17 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 <NumberChoice 
                   label={settings.productionMode === 'mv' ? '生成曲数' : (settings.productionMode === 'style-matrix' ? '比較画風数' : (settings.productionMode === 'episodes' ? '生成話数' : '生成本数'))} 
                   value={settings.episodeCount} 
-                  options={settings.productionMode === 'style-matrix' ? [3, 5, 8, 10] : [1, 5, 10, 20, 50]} 
+                  options={
+                    settings.productionMode === 'style-matrix' 
+                      ? [3, 5, 8, 10] 
+                      : (() => {
+                          const base = [1, 2, 4, 10, 20, 50];
+                          if (!base.includes(settings.episodeCount)) {
+                            return [...base, settings.episodeCount].sort((a, b) => a - b);
+                          }
+                          return base;
+                        })()
+                  } 
                   formatLabel={v => settings.productionMode === 'style-matrix' && v === 10 ? '10種 (全)' : `${v}${settings.productionMode === 'mv' ? '曲' : (settings.productionMode === 'style-matrix' ? '種' : (settings.productionMode === 'episodes' ? '話' : '本'))}`}
                   onChange={v => setSettings(s => ({ ...s, episodeCount: v }))} 
                 />

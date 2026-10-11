@@ -68,7 +68,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
       isMvMode: mode === 'mv',
       episodeCount: mode === 'style-matrix'
         ? ([3, 5, 8, 10].includes(s.episodeCount) ? s.episodeCount : 3)
-        : ([1, 5, 10, 20, 50].includes(s.episodeCount) ? s.episodeCount : 1),
+        : ([1, 2, 4, 5, 10, 20, 50].includes(s.episodeCount) ? s.episodeCount : s.episodeCount || 1),
       theme: defaultTheme,
       era: defaultTheme,
     }));
@@ -226,8 +226,48 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
       <div className="w-px h-7 bg-slate-200 shrink-0"></div>
 
-      {/* ③ 最後に作成ボタン ＆ ツール群 */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* ③ 最重要メインアクション: 作成開始ボタン (絶対に画面外に見切れない位置に配置) */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {isProducing ? (
+          <button 
+            type="button"
+            className="h-10 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+            onClick={onAbort}
+          >
+            <span className="material-symbols-outlined text-[18px]">stop_circle</span>
+            <span>中止</span>
+          </button>
+        ) : (
+          <button 
+            type="button"
+            disabled={isProducing}
+            onClick={onStart}
+            className={`h-10 px-4.5 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none shadow-md hover:shadow-lg active:scale-95 shrink-0 whitespace-nowrap cursor-pointer ${startBtn.className}`}
+            title="設定された内容（大前提またはざっくり）で作成を開始します"
+          >
+            <span className="material-symbols-outlined text-[18px]">{startBtn.icon}</span>
+            <span>③ 作成開始</span>
+          </button>
+        )}
+
+        {activeSeriesManifest && settings.productionMode === 'episodes' && (
+          <button 
+            type="button" 
+            disabled={isProducing}
+            onClick={onResumeClick}
+            className="h-10 px-3 text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-2xs"
+            title="中断した連載制作を再開"
+          >
+            <span className="material-symbols-outlined text-[16px]">file_open</span>
+            <span>再開</span>
+          </button>
+        )}
+      </div>
+
+      <div className="w-px h-7 bg-slate-200 shrink-0"></div>
+
+      {/* 右側サブツール群 (JSON保存/読込, 台帳, アーカイブ, 全消去, ログ) */}
+      <div className="flex items-center gap-1.5 shrink-0">
         {/* JSON 保存・復元 (リロードしても消えないようにダウンロード/アップロード) */}
         <input 
           type="file" 
@@ -265,55 +305,20 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           </button>
         )}
 
-        {activeSeriesManifest && settings.productionMode === 'episodes' && (
-          <button 
-            type="button" 
-            disabled={isProducing}
-            onClick={onResumeClick}
-            className="px-2.5 py-1.5 text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap"
-          >
-            <span className="material-symbols-outlined text-[16px]">file_open</span>
-            <span>再開</span>
-          </button>
-        )}
-
         <button 
           type="button"
           onClick={onOpenArchive} 
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200 shrink-0" 
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200 shrink-0 cursor-pointer" 
           title="アーカイブ"
         >
           <span className="material-symbols-outlined text-[18px]">folder</span>
         </button>
-        
-        {/* ③ 作成ボタン (START PRODUCTION) */}
-        {isProducing ? (
-          <button 
-            type="button"
-            className="h-10 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider animate-pulse shadow-sm flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
-            onClick={onAbort}
-          >
-            <span className="material-symbols-outlined text-[18px]">stop_circle</span>
-            <span>中止</span>
-          </button>
-        ) : (
-          <button 
-            type="button"
-            disabled={isProducing}
-            onClick={onStart}
-            className={`h-10 px-4.5 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none shadow-md hover:shadow-lg active:scale-95 shrink-0 whitespace-nowrap cursor-pointer ${startBtn.className}`}
-            title="設定された内容（大前提またはお任せ）で作成を開始します"
-          >
-            <span className="material-symbols-outlined text-[18px]">{startBtn.icon}</span>
-            <span>③ 作成開始</span>
-          </button>
-        )}
 
         <button 
           type="button"
           disabled={isProducing}
           onClick={onClear} 
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors border border-red-200 shrink-0" 
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors border border-red-200 shrink-0 cursor-pointer" 
           title="全消去"
         >
           <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -322,7 +327,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         <button 
           type="button"
           onClick={onToggleLogs} 
-          className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors border shrink-0 ${isLogDrawerOpen ? 'bg-indigo-100 border-indigo-200 text-indigo-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'}`} 
+          className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors border shrink-0 cursor-pointer ${isLogDrawerOpen ? 'bg-indigo-100 border-indigo-200 text-indigo-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'}`} 
           title="ログ表示"
         >
           <span className="material-symbols-outlined text-[18px]">subject</span>

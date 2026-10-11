@@ -1431,13 +1431,14 @@ ${customTastesInstruction}
                     type="button"
                     onClick={() => handleGenerateStoryPlan(currentCandidate, episodeCount)}
                     disabled={isGeneratingPlan}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
-                      episodesPlan.length === 0
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:brightness-110 animate-pulse'
-                        : 'bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700'
-                    }`}
+                    style={{
+                      backgroundColor: episodesPlan.length === 0 ? '#4f46e5' : '#eef2ff',
+                      color: episodesPlan.length === 0 ? '#ffffff' : '#4338ca',
+                      borderColor: episodesPlan.length === 0 ? '#4338ca' : '#c7d2fe',
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-md hover:brightness-110 active:scale-95 cursor-pointer border select-none"
                   >
-                    <span className={`material-symbols-outlined text-sm ${isGeneratingPlan ? 'animate-spin' : ''}`}>
+                    <span className={`material-symbols-outlined text-[16px] ${isGeneratingPlan ? 'animate-spin' : ''}`}>
                       {isGeneratingPlan ? 'autorenew' : (episodesPlan.length === 0 ? 'auto_awesome' : 'refresh')}
                     </span>
                     <span>
@@ -1472,12 +1473,33 @@ ${customTastesInstruction}
 
                 {/* Episodes Plan List or Placeholder Guide */}
                 {episodesPlan.length === 0 ? (
-                  <div className="py-8 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-center gap-2">
-                    <span className="material-symbols-outlined text-3xl text-indigo-400">history_edu</span>
-                    <p className="text-xs font-bold text-slate-700">プロットはまだ生成されていません</p>
-                    <p className="text-[11px] text-slate-500 max-w-md">
-                      上の設定で<strong>連載話数（全{episodeCount}話）</strong>と<strong>作画カット数（{cutsPerEpisode}Cut）</strong>を自由に決めた後、右上の<strong>「✨ 全{episodeCount}話のプロットをAI生成する」</strong>ボタンを押してください。
-                    </p>
+                  <div className="py-8 px-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center text-center gap-3">
+                    <span className="material-symbols-outlined text-4xl text-indigo-500">history_edu</span>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-bold text-slate-800">プロットはまだ生成されていません</p>
+                      <p className="text-xs text-slate-500 max-w-md">
+                        上の設定で<strong>連載話数（全{episodeCount}話）</strong>と<strong>作画カット数（{cutsPerEpisode}Cut）</strong>を自由に決めた後、下のボタンを押してください。
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateStoryPlan(currentCandidate, episodeCount)}
+                      disabled={isGeneratingPlan}
+                      style={{
+                        backgroundColor: '#4f46e5',
+                        color: '#ffffff'
+                      }}
+                      className="mt-1 px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                    >
+                      <span className={`material-symbols-outlined text-base ${isGeneratingPlan ? 'animate-spin' : ''}`}>
+                        {isGeneratingPlan ? 'autorenew' : 'auto_awesome'}
+                      </span>
+                      <span>
+                        {isGeneratingPlan 
+                          ? 'AIが全話プロットを構築中...' 
+                          : `✨ 全${episodeCount}話の起承転結プロットをAI生成する`}
+                      </span>
+                    </button>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
