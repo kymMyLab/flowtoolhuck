@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@d029582/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[buildCompactScriptPrompt参照エラー完全解消版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@55f7dfe/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[画風比較31種全対応＆動的カスタム画風反映版]'); });
