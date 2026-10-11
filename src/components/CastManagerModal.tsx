@@ -245,8 +245,8 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
         </div>
 
         {/* Character Tabs Selector */}
-        <div className="px-6 py-2 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0 overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-2">
+        <div className="px-6 py-2 border-b border-slate-100 bg-slate-50 flex items-center gap-3 shrink-0">
+          <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
             {project.characters.map((char, index) => {
               const isSelected = char.id === selectedCharId;
               const roleBadgeColor = 
@@ -267,7 +267,7 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
                   key={char.id}
                   onClick={() => setSelectedCharId(char.id)}
                   className={`
-                    flex items-center gap-2.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shrink-0
+                    flex items-center gap-2.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shrink-0 whitespace-nowrap
                     ${isSelected 
                       ? 'bg-white border-amber-500 text-slate-900 shadow-sm ring-2 ring-amber-500/20' 
                       : 'bg-slate-100/70 border-slate-200 text-slate-600 hover:bg-slate-200/50 hover:text-slate-800'
@@ -290,10 +290,10 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
               );
             })}
 
-            {project.characters.length < 6 && (
+            {project.characters.length < 8 && (
               <button
                 onClick={handleAddCharacter}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-slate-300 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:border-slate-400 hover:bg-white transition-all shrink-0"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-slate-300 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:border-slate-400 hover:bg-white transition-all shrink-0 whitespace-nowrap"
               >
                 <span className="material-symbols-outlined text-sm">add</span>
                 キャラ追加
@@ -305,11 +305,11 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
           {currentChar && project.characters.length > 1 && (
             <button
               onClick={() => handleDeleteCharacter(currentChar.id)}
-              className="text-xs text-slate-400 hover:text-rose-600 flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-rose-50"
-              title="このキャラクターを削除"
+              className="text-xs text-slate-400 hover:text-rose-600 flex items-center gap-1 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-rose-50 border border-transparent hover:border-rose-200 shrink-0 whitespace-nowrap"
+              title="選択中のキャラクターを削除"
             >
               <span className="material-symbols-outlined text-sm">delete</span>
-              削除
+              <span>削除</span>
             </button>
           )}
         </div>
