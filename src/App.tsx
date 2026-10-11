@@ -73,8 +73,31 @@ export default function App() {
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
 
   const handleUpdateMangaProject = useCallback((updated: MangaProject) => {
-    setMangaProject(updated);
-    saveMangaProject(updated);
+    setMangaProject(prev => {
+      // 既存キャラの表情画像が消えないよう保護マージ
+      const mergedChars = updated.characters.map(newChar => {
+        const prevChar = prev.characters.find(c => c.id === newChar.id);
+        if (!prevChar) return newChar;
+        const mergedExpressions: any = { ...newChar.expressions };
+        (Object.keys(prevChar.expressions) as ExpressionType[]).forEach(expKey => {
+          if (!mergedExpressions[expKey]?.imageBase64 && prevChar.expressions[expKey]?.imageBase64) {
+            mergedExpressions[expKey] = {
+              ...mergedExpressions[expKey],
+              imageBase64: prevChar.expressions[expKey].imageBase64,
+              mediaId: prevChar.expressions[expKey].mediaId
+            };
+          }
+        });
+        return {
+          ...newChar,
+          avatarBase64: newChar.avatarBase64 || prevChar.avatarBase64,
+          expressions: mergedExpressions
+        };
+      });
+      const next: MangaProject = { ...updated, characters: mergedChars };
+      saveMangaProject(next);
+      return next;
+    });
   }, []);
 
   const handleApplyCharacterToVault = useCallback(async (char: CastCharacter, expressionType: ExpressionType = 'neutral') => {
