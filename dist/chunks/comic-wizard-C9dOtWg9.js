@@ -1,4 +1,4 @@
-import{r as u,j as e}from"./vendor-react-Boa1DHsq.js";import{d as De,f as re,g as ie,h as Ce}from"./studio-constants-B-HuNjj_.js";import{c as oe}from"./cast-manager-C-57ij5d.js";import{c as de,F as ce,f as J,s as pe,b as Je,a as Oe,d as Re,l as Be}from"./production-engine-BtHnrN0T.js";import"./studio-sidebar-DJ0BxYJn.js";async function Ge(A){const{productionMode:b,selectedTheme:h,tasteMode:c,selectedCustomTastes:i,availableTastes:v,currentModeConfig:o,onAddLog:y}=A,w=i.length,d=c==="custom_pick"&&w>0;let _="";d?_=`
+import{r as u,j as e}from"./vendor-react-Boa1DHsq.js";import{d as De,f as re,g as ie,h as Ce}from"./studio-constants-B-HuNjj_.js";import{c as oe}from"./cast-manager-CMxzlQnI.js";import{c as de,F as ce,f as J,s as pe,b as Je,a as Oe,d as Re,l as Be}from"./production-engine-DvD88BdP.js";import"./studio-sidebar-ShMJMOoS.js";async function Ge(A){const{productionMode:b,selectedTheme:h,tasteMode:c,selectedCustomTastes:i,availableTastes:v,currentModeConfig:o,onAddLog:y}=A,w=i.length,d=c==="custom_pick"&&w>0;let _="";d?_=`
 【最重要: ユーザーが自ら指定した画風 (${w}個)】:
 ${i.map((m,$)=>`候補 ${$+1} 枠: 「${m}」 (英語画風プロンプト: ${v[m]||"masterpiece anime style"})`).join(`
 `)}

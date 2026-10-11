@@ -13,7 +13,7 @@ import { getStoryboardPreset } from './promptEngine';
 import { loadCustomTastes } from './tasteStorage';
 import { createDefaultCut, isCutSelectedForVideo, safeJsonParse, callWithRetry, formatErrorMessage } from './utils';
 import { saveStory } from './db';
-import { downloadZip, renderCoverBase64 } from './exportService';
+import { downloadZip, renderCoverBase64, downloadManifestFile } from './exportService';
 import { 
   generateSafeEpisodeScript, 
   extractHighlights, 
@@ -878,6 +878,13 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       manifest.currentEpisodeId = epId + 1;
       setActiveSeriesManifest({ ...manifest });
 
+      // ★ 確実にレジューム可能にするため、1話完了ごとに自動で manifest をバックアップ保存
+      if (settings.autoDownload && !isAbortedRef.current) {
+        try {
+          await downloadManifestFile(manifest, addLog);
+        } catch (_) {}
+      }
+
       const freshEp = episodesRef.current.find(e => e.id === epId) || currentEp;
       if (settings.autoDownload && !isAbortedRef.current) {
         const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
@@ -897,7 +904,21 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       cleanupEpisodeMemory();
     } catch (epErr: any) {
       addLog(`⚠️ 第 ${epId} 話の生成中にエラーが発生しました。スキップして次へ進みます: ${formatErrorMessage(epErr)}`, 'warning');
-      updateEpisode(epId, { isGenerating: false, error: '生成中断' });
+      episodesRef.current = episodesRef.current.map(e => e.id === epId ? {
+        ...e,
+        isGenerating: false,
+        isBatchGeneratingVideos: false,
+        error: '生成中断',
+        cuts: e.cuts.map(c => ({ ...c, isGeneratingImage: false, isGeneratingVideo: false, isGeneratingEndFrame: false }))
+      } : e);
+      setEpisodes(prev => prev.map(e => e.id === epId ? {
+        ...e,
+        isGenerating: false,
+        isBatchGeneratingVideos: false,
+        error: '生成中断',
+        cuts: e.cuts.map(c => ({ ...c, isGeneratingImage: false, isGeneratingVideo: false, isGeneratingEndFrame: false }))
+      } : e));
+      cleanupEpisodeMemory();
       continue;
     }
   }
