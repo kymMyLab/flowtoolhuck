@@ -18,6 +18,10 @@ import { loadCustomThemes } from './services/themeStorage';
 import { loadCustomTastes } from './services/tasteStorage';
 import { ThemeEditorModal } from './components/ThemeEditorModal';
 import { TasteEditorModal } from './components/TasteEditorModal';
+import { CastManagerModal } from './components/CastManagerModal';
+import { loadMangaProject, saveMangaProject } from './services/castStorage';
+import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset } from './types';
+import { saveReferenceAsset } from './services/db';
 
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
@@ -34,8 +38,41 @@ export default function App() {
   const [customTastes, setCustomTastes] = useState(() => loadCustomTastes());
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
   const [isTasteEditorOpen, setIsTasteEditorOpen] = useState(false);
+  const [mangaProject, setMangaProject] = useState<MangaProject>(() => loadMangaProject());
+  const [isCastModalOpen, setIsCastModalOpen] = useState(false);
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
+
+  const handleUpdateMangaProject = useCallback((updated: MangaProject) => {
+    setMangaProject(updated);
+    saveMangaProject(updated);
+  }, []);
+
+  const handleApplyCharacterToVault = useCallback(async (char: CastCharacter, expressionType: ExpressionType = 'neutral') => {
+    const exp = char.expressions[expressionType] || char.expressions.neutral;
+    const base64 = exp?.imageBase64 || char.avatarBase64;
+    if (!base64) {
+      addLog(`⚠️ 「${char.name}」にはまだ画像が登録されていません。先にAI作画またはアップロードを行ってください。`, 'warning');
+      return;
+    }
+
+    const newAsset: ReferenceAsset = {
+      name: `${char.name} [${exp?.label || '通常'}]`,
+      base64: base64,
+      mimeType: 'image/png',
+      characterAnalysis: char.dnaPromptEn,
+      styleAnalysis: exp?.promptModifierEn,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const id = await saveReferenceAsset(newAsset);
+      setSettings(prev => ({ ...prev, selectedAssetId: id }));
+      addLog(`✨ キャスト「${char.name}」を参照庫へ登録し、Active DNAとして同期しました！`, 'success');
+    } catch (err: any) {
+      addLog(`❌ 参照庫への登録に失敗しました: ${err.message}`, 'error');
+    }
+  }, [addLog]);
 
   // マウント時にDevToolsコンソールへ準備完了バナーと制作構成を出力
   useEffect(() => {
@@ -195,6 +232,8 @@ export default function App() {
           customTastes={customTastes}
           onOpenThemeEditor={() => setIsThemeEditorOpen(true)}
           onOpenTasteEditor={() => setIsTasteEditorOpen(true)}
+          onOpenCastModal={() => setIsCastModalOpen(true)}
+          castCount={mangaProject.characters.length}
           activeSeriesManifest={activeSeriesManifest}
           onResumeClick={() => resumeFileRef.current?.click()}
           isLogDrawerOpen={isLogDrawerOpen}
@@ -312,6 +351,14 @@ export default function App() {
           onTastesUpdated={(updatedTastes) => {
             setCustomTastes(updatedTastes);
           }} 
+        />
+        <CastManagerModal
+          isOpen={isCastModalOpen}
+          onClose={() => setIsCastModalOpen(false)}
+          project={mangaProject}
+          onUpdateProject={handleUpdateMangaProject}
+          onApplyCharacterToVault={handleApplyCharacterToVault}
+          onAddLog={addLog}
         />
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
       </div>

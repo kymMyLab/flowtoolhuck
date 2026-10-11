@@ -242,3 +242,34 @@ export interface SeriesManifest {
   };
   settings?: Partial<GeneratorSettings>;
 }
+
+/**
+ * キャスト台帳・喜怒哀楽表情定義
+ */
+export type ExpressionType = 'neutral' | 'happy' | 'angry' | 'sad' | 'surprised' | 'smirk';
+
+export interface CastExpression {
+  type: ExpressionType;
+  label: string;
+  promptModifierEn: string;
+  imageBase64?: string;
+  mediaId?: string;
+}
+
+export interface CastCharacter {
+  id: string;
+  name: string;
+  role: 'protagonist' | 'partner' | 'antagonist' | 'supporting';
+  dnaPromptEn: string;
+  avatarBase64?: string;
+  expressions: Record<ExpressionType, CastExpression>;
+}
+
+export interface MangaProject {
+  id: string;
+  title: string;
+  description?: string;
+  characters: CastCharacter[];
+  activeCharacterId?: string;
+  updatedAt: string;
+}

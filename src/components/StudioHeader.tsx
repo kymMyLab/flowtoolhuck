@@ -17,13 +17,15 @@ interface StudioHeaderProps {
   customTastes: Record<string, any>;
   onOpenThemeEditor: () => void;
   onOpenTasteEditor: () => void;
+  onOpenCastModal?: () => void;
+  castCount?: number;
   activeSeriesManifest?: any;
   onResumeClick?: () => void;
   isLogDrawerOpen: boolean;
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
-  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, activeSeriesManifest, onResumeClick, isLogDrawerOpen
+  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenCastModal, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen
 }) => {
   const currentModeDef = PRODUCTION_MODES.find(m => m.value === settings.productionMode) || PRODUCTION_MODES[0];
 
@@ -155,6 +157,22 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
+        {onOpenCastModal && (
+          <button 
+            type="button"
+            disabled={isProducing}
+            onClick={onOpenCastModal}
+            className="h-10 px-3.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-900 border border-amber-300/80 flex items-center gap-2 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
+            title="キャスト台帳＆マンガプロジェクト管理を開く"
+          >
+            <span className="material-symbols-outlined text-[18px] text-amber-600">theater_comedy</span>
+            <span>キャスト台帳</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-200/90 text-amber-900 font-black">
+              {castCount}人
+            </span>
+          </button>
+        )}
+
         {activeSeriesManifest && settings.productionMode === 'episodes' && (
           <button 
             type="button" 

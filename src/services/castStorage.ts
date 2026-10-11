@@ -1,0 +1,170 @@
+import { MangaProject, CastCharacter, ExpressionType, CastExpression } from '../types';
+
+const STORAGE_KEY = 'flowtool_manga_project_v1';
+
+export const EXPRESSION_METAS: Record<ExpressionType, { label: string; promptModifierEn: string; icon: string }> = {
+  neutral: { 
+    label: '通常 (Neutral)', 
+    promptModifierEn: 'neutral calm expression, steady confident gaze, sharp facial features', 
+    icon: 'sentiment_neutral' 
+  },
+  happy: { 
+    label: '笑顔 (Happy)', 
+    promptModifierEn: 'bright gentle smile, warm happy eyes, cheerful friendly expression', 
+    icon: 'sentiment_satisfied' 
+  },
+  angry: { 
+    label: '怒り (Angry)', 
+    promptModifierEn: 'intense angry expression, sharp piercing glare, furrowed brows, gritted teeth, fierce battle focus', 
+    icon: 'mood_bad' 
+  },
+  sad: { 
+    label: '哀愁 (Sad)', 
+    promptModifierEn: 'sorrowful melancholy expression, downcast eyes, gentle poignant sadness', 
+    icon: 'sentiment_dissatisfied' 
+  },
+  surprised: { 
+    label: '驚愕 (Surprised)', 
+    promptModifierEn: 'wide astonished eyes, gasp of shock, startled dynamic expression', 
+    icon: 'sentiment_very_dissatisfied' 
+  },
+  smirk: { 
+    label: '不敵 (Smirk)', 
+    promptModifierEn: 'daring smirk, sly confident grin, sharp side-glance, charming cool aura', 
+    icon: 'sentiment_very_satisfied' 
+  },
+};
+
+export function createDefaultExpressions(): Record<ExpressionType, CastExpression> {
+  const exps: any = {};
+  (Object.keys(EXPRESSION_METAS) as ExpressionType[]).forEach((key) => {
+    exps[key] = {
+      type: key,
+      label: EXPRESSION_METAS[key].label,
+      promptModifierEn: EXPRESSION_METAS[key].promptModifierEn,
+    };
+  });
+  return exps as Record<ExpressionType, CastExpression>;
+}
+
+export function createDefaultCastCharacter(
+  id: string, 
+  name: string, 
+  role: CastCharacter['role'], 
+  dnaPromptEn: string
+): CastCharacter {
+  return {
+    id,
+    name,
+    role,
+    dnaPromptEn,
+    expressions: createDefaultExpressions(),
+  };
+}
+
+export const DEFAULT_MANGA_PROJECT: MangaProject = {
+  id: 'project_default',
+  title: '新選組・壬生浪士の挽歌（オリジナル連載）',
+  description: '幕末京都を舞台に繰り広げられる3人の剣士と女密偵の歴史ドラマ',
+  activeCharacterId: 'char_1',
+  updatedAt: new Date().toISOString(),
+  characters: [
+    createDefaultCastCharacter(
+      'char_1',
+      '主人公 (沖田)',
+      'protagonist',
+      'A young handsome samurai with dark topknot, sharp jawline, wearing indigo haori with white dandaraya zig-zag pattern, holding katana'
+    ),
+    createDefaultCastCharacter(
+      'char_2',
+      '相棒・密偵 (千代)',
+      'partner',
+      'A graceful beautiful young woman with dark silky hair tied with crimson ribbon, piercing emerald eyes, wearing elegant noir kimono'
+    ),
+    createDefaultCastCharacter(
+      'char_3',
+      '宿敵 (芹沢)',
+      'antagonist',
+      'A menacing cold swordsman with silver-streaked hair, scar across left cheek, fierce golden eyes, wearing midnight black haori'
+    ),
+  ],
+};
+
+/**
+ * LocalStorage からプロジェクトをロード
+ */
+export function loadMangaProject(): MangaProject {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_MANGA_PROJECT));
+      return { ...DEFAULT_MANGA_PROJECT };
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed.characters || !Array.isArray(parsed.characters) || parsed.characters.length === 0) {
+      return { ...DEFAULT_MANGA_PROJECT };
+    }
+    return parsed as MangaProject;
+  } catch (e) {
+    console.warn('Failed to load manga project from localStorage', e);
+    return { ...DEFAULT_MANGA_PROJECT };
+  }
+}
+
+/**
+ * LocalStorage へプロジェクトを保存
+ */
+export function saveMangaProject(project: MangaProject): void {
+  try {
+    const toSave: MangaProject = {
+      ...project,
+      updatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (e) {
+    console.error('Failed to save manga project to localStorage', e);
+  }
+}
+
+/**
+ * プロジェクト全体（キャラ画像base64を含む）を JSON ファイルとしてダウンロード
+ */
+export function exportProjectJson(project: MangaProject): void {
+  const filename = `manga_project_${(project.title || 'untitled').replace(/[\s/\\?%*:|"<>]/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
+  const jsonStr = JSON.stringify(project, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * JSON ファイルを読み込んで MangaProject オブジェクトを復元
+ */
+export function importProjectJson(file: File): Promise<MangaProject> {
+  return new Promise((resolve, reject) => {
+    if (!file.name.endsWith('.json')) {
+      return reject(new Error('JSONファイルを選択してください'));
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const parsed = JSON.parse(text);
+        if (!parsed.characters || !Array.isArray(parsed.characters)) {
+          throw new Error('有効なプロジェクト形式ではありません（characters 配列がありません）');
+        }
+        resolve(parsed as MangaProject);
+      } catch (err: any) {
+        reject(new Error(`JSONの解析に失敗しました: ${err?.message || err}`));
+      }
+    };
+    reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました'));
+    reader.readAsText(file);
+  });
+}
