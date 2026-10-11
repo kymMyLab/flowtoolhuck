@@ -244,23 +244,23 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             disabled={isProducing}
             onClick={onStart}
             className={`h-10 px-4.5 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shrink-0 whitespace-nowrap relative ${
-              (activeSeriesManifest || isWaitingForStart)
+              isWaitingForStart
                 ? 'ring-4 ring-pink-400 ring-offset-2 animate-pulse shadow-[0_0_25px_rgba(236,72,153,0.8)] brightness-110 !bg-gradient-to-r !from-indigo-600 !via-purple-600 !to-pink-600 text-white hover:brightness-125 hover:scale-105 active:scale-95'
                 : `shadow-md hover:shadow-lg active:scale-95 ${startBtn.className}`
             }`}
-            title={(activeSeriesManifest || isWaitingForStart) ? "スタンバイ完了！クリックして本編の作成を開始します" : "設定された内容で作成を開始します"}
+            title={isWaitingForStart ? "スタンバイ完了！クリックして本編の作成を開始します" : "設定された内容で作成を開始します"}
           >
-            {(activeSeriesManifest || isWaitingForStart) && (
+            {isWaitingForStart && (
               <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-80"></span>
                 <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-pink-500 border border-white"></span>
               </span>
             )}
             <span className="material-symbols-outlined text-[18px]">
-              {(activeSeriesManifest || isWaitingForStart) ? 'play_arrow' : startBtn.icon}
+              {isWaitingForStart ? 'play_arrow' : startBtn.icon}
             </span>
             <span>③ 作成開始</span>
-            {(activeSeriesManifest || isWaitingForStart) && (
+            {isWaitingForStart && (
               <span className="ml-0.5 px-1.5 py-0.5 rounded-md bg-white text-purple-700 font-black text-[10px] shadow-2xs tracking-tighter">
                 START ▶
               </span>

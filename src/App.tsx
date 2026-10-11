@@ -289,8 +289,14 @@ export default function App() {
     }
   }, [refreshStories]);
 
-  const hasPendingCuts = episodes.some(ep => ep.cuts.some(c => c.status === 'pending' || c.status === 'standby'));
-  const isWaitingForStart = !isProducing && (!!activeSeriesManifest || (episodes.length > 0 && hasPendingCuts));
+  // 先行プレビュー枚数分（または各話のカット）の画像がまだ未生成であるかどうかを厳密に判定
+  const hasPendingCuts = episodes.length > 0 && episodes.some(ep => {
+    const targetCount = Math.min(settings.previewCutCount || 12, ep.cuts.length);
+    const readyCount = ep.cuts.slice(0, targetCount).filter(c => !!(c.imageBase64 || c.imageMediaId)).length;
+    return readyCount < targetCount;
+  });
+  // 待機中（光る状態）＝ 現在制作中ではなく、かつ未生成のカットが存在すること
+  const isWaitingForStart = !isProducing && hasPendingCuts;
 
   return (
     <ErrorBoundary>
