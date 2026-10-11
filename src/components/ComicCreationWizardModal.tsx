@@ -74,7 +74,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
   const [isGeneratingSubs, setIsGeneratingSubs] = useState(false);
 
   // Step 3: 起承転結ストーリー (1〜50話 & 1話カット数)
-  const [episodeCount, setEpisodeCount] = useState<number>(20); // 1〜50話
+  const [episodeCount, setEpisodeCount] = useState<number>(4); // デフォルト4話（起承転結）
   const [cutsPerEpisode, setCutsPerEpisode] = useState<number>(30); // 12, 24, 30
   const [seriesTitle, setSeriesTitle] = useState<string>('');
   const [overallSynopsis, setOverallSynopsis] = useState<string>('');
@@ -102,6 +102,30 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
     return keys.filter(k => k.toLowerCase().includes(q) || (availableTastes[k] || '').toLowerCase().includes(q));
   }, [availableTastes, tasteSearchQuery]);
 
+  // 選択中の候補を取得
+  const currentCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0];
+
+  // 表示用エピソードプラン：episodeCountと100%同期（2話指定なら厳密に2話分のみ）
+  const displayedEpisodes = useMemo(() => {
+    if (episodesPlan.length === 0) return [];
+    if (episodesPlan.length >= episodeCount) {
+      return episodesPlan.slice(0, episodeCount);
+    }
+    const diff = episodeCount - episodesPlan.length;
+    const fillers: SeriesEpisodePlan[] = Array.from({ length: diff }, (_, idx) => {
+      const epNum = episodesPlan.length + idx + 1;
+      const progress = epNum / episodeCount;
+      const phase = progress < 0.3 ? '運命の幕開け' : progress < 0.6 ? '深まる謎と試練' : progress < 0.85 ? '最大の激突と転換' : '大団円と未来';
+      return {
+        epNumber: epNum,
+        titleJp: `第${epNum}話 ${phase}`,
+        titleEn: `Episode ${epNum}`,
+        summary: `主人公${currentCandidate?.name || '主人公'}が挑む第${epNum}話の展開`
+      };
+    });
+    return [...episodesPlan, ...fillers];
+  }, [episodesPlan, episodeCount, currentCandidate?.name]);
+
   if (!isOpen) return null;
 
   // テーマをランダムに選定
@@ -123,9 +147,6 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
       setSelectedCustomTastes(prev => [...prev, tasteKey]);
     }
   };
-
-  // 選択中の候補を取得
-  const currentCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0];
 
   // =========================================================================
   // Step 1: 世界観から最適な画風5選（または指定画風＋AI補完）をAI考案し三面図を一括作画
@@ -548,36 +569,61 @@ ${customTastesInstruction}
     }
   };
 
+  // 話数スライダー変更時の即時同期ハンドラー
+  const handleEpisodeCountChange = (newCount: number) => {
+    const validCount = Math.max(1, Math.min(50, newCount));
+    setEpisodeCount(validCount);
+    setEpisodesPlan(prev => {
+      if (prev.length === 0) return prev;
+      if (prev.length >= validCount) {
+        return prev.slice(0, validCount);
+      }
+      // 不足分を即座に補完
+      const currentLen = prev.length;
+      const additional: SeriesEpisodePlan[] = Array.from({ length: validCount - currentLen }, (_, idx) => {
+        const epNum = currentLen + idx + 1;
+        const progress = epNum / validCount;
+        const phaseName = progress < 0.3 ? '運命の幕開け' : progress < 0.6 ? '深まる謎と試練' : progress < 0.85 ? '最大の激突と転換' : '大団円と未来';
+        return {
+          epNumber: epNum,
+          titleJp: `第${epNum}話 ${phaseName}`,
+          titleEn: `Episode ${epNum} Arc`,
+          summary: `主人公${currentCandidate?.name || '主人公'}が挑む第${epNum}話の試練と成長`
+        };
+      });
+      return [...prev, ...additional];
+    });
+  };
+
   // Step 2 ➔ Step 3（話数＆全話プロット）へ進む
   const handleProceedToStep3 = () => {
     setStep(3);
     onAddLog(`📜 全${episodeCount}話の起承転結ストーリー構成へ進みます`, 'info');
     if (episodesPlan.length === 0) {
       setTimeout(() => {
-        handleGenerateStoryPlan(currentCandidate);
+        handleGenerateStoryPlan(currentCandidate, episodeCount);
       }, 150);
     }
   };
 
-
   // =========================================================================
   // Step 3: 選択した主人公三面図から起承転結（全1〜50話）ストーリー策定
   // =========================================================================
-  const handleGenerateStoryPlan = async (targetCand?: TurnaroundCandidate) => {
+  const handleGenerateStoryPlan = async (targetCand?: TurnaroundCandidate, countToUse?: number) => {
     const target = targetCand || currentCandidate;
     if (!target) return;
 
+    const count = countToUse || episodeCount;
     setIsGeneratingPlan(true);
-    onAddLog(`📜 主人公「${target.name}」で【全${episodeCount}話】の起承転結ストーリー構成を構築中...`, 'process');
+    onAddLog(`📜 主人公「${target.name}」で【全${count}話】の起承転結ストーリー構成を構築中...`, 'process');
 
     const prompt = buildGrandDesignPrompt(
+      count,
+      '日本',
       selectedTheme,
       target.tasteName,
-      episodeCount,
-      '日本',
-      undefined,
       true, // isMangaMode
-      false,
+      false, // isMvMode
       target.dnaPromptEn,
       target.name
     );
@@ -597,22 +643,40 @@ ${customTastesInstruction}
       if (parsed && Array.isArray(parsed.episodesPlan) && parsed.episodesPlan.length > 0) {
         setSeriesTitle(parsed.seriesTitle || `${target.name}伝`);
         setOverallSynopsis(parsed.overallSynopsis || '');
-        setEpisodesPlan(parsed.episodesPlan);
-        onAddLog(`🎉 コミック連載『${parsed.seriesTitle}』（全${parsed.episodesPlan.length}話）の起承転結プロットが確定しました！`, 'success');
+        
+        // 指定話数 count に厳密に同期
+        let adjustedPlan: SeriesEpisodePlan[] = parsed.episodesPlan;
+        if (adjustedPlan.length > count) {
+          adjustedPlan = adjustedPlan.slice(0, count);
+        } else if (adjustedPlan.length < count) {
+          const diff = count - adjustedPlan.length;
+          const fillers: SeriesEpisodePlan[] = Array.from({ length: diff }, (_, idx) => {
+            const epNum = adjustedPlan.length + idx + 1;
+            return {
+              epNumber: epNum,
+              titleJp: `第${epNum}話 続く戦いと希望`,
+              titleEn: `Episode ${epNum}`,
+              summary: `${target.name}の壮大な冒険の第${epNum}話`
+            };
+          });
+          adjustedPlan = [...adjustedPlan, ...fillers];
+        }
+        setEpisodesPlan(adjustedPlan);
+        onAddLog(`🎉 コミック連載『${parsed.seriesTitle || target.name}』（全${adjustedPlan.length}話）の起承転結プロットが確定しました！`, 'success');
       } else {
         throw new Error('ストーリープロットの生成に失敗しました');
       }
     } catch (err: any) {
       onAddLog(`❌ 起承転結プロット生成エラー: ${formatErrorMessage(err)}`, 'error');
       // フォールバック
-      const dummyPlan: SeriesEpisodePlan[] = Array.from({ length: episodeCount }, (_, i) => ({
+      const dummyPlan: SeriesEpisodePlan[] = Array.from({ length: count }, (_, i) => ({
         epNumber: i + 1,
-        titleJp: `第${i + 1}話 ${i < Math.round(episodeCount * 0.25) ? '運命の幕開け' : i < Math.round(episodeCount * 0.55) ? '深まる謎と試練' : i < Math.round(episodeCount * 0.85) ? '最大の激突と転換' : '大団円と未来'}`,
+        titleJp: `第${i + 1}話 ${i < Math.round(count * 0.25) ? '運命の幕開け' : i < Math.round(count * 0.55) ? '深まる謎と試練' : i < Math.round(count * 0.85) ? '最大の激突と転換' : '大団円と未来'}`,
         titleEn: `Episode ${i + 1} Arc`,
         summary: `主人公${target.name}が立ち向かう第${i + 1}話の試練と成長`
       }));
       setSeriesTitle(`${target.name}活劇録`);
-      setOverallSynopsis(`${selectedTheme}の世界で${target.name}が仲間と共に織りなす全${episodeCount}話の大河ストーリー`);
+      setOverallSynopsis(`${selectedTheme}の世界で${target.name}が仲間と共に織りなす全${count}話の大河ストーリー`);
       setEpisodesPlan(dummyPlan);
     } finally {
       setIsGeneratingPlan(false);
@@ -646,7 +710,7 @@ ${customTastesInstruction}
       currentEpisodeId: 1,
       completedEpisodeIds: [],
       overallSynopsis: overallSynopsis || `${selectedTheme}の世界を舞台にした${currentCandidate.name}の壮大な物語`,
-      episodesPlan: episodesPlan.length > 0 ? episodesPlan : Array.from({ length: episodeCount }, (_, i) => ({
+      episodesPlan: displayedEpisodes.length > 0 ? displayedEpisodes : Array.from({ length: episodeCount }, (_, i) => ({
         epNumber: i + 1,
         titleJp: `第${i + 1}話`,
         titleEn: `Episode ${i + 1}`,
@@ -1188,14 +1252,15 @@ ${customTastesInstruction}
                     min="1"
                     max="50"
                     value={episodeCount}
-                    onChange={e => setEpisodeCount(Number(e.target.value))}
-                    className="w-full accent-indigo-600"
+                    onChange={e => handleEpisodeCountChange(Number(e.target.value))}
+                    className="w-full accent-indigo-600 cursor-pointer"
                   />
-                  <div className="flex justify-between text-[10px] text-slate-400 font-bold">
-                    <span>1話 (読切短編)</span>
-                    <span>10話</span>
-                    <span>20話 (中編)</span>
-                    <span>50話 (コミック大河大作)</span>
+                  <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold px-0.5">
+                    <button type="button" onClick={() => handleEpisodeCountChange(1)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 1 ? 'text-indigo-600 font-black underline' : ''}`}>1話 (読切)</button>
+                    <button type="button" onClick={() => handleEpisodeCountChange(2)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 2 ? 'text-indigo-600 font-black underline' : ''}`}>2話 (前後編)</button>
+                    <button type="button" onClick={() => handleEpisodeCountChange(4)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 4 ? 'text-indigo-600 font-black underline' : ''}`}>4話 (起承転結)</button>
+                    <button type="button" onClick={() => handleEpisodeCountChange(10)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 10 ? 'text-indigo-600 font-black underline' : ''}`}>10話</button>
+                    <button type="button" onClick={() => handleEpisodeCountChange(20)} className={`hover:text-indigo-600 transition-colors cursor-pointer ${episodeCount === 20 ? 'text-indigo-600 font-black underline' : ''}`}>20話 (中編)</button>
                   </div>
                 </div>
 
@@ -1237,19 +1302,19 @@ ${customTastesInstruction}
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-indigo-500 text-sm">history_edu</span>
                     <h4 className="text-xs font-bold text-slate-800">
-                      シリーズ起承転結プロット ({episodesPlan.length}話分)
+                      全 {episodeCount} 話 連載プロット構成 ({displayedEpisodes.length}話分)
                     </h4>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleGenerateStoryPlan(currentCandidate)}
+                    onClick={() => handleGenerateStoryPlan(currentCandidate, episodeCount)}
                     disabled={isGeneratingPlan}
                     className="px-3 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <span className={`material-symbols-outlined text-xs ${isGeneratingPlan ? 'animate-spin' : ''}`}>
                       {isGeneratingPlan ? 'autorenew' : 'refresh'}
                     </span>
-                    <span>{isGeneratingPlan ? 'プロット再構築中...' : 'プロットを再生成'}</span>
+                    <span>{isGeneratingPlan ? '全話プロット再構築中...' : `全${episodeCount}話でプロット再生成`}</span>
                   </button>
                 </div>
 
@@ -1265,7 +1330,7 @@ ${customTastesInstruction}
 
                 {/* Episodes Plan List */}
                 <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
-                  {episodesPlan.map((ep) => (
+                  {displayedEpisodes.map((ep) => (
                     <div key={ep.epNumber} className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200/80 flex items-start gap-2.5 transition-colors">
                       <span className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[10px] font-black shrink-0 mt-0.5">
                         第 {ep.epNumber} 話
