@@ -596,14 +596,22 @@ export function buildCompactScriptPrompt(
   const contextTitle = modeConfig.getContextTitle(isMangaMode, checkIsHistorical(era, theme));
 
   const avoidSection = existingTitles && existingTitles.length > 0
-    ? `\nPREVIOUSLY COVERED TOPICS IN THIS SERIES (DO NOT DUPLICATE OR OVERLAP WITH THESE):\n${existingTitles.map(t => `- ${t}`).join('\n')}\n`
+    ? `\nPREVIOUSLY COVERED TOPICS IN THIS SERIES (DO NOT DUPLICATE OR OVERLAP WITH THESE):\n${existingTitles.map(t => `- ${t}`).join('\n')}\nCRITICAL ANTI-DUPLICATION RULE: Each episode in a multi-part series MUST depict a distinctly DIFFERENT time of day, unique emotional phase, or narrative progression! NEVER repeat identical situations, settings, or keywords across multiple episodes!\n`
     : '';
+
+  const hasPlannedTitle = !!(currentPlan?.titleJp && !currentPlan.titleJp.match(/^(第\d+話|第\d+曲|Vol\.\d+|Episode\s*\d+|Untitled)/i));
+  const plannedTitleJp = hasPlannedTitle ? currentPlan.titleJp : 'このエピソード独自の具体的で引きの強い日本語お題（15〜25文字）';
+  const plannedTitleEn = currentPlan?.titleEn || 'Specific Topic Episode Subtitle in English';
+
+  const titleRule = hasPlannedTitle
+    ? `1. Title: Maintain and harmonize with the designated episode title "${currentPlan.titleJp}" ("titleEn": "${plannedTitleEn}"). Do NOT replace it with a generic or duplicate phrase.`
+    : `1. Title: Create an engaging Japanese title ("titleJp", 15-25 chars) and English title ("titleEn"). No episode numbers.`;
 
   return `You are a creative showrunner directing a ${cutCount}-cut ${contextTitle} for Episode ${epId} in "${worldSetting}".
 Art Style: "${taste || 'Cinematic'}".
 ${avoidSection}
 RULES:
-1. Title: Create an engaging Japanese title ("titleJp", 15-25 chars) and English title ("titleEn"). No episode numbers.
+${titleRule}
 2. Protagonist: Define "characterDna" in English (consistent single protagonist: age, gender, hair, signature attire). All character cuts MUST feature this exact protagonist.
 3. Object Cut: Cut 6 should be an iconic object without humans ("isObjectOnly": true).
 4. 8-Second Dynamic Cinematic Progression (180° Drone Orbit & Camera Angle Shift):
@@ -616,8 +624,8 @@ ${isMultiPanel ? '5. Panel layout: Use "single", "split-2", or "split-3" per cut
 
 Output ONLY valid JSON:
 {
-  "titleJp": "このエピソード独自の具体的で引きの強い日本語お題（15〜25文字）",
-  "titleEn": "Specific Topic Episode Subtitle in English",
+  "titleJp": "${plannedTitleJp}",
+  "titleEn": "${plannedTitleEn}",
   "summary": "${isMvMode ? '楽曲の世界観（日本語）' : 'あらすじ（日本語）'}",
   "characterDna": "Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob, cozy knit sweater, sleek headphones",
   "eraAnalysisJp": "時代背景の解説（日本語）",

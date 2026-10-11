@@ -727,6 +727,11 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     const effectiveMode = settings.productionMode || (isMv ? 'mv' : isManga ? 'manga' : 'episodes');
     const unitLabel = isMv ? '曲' : '話';
 
+    // 既出タイトルの収集（話数・曲数間でのネタ・シチュエーション被り防止）
+    const existingTitles = episodesRef.current
+      .map(e => (e.titleJp || '').replace(/^[^\w\s一-龯]+/, '').trim())
+      .filter(Boolean);
+
     try {
       addLog(`📖 【第${epId}${unitLabel}】「${currentPlan.titleJp}」の脚本・演出構成をAIに執筆依頼中...`, 'process');
       updateEpisode(epId, { isGenerating: true });
@@ -742,6 +747,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         taste: settings.taste,
         productionMode: effectiveMode,
         isMultiPanel: settings.isMultiPanel,
+        existingTitles,
         superBackoff: settings.superBackoff,
         abortCheck: () => isAbortedRef.current,
         addLog
@@ -789,8 +795,17 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         turnaroundBase64 = turnaround.base64;
       }
 
+      const finalTitleJp = (currentPlan.titleJp && !currentPlan.titleJp.match(/^(第\d+話|第\d+曲|Vol\.\d+|Episode\s*\d+|Untitled)/i))
+        ? currentPlan.titleJp
+        : (sharedScript.titleJp || currentPlan.titleJp);
+      const finalTitleEn = (currentPlan.titleEn && !currentPlan.titleEn.match(/^(Episode\s*\d+|Track\s*\d+|Untitled)/i))
+        ? currentPlan.titleEn
+        : (sharedScript.titleEn || currentPlan.titleEn);
+
       updateEpisode(epId, {
-        titleJp: sharedScript.titleJp, titleEn: sharedScript.titleEn, summary: sharedScript.summary,
+        titleJp: finalTitleJp, 
+        titleEn: finalTitleEn, 
+        summary: currentPlan.summary || sharedScript.summary,
         characterDna: sharedScript.characterDna,
         eraAnalysis: sharedScript.eraAnalysisJp, forbiddenAnachronisms: sharedScript.forbiddenAnachronisms,
         authenticAttireEn: sharedScript.authenticAttireEn, forbiddenKeywordsEn: sharedScript.forbiddenKeywordsEn,
