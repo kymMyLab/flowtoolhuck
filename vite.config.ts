@@ -41,10 +41,7 @@ export default defineConfig({
           if (id.includes('CastManagerModal')) {
             return 'cast-manager';
           }
-          if (id.includes('StudioSidebar')) {
-            return 'studio-sidebar';
-          }
-          if (id.includes('directorService') || id.includes('productionPipelines')) {
+          if (id.includes('directorService') || id.includes('productionPipelines') || id.includes('src/services/pipelines/')) {
             return 'production-engine';
           }
           if (id.includes('constants') || id.includes('studioDefinitions')) {

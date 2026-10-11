@@ -4,7 +4,6 @@ import { GeneratorSettings, ReferenceAsset, ProductionMode } from '../types';
 import { 
   IMAGE_MODELS, 
   VIDEO_RATIO_OPTIONS,
-  PRODUCTION_MODES,
   TASTES
 } from '../constants';
 import { loadCustomTastes } from '../services/tasteStorage';
@@ -12,8 +11,6 @@ import { loadCustomTastes } from '../services/tasteStorage';
 import { ReferenceVault } from './ReferenceVault';
 import { getAllReferenceAssets } from '../services/db';
 import { LogEntry } from './StudioLogs';
-
-export { PRODUCTION_MODES };
 
 interface StudioSidebarProps {
   settings: GeneratorSettings;

@@ -1,0 +1,187 @@
+import { Episode } from '../../types';
+import { CUTS_PER_EPISODE } from '../../constants';
+import { saveStory } from '../db';
+import { downloadZip } from '../exportService';
+import { 
+  generateSafeEpisodeScript, 
+  cleanEpisodeTitle, 
+  cleanEpisodeTitleEn, 
+  sanitizeForYouTubeSafety 
+} from '../directorService';
+import { ProductionPipelineContext, SHORTS_CONFIG_MAP, cleanupEpisodeMemory } from './pipelineTypes';
+import { createPipelineCut } from './pipelineCutFactory';
+import { ensureCharacterTurnaround, ensureInfographicCover } from './pipelineAssetFactory';
+
+/**
+ * ── 2. YouTube Shorts / 音楽MV（指定本数 × 各12カット）制作パイプライン ──
+ */
+export async function runShortsBatchProduction(ctx: ProductionPipelineContext, curMode: string): Promise<void> {
+  const { settings, addLog, isAbortedRef, episodesRef, setEpisodes, updateEpisode, runTasks, buildCutTasks, handleBulkVideo } = ctx;
+  const modeInfo = SHORTS_CONFIG_MAP[curMode] || { label: 'Shorts', unit: '本', icon: '🎬' };
+  const totalEpCount = Math.max(1, settings.episodeCount || 1);
+
+  // 既存エピソードがある場合は上書きせず、末尾に追記（継続追加）する
+  const existingEpisodes = episodesRef.current || [];
+  // 画像が生成済みのエピソードのみを完了済みとみなし、未生成の枠があればそこから開始する
+  const completedEpisodes = existingEpisodes.filter(e => e.cuts.some(c => !!(c.imageBase64 || c.imageMediaId)));
+  const existingMaxId = completedEpisodes.length > 0 ? Math.max(...completedEpisodes.map(e => e.id)) : 0;
+  const startEpIndex = existingMaxId + 1;
+  const endEpIndex = existingMaxId + totalEpCount;
+  const isContinuing = existingMaxId > 0;
+
+  if (isContinuing) {
+    addLog(`${modeInfo.icon} 【${modeInfo.label}モード】既存 ${existingMaxId} ${modeInfo.unit}を保持したまま、追加で全 ${totalEpCount} ${modeInfo.unit}（第${startEpIndex}〜${endEpIndex}${modeInfo.unit}）の制作を開始します！[世界観: ${settings.theme}]`, 'process');
+  } else {
+    addLog(`${modeInfo.icon} 【${modeInfo.label}モード】全 ${totalEpCount} ${modeInfo.unit}の制作を開始します！[世界観: ${settings.theme}]`, 'process');
+  }
+
+  const baseRawTitle = settings.theme.split('（')[0].replace(/^[^\w\s一-龯]+/, '').trim() || '情景の記録';
+  const defaultEnTitle = 'Cinematic Story';
+
+  for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
+    const currentBatchStep = epIndex - startEpIndex + 1;
+    if (isAbortedRef.current) {
+      addLog(`🛑 制作が中断されました（今回作成: ${currentBatchStep - 1}/${totalEpCount}${modeInfo.unit}完了）`, 'warning');
+      break;
+    }
+
+    const rawTitle = (endEpIndex > 1) ? `${baseRawTitle} Vol.${epIndex}` : baseRawTitle;
+    const currentEnTitle = (endEpIndex > 1) ? `${defaultEnTitle} Vol.${epIndex}` : defaultEnTitle;
+
+    // 既出タイトルの収集（ネタ・お題の重複被り防止）
+    const existingTitles = episodesRef.current
+      .map(e => e.titleJp.replace(/^[^\w\s一-龯]+/, '').trim())
+      .filter(Boolean);
+
+    addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit} / 今回制作: ${currentBatchStep}${modeInfo.unit}目（全${totalEpCount}${modeInfo.unit}）】「${baseRawTitle}」第${epIndex}弾のお題＆脚本（12カット）をAIが考案中...`, 'process');
+
+    const curPlan = {
+      epNumber: epIndex,
+      titleJp: rawTitle,
+      titleEn: currentEnTitle,
+      summary: `${baseRawTitle}の世界観で紡がれる第${epIndex}の映像作品（全12カット）`
+    };
+
+    const parsed = await generateSafeEpisodeScript({
+      epId: epIndex,
+      currentPlan: curPlan,
+      country: settings.country,
+      theme: settings.theme,
+      era: settings.era,
+      isMangaMode: false,
+      isMvMode: curMode === 'mv',
+      taste: settings.taste,
+      productionMode: curMode,
+      isMultiPanel: settings.isMultiPanel,
+      existingTitles,
+      superBackoff: settings.superBackoff,
+      abortCheck: () => isAbortedRef.current,
+      addLog
+    });
+
+    const cutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12, curMode === 'manga' ? 24 : 12);
+    const baseCutsData = Array.from({ length: cutsCount }, (_, j) => {
+      const cutData = parsed.cuts[j] || {} as any;
+      return createPipelineCut(j, cutData, parsed, settings, curMode, curMode === 'mv', curMode === 'manga' || settings.isMangaMode);
+    });
+
+    // 各話固有のお題（サブタイトル）を整形（削除による欠番事故を防ぐため、Vol.Xや第X話などの連番は一切入れない）
+    const cleanParsedTitle = cleanEpisodeTitle(parsed.titleJp || '');
+    const safeTopicJp = sanitizeForYouTubeSafety(cleanParsedTitle && cleanParsedTitle !== baseRawTitle ? cleanParsedTitle : `情景の断章`);
+    const displayTitleJp = `${modeInfo.icon} ${safeTopicJp}`;
+
+    const cleanParsedEn = cleanEpisodeTitleEn(parsed.titleEn || '');
+    const cleanTopicEn = cleanParsedEn && cleanParsedEn !== defaultEnTitle ? cleanParsedEn : 'Cinematic Story';
+    const displayTitleEn = cleanTopicEn;
+
+    const newEpisode: Episode = {
+      id: epIndex, internalId: crypto.randomUUID(),
+      titleJp: displayTitleJp, titleEn: displayTitleEn,
+      summary: parsed.summary || `${safeTopicJp}の情景`, 
+      characterDna: parsed.characterDna,
+      eraAnalysis: parsed.eraAnalysisJp || '作品を引き立てる演出構図。',
+      forbiddenAnachronisms: parsed.forbiddenAnachronisms || ['過剰な劇的演出'],
+      authenticAttireEn: parsed.authenticAttireEn || 'Cinematic style attire', forbiddenKeywordsEn: 'explosive drama',
+      coverCatchphraseJp: parsed.coverCatchphraseJp || '心揺さぶる一瞬の物語。', highlightWords: parsed.highlightWords || ['光'],
+      cuts: baseCutsData, isGenerating: true, isGeneratingRemainingImages: false, isBatchGeneratingVideos: false,
+      isPreviewDone: false, isDone: false, taste: settings.taste, era: settings.era, theme: settings.theme,
+      isMvMode: curMode === 'mv', productionMode: curMode as any
+    };
+
+    // 三面図マスターシートの自動生成（360度キャラ崩れ完全防止）
+    const turnaround = await ensureCharacterTurnaround(ctx, newEpisode);
+    if (turnaround.mediaId) {
+      newEpisode.characterTurnaroundMediaId = turnaround.mediaId;
+      newEpisode.characterTurnaroundBase64 = turnaround.base64;
+    }
+
+    setEpisodes(prev => [...prev.filter(e => e.id !== epIndex), newEpisode]);
+    episodesRef.current = [...episodesRef.current.filter(e => e.id !== epIndex), newEpisode];
+    addLog(`✨ 第${epIndex}${modeInfo.unit}のお題決定！『${newEpisode.titleJp}』全${cutsCount}カットの情景演出が確定！描画を開始します...`, 'success');
+
+    const targetCutCount = Math.min(settings.previewCutCount, cutsCount);
+    await runTasks(buildCutTasks(newEpisode, newEpisode.cuts.slice(0, targetCutCount)));
+
+    const isAllDone = targetCutCount >= cutsCount;
+    updateEpisode(epIndex, { 
+      isGenerating: false, 
+      isPreviewDone: true, 
+      isDone: isAllDone 
+    });
+    addLog(`✅ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！`, 'success');
+
+    // ★インフォグラフィック扉絵（9:16特大ポスター）を全自動生成！
+    await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epIndex) || newEpisode);
+
+    if (settings.autoVideo && !isAbortedRef.current) {
+      const currentEpForVideo = episodesRef.current.find(e => e.id === epIndex);
+      const selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
+      if (selectedCuts.length > 0) {
+        addLog(`🎬 第${epIndex}${modeInfo.unit}の自動動画化を開始します（対象: ${selectedCuts.length}カット）...`, 'process');
+        await handleBulkVideo(epIndex);
+      }
+    }
+
+    // 先行プレビュー＋動画化完了フラグを確実にONにして全ボタンを解放、かつ全カットのisGeneratingVideoを確実にクリア
+    episodesRef.current = episodesRef.current.map(e => e.id === epIndex ? {
+      ...e,
+      isGenerating: false,
+      isBatchGeneratingVideos: false,
+      isPreviewDone: true,
+      isDone: true,
+      cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
+    } : e);
+    setEpisodes(prev => prev.map(e => e.id === epIndex ? {
+      ...e,
+      isGenerating: false,
+      isBatchGeneratingVideos: false,
+      isPreviewDone: true,
+      isDone: true,
+      cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
+    } : e));
+
+    // 自動ダウンロードがONの場合、パッケージング＆直接保存を実行
+    const freshEp = episodesRef.current.find(e => e.id === epIndex) || newEpisode;
+    if (settings.autoDownload && !isAbortedRef.current) {
+      addLog(`📦 第${epIndex}${modeInfo.unit}の完了時自動ダウンロードを開始します...`, 'process');
+      const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
+      const res = await downloadZip(freshEp, addLog, undefined, currentLogs);
+      if (res) {
+        if (freshEp.packageZipBlobUrl) {
+          try { URL.revokeObjectURL(freshEp.packageZipBlobUrl); } catch (_) {}
+        }
+        updateEpisode(epIndex, {
+          packageZipBlobUrl: res.blobUrl,
+          packageZipFilename: res.filename,
+          packageZipSizeStr: res.sizeStr
+        });
+      }
+    }
+    await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
+    cleanupEpisodeMemory();
+  }
+
+  if (!isAbortedRef.current) {
+    addLog(`🎉 全 ${totalEpCount} ${modeInfo.unit}の${modeInfo.label}制作がすべて完了しました！`, 'success');
+  }
+}
