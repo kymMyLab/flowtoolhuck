@@ -1,11 +1,23 @@
 import React, { useState, useRef } from 'react';
-import { THEMES, TASTES, resolveImageModel } from '../constants';
-import { CastCharacter, SeriesEpisodePlan, SeriesManifest, GeneratorSettings } from '../types';
+import { THEMES, resolveImageModel } from '../constants';
+import { CastCharacter, SeriesEpisodePlan, SeriesManifest } from '../types';
 import { createDefaultCastCharacter } from '../services/castStorage';
 import { Flow } from 'flow-sdk';
 import { callWithRetry, safeJsonParse, formatErrorMessage } from '../services/utils';
-import { resolveTastePrompt } from '../services/tasteStorage';
 import { buildGrandDesignPrompt } from '../services/directorService';
+
+export interface TurnaroundCandidate {
+  id: string;
+  tasteName: string;      // 例: 🏮 レトロ・ノワールサイバー劇画
+  tastePromptEn: string;  // 画風プロンプト
+  name: string;           // 主人公名
+  concept: string;        // 性格・世界観設定
+  dnaPromptEn: string;    // 容姿DNA
+  turnaroundBase64?: string;
+  turnaroundMediaId?: string;
+  status: 'idle' | 'generating_image' | 'completed' | 'error';
+  errorMessage?: string;
+}
 
 interface ComicCreationWizardModalProps {
   isOpen: boolean;
@@ -32,138 +44,263 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
   onLaunchComicSeries,
   onAddLog,
 }) => {
-  // ステップ管理: 1: テーマ・画風, 2: 主人公三面図, 3: 起承転結, 4: サブキャラ, 5: 完了確認
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  // ステップ管理: 1: 世界観選定＆三面図5選, 2: 起承転結プロット(1〜50話), 3: サブキャラ配役, 4: 完了確認＆連載開始
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Step 1: 世界観テーマ & 画風
+  // Step 1: 世界観テーマ
   const [selectedTheme, setSelectedTheme] = useState<string>(currentTheme || THEMES[0]);
-  const [selectedTaste, setSelectedTaste] = useState<string>(currentTaste || Object.keys(TASTES)[0]);
 
-  // Step 2: 主人公設定 & 三面図
-  const [protagonistName, setProtagonistName] = useState<string>('主人公');
-  const [protagonistConcept, setProtagonistConcept] = useState<string>('');
-  const [protagonistDna, setProtagonistDna] = useState<string>('');
-  const [turnaroundBase64, setTurnaroundBase64] = useState<string | null>(null);
-  const [turnaroundMediaId, setTurnaroundMediaId] = useState<string | null>(null);
-  const [isGeneratingProtagonistDna, setIsGeneratingProtagonistDna] = useState(false);
-  const [isGeneratingTurnaround, setIsGeneratingTurnaround] = useState(false);
+  // Step 1: Geminiが自動選定した「画風5選 × 主人公キャラクター」候補リスト
+  const [candidates, setCandidates] = useState<TurnaroundCandidate[]>([]);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [isBrainstormingCandidates, setIsBrainstormingCandidates] = useState(false);
+  const [activeGeneratingIndex, setActiveGeneratingIndex] = useState<number | null>(null);
 
-  // Step 3: 起承転結ストーリー (大河シリーズ設計図)
-  const [episodeCount, setEpisodeCount] = useState<number>(20); // 20話 or 50話
+  // Step 2: 起承転結ストーリー (1〜50話 & 1話カット数)
+  const [episodeCount, setEpisodeCount] = useState<number>(20); // 1〜50話
+  const [cutsPerEpisode, setCutsPerEpisode] = useState<number>(30); // 12, 24, 30
   const [seriesTitle, setSeriesTitle] = useState<string>('');
   const [overallSynopsis, setOverallSynopsis] = useState<string>('');
   const [episodesPlan, setEpisodesPlan] = useState<SeriesEpisodePlan[]>([]);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
 
-  // Step 4: サブキャラクター
+  // Step 3: サブキャラクター
   const [subCharacters, setSubCharacters] = useState<CastCharacter[]>([]);
   const [isGeneratingSubs, setIsGeneratingSubs] = useState(false);
 
-  // 画像ズーム用
+  // 画像拡大Lightbox用
   const [zoomImage, setZoomImage] = useState<{ base64: string; title: string } | null>(null);
+
+  const isGeneratingRef = useRef(false);
 
   if (!isOpen) return null;
 
-  // テーマをランダムに1つ選定
+  // テーマをランダムに選定
   const handleRandomTheme = () => {
     const randomItem = THEMES[Math.floor(Math.random() * THEMES.length)];
     setSelectedTheme(randomItem);
     onAddLog(`🎲 世界観テーマをランダム選定しました: 「${randomItem}」`, 'info');
   };
 
-  // Step 1 -> 2: テーマと画風から主人公をAI自動考案
-  const handleProceedToStep2 = async () => {
-    setIsGeneratingProtagonistDna(true);
-    onAddLog(`🧠 「${selectedTheme}」×「${selectedTaste.split(' ')[0]}」の主人公キャラクターをAI考案中...`, 'process');
+  // 選択中の候補を取得
+  const currentCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0];
 
-    const rawTaste = resolveTastePrompt(selectedTaste);
-    const prompt = `あなたは世界的人気漫画の編集長です。
-以下の世界観テーマと画風テイストに最高にマッチする、読者を熱狂させる魅力的な「主人公キャラクター」を1名考案してください。
+  // =========================================================================
+  // Step 1: 世界観から最適な画風5選をGeminiが選定し、5体の三面図を一括作画
+  // =========================================================================
+  const handleGenerate5Candidates = async () => {
+    if (isBrainstormingCandidates || isGeneratingRef.current) return;
+    setIsBrainstormingCandidates(true);
+    isGeneratingRef.current = true;
+    onAddLog(`🧠 「${selectedTheme}」に最適な【画風5選 × 主人公三面図】をGeminiがAI自動考案中...`, 'process');
+
+    const prompt = `あなたは世界的人気漫画の編集長兼アートディレクターです。
+以下の世界観テーマに最高にマッチする、全くアプローチの異なる【5種類の画風・テイスト】と、それぞれの画風を極限まで活かした魅力的な【主人公キャラクター案】を5組考案してください。
 
 【世界観テーマ】: ${selectedTheme}
-【画風テイスト】: ${selectedTaste} (${rawTaste})
 
-以下の厳密なJSON形式（Markdownコードブロックなし）で出力してください:
-{
-  "name": "主人公の魅力的な名前 (肩書)",
-  "concept": "主人公の性格、信念、武器、特徴（日本語2〜3行）",
-  "dnaPromptEn": "Detailed English character appearance prompt: gender, age, facial features, distinctive eyes, expressive hairstyle, hair color, signature clothing matching the theme and taste, accessories"
-}`;
+【5組のバリエーション要件（被りのない多様な画風）】
+1. 王道少年漫画・ダイナミック劇画（迫力の太線、情熱的）
+2. レトロノワール・シックなセル画風（重厚な影、スタイリッシュ）
+3. エモーショナル水彩・ネオシティポップ（繊細、色彩豊か）
+4. 重厚ダークファンタジー・緻密ペン画（精緻、耽美・退廃美）
+5. 先進的サイバー・ポップアニメ（鮮烈、洗練された現代アニメ調）
+
+以下の厳密なJSON配列形式（Markdownコードブロックなしの純粋なJSON配列）で出力してください:
+[
+  {
+    "id": "cand_1",
+    "tasteName": "🔥 王道少年熱血・ダイナミック劇画",
+    "tastePromptEn": "dynamic shonen manga style, bold black ink lines, high contrast shadows, expressive energetic anime aesthetic, masterpiece",
+    "name": "主人公の名前 (肩書)",
+    "concept": "性格、信念、武器や特徴（日本語2行程度）",
+    "dnaPromptEn": "Detailed English character appearance prompt: gender, age, facial features, striking eyes, expressive hairstyle, signature attire matching ${selectedTheme}"
+  },
+  {
+    "id": "cand_2",
+    "tasteName": "🏮 レトロ・ノワールセル画調",
+    "tastePromptEn": "retro 90s anime cel shading, film grain, deep shadows, cinematic noir lighting, moody aesthetic, masterpiece",
+    "name": "主人公の名前 (肩書)",
+    "concept": "性格、信念、武器や特徴（日本語2行程度）",
+    "dnaPromptEn": "Detailed English character appearance prompt: gender, age, facial features, striking eyes, expressive hairstyle, signature attire matching ${selectedTheme}"
+  },
+  {
+    "id": "cand_3",
+    "tasteName": "🎨 エモーショナル水彩・ネオシティ",
+    "tastePromptEn": "soft watercolor anime style, pastel gradients, vibrant emotional rim lighting, clean delicate lines, masterpiece",
+    "name": "主人公の名前 (肩書)",
+    "concept": "性格、信念、武器や特徴（日本語2行程度）",
+    "dnaPromptEn": "Detailed English character appearance prompt: gender, age, facial features, striking eyes, expressive hairstyle, signature attire matching ${selectedTheme}"
+  },
+  {
+    "id": "cand_4",
+    "tasteName": "⚔️ 重厚ダークファンタジー劇画",
+    "tastePromptEn": "dark fantasy manga style, intricate cross-hatching lineart, grim atmospheric lighting, heavy contrast, masterpiece",
+    "name": "主人公の名前 (肩書)",
+    "concept": "性格、信念、武器や特徴（日本語2行程度）",
+    "dnaPromptEn": "Detailed English character appearance prompt: gender, age, facial features, striking eyes, expressive hairstyle, signature attire matching ${selectedTheme}"
+  },
+  {
+    "id": "cand_5",
+    "tasteName": "✨ 先進的サイバー・スタイリッシュアニメ",
+    "tastePromptEn": "futuristic modern anime key visual style, crisp sharp linework, vivid accents, sleek high-end anime aesthetic, masterpiece",
+    "name": "主人公の名前 (肩書)",
+    "concept": "性格、信念、武器や特徴（日本語2行程度）",
+    "dnaPromptEn": "Detailed English character appearance prompt: gender, age, facial features, striking eyes, expressive hairstyle, signature attire matching ${selectedTheme}"
+  }
+]`;
 
     try {
-      const res = await Flow.generate.text(prompt);
-      const text = res?.text || (typeof res === 'string' ? res : '');
-      const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const parsed = safeJsonParse<any>(cleaned, null);
-
-      if (parsed && parsed.dnaPromptEn) {
-        setProtagonistName(parsed.name || '主人公');
-        setProtagonistConcept(parsed.concept || '');
-        setProtagonistDna(parsed.dnaPromptEn);
-        setStep(2);
-        onAddLog(`✨ 主人公「${parsed.name}」の設定が完成しました！三面図を作画しましょう。`, 'success');
-      } else {
-        throw new Error('キャラクター設定の生成に失敗しました');
-      }
-    } catch (err: any) {
-      onAddLog(`❌ 主人公考案エラー: ${formatErrorMessage(err)}`, 'error');
-      // フォールバック
-      setProtagonistName('主人公 (特務)');
-      setProtagonistConcept(`${selectedTheme}の世界で生きる主人公`);
-      setProtagonistDna(`A striking anime protagonist matching ${selectedTheme}, distinctive sharp eyes, stylish anime hairstyle, authentic detailed attire`);
-      setStep(2);
-    } finally {
-      setIsGeneratingProtagonistDna(false);
-    }
-  };
-
-  // Step 2: 主人公の三面図（16:9）AI作画
-  const handleGenerateTurnaround = async () => {
-    setIsGeneratingTurnaround(true);
-    onAddLog(`📐 主人公「${protagonistName}」の三面図シート（正面・側面・背面 / 16:9）をAI作画中...`, 'process');
-
-    const rawTaste = resolveTastePrompt(selectedTaste);
-    const fullPrompt = `${protagonistDna}, anime character turnaround sheet, model sheet, three views, full body front view, full body side view, full body back view, clean plain white background, high-contrast crisp anime lineart, consistent clothing and proportions, masterpiece. Art style: ${rawTaste}`;
-    const safeNegative = 'worst quality, normal quality, lowres, deformed, distorted, bad anatomy, bad hands, blurry, complex background, text, watermark';
-
-    try {
-      const modelDef = resolveImageModel();
-      const safeModelName = modelDef?.name || '🍌 Nano Banana 2';
-
       const res = await callWithRetry<any>(
-        () => Flow.generate.image({
-          prompt: fullPrompt,
-          negativePrompt: safeNegative,
-          aspectRatio: '16:9',
-          modelDisplayName: safeModelName,
-        }),
-        (attempt, max, delay, err) => {
-          onAddLog(`⚠️ 三面図作画リトライ (${attempt}/${max}) ${Math.round(delay / 1000)}秒後... (理由: ${formatErrorMessage(err)})`, 'warning');
-        },
+        () => Flow.generate.text(prompt),
+        undefined,
         3
       );
+      const text = res?.text || (typeof res === 'string' ? res : '');
+      const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const list = safeJsonParse<any[]>(cleaned, []);
 
-      const base64 = res?.base64 || res?.image?.base64;
-      const mediaId = res?.mediaId || res?.image?.mediaId;
+      let initialCandidates: TurnaroundCandidate[] = [];
 
-      if (base64) {
-        setTurnaroundBase64(base64);
-        setTurnaroundMediaId(mediaId || null);
-        onAddLog(`✨ 主人公「${protagonistName}」の三面図シートが完成しました！`, 'success');
+      if (Array.isArray(list) && list.length >= 3) {
+        initialCandidates = list.map((item, idx) => ({
+          id: item.id || `cand_${idx + 1}`,
+          tasteName: item.tasteName || `画風案 ${idx + 1}`,
+          tastePromptEn: item.tastePromptEn || 'anime style, masterpiece',
+          name: item.name || `主人公 ${idx + 1}`,
+          concept: item.concept || `${selectedTheme}の世界を駆ける主人公`,
+          dnaPromptEn: item.dnaPromptEn || `A striking anime character matching ${selectedTheme}`,
+          status: 'idle' as const,
+        }));
       } else {
-        throw new Error('三面図データが返却されませんでした');
+        // フォールバック
+        initialCandidates = [
+          {
+            id: 'cand_1',
+            tasteName: '🔥 王道少年熱血・ダイナミック劇画',
+            tastePromptEn: 'dynamic shonen manga style, bold black ink lines, high contrast shadows, expressive energetic anime aesthetic, masterpiece',
+            name: '疾風の剣士 (熱血型)',
+            concept: '不屈の闘志で困難を切り開く主人公。真っ直ぐな瞳と正義感を宿す。',
+            dnaPromptEn: `A passionate young anime hero, fiery determined eyes, spiky hair, rugged stylish traveler attire matching ${selectedTheme}`,
+            status: 'idle'
+          },
+          {
+            id: 'cand_2',
+            tasteName: '🏮 レトロ・ノワールセル画調',
+            tastePromptEn: 'retro 90s anime cel shading, film grain, deep shadows, cinematic noir lighting, moody aesthetic, masterpiece',
+            name: '影の仕事人 (クール型)',
+            concept: '冷静沈着に事件の裏を暴く孤高の主人公。コートと懐中時計がトレードマーク。',
+            dnaPromptEn: `A cool analytical anime protagonist, sharp piercing eyes, dark flowing coat, mysterious aura matching ${selectedTheme}`,
+            status: 'idle'
+          },
+          {
+            id: 'cand_3',
+            tasteName: '🎨 エモーショナル水彩・ネオシティ',
+            tastePromptEn: 'soft watercolor anime style, pastel gradients, vibrant emotional rim lighting, clean delicate lines, masterpiece',
+            name: '奇跡の使い手 (神秘型)',
+            concept: '隠された力を持ち、人々の心を救う主人公。透明感ある佇まい。',
+            dnaPromptEn: `A delicate ethereal anime protagonist, expressive gentle eyes, soft pastel colored hair, ornate modern outfit matching ${selectedTheme}`,
+            status: 'idle'
+          },
+          {
+            id: 'cand_4',
+            tasteName: '⚔️ 重厚ダークファンタジー劇画',
+            tastePromptEn: 'dark fantasy manga style, intricate cross-hatching lineart, grim atmospheric lighting, heavy contrast, masterpiece',
+            name: '宿命の求道者 (重厚型)',
+            concept: '重い宿命を背負いながら戦い続ける主人公。鍛え抜かれた肉体と歴戦の傷。',
+            dnaPromptEn: `A battle-hardened anime warrior, intense scarred face, weathered mantle, armored details matching ${selectedTheme}`,
+            status: 'idle'
+          },
+          {
+            id: 'cand_5',
+            tasteName: '✨ 先進的サイバー・スタイリッシュアニメ',
+            tastePromptEn: 'futuristic modern anime key visual style, crisp sharp linework, vivid accents, sleek high-end anime aesthetic, masterpiece',
+            name: '電脳のトリックスター (スマート型)',
+            concept: '圧倒的な機転とスピードで敵を翻弄する現代風主人公。ヘッドギアとバイザー。',
+            dnaPromptEn: `A stylish sleek anime protagonist, radiant ruby irises, modern tailored jacket with glowing accents matching ${selectedTheme}`,
+            status: 'idle'
+          }
+        ];
       }
+
+      setCandidates(initialCandidates);
+      setSelectedCandidateId(initialCandidates[0].id);
+      setIsBrainstormingCandidates(false);
+      onAddLog(`🎨 5組の画風・主人公設定が決定！三面図シート（16:9）を順次AI作画開始します...`, 'process');
+
+      // 5体の三面図（16:9）を順次作画
+      const modelDef = resolveImageModel();
+      const safeModelName = modelDef?.name || '🍌 Nano Banana 2';
+      const safeNegative = 'worst quality, normal quality, lowres, deformed, distorted, bad anatomy, bad hands, blurry, complex background, text, watermark';
+
+      for (let i = 0; i < initialCandidates.length; i++) {
+        const cand = initialCandidates[i];
+        setActiveGeneratingIndex(i);
+
+        setCandidates(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'generating_image' } : c));
+        onAddLog(`📐 [${i + 1}/5] 「${cand.tasteName}」×「${cand.name}」の三面図シートを作画中...`, 'process');
+
+        const turnaroundPrompt = `${cand.dnaPromptEn}, anime character turnaround sheet, model sheet, three views, full body front view, full body side view, full body back view, clean plain white background, high-contrast crisp anime lineart, consistent clothing and proportions, masterpiece. Art style: ${cand.tastePromptEn}`;
+
+        try {
+          const imgRes = await callWithRetry<any>(
+            () => Flow.generate.image({
+              prompt: turnaroundPrompt,
+              negativePrompt: safeNegative,
+              aspectRatio: '16:9',
+              modelDisplayName: safeModelName,
+            }),
+            (att, max, d, e) => {
+              onAddLog(`⚠️ [${i + 1}/5] 作画リトライ (${att}/${max}) (理由: ${formatErrorMessage(e)})`, 'warning');
+            },
+            2
+          );
+
+          const base64 = imgRes?.base64 || imgRes?.image?.base64;
+          const mediaId = imgRes?.mediaId || imgRes?.image?.mediaId;
+
+          if (base64) {
+            setCandidates(prev => prev.map((c, idx) => 
+              idx === i ? { ...c, turnaroundBase64: base64, turnaroundMediaId: mediaId, status: 'completed' } : c
+            ));
+            onAddLog(`✨ [${i + 1}/5] 「${cand.name}」の三面図シートが完成！`, 'success');
+          } else {
+            throw new Error('画像データが取得できませんでした');
+          }
+        } catch (imgErr: any) {
+          onAddLog(`⚠️ [${i + 1}/5] 三面図作画エラー: ${formatErrorMessage(imgErr)}`, 'warning');
+          setCandidates(prev => prev.map((c, idx) => 
+            idx === i ? { ...c, status: 'error', errorMessage: formatErrorMessage(imgErr) } : c
+          ));
+        }
+      }
+
+      onAddLog(`🎉 全5体の三面図シート作画が完了しました！お気に入りの1枚を選択してください。`, 'success');
     } catch (err: any) {
-      onAddLog(`❌ 三面図作画エラー: ${formatErrorMessage(err)}`, 'error');
+      onAddLog(`❌ 画風＆キャラクター考案エラー: ${formatErrorMessage(err)}`, 'error');
+      setIsBrainstormingCandidates(false);
     } finally {
-      setIsGeneratingTurnaround(false);
+      setActiveGeneratingIndex(null);
+      isGeneratingRef.current = false;
+      setIsBrainstormingCandidates(false);
     }
   };
 
-  // Step 2 -> 3: 三面図から起承転結（全20話〜50話）ストーリー策定
+  // =========================================================================
+  // Step 2: 選択した主人公三面図から起承転結（全1〜50話）ストーリー策定
+  // =========================================================================
+  const handleProceedToStep2 = () => {
+    if (!currentCandidate || !currentCandidate.turnaroundBase64) {
+      onAddLog(`⚠️ 三面図が完成しているキャラクターを1つ選択してください`, 'warning');
+      return;
+    }
+    setStep(2);
+  };
+
   const handleGenerateStoryPlan = async () => {
+    if (!currentCandidate) return;
     setIsGeneratingPlan(true);
-    onAddLog(`📜 主人公「${protagonistName}」を軸に、全${episodeCount}話の起承転結ストーリーをAI策定中...`, 'process');
+    onAddLog(`📜 主人公「${currentCandidate.name}」を軸に、全${episodeCount}話（各話${cutsPerEpisode}Cut）の起承転結ストーリーをAI策定中...`, 'process');
 
     const prompt = buildGrandDesignPrompt(
       episodeCount,
@@ -172,8 +309,8 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
       undefined,
       true, // isMangaMode
       false,
-      protagonistDna,
-      protagonistName
+      currentCandidate.dnaPromptEn,
+      currentCandidate.name
     );
 
     try {
@@ -187,10 +324,9 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
       const parsed = safeJsonParse<any>(cleaned, null);
 
       if (parsed && Array.isArray(parsed.episodesPlan) && parsed.episodesPlan.length > 0) {
-        setSeriesTitle(parsed.seriesTitle || `${protagonistName}伝`);
+        setSeriesTitle(parsed.seriesTitle || `${currentCandidate.name}伝`);
         setOverallSynopsis(parsed.overallSynopsis || '');
         setEpisodesPlan(parsed.episodesPlan);
-        setStep(3);
         onAddLog(`🎉 コミック連載『${parsed.seriesTitle}』（全${parsed.episodesPlan.length}話）の起承転結プロットが確定しました！`, 'success');
       } else {
         throw new Error('ストーリープロットの生成に失敗しました');
@@ -200,44 +336,68 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
       // フォールバック
       const dummyPlan: SeriesEpisodePlan[] = Array.from({ length: episodeCount }, (_, i) => ({
         epNumber: i + 1,
-        titleJp: `第${i + 1}話 ${i < 5 ? '波乱の胎動' : i < 12 ? '深まる謎と激突' : i < 17 ? '絶体絶命の決断' : '運命の結末'}`,
+        titleJp: `第${i + 1}話 ${i < Math.round(episodeCount * 0.25) ? '運命の幕開け' : i < Math.round(episodeCount * 0.55) ? '深まる謎と試練' : i < Math.round(episodeCount * 0.85) ? '最大の激突と転換' : '大団円と未来'}`,
         titleEn: `Episode ${i + 1} Arc`,
-        summary: `主人公${protagonistName}が立ち向かう第${i + 1}話の試練`
+        summary: `主人公${currentCandidate.name}が立ち向かう第${i + 1}話の試練と成長`
       }));
-      setSeriesTitle(`${protagonistName}活劇録`);
-      setOverallSynopsis(`${selectedTheme}の舞台で${protagonistName}が織りなす連続ストーリー`);
+      setSeriesTitle(`${currentCandidate.name}活劇録`);
+      setOverallSynopsis(`${selectedTheme}の世界で${currentCandidate.name}が仲間と共に織りなす全${episodeCount}話の大河ストーリー`);
       setEpisodesPlan(dummyPlan);
-      setStep(3);
     } finally {
       setIsGeneratingPlan(false);
     }
   };
 
-  // Step 3 -> 4: 起承転結に合わせてサブキャラ・お友達を自動生成（2〜3名）
+  // =========================================================================
+  // Step 3: サブキャラ・お友達の自動配役（2〜3名）
+  // =========================================================================
+  const handleProceedToStep3 = async () => {
+    if (episodesPlan.length === 0) {
+      await handleGenerateStoryPlan();
+    }
+    setStep(3);
+    // 自動でサブキャラ生成をトリガー
+    if (subCharacters.length === 0) {
+      handleGenerateSubCharacters();
+    }
+  };
+
   const handleGenerateSubCharacters = async () => {
+    if (!currentCandidate) return;
     setIsGeneratingSubs(true);
-    onAddLog(`👥 物語『${seriesTitle}』を彩る相棒・お友達・宿敵などサブキャラを自動配役中...`, 'process');
+    onAddLog(`👥 物語『${seriesTitle || currentCandidate.name}』を彩るお友達・相棒・宿敵などサブキャラを自動配役中...`, 'process');
 
     const prompt = `あなたは一流の漫画編集者です。
-漫画『${seriesTitle}』（全${episodeCount}話）のストーリー展開と主人公「${protagonistName}」を強力に引き立てる、
+漫画『${seriesTitle || currentCandidate.name}』（全${episodeCount}話）のストーリー展開と主人公「${currentCandidate.name}」を強力に引き立てる、
 魅力的なサブキャラクター（お友達・相棒、ヒロイン、宿敵・ライバル）を【2〜3名】考案してください。
 
 【世界観テーマ】: ${selectedTheme}
-【主人公】: ${protagonistName} (${protagonistConcept})
+【画風テイスト】: ${currentCandidate.tasteName}
+【主人公】: ${currentCandidate.name} (${currentCandidate.concept})
 【あらすじ】: ${overallSynopsis}
 
-以下の厳密なJSON形式（Markdownコードブロックなし）で出力してください:
+以下の厳密なJSON配列形式（Markdownコードブロックなしの純粋なJSON配列）で出力してください:
 [
   {
     "name": "キャラクター名 (肩書)",
-    "role": "partner" (または "antagonist" または "supporting"),
-    "concept": "主人公との関係性・お友達・相棒・ライバルとしての役割（日本語2行）",
+    "role": "partner",
+    "concept": "主人公との関係性・お友達・相棒としての役割（日本語2行）",
+    "dnaPromptEn": "Detailed English character appearance prompt: gender, age, hair, eyes, distinct clothing matching ${selectedTheme}"
+  },
+  {
+    "name": "キャラクター名 (肩書)",
+    "role": "antagonist",
+    "concept": "主人公と対立する宿敵・ライバルとしての役割（日本語2行）",
     "dnaPromptEn": "Detailed English character appearance prompt: gender, age, hair, eyes, distinct clothing matching ${selectedTheme}"
   }
 ]`;
 
     try {
-      const res = await Flow.generate.text(prompt);
+      const res = await callWithRetry<any>(
+        () => Flow.generate.text(prompt),
+        undefined,
+        3
+      );
       const text = res?.text || (typeof res === 'string' ? res : '');
       const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
       const list = safeJsonParse<any[]>(cleaned, []);
@@ -252,8 +412,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
           );
         });
         setSubCharacters(chars);
-        setStep(4);
-        onAddLog(`✨ サブキャラクター${chars.length}名の配役が完了しました！`, 'success');
+        onAddLog(`✨ サブキャラクター${chars.length}名（お友達・相棒・宿敵）の配役が完了しました！`, 'success');
       } else {
         throw new Error('サブキャラクターの生成に失敗しました');
       }
@@ -261,72 +420,70 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
       onAddLog(`❌ サブキャラ考案エラー: ${formatErrorMessage(err)}`, 'error');
       // フォールバック
       const dummySubs: CastCharacter[] = [
-        createDefaultCastCharacter(`sub_1_${Date.now()}`, '相棒・友人', 'partner', `A trustworthy friend and companion of ${protagonistName}, anime style`),
-        createDefaultCastCharacter(`sub_2_${Date.now()}`, '宿命のライバル', 'antagonist', `A fierce rival and antagonist opposing ${protagonistName}, intense gaze`)
+        createDefaultCastCharacter(`sub_1_${Date.now()}`, '頼れる相棒・親友', 'partner', `A trustworthy loyal friend and companion of ${currentCandidate.name}, anime style`),
+        createDefaultCastCharacter(`sub_2_${Date.now()}`, '宿命の好敵手', 'antagonist', `A fierce rival and antagonist opposing ${currentCandidate.name}, sharp intense eyes`)
       ];
       setSubCharacters(dummySubs);
-      setStep(4);
     } finally {
       setIsGeneratingSubs(false);
     }
   };
 
-  // Step 4 -> 5: 最終確認画面へ
-  const handleProceedToFinalConfirm = () => {
-    setStep(5);
-  };
-
-  // Step 5: コミック一冊分（30Cut × 20〜50話）の自動制作をローンチ！
+  // =========================================================================
+  // Step 4: コミック一冊分（30Cut × 1〜50話）の自動制作をローンチ！
+  // =========================================================================
   const handleLaunch = () => {
+    if (!currentCandidate) return;
+
     // 主人公の CastCharacter オブジェクトを構築
     const mainProtagonist = createDefaultCastCharacter(
       `protagonist_${Date.now()}`,
-      protagonistName,
+      currentCandidate.name,
       'protagonist',
-      protagonistDna
+      currentCandidate.dnaPromptEn
     );
-    if (turnaroundBase64) {
-      mainProtagonist.turnaroundBase64 = turnaroundBase64;
-      mainProtagonist.turnaroundMediaId = turnaroundMediaId || undefined;
-      mainProtagonist.avatarBase64 = turnaroundBase64;
+    if (currentCandidate.turnaroundBase64) {
+      mainProtagonist.turnaroundBase64 = currentCandidate.turnaroundBase64;
+      mainProtagonist.turnaroundMediaId = currentCandidate.turnaroundMediaId || undefined;
+      mainProtagonist.avatarBase64 = currentCandidate.turnaroundBase64;
     }
 
     const manifest: SeriesManifest = {
-      seriesTitle: seriesTitle || `${protagonistName}物語`,
+      seriesTitle: seriesTitle || `${currentCandidate.name}物語`,
       totalEpisodes: episodeCount,
       currentEpisodeId: 1,
       completedEpisodeIds: [],
       overallSynopsis: overallSynopsis,
       episodesPlan: episodesPlan,
-      referenceAsset: turnaroundBase64 ? {
-        name: `${protagonistName} [三面図マスター]`,
-        base64: turnaroundBase64,
+      referenceAsset: currentCandidate.turnaroundBase64 ? {
+        name: `${currentCandidate.name} [三面図マスター]`,
+        base64: currentCandidate.turnaroundBase64,
         mimeType: 'image/png',
-        characterDna: protagonistDna,
-        styleDna: resolveTastePrompt(selectedTaste),
+        characterDna: currentCandidate.dnaPromptEn,
+        styleDna: currentCandidate.tastePromptEn,
       } : undefined,
     };
 
     onLaunchComicSeries({
       theme: selectedTheme,
-      taste: selectedTaste,
+      taste: currentCandidate.tasteName,
       protagonist: mainProtagonist,
       subCharacters,
       manifest,
       totalEpisodes: episodeCount,
-      cutsPerEpisode: 30, // 30Cut標準！
+      cutsPerEpisode: cutsPerEpisode, // 30Cut標準！
     });
 
-    onAddLog(`🚀 コミック一冊分（全${episodeCount}話 × 30Cut）の全自動制作をローンチしました！`, 'success');
+    onAddLog(`🚀 コミック連載『${manifest.seriesTitle}』（全${episodeCount}話 × 各話${cutsPerEpisode}Cut = 計${episodeCount * cutsPerEpisode}Cut）の自動制作を開始しました！`, 'success');
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-4xl h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-5xl h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Top Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white shrink-0">
+        <div className="px-6 py-3.5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white shrink-0">
           <div className="flex items-center gap-3">
             <span className="p-2 rounded-xl bg-amber-500/20 text-amber-400 material-symbols-outlined text-2xl">
               auto_stories
@@ -338,13 +495,13 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                   COMIC WIZARD PRO
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
-                世界観選定 ➔ 三面図 ➔ 起承転結 ➔ サブキャラ配役 ➔ 30Cut連載（20〜50話）をボタンポチで一括プロデュース
+              <p className="text-[11px] text-slate-300">
+                世界観選定 ➔ AI最適画風5選×三面図 ➔ 起承転結(1〜50話) ➔ サブキャラ配役 ➔ 30Cut連載
               </p>
             </div>
           </div>
 
-          <button
+          <button 
             onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
           >
@@ -355,11 +512,10 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
         {/* Step Progress Bar */}
         <div className="px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold shrink-0">
           {[
-            { num: 1, label: '① 世界観・画風' },
-            { num: 2, label: '② 主人公三面図' },
-            { num: 3, label: '③ 起承転結 (全話)' },
-            { num: 4, label: '④ サブキャラ配役' },
-            { num: 5, label: '⑤ コミック連載開始' },
+            { num: 1, label: '① 世界観 ＆ 画風5選・三面図' },
+            { num: 2, label: '② 起承転結プロット (1〜50話)' },
+            { num: 3, label: '③ お友達・サブキャラ配役' },
+            { num: 4, label: '④ コミック連載スタート' },
           ].map(s => {
             const isActive = step === s.num;
             const isPassed = step > s.num;
@@ -382,190 +538,422 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
         </div>
 
         {/* Modal Main Body */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 flex flex-col gap-5">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 bg-slate-50/50 flex flex-col gap-4">
           
           {/* ========================================================
-              STEP 1: 世界観テーマ & 画風の決定
+              STEP 1: 世界観テーマ選定 ＆ 最適画風5選×三面図AI作画
              ======================================================== */}
           {step === 1 && (
             <div className="flex flex-col gap-4 animate-fadeIn">
-              <div className="bg-indigo-50/70 border border-indigo-200/80 p-4 rounded-xl flex items-start gap-3 text-indigo-900">
-                <span className="material-symbols-outlined text-indigo-600 mt-0.5">help</span>
+              
+              {/* Guidance Box */}
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200/80 p-3.5 rounded-xl flex items-start gap-3 text-indigo-950 shadow-2xs">
+                <span className="material-symbols-outlined text-indigo-600 mt-0.5 text-xl">auto_fix_high</span>
                 <div className="text-xs leading-relaxed">
-                  <p className="font-bold">まずは「世界観・テーマ」と「画風」を決定します。</p>
+                  <p className="font-bold">世界観・テーマを決めて「AI最適画風5選＆三面図を作画」ボタンを押してください。</p>
                   <p className="text-indigo-700 mt-0.5">
-                    既存の選べるテーマ一覧から選択できるほか、「🎲 ランダム選定」を押すとAIがテーマをランダムに一発決定します。
+                    Geminiが世界観に最適な「画風テイスト5種 × 主人公設定」を考案し、三面図（正面・側面・背面 / 16:9）を自動作画します。出来上がった5枚の中からお気に入りの1枚を選択してください。
                   </p>
                 </div>
               </div>
 
-              {/* Theme Picker */}
+              {/* Theme Selector Section */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-3 shadow-2xs">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-sm text-amber-500">public</span>
                     世界観・テーマ (World Theme)
                   </label>
                   <button
                     onClick={handleRandomTheme}
-                    className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold flex items-center gap-1 transition-colors"
+                    className="px-3 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
                   >
                     <span className="material-symbols-outlined text-sm">casino</span>
-                    🎲 ランダム選定
+                    🎲 ランダムに選定
                   </button>
                 </div>
 
-                <select
-                  value={selectedTheme}
-                  onChange={e => setSelectedTheme(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-800 font-semibold"
-                >
-                  {THEMES.map((themeItem, idx) => (
-                    <option key={idx} value={themeItem}>{themeItem}</option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={selectedTheme}
+                    onChange={e => setSelectedTheme(e.target.value)}
+                    className="flex-1 px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-800 font-semibold"
+                  >
+                    {THEMES.map((themeItem, idx) => (
+                      <option key={idx} value={themeItem}>{themeItem}</option>
+                    ))}
+                  </select>
+
+                  {/* Main Action Trigger */}
+                  <button
+                    onClick={handleGenerate5Candidates}
+                    disabled={isBrainstormingCandidates || activeGeneratingIndex !== null}
+                    className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 hover:from-indigo-700 hover:to-amber-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all shrink-0"
+                  >
+                    <span className={`material-symbols-outlined text-sm ${isBrainstormingCandidates || activeGeneratingIndex !== null ? 'animate-spin' : ''}`}>
+                      {isBrainstormingCandidates || activeGeneratingIndex !== null ? 'autorenew' : 'palette'}
+                    </span>
+                    <span>
+                      {isBrainstormingCandidates 
+                        ? '最適な画風5選をAI考案中...' 
+                        : activeGeneratingIndex !== null 
+                        ? `三面図を作画中 (${activeGeneratingIndex + 1}/5)...` 
+                        : '🎨 最適画風5選＆三面図を一括AI作画！'}
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              {/* Taste Picker */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-3 shadow-2xs">
-                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-sm text-indigo-500">palette</span>
-                  画風・テイスト (Visual Art Style)
-                </label>
-                <select
-                  value={selectedTaste}
-                  onChange={e => setSelectedTaste(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-800 font-semibold"
-                >
-                  {Object.keys(TASTES).map((tKey) => (
-                    <option key={tKey} value={tKey}>{tKey}</option>
-                  ))}
-                </select>
+              {/* Candidates 5 Cards Grid */}
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-indigo-500">grid_view</span>
+                    画風テイスト ＆ 主人公三面図候補（5体中から1枚を選択）
+                  </span>
+                  {selectedCandidateId && (
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      ✓ 「{currentCandidate?.name}」を選択中
+                    </span>
+                  )}
+                </div>
+
+                {candidates.length === 0 ? (
+                  <div className="bg-white p-8 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-center gap-2 text-slate-400">
+                    <span className="material-symbols-outlined text-4xl text-slate-300">view_carousel</span>
+                    <span className="text-xs font-bold text-slate-600">まだ候補が生成されていません</span>
+                    <span className="text-[11px] text-slate-500">
+                      上の「🎨 最適画風5選＆三面図を一括AI作画！」ボタンを押すと、Geminiが5種類の最適な画風と主人公三面図を自動作画します。
+                    </span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {candidates.map((cand, idx) => {
+                      const isSelected = cand.id === selectedCandidateId;
+                      const hasImage = Boolean(cand.turnaroundBase64);
+                      const isGenerating = cand.status === 'generating_image';
+
+                      return (
+                        <div
+                          key={cand.id}
+                          onClick={() => {
+                            if (hasImage) {
+                              setSelectedCandidateId(cand.id);
+                            }
+                          }}
+                          className={`relative bg-white rounded-xl border-2 transition-all flex flex-col overflow-hidden shadow-2xs cursor-pointer ${
+                            isSelected 
+                              ? 'border-indigo-600 ring-2 ring-indigo-500/20 shadow-md' 
+                              : hasImage 
+                              ? 'border-slate-200 hover:border-indigo-300' 
+                              : 'border-slate-200 opacity-80'
+                          }`}
+                        >
+                          {/* Selected Badge */}
+                          {isSelected && (
+                            <div className="absolute top-2 left-2 z-10 bg-indigo-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
+                              <span className="material-symbols-outlined text-[12px]">check</span>
+                              <span>選択中</span>
+                            </div>
+                          )}
+
+                          {/* Index Badge */}
+                          <div className="absolute top-2 right-2 z-10 bg-slate-900/70 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            候補 #{idx + 1}
+                          </div>
+
+                          {/* 16:9 Image Preview Box */}
+                          <div className="relative aspect-video w-full bg-slate-100 flex items-center justify-center overflow-hidden border-b border-slate-100 group">
+                            {cand.turnaroundBase64 ? (
+                              <>
+                                <img
+                                  src={`data:image/png;base64,${cand.turnaroundBase64}`}
+                                  alt={cand.name}
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setZoomImage({
+                                      base64: cand.turnaroundBase64!,
+                                      title: `📐 ${cand.tasteName} - ${cand.name} (三面図シート)`
+                                    });
+                                  }}
+                                  className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-slate-950/70 hover:bg-slate-950 text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shadow-sm"
+                                  title="拡大表示"
+                                >
+                                  <span className="material-symbols-outlined text-xs">zoom_in</span>
+                                  拡大
+                                </button>
+                              </>
+                            ) : isGenerating ? (
+                              <div className="flex flex-col items-center justify-center p-3 text-center gap-1 text-indigo-600">
+                                <span className="material-symbols-outlined animate-spin text-2xl">autorenew</span>
+                                <span className="text-[10px] font-bold">三面図を作画中...</span>
+                              </div>
+                            ) : cand.status === 'error' ? (
+                              <div className="flex flex-col items-center justify-center p-3 text-center gap-1 text-rose-500">
+                                <span className="material-symbols-outlined text-xl">error</span>
+                                <span className="text-[10px]">作画エラー</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center p-3 text-center gap-1 text-slate-400">
+                                <span className="material-symbols-outlined text-xl text-slate-300">hourglass_empty</span>
+                                <span className="text-[10px]">作画待機中</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Candidate Info */}
+                          <div className="p-3 flex flex-col gap-1.5 flex-1 justify-between">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 truncate" title={cand.tasteName}>
+                                {cand.tasteName}
+                              </span>
+                              <h5 className="text-xs font-bold text-slate-900 truncate" title={cand.name}>
+                                {cand.name}
+                              </h5>
+                              <p className="text-[11px] text-slate-500 leading-tight line-clamp-2" title={cand.concept}>
+                                {cand.concept}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (hasImage) setSelectedCandidateId(cand.id);
+                              }}
+                              disabled={!hasImage}
+                              className={`w-full py-1 rounded text-[11px] font-bold transition-all ${
+                                isSelected 
+                                  ? 'bg-indigo-600 text-white' 
+                                  : hasImage 
+                                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
+                                  : 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                              }`}
+                            >
+                              {isSelected ? '✓ 選択済み' : hasImage ? 'このキャラを選ぶ' : '作画中...'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              {/* Action Button */}
+              {/* Next Step Action Button */}
               <div className="flex justify-end mt-2">
                 <button
                   onClick={handleProceedToStep2}
-                  disabled={isGeneratingProtagonistDna}
-                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+                  disabled={!currentCandidate || !currentCandidate.turnaroundBase64}
+                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
                 >
-                  <span className={`material-symbols-outlined text-sm ${isGeneratingProtagonistDna ? 'animate-spin' : ''}`}>
-                    {isGeneratingProtagonistDna ? 'autorenew' : 'arrow_forward'}
-                  </span>
-                  <span>{isGeneratingProtagonistDna ? '主人公キャラクターをAI考案中...' : '次へ：主人公の三面図を準備する ➔'}</span>
+                  <span>この主人公＆画風で起承転結を作る (全1〜50話) ➔</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </button>
               </div>
+
             </div>
           )}
 
           {/* ========================================================
-              STEP 2: 画風に従って主人公三面図をAI作画
+              STEP 2: 話数自由選択 (1〜50話) ＆ 起承転結プロット構築
              ======================================================== */}
-          {step === 2 && (
+          {step === 2 && currentCandidate && (
             <div className="flex flex-col gap-4 animate-fadeIn">
-              <div className="bg-emerald-50/70 border border-emerald-200/80 p-3.5 rounded-xl flex items-start gap-3 text-emerald-900">
-                <span className="material-symbols-outlined text-emerald-600 mt-0.5">view_in_ar</span>
+              
+              {/* Selected Protagonist Summary Header */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4 shadow-2xs">
+                {currentCandidate.turnaroundBase64 && (
+                  <img
+                    src={`data:image/png;base64,${currentCandidate.turnaroundBase64}`}
+                    alt={currentCandidate.name}
+                    className="w-24 h-14 object-cover rounded-lg border border-slate-200 cursor-pointer shrink-0"
+                    onClick={() => setZoomImage({ base64: currentCandidate.turnaroundBase64!, title: currentCandidate.name })}
+                  />
+                )}
+                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
+                      {currentCandidate.tasteName}
+                    </span>
+                    <span className="text-xs font-extrabold text-slate-800">
+                      主人公: {currentCandidate.name}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 truncate">{currentCandidate.concept}</p>
+                </div>
+              </div>
+
+              {/* Volume & Cuts Guidance */}
+              <div className="bg-amber-50/70 border border-amber-200/80 p-3.5 rounded-xl flex items-start gap-3 text-amber-950">
+                <span className="material-symbols-outlined text-amber-600 mt-0.5 text-xl">help</span>
                 <div className="text-xs leading-relaxed">
-                  <p className="font-bold">主人公の容姿プロンプトDNAを確認し、三面図（16:9）を作画します。</p>
-                  <p className="text-emerald-700 mt-0.5">
-                    「正面・側面・背面」の全身モデルシートが作画され、この後の全20〜50話の作画基準（Active DNA）となります。
+                  <p className="font-bold">
+                    💡 1カット＝漫画の「1ページ（2〜5コマ割り）」に相当します！
+                  </p>
+                  <p className="text-amber-800 mt-0.5">
+                    <strong>30Cut</strong>は、月刊漫画誌の読み切りや第1話（約30ページ / 約60〜120コマ）に相当する<strong>本格的で読み応え満点な大ボリューム</strong>です。<br />
+                    話数は「1話（読切）」〜「50話（長編大河）」まで自由にお選びいただけます。
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                {/* Left: Protagonist Profile */}
-                <div className="md:col-span-6 bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-3 shadow-2xs">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">主人公の名前 (肩書)</label>
-                    <input
-                      type="text"
-                      value={protagonistName}
-                      onChange={e => setProtagonistName(e.target.value)}
-                      className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 font-bold text-slate-800"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">設定・キャラクター背景</label>
-                    <textarea
-                      rows={2}
-                      value={protagonistConcept}
-                      onChange={e => setProtagonistConcept(e.target.value)}
-                      className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 text-slate-600 resize-none leading-relaxed"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">容姿 DNA プロンプト (Base Appearance)</label>
-                    <textarea
-                      rows={3}
-                      value={protagonistDna}
-                      onChange={e => setProtagonistDna(e.target.value)}
-                      className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 font-mono text-slate-600 resize-none leading-relaxed"
-                    />
-                  </div>
-                </div>
-
-                {/* Right: Turnaround Preview Box */}
-                <div className="md:col-span-6 bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-2.5 shadow-2xs">
+              {/* Episode Count & Cuts Settings Box */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-4 shadow-2xs">
+                
+                {/* 1話〜50話 選択セクション */}
+                <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800">三面図シートプレビュー (16:9)</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
-                      正面・側面・背面
-                    </span>
-                  </div>
+                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm text-indigo-500">library_books</span>
+                      連載話数: <span className="text-indigo-600 font-black text-sm">{episodeCount} 話</span>
+                      <span className="text-slate-400 font-normal">
+                        ({episodeCount === 1 ? '短編読切' : episodeCount <= 5 ? 'ミニ連載' : episodeCount <= 20 ? '単行本1冊分' : '大河長編大作'})
+                      </span>
+                    </label>
 
-                  <div 
-                    className="relative aspect-video w-full rounded-lg bg-slate-100 overflow-hidden border border-slate-200 flex items-center justify-center group"
-                  >
-                    {turnaroundBase64 ? (
-                      <>
-                        <img 
-                          src={`data:image/png;base64,${turnaroundBase64}`} 
-                          alt="Turnaround" 
-                          className="w-full h-full object-cover cursor-pointer"
-                          onClick={() => setZoomImage({ base64: turnaroundBase64, title: `📐 主人公「${protagonistName}」三面図シート` })}
-                        />
-                        <div 
-                          onClick={() => setZoomImage({ base64: turnaroundBase64, title: `📐 主人公「${protagonistName}」三面図シート` })}
-                          className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer gap-1 text-white"
+                    {/* 話数クイックプリセットボタン */}
+                    <div className="flex items-center gap-1.5">
+                      {[1, 3, 10, 20, 50].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setEpisodeCount(preset)}
+                          className={`px-2.5 py-1 rounded text-xs font-bold transition-all border ${
+                            episodeCount === preset
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
                         >
-                          <span className="material-symbols-outlined text-xl">zoom_in</span>
-                          <span className="text-xs font-bold">クリックで拡大</span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-center p-4 gap-1 text-slate-400">
-                        <span className="material-symbols-outlined text-3xl text-slate-300">view_sidebar</span>
-                        <span className="text-xs font-bold text-slate-600">三面図がまだありません</span>
-                        <span className="text-[10px]">下のボタンを押してAI作画してください</span>
-                      </div>
-                    )}
-
-                    {isGeneratingTurnaround && (
-                      <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-2 z-10">
-                        <span className="material-symbols-outlined animate-spin text-2xl text-emerald-400">autorenew</span>
-                        <span className="text-xs font-bold">三面図をAI作画中 (16:9)...</span>
-                      </div>
-                    )}
+                          {preset}話{preset === 1 ? '(読切)' : preset === 20 ? '(1冊分)' : preset === 50 ? '(大河)' : ''}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  <button
-                    onClick={handleGenerateTurnaround}
-                    disabled={isGeneratingTurnaround}
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all"
-                  >
-                    <span className={`material-symbols-outlined text-sm ${isGeneratingTurnaround ? 'animate-spin' : ''}`}>
-                      {isGeneratingTurnaround ? 'autorenew' : 'palette'}
-                    </span>
-                    <span>{turnaroundBase64 ? '三面図を再作画する' : '📐 主人公の三面図をAI作画 (16:9)'}</span>
-                  </button>
+                  {/* 話数スライダー & 数値入力 */}
+                  <div className="flex items-center gap-4 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <input
+                      type="range"
+                      min={1}
+                      max={50}
+                      value={episodeCount}
+                      onChange={e => setEpisodeCount(Number(e.target.value))}
+                      className="flex-1 accent-indigo-600 cursor-pointer"
+                    />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={episodeCount}
+                        onChange={e => setEpisodeCount(Math.min(50, Math.max(1, Number(e.target.value) || 1)))}
+                        className="w-14 px-2 py-1 text-xs font-bold text-center border border-slate-300 rounded focus:outline-none focus:border-indigo-500 bg-white"
+                      />
+                      <span className="text-xs font-bold text-slate-600">話</span>
+                    </div>
+                  </div>
                 </div>
+
+                {/* 1話あたりのカット数選択 */}
+                <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-800">1話あたりのカット数 (ページ数):</span>
+                    <span className="text-[11px] text-slate-500">※マルチパネル(2〜5コマ割)が適用されます</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {[
+                      { cuts: 12, label: '12Cut (短編・約12P)' },
+                      { cuts: 24, label: '24Cut (標準・約24P)' },
+                      { cuts: 30, label: '⭐ 30Cut (推奨・約30P)' },
+                    ].map(cOpt => (
+                      <button
+                        key={cOpt.cuts}
+                        type="button"
+                        onClick={() => setCutsPerEpisode(cOpt.cuts)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                          cutsPerEpisode === cOpt.cuts
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-2xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {cOpt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* AIプロット策定トリガーボタン */}
+                <button
+                  type="button"
+                  onClick={handleGenerateStoryPlan}
+                  disabled={isGeneratingPlan}
+                  className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+                >
+                  <span className={`material-symbols-outlined text-sm ${isGeneratingPlan ? 'animate-spin' : ''}`}>
+                    {isGeneratingPlan ? 'autorenew' : 'psychology'}
+                  </span>
+                  <span>
+                    {isGeneratingPlan 
+                      ? `全${episodeCount}話の起承転結プロットをAI構築中...` 
+                      : episodesPlan.length > 0 
+                      ? `全${episodeCount}話の起承転結プロットを再構築する` 
+                      : `📜 全${episodeCount}話の起承転結プロットをAI構築する`}
+                  </span>
+                </button>
               </div>
 
-              {/* Action Buttons */}
+              {/* Episodes List Preview */}
+              {episodesPlan.length > 0 && (
+                <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-2.5 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-amber-500 text-sm">menu_book</span>
+                      <h4 className="text-xs font-bold text-slate-900">{seriesTitle}</h4>
+                    </div>
+                    <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                      全{episodesPlan.length}話・起承転結プロット確定
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    {overallSynopsis}
+                  </p>
+
+                  <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
+                    {episodesPlan.map((p) => {
+                      const actBadge = 
+                        p.epNumber <= Math.max(1, Math.round(episodeCount * 0.25)) ? 'bg-emerald-100 text-emerald-800' :
+                        p.epNumber <= Math.max(2, Math.round(episodeCount * 0.55)) ? 'bg-indigo-100 text-indigo-800' :
+                        p.epNumber <= Math.max(3, Math.round(episodeCount * 0.85)) ? 'bg-rose-100 text-rose-800' :
+                        'bg-amber-100 text-amber-800';
+                      const actName = 
+                        p.epNumber <= Math.max(1, Math.round(episodeCount * 0.25)) ? '起' :
+                        p.epNumber <= Math.max(2, Math.round(episodeCount * 0.55)) ? '承' :
+                        p.epNumber <= Math.max(3, Math.round(episodeCount * 0.85)) ? '転' : '結';
+
+                      return (
+                        <div key={p.epNumber} className="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-start gap-2.5">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-black shrink-0 ${actBadge}`}>
+                            {actName} 第{p.epNumber}話
+                          </span>
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="text-xs font-bold text-slate-800 truncate">{p.titleJp}</span>
+                            <span className="text-[11px] text-slate-500 leading-tight line-clamp-1">{p.summary}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Action Buttons */}
               <div className="flex justify-between items-center mt-2">
                 <button
                   onClick={() => setStep(1)}
@@ -575,153 +963,52 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                 </button>
 
                 <button
-                  onClick={handleGenerateStoryPlan}
-                  disabled={isGeneratingPlan || !turnaroundBase64}
+                  onClick={handleProceedToStep3}
+                  disabled={isGeneratingPlan}
                   className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
                 >
-                  <span className={`material-symbols-outlined text-sm ${isGeneratingPlan ? 'animate-spin' : ''}`}>
-                    {isGeneratingPlan ? 'autorenew' : 'arrow_forward'}
-                  </span>
-                  <span>{isGeneratingPlan ? '起承転結プロットをAI策定中...' : 'この三面図で決定し、起承転結プロットへ ➔'}</span>
+                  <span>次へ：お友達・サブキャラを自動配役 ➔</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </button>
               </div>
+
             </div>
           )}
 
           {/* ========================================================
-              STEP 3: 起承転結ストーリー (大河シリーズ設計図)
+              STEP 3: お友達・サブキャラクター自動配役
              ======================================================== */}
-          {step === 3 && (
+          {step === 3 && currentCandidate && (
             <div className="flex flex-col gap-4 animate-fadeIn">
-              <div className="bg-purple-50/70 border border-purple-200/80 p-3.5 rounded-xl flex items-start gap-3 text-purple-900">
-                <span className="material-symbols-outlined text-purple-600 mt-0.5">auto_stories</span>
+              
+              <div className="bg-amber-50/70 border border-amber-200/80 p-3.5 rounded-xl flex items-start gap-3 text-amber-950">
+                <span className="material-symbols-outlined text-amber-600 mt-0.5 text-xl">group</span>
                 <div className="text-xs leading-relaxed">
-                  <p className="font-bold">全{episodesPlan.length}話の起承転結ストーリーが策定されました！</p>
-                  <p className="text-purple-700 mt-0.5">
-                    「起（導入・出会い）」「承（事件・葛藤）」「転（衝撃の真相・対峙）」「結（大団円・余韻）」の完全連続プロットです。
+                  <p className="font-bold">物語を彩る「お友達・相棒・ライバル」サブキャラクターを自動配役しました！</p>
+                  <p className="text-amber-800 mt-0.5">
+                    主人公との掛け合いを行い、全{episodeCount}話のコミック内で活躍します。
                   </p>
                 </div>
               </div>
 
-              {/* Episode Count Picker & Title Card */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-3 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-amber-500">menu_book</span>
-                    <h4 className="text-sm font-bold text-slate-900">{seriesTitle}</h4>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500 font-bold">話数:</span>
-                    {[20, 50].map((num) => (
-                      <button
-                        key={num}
-                        onClick={() => {
-                          setEpisodeCount(num);
-                          onAddLog(`📖 話数を全${num}話に変更しました。再策定ボタンを押してください。`, 'info');
-                        }}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
-                          episodeCount === num 
-                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' 
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        {num}話 ({num === 20 ? '単行本1冊' : '大作連載'})
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                  {overallSynopsis}
-                </p>
-              </div>
-
-              {/* Episodes List (Scrollable) */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-2 shadow-2xs max-h-56 overflow-y-auto">
-                <span className="text-xs font-bold text-slate-700">各話プロット一覧 (全{episodesPlan.length}話)</span>
-                <div className="flex flex-col gap-2">
-                  {episodesPlan.map((p) => {
-                    const actBadge = 
-                      p.epNumber <= Math.round(episodeCount * 0.25) ? 'bg-emerald-100 text-emerald-800' :
-                      p.epNumber <= Math.round(episodeCount * 0.55) ? 'bg-indigo-100 text-indigo-800' :
-                      p.epNumber <= Math.round(episodeCount * 0.85) ? 'bg-rose-100 text-rose-800' :
-                      'bg-amber-100 text-amber-800';
-                    const actName = 
-                      p.epNumber <= Math.round(episodeCount * 0.25) ? '起' :
-                      p.epNumber <= Math.round(episodeCount * 0.55) ? '承' :
-                      p.epNumber <= Math.round(episodeCount * 0.85) ? '転' : '結';
-
-                    return (
-                      <div key={p.epNumber} className="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-start gap-2.5">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-black shrink-0 ${actBadge}`}>
-                          {actName} 第{p.epNumber}話
-                        </span>
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                          <span className="text-xs font-bold text-slate-800 truncate">{p.titleJp}</span>
-                          <span className="text-[11px] text-slate-500 leading-tight line-clamp-1">{p.summary}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-between items-center mt-2">
-                <button
-                  onClick={() => setStep(2)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                >
-                  戻る
-                </button>
-
-                <button
-                  onClick={handleGenerateSubCharacters}
-                  disabled={isGeneratingSubs}
-                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
-                >
-                  <span className={`material-symbols-outlined text-sm ${isGeneratingSubs ? 'animate-spin' : ''}`}>
-                    {isGeneratingSubs ? 'autorenew' : 'arrow_forward'}
-                  </span>
-                  <span>{isGeneratingSubs ? 'サブキャラ・お友達を配役中...' : '次へ：お友達・サブキャラを自動配役 ➔'}</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ========================================================
-              STEP 4: サブキャラ・お友達の自動配役
-             ======================================================== */}
-          {step === 4 && (
-            <div className="flex flex-col gap-4 animate-fadeIn">
-              <div className="bg-amber-50/70 border border-amber-200/80 p-3.5 rounded-xl flex items-start gap-3 text-amber-900">
-                <span className="material-symbols-outlined text-amber-600 mt-0.5">group</span>
-                <div className="text-xs leading-relaxed">
-                  <p className="font-bold">物語を盛り上げるサブキャラクター（お友達・相棒・ライバル）が配役されました！</p>
-                  <p className="text-amber-700 mt-0.5">
-                    主人公と掛け合いを行うキャストとして台帳に保存され、全エピソードの作画に反映されます。
-                  </p>
-                </div>
-              </div>
-
-              {/* Characters Grid */}
+              {/* Cast Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {/* Main Protagonist Card */}
-                <div className="bg-white p-3.5 rounded-xl border-2 border-amber-400 flex flex-col gap-2 shadow-xs">
+                <div className="bg-white p-3.5 rounded-xl border-2 border-indigo-500 flex flex-col gap-2 shadow-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-extrabold border border-amber-300">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-extrabold border border-indigo-300">
                       ★ 主人公
                     </span>
-                    <span className="material-symbols-outlined text-amber-500 text-sm">stars</span>
+                    <span className="material-symbols-outlined text-indigo-500 text-sm">stars</span>
                   </div>
-                  <h5 className="text-xs font-bold text-slate-900">{protagonistName}</h5>
-                  <p className="text-[11px] text-slate-500 leading-tight line-clamp-3">{protagonistConcept}</p>
+                  <h5 className="text-xs font-bold text-slate-900">{currentCandidate.name}</h5>
+                  <p className="text-[11px] text-slate-500 leading-tight line-clamp-3">{currentCandidate.concept}</p>
                 </div>
 
                 {/* Sub Characters Cards */}
                 {subCharacters.map((sub, idx) => {
                   const roleBadge = 
-                    sub.role === 'partner' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
+                    sub.role === 'partner' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
                     sub.role === 'antagonist' ? 'bg-rose-100 text-rose-800 border-rose-200' :
                     'bg-slate-100 text-slate-700 border-slate-200';
                   const roleName = 
@@ -742,38 +1029,48 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                 })}
               </div>
 
-              {/* Action Buttons */}
+              {isGeneratingSubs && (
+                <div className="p-4 bg-slate-100 rounded-xl flex items-center justify-center gap-2 text-indigo-600 text-xs font-bold">
+                  <span className="material-symbols-outlined animate-spin text-sm">autorenew</span>
+                  <span>サブキャラクターをAI配役中...</span>
+                </div>
+              )}
+
+              {/* Navigation Action Buttons */}
               <div className="flex justify-between items-center mt-2">
                 <button
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(2)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                 >
                   戻る
                 </button>
 
                 <button
-                  onClick={handleProceedToFinalConfirm}
+                  onClick={() => setStep(4)}
                   className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
                 >
                   <span>次へ：連載スタートの最終確認 ➔</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </button>
               </div>
+
             </div>
           )}
 
           {/* ========================================================
-              STEP 5: コミック連載スタート（最終確認）
+              STEP 4: コミック連載スタート（最終確認）
              ======================================================== */}
-          {step === 5 && (
+          {step === 4 && currentCandidate && (
             <div className="flex flex-col gap-4 animate-fadeIn">
+              
               <div className="bg-gradient-to-r from-emerald-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-200 p-4 rounded-xl flex flex-col gap-2 text-slate-800">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-indigo-600 text-xl">verified</span>
-                  <h4 className="text-sm font-bold text-slate-900">コミック一冊分の全プロデュース準備が整いました！</h4>
+                  <h4 className="text-sm font-bold text-slate-900">コミック一冊分の自動プロデュース準備が完了しました！</h4>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  「🚀 コミック一冊分の自動制作をスタート！」をクリックすると、既存のドラマ連番UI上で、
-                  <strong>漫画コマ割り（Multi-Panel）ON</strong>、<strong>1話30カット</strong>で全{episodeCount}話の連続コミック制作が自動開始されます。
+                  下のボタンを押すと、既存のドラマ連番制作スタジオ上で、
+                  <strong>漫画コマ割り（Multi-Panel）ON</strong>、<strong>1話{cutsPerEpisode}カット</strong>で全{episodeCount}話の連続コミック制作が自動スタートします。
                 </p>
               </div>
 
@@ -784,7 +1081,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex flex-col gap-1">
                     <span className="text-[10px] text-slate-400 font-bold">タイトル</span>
-                    <span className="font-bold text-slate-900">{seriesTitle}</span>
+                    <span className="font-bold text-slate-900">{seriesTitle || `${currentCandidate.name}物語`}</span>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex flex-col gap-1">
@@ -793,13 +1090,13 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex flex-col gap-1">
-                    <span className="text-[10px] text-slate-400 font-bold">画風テイスト</span>
-                    <span className="font-bold text-slate-900 truncate" title={selectedTaste}>{selectedTaste.split(' ')[0]}</span>
+                    <span className="text-[10px] text-slate-400 font-bold">決定した画風テイスト</span>
+                    <span className="font-bold text-indigo-700 truncate" title={currentCandidate.tasteName}>{currentCandidate.tasteName}</span>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex flex-col gap-1">
                     <span className="text-[10px] text-slate-400 font-bold">総制作ボリューム</span>
-                    <span className="font-extrabold text-indigo-600">全{episodeCount}話 × 各話30Cut (計{episodeCount * 30}コマ)</span>
+                    <span className="font-extrabold text-indigo-600">全{episodeCount}話 × 各話{cutsPerEpisode}Cut (計{episodeCount * cutsPerEpisode}コマ)</span>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex flex-col gap-1">
@@ -814,10 +1111,10 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Navigation Action Buttons */}
               <div className="flex justify-between items-center mt-2">
                 <button
-                  onClick={() => setStep(4)}
+                  onClick={() => setStep(3)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                 >
                   戻る
@@ -831,6 +1128,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
                   <span>🚀 コミック一冊分の自動制作をスタート！</span>
                 </button>
               </div>
+
             </div>
           )}
 
@@ -838,7 +1136,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
 
       </div>
 
-      {/* 画像拡大モーダル */}
+      {/* 画像拡大Lightbox */}
       {zoomImage && (
         <div 
           className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn"
@@ -849,7 +1147,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
             onClick={e => e.stopPropagation()}
           >
             <div className="w-full px-4 py-2.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-white shrink-0">
-              <span className="text-xs font-bold">{zoomImage.title}</span>
+              <span className="text-xs font-bold truncate max-w-md">{zoomImage.title}</span>
               <button
                 onClick={() => setZoomImage(null)}
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white"
