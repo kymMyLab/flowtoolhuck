@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@eae36f5/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[ボタンホバー＆非活性時白飛び完全修正済み]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@81ed8c0/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[表情生成撤廃・超快適3ステップコミック制作フロー]'); });
