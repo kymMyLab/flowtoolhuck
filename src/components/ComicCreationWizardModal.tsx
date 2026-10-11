@@ -21,53 +21,10 @@ export interface TurnaroundCandidate {
   isUserSpecified?: boolean; // ユーザーが明示的に指定した画風か
 }
 
-// 起承転結の顔（喜怒哀楽・4表情）
-export interface KishotenketsuFace {
-  stage: 'ki' | 'sho' | 'ten' | 'ketsu';
-  stageLabel: string;
-  stageSub: string;
-  expType: ExpressionType;
-  promptModifierEn: string;
-  base64?: string;
-  mediaId?: string;
-  status: 'idle' | 'generating' | 'completed' | 'error';
-  errorMessage?: string;
-}
-
-const DEFAULT_FACES: KishotenketsuFace[] = [
-  {
-    stage: 'ki',
-    stageLabel: '【起】通常・決意',
-    stageSub: '物語の幕開け、普段の佇まい・真剣な眼差し',
-    expType: 'neutral',
-    promptModifierEn: 'neutral calm expression, steady confident resolute gaze, sharp facial features',
-    status: 'idle'
-  },
-  {
-    stage: 'sho',
-    stageLabel: '【承】笑顔・希望',
-    stageSub: '仲間との出会い、笑顔・希望に満ちた表情',
-    expType: 'happy',
-    promptModifierEn: 'bright gentle smile, warm happy eyes, cheerful friendly expression',
-    status: 'idle'
-  },
-  {
-    stage: 'ten',
-    stageLabel: '【転】怒り・焦燥・激闘',
-    stageSub: '最大の危機、強敵との対峙・気迫の叫び',
-    expType: 'angry',
-    promptModifierEn: 'intense angry expression, sharp piercing glare, furrowed brows, gritted teeth, fierce battle focus',
-    status: 'idle'
-  },
-  {
-    stage: 'ketsu',
-    stageLabel: '【結】哀愁・感涙・大団円',
-    stageSub: '試練を越えて、感涙・静かな微笑み・達成感',
-    expType: 'sad',
-    promptModifierEn: 'sorrowful melancholy expression with gentle touching smile, teary emotional eyes, poignant sadness and relief',
-    status: 'idle'
-  }
-];
+// Comic Wizard 3-Step Flow:
+// 1: 世界観選定＆画風5選・三面図
+// 2: お友達・サブキャラ配役
+// 3: 話数選択(1〜50話)＆起承転結プロット＆連載スタート
 
 interface ComicCreationWizardModalProps {
   isOpen: boolean;
@@ -94,12 +51,8 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
   onLaunchComicSeries,
   onAddLog,
 }) => {
-  // ステップ管理:
-  // 1: 世界観選定＆画風5選・三面図
-  // 2: 主人公の起承転結・喜怒哀楽の顔（表情作画）
-  // 3: お友達・サブキャラ配役
-  // 4: 話数選択(1〜50話)＆起承転結プロット＆連載スタート
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  // ステップ管理: 1: 三面図 ➔ 2: サブキャラ ➔ 3: プロット＆連載スタート
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1: 世界観テーマ
   const [selectedTheme, setSelectedTheme] = useState<string>(currentTheme || THEMES[0]);
@@ -116,16 +69,11 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
   const [isBrainstormingCandidates, setIsBrainstormingCandidates] = useState(false);
   const [activeGeneratingIndex, setActiveGeneratingIndex] = useState<number | null>(null);
 
-  // Step 2: 主人公の起承転結・表情差分（4表情）
-  const [protagonistFaces, setProtagonistFaces] = useState<KishotenketsuFace[]>(DEFAULT_FACES);
-  const [isGeneratingFaces, setIsGeneratingFaces] = useState(false);
-  const [activeGeneratingFaceIndex, setActiveGeneratingFaceIndex] = useState<number | null>(null);
-
-  // Step 3: サブキャラクター（お友達・相棒・宿敵）
+  // Step 2: サブキャラクター（お友達・相棒・宿敵）
   const [subCharacters, setSubCharacters] = useState<CastCharacter[]>([]);
   const [isGeneratingSubs, setIsGeneratingSubs] = useState(false);
 
-  // Step 4: 起承転結ストーリー (1〜50話 & 1話カット数)
+  // Step 3: 起承転結ストーリー (1〜50話 & 1話カット数)
   const [episodeCount, setEpisodeCount] = useState<number>(20); // 1〜50話
   const [cutsPerEpisode, setCutsPerEpisode] = useState<number>(30); // 12, 24, 30
   const [seriesTitle, setSeriesTitle] = useState<string>('');
@@ -499,7 +447,7 @@ ${customTastesInstruction}
   };
 
   // =========================================================================
-  // Step 2 への決定＆遷移ハンドラー（三面図決定 ➔ 起承転結の顔作画へ）
+  // Step 2 への決定＆遷移ハンドラー（三面図決定 ➔ お友達・サブキャラ配役へ）
   // =========================================================================
   const handleProceedToStep2 = (cand?: TurnaroundCandidate) => {
     const target = cand || currentCandidate;
@@ -509,161 +457,52 @@ ${customTastesInstruction}
     }
     setSelectedCandidateId(target.id);
     setStep(2);
-    onAddLog(`✨ 主人公「${target.name}」(${target.tasteName}) を選択しました！起承転結（喜怒哀楽・4表情）を作画します。`, 'success');
+    onAddLog(`✨ 主人公「${target.name}」(${target.tasteName}) を選択しました！お友達・サブキャラ配役へ進みます。`, 'success');
 
-    // まだ表情が作画されていない場合は自動で作画を開始！
-    const hasAnyFace = protagonistFaces.some(f => Boolean(f.base64));
-    if (!hasAnyFace) {
-      setTimeout(() => {
-        handleGenerateAllFaces(target);
-      }, 200);
-    }
-  };
-
-  // =========================================================================
-  // Step 2: 主人公の起承転結・喜怒哀楽の顔（4表情）AI作画
-  // =========================================================================
-  const handleGenerateAllFaces = async (targetCand?: TurnaroundCandidate) => {
-    const target = targetCand || currentCandidate;
-    if (!target) return;
-
-    setIsGeneratingFaces(true);
-    onAddLog(`🎭 主人公「${target.name}」の起承転結（喜怒哀楽・4表情）を一括AI作画開始します...`, 'process');
-
-    const modelDef = resolveImageModel();
-    const safeModelName = modelDef?.name || '🍌 Nano Banana 2';
-    const safeNegative = 'worst quality, normal quality, lowres, deformed, distorted, bad anatomy, bad hands, blurry, complex background, text, watermark';
-
-    for (let i = 0; i < protagonistFaces.length; i++) {
-      const face = protagonistFaces[i];
-      setActiveGeneratingFaceIndex(i);
-      setProtagonistFaces(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'generating' } : f));
-      onAddLog(`🎨 [${i + 1}/4] ${face.stageLabel} をAI作画中...`, 'process');
-
-      // ポートレート構図（胸上アップ・表情強調）
-      const portraitPrompt = `${target.dnaPromptEn}, anime character portrait, upper chest and face close-up, ${face.promptModifierEn}, facing camera, clean simple background, consistent facial features and hairstyle, masterpiece. Art style: ${target.tastePromptEn}`;
-
-      try {
-        const res = await callWithRetry<any>(
-          () => Flow.generate.image({
-            prompt: portraitPrompt,
-            negativePrompt: safeNegative,
-            aspectRatio: '1:1',
-            modelDisplayName: safeModelName,
-          }),
-          (att, max, d, e) => {
-            onAddLog(`⚠️ [${face.stageLabel}] 作画リトライ (${att}/${max}) (理由: ${formatErrorMessage(e)})`, 'warning');
-          },
-          3
-        );
-
-        const base64 = res?.base64 || res?.image?.base64;
-        const mediaId = res?.mediaId || res?.image?.mediaId;
-
-        if (base64) {
-          setProtagonistFaces(prev => prev.map((f, idx) => 
-            idx === i ? { ...f, base64, mediaId, status: 'completed' } : f
-          ));
-          onAddLog(`✅ [${i + 1}/4] ${face.stageLabel} の作画が完了！`, 'success');
-        } else {
-          throw new Error('画像データが取得できませんでした');
-        }
-      } catch (err: any) {
-        onAddLog(`⚠️ [${face.stageLabel}] 作画エラー: ${formatErrorMessage(err)}`, 'warning');
-        setProtagonistFaces(prev => prev.map((f, idx) => 
-          idx === i ? { ...f, status: 'error', errorMessage: formatErrorMessage(err) } : f
-        ));
-      }
-    }
-
-    setActiveGeneratingFaceIndex(null);
-    setIsGeneratingFaces(false);
-    onAddLog(`🎉 主人公「${target.name}」の起承転結・4大表情差分がすべて整いました！`, 'success');
-  };
-
-  // 単一表情の再作画
-  const handleGenerateSingleFace = async (index: number) => {
-    const target = currentCandidate;
-    if (!target) return;
-    const face = protagonistFaces[index];
-    if (!face) return;
-
-    setProtagonistFaces(prev => prev.map((f, idx) => idx === index ? { ...f, status: 'generating' } : f));
-    onAddLog(`🎨 ${face.stageLabel} を再作画中...`, 'process');
-
-    const modelDef = resolveImageModel();
-    const safeModelName = modelDef?.name || '🍌 Nano Banana 2';
-    const safeNegative = 'worst quality, normal quality, lowres, deformed, distorted, bad anatomy, bad hands, blurry, complex background, text, watermark';
-    const portraitPrompt = `${target.dnaPromptEn}, anime character portrait, upper chest and face close-up, ${face.promptModifierEn}, facing camera, clean simple background, consistent facial features and hairstyle, masterpiece. Art style: ${target.tastePromptEn}`;
-
-    try {
-      const res = await callWithRetry<any>(
-        () => Flow.generate.image({
-          prompt: portraitPrompt,
-          negativePrompt: safeNegative,
-          aspectRatio: '1:1',
-          modelDisplayName: safeModelName,
-        }),
-        undefined,
-        3
-      );
-      const base64 = res?.base64 || res?.image?.base64;
-      const mediaId = res?.mediaId || res?.image?.mediaId;
-      if (base64) {
-        setProtagonistFaces(prev => prev.map((f, idx) => 
-          idx === index ? { ...f, base64, mediaId, status: 'completed' } : f
-        ));
-        onAddLog(`✅ ${face.stageLabel} の再作画が完了！`, 'success');
-      }
-    } catch (err: any) {
-      setProtagonistFaces(prev => prev.map((f, idx) => 
-        idx === index ? { ...f, status: 'error', errorMessage: formatErrorMessage(err) } : f
-      ));
-    }
-  };
-
-  // Step 2 ➔ Step 3（お友達・サブキャラ配役）へ進む
-  const handleProceedToStep3 = () => {
-    setStep(3);
-    onAddLog(`👥 お友達・サブキャラクターの配役へ進みます`, 'info');
+    // まだサブキャラが考案されていない場合は自動で考案開始
     if (subCharacters.length === 0) {
       setTimeout(() => {
-        handleGenerateSubCharacters();
-      }, 200);
+        handleGenerateSubCharacters(target);
+      }, 150);
     }
   };
 
   // =========================================================================
-  // Step 3: サブキャラ・お友達の自動配役（2〜3名）
+  // Step 2: サブキャラ・お友達の自動配役（2〜3名）
   // =========================================================================
-  const handleGenerateSubCharacters = async () => {
-    if (!currentCandidate) return;
+  const handleGenerateSubCharacters = async (targetCand?: TurnaroundCandidate) => {
+    const target = targetCand || currentCandidate;
+    if (!target) return;
     setIsGeneratingSubs(true);
-    onAddLog(`👥 物語を彩るお友達・相棒・宿敵などサブキャラを自動考案中...`, 'process');
+    onAddLog(`👥 主人公「${target.name}」を取り巻くお友達・相棒・宿敵などサブキャラを自動考案中...`, 'process');
 
     const prompt = `あなたは一流の漫画編集者です。
-漫画『${seriesTitle || currentCandidate.name}』（主人公: 「${currentCandidate.name}」）のストーリー展開を強力に引き立てる、
+漫画『${seriesTitle || target.name}』（主人公: 「${target.name}」）のストーリー展開を強力に引き立てる、
 魅力的なサブキャラクター（お友達・相棒、ヒロイン、宿敵・ライバル）を【2〜3名】考案してください。
 
 【世界観テーマ】: ${selectedTheme}
-【画風テイスト】: ${currentCandidate.tasteName}
-【主人公】: ${currentCandidate.name} (${currentCandidate.concept})
+【画風テイスト】: ${target.tasteName}
+【主人公】: ${target.name} (${target.concept})
 
-以下の厳密なJSON配列形式（Markdownコードブロックなしの純粋なJSON配列）で出力してください:
-[
-  {
-    "name": "キャラクター名 (肩書)",
-    "role": "partner",
-    "concept": "主人公との関係性・お友達・相棒としての役割（日本語2行）",
-    "dnaPromptEn": "Detailed English character appearance prompt: gender, age, hair, eyes, distinct clothing matching ${selectedTheme}"
-  },
-  {
-    "name": "キャラクター名 (肩書)",
-    "role": "antagonist",
-    "concept": "主人公と対立する宿敵・ライバルとしての役割（日本語2行）",
-    "dnaPromptEn": "Detailed English character appearance prompt: gender, age, hair, eyes, distinct clothing matching ${selectedTheme}"
-  }
-]`;
+【重要】世界観「${selectedTheme}」の日常・社会派・歴史などのジャンルに応じたリアリティを重視してください。
+
+以下の厳密なJSON形式（Markdownコードブロックなし）で出力してください:
+{
+  "subCharacters": [
+    {
+      "name": "キャラクター名 (立場・肩書)",
+      "role": "partner",
+      "concept": "主人公との関係性・お友達・相棒としての役割（日本語2行）",
+      "dnaPromptEn": "Detailed English character appearance prompt: gender, age, hair, eyes, distinct clothing matching ${selectedTheme}"
+    },
+    {
+      "name": "キャラクター名 (立場・肩書)",
+      "role": "antagonist",
+      "concept": "主人公と対立する宿敵・ライバル・または対立する立場としての役割（日本語2行）",
+      "dnaPromptEn": "Detailed English character appearance prompt: gender, age, hair, eyes, distinct clothing matching ${selectedTheme}"
+    }
+  ]
+}`;
 
     try {
       const res = await callWithRetry<any>(
@@ -674,10 +513,15 @@ ${customTastesInstruction}
         5
       );
       const text = res?.text || (typeof res === 'string' ? res : '');
-      const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const list = safeJsonParse<any[]>(cleaned, []);
+      const parsed = safeJsonParse<any>(text, null);
+      let list: any[] = [];
+      if (Array.isArray(parsed)) {
+        list = parsed;
+      } else if (parsed && Array.isArray(parsed.subCharacters)) {
+        list = parsed.subCharacters;
+      }
 
-      if (Array.isArray(list) && list.length > 0) {
+      if (list.length > 0) {
         const chars: CastCharacter[] = list.map((item, idx) => {
           return createDefaultCastCharacter(
             `sub_char_${idx + 1}_${Date.now()}`,
@@ -695,8 +539,8 @@ ${customTastesInstruction}
       onAddLog(`❌ サブキャラ考案エラー: ${formatErrorMessage(err)}`, 'error');
       // フォールバック
       const dummySubs: CastCharacter[] = [
-        createDefaultCastCharacter(`sub_1_${Date.now()}`, '頼れる相棒・親友', 'partner', `A trustworthy loyal friend and companion of ${currentCandidate.name}, matching ${selectedTheme}`),
-        createDefaultCastCharacter(`sub_2_${Date.now()}`, '宿命の好敵手', 'antagonist', `A fierce rival and antagonist opposing ${currentCandidate.name}, sharp intense eyes matching ${selectedTheme}`)
+        createDefaultCastCharacter(`sub_1_${Date.now()}`, '頼れる相棒・理解者', 'partner', `A trustworthy loyal companion and friend of ${target.name}, matching ${selectedTheme}`),
+        createDefaultCastCharacter(`sub_2_${Date.now()}`, '宿命の好敵手・対立者', 'antagonist', `A compelling opposing figure to ${target.name}, sharp intense eyes matching ${selectedTheme}`)
       ];
       setSubCharacters(dummySubs);
     } finally {
@@ -704,19 +548,20 @@ ${customTastesInstruction}
     }
   };
 
-  // Step 3 ➔ Step 4（話数＆全話プロット）へ進む
-  const handleProceedToStep4 = () => {
-    setStep(4);
+  // Step 2 ➔ Step 3（話数＆全話プロット）へ進む
+  const handleProceedToStep3 = () => {
+    setStep(3);
     onAddLog(`📜 全${episodeCount}話の起承転結ストーリー構成へ進みます`, 'info');
     if (episodesPlan.length === 0) {
       setTimeout(() => {
         handleGenerateStoryPlan(currentCandidate);
-      }, 200);
+      }, 150);
     }
   };
 
+
   // =========================================================================
-  // Step 4: 選択した主人公三面図から起承転結（全1〜50話）ストーリー策定
+  // Step 3: 選択した主人公三面図から起承転結（全1〜50話）ストーリー策定
   // =========================================================================
   const handleGenerateStoryPlan = async (targetCand?: TurnaroundCandidate) => {
     const target = targetCand || currentCandidate;
@@ -775,7 +620,7 @@ ${customTastesInstruction}
   };
 
   // =========================================================================
-  // Step 4: コミック一冊分（30Cut × 1〜50話）の自動制作をローンチ！
+  // Step 3: コミック一冊分（30Cut × 1〜50話）の自動制作をローンチ！
   // =========================================================================
   const handleLaunch = () => {
     if (!currentCandidate) return;
@@ -792,18 +637,7 @@ ${customTastesInstruction}
     mainProtagonist.turnaroundBase64 = currentCandidate.turnaroundBase64;
     mainProtagonist.turnaroundMediaId = currentCandidate.turnaroundMediaId;
     mainProtagonist.turnaroundPromptEn = `${currentCandidate.dnaPromptEn}, turnaround sheet, art style: ${currentCandidate.tastePromptEn}`;
-
-    // 起承転結の顔（喜怒哀楽）を表情差分として完全格納！
-    const neutralFace = protagonistFaces.find(f => f.expType === 'neutral')?.base64;
-    const happyFace = protagonistFaces.find(f => f.expType === 'happy')?.base64;
-    const angryFace = protagonistFaces.find(f => f.expType === 'angry')?.base64;
-    const sadFace = protagonistFaces.find(f => f.expType === 'sad')?.base64;
-
-    mainProtagonist.avatarBase64 = neutralFace || currentCandidate.turnaroundBase64;
-    if (neutralFace) mainProtagonist.expressions.neutral.imageBase64 = neutralFace;
-    if (happyFace) mainProtagonist.expressions.happy.imageBase64 = happyFace;
-    if (angryFace) mainProtagonist.expressions.angry.imageBase64 = angryFace;
-    if (sadFace) mainProtagonist.expressions.sad.imageBase64 = sadFace;
+    mainProtagonist.avatarBase64 = currentCandidate.turnaroundBase64;
 
     // シリーズマニフェストを構築
     const manifest: SeriesManifest = {
@@ -883,9 +717,8 @@ ${customTastesInstruction}
         <div className="px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold shrink-0">
           {[
             { num: 1, label: '① 世界観＆三面図5選' },
-            { num: 2, label: '② 起承転結・喜怒哀楽の顔' },
-            { num: 3, label: '③ お友達・サブキャラ配役' },
-            { num: 4, label: '④ 全話プロット＆連載開始' },
+            { num: 2, label: '② お友達・サブキャラ配役' },
+            { num: 3, label: '③ 全話プロット＆連載開始' },
           ].map(s => {
             const isActive = step === s.num;
             const isPassed = step > s.num;
@@ -1244,10 +1077,10 @@ ${customTastesInstruction}
                             >
                               {isSelected ? (
                                 <>
-                                  <span>🚀 決定して表情作画へ ➔</span>
+                                  <span>🚀 この主人公で決定し次へ ➔</span>
                                 </>
                               ) : hasImage ? (
-                                'このキャラで決定'
+                                'このキャラを選択'
                               ) : (
                                 '作画中...'
                               )}
@@ -1264,159 +1097,9 @@ ${customTastesInstruction}
           )}
 
           {/* ========================================================
-              STEP 2: 主人公の起承転結・喜怒哀楽の顔（4表情作画）
+              STEP 2: お友達・相棒・サブキャラ配役
              ======================================================== */}
           {step === 2 && currentCandidate && (
-            <div className="flex flex-col gap-4 animate-fadeIn">
-              
-              {/* Selected Protagonist Summary Header */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between gap-4 shadow-2xs flex-wrap">
-                <div className="flex items-center gap-3">
-                  {currentCandidate.turnaroundBase64 && (
-                    <img
-                      src={`data:image/png;base64,${currentCandidate.turnaroundBase64}`}
-                      alt={currentCandidate.name}
-                      className="w-24 h-14 object-cover rounded-lg border border-slate-200 cursor-pointer shrink-0"
-                      onClick={() => setZoomImage({ base64: currentCandidate.turnaroundBase64!, title: currentCandidate.name })}
-                    />
-                  )}
-                  <div className="flex flex-col gap-0.5 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
-                        {currentCandidate.tasteName}
-                      </span>
-                      <span className="text-xs font-extrabold text-slate-800">
-                        主人公: {currentCandidate.name}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 truncate max-w-md">{currentCandidate.concept}</p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleGenerateAllFaces()}
-                  disabled={isGeneratingFaces}
-                  style={{ color: isGeneratingFaces ? '#94a3b8' : '#ffffff' }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all select-none ${
-                    isGeneratingFaces
-                      ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
-                      : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 active:brightness-95 text-white shadow-sm hover:shadow-md cursor-pointer'
-                  }`}
-                >
-                  <span className={`material-symbols-outlined text-sm ${isGeneratingFaces ? 'animate-spin' : ''}`}>
-                    {isGeneratingFaces ? 'autorenew' : 'auto_awesome'}
-                  </span>
-                  <span>{isGeneratingFaces ? '表情を作画中...' : '⚡ 4表情を一括再作画'}</span>
-                </button>
-              </div>
-
-              {/* Guidance Box */}
-              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200/80 p-3.5 rounded-xl flex items-start gap-3 text-purple-950 shadow-2xs">
-                <span className="material-symbols-outlined text-purple-600 mt-0.5 text-xl">mood</span>
-                <div className="text-xs leading-relaxed">
-                  <p className="font-bold">主人公の【起承転結・喜怒哀楽の顔（4表情）】を生成します。</p>
-                  <p className="text-purple-700 mt-0.5">
-                    決定した三面図の容姿DNAと画風を忠実に維持したまま、物語の展開に応じた4つの主要表情（起・承・転・結）を作画します。各カット作画時にキャラクターの感情マスターとして自動適用されます。
-                  </p>
-                </div>
-              </div>
-
-              {/* 4 Faces Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                {protagonistFaces.map((face, idx) => {
-                  const isGeneratingThis = activeGeneratingFaceIndex === idx || face.status === 'generating';
-                  const hasImage = Boolean(face.base64);
-
-                  return (
-                    <div
-                      key={face.stage}
-                      className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs flex flex-col justify-between"
-                    >
-                      <div className="p-3 border-b border-slate-100 flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                          {face.stageLabel}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">#{idx + 1}</span>
-                      </div>
-
-                      {/* 1:1 Portrait Image Box */}
-                      <div className="relative aspect-square w-full bg-slate-100 flex items-center justify-center overflow-hidden group">
-                        {hasImage ? (
-                          <>
-                            <img
-                              src={`data:image/png;base64,${face.base64}`}
-                              alt={face.stageLabel}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setZoomImage({ base64: face.base64!, title: `${currentCandidate.name} - ${face.stageLabel}` })}
-                                className="p-2 rounded-lg bg-white/90 text-slate-900 hover:bg-white text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-sm">zoom_in</span>
-                                拡大
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleGenerateSingleFace(idx)}
-                                disabled={isGeneratingFaces}
-                                className="p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-sm">refresh</span>
-                                再作画
-                              </button>
-                            </div>
-                          </>
-                        ) : isGeneratingThis ? (
-                          <div className="flex flex-col items-center justify-center p-4 text-center gap-1.5 text-indigo-600">
-                            <span className="material-symbols-outlined animate-spin text-3xl">autorenew</span>
-                            <span className="text-xs font-bold">表情を作画中...</span>
-                          </div>
-                        ) : face.status === 'error' ? (
-                          <div className="flex flex-col items-center justify-center p-4 text-center gap-1 text-rose-500">
-                            <span className="material-symbols-outlined text-2xl">error</span>
-                            <span className="text-xs">作画エラー</span>
-                            <button
-                              type="button"
-                              onClick={() => handleGenerateSingleFace(idx)}
-                              className="mt-1 px-2.5 py-1 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold cursor-pointer"
-                            >
-                              再試行
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center p-4 text-center gap-1 text-slate-400">
-                            <span className="material-symbols-outlined text-2xl text-slate-300">face</span>
-                            <span className="text-[11px]">未作画</span>
-                            <button
-                              type="button"
-                              onClick={() => handleGenerateSingleFace(idx)}
-                              className="mt-1 px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold cursor-pointer"
-                            >
-                              今すぐ作画
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-3 bg-slate-50/70 border-t border-slate-100 flex flex-col gap-1">
-                        <p className="text-[11px] text-slate-600 leading-tight">{face.stageSub}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-            </div>
-          )}
-
-          {/* ========================================================
-              STEP 3: お友達・相棒・サブキャラ配役
-             ======================================================== */}
-          {step === 3 && currentCandidate && (
             <div className="flex flex-col gap-4 animate-fadeIn">
               
               {/* Guidance Box */}
@@ -1454,10 +1137,10 @@ ${customTastesInstruction}
                 ))}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={handleGenerateSubCharacters}
+                  onClick={() => handleGenerateSubCharacters()}
                   disabled={isGeneratingSubs}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
@@ -1466,15 +1149,25 @@ ${customTastesInstruction}
                   </span>
                   <span>サブキャラを再考案（リロール）</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleProceedToStep3}
+                  disabled={isGeneratingSubs}
+                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:brightness-110 active:brightness-95 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  <span>このキャストで決定し、全話プロット構築へ ➔</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
               </div>
 
             </div>
           )}
 
           {/* ========================================================
-              STEP 4: 話数選択 (1〜50話) ＆ 起承転結プロット構築 ＆ 連載スタート
+              STEP 3: 話数選択 (1〜50話) ＆ 起承転結プロット構築 ＆ 連載スタート
              ======================================================== */}
-          {step === 4 && currentCandidate && (
+          {step === 3 && currentCandidate && (
             <div className="flex flex-col gap-4 animate-fadeIn">
               
               {/* Volume & Cuts Guidance */}
@@ -1654,7 +1347,7 @@ ${customTastesInstruction}
                     : 'bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-md hover:shadow-lg cursor-pointer transform hover:scale-102'
                 }`}
               >
-                <span>この主人公で決定し、起承転結の顔（喜怒哀楽）へ</span>
+                <span>この主人公で決定し、お友達・サブキャラ配役へ</span>
                 <span className="material-symbols-outlined text-base">arrow_forward</span>
               </button>
             )}
@@ -1663,25 +1356,6 @@ ${customTastesInstruction}
               <button
                 type="button"
                 onClick={handleProceedToStep3}
-                disabled={isGeneratingFaces}
-                style={{
-                  color: isGeneratingFaces ? '#94a3b8' : '#ffffff'
-                }}
-                className={`px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all select-none ${
-                  isGeneratingFaces
-                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
-                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-sm hover:shadow-md cursor-pointer'
-                }`}
-              >
-                <span>次へ：お友達・サブキャラ配役</span>
-                <span className="material-symbols-outlined text-base">arrow_forward</span>
-              </button>
-            )}
-
-            {step === 3 && (
-              <button
-                type="button"
-                onClick={handleProceedToStep4}
                 disabled={isGeneratingSubs}
                 style={{
                   color: isGeneratingSubs ? '#94a3b8' : '#ffffff'
@@ -1689,7 +1363,7 @@ ${customTastesInstruction}
                 className={`px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all select-none ${
                   isGeneratingSubs
                     ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
-                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:brightness-95 text-white shadow-sm hover:shadow-md cursor-pointer'
+                    : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:brightness-110 active:brightness-95 text-white shadow-md hover:shadow-lg cursor-pointer'
                 }`}
               >
                 <span>次へ：全話プロット構築＆連載設定</span>
@@ -1697,7 +1371,7 @@ ${customTastesInstruction}
               </button>
             )}
 
-            {step === 4 && (
+            {step === 3 && (
               <button
                 type="button"
                 onClick={handleLaunch}
