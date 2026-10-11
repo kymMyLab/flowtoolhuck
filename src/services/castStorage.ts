@@ -1,6 +1,7 @@
 import { MangaProject, CastCharacter, ExpressionType, CastExpression } from '../types';
 
-const STORAGE_KEY = 'flowtool_manga_project_v1';
+const STORAGE_KEY = 'flowtool_manga_project_v2';
+const OLD_STORAGE_KEY = 'flowtool_manga_project_v1';
 
 export const EXPRESSION_METAS: Record<ExpressionType, { label: string; promptModifierEn: string; icon: string }> = {
   neutral: { 
@@ -93,6 +94,12 @@ export const DEFAULT_MANGA_PROJECT: MangaProject = {
       'protagonist',
       'A cute young anime witch girl with fluffy cat ears and long messy light ash-blonde hair, large gentle golden-yellow eyes, slightly pouty expression, wearing a dark oversized witch hat decorated with ribbons and a bell, dark hooded witch cloak, dark gothic dress, striped thigh-high socks, heavy lace-up combat boots, fluffy dark cat tail'
     ),
+    createDefaultCastCharacter(
+      'char_cruise_lady',
+      'バーの麗人・セリア (猫耳セレブ)',
+      'protagonist',
+      'A glamorous slender kemonomimi woman with cat ears and flowing blonde hair, elegant 6-head-tall mature proportions, sleek jawline, alluring expressive almond-shaped eyes with vivid crimson irises, wearing an exquisite modern cocktail dress with fine lace fabric texture, shimmering jewelry, sophisticated beauty'
+    ),
   ],
 };
 
@@ -101,7 +108,11 @@ export const DEFAULT_MANGA_PROJECT: MangaProject = {
  */
 export function loadMangaProject(): MangaProject {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw && OLD_STORAGE_KEY) {
+      raw = localStorage.getItem(OLD_STORAGE_KEY);
+    }
+
     if (!raw) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_MANGA_PROJECT));
       return { ...DEFAULT_MANGA_PROJECT };
@@ -109,6 +120,19 @@ export function loadMangaProject(): MangaProject {
     const parsed = JSON.parse(raw);
     if (!parsed.characters || !Array.isArray(parsed.characters) || parsed.characters.length === 0) {
       return { ...DEFAULT_MANGA_PROJECT };
+    }
+
+    // デフォルトキャラ（新追加キャラ含む）が既存プロジェクトに無ければ安全に追記
+    const existingIds = new Set(parsed.characters.map((c: CastCharacter) => c.id));
+    let hasNew = false;
+    for (const defChar of DEFAULT_MANGA_PROJECT.characters) {
+      if (!existingIds.has(defChar.id)) {
+        parsed.characters.push(defChar);
+        hasNew = true;
+      }
+    }
+    if (hasNew) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
     return parsed as MangaProject;
   } catch (e) {
