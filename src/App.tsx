@@ -156,6 +156,13 @@ export default function App() {
   const episodesRef = useRef(episodes);
   episodesRef.current = episodes;
 
+  // グローバル（コンソール）から全エピソードデータにいつでも直接アクセス・救出可能にする
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__STUDIO_EPISODES__ = episodes;
+    }
+  }, [episodes]);
+
   const handleLaunchComicSeries = useCallback(async (payload: {
     productionMode: ProductionMode;
     theme: string;
