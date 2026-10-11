@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@7a65f23/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[超指数バックオフ60分待機追加＆Session1安全メモリ保護統合版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@1f676e7/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[超指数バックオフ9回60分待機＆Jules全4タスク統合版]'); });
