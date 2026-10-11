@@ -16,8 +16,9 @@ const cleanTitle = (title: string) => {
  * SRT形式のタイムコード生成 (HH:MM:SS,mmm)
  */
 function formatSRTTime(seconds: number): string {
+  if (isNaN(seconds) || seconds < 0) return "00:00:00,000";
   const date = new Date(0);
-  date.setMilliseconds(seconds * 1000);
+  date.setUTCMilliseconds(Math.floor(seconds * 1000));
   const hh = date.getUTCHours().toString().padStart(2, '0');
   const mm = date.getUTCMinutes().toString().padStart(2, '0');
   const ss = date.getUTCSeconds().toString().padStart(2, '0');
@@ -33,7 +34,10 @@ function generateSRT(ep: Episode): string {
   let currentTime = 2.0; // 冒頭2秒の扉絵分をオフセット
 
   ep.cuts.forEach((cut, index) => {
-    const duration = cut.videoDuration || 4;
+    let duration = Number(cut.videoDuration);
+    if (isNaN(duration) || duration <= 0) {
+      duration = Math.max(4, (cut.narrationJp?.length || 0) * 0.25);
+    }
     const startTime = formatSRTTime(currentTime);
     const endTime = formatSRTTime(currentTime + duration);
 
@@ -350,13 +354,14 @@ export async function renderCoverBase64(ep: Episode): Promise<string> {
       const reader = new FileReader();
       reader.onloadend = () => {
         const res = reader.result as string;
-        resolve(res.replace(/^data:image\/png;base64,/, ''));
+        resolve(res.split('base64,').pop() || res);
       };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
   } else {
-    return (canvas as HTMLCanvasElement).toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+    const res = (canvas as HTMLCanvasElement).toDataURL('image/png');
+    return res.split('base64,').pop() || res;
   }
 }
 
@@ -582,17 +587,17 @@ export const downloadZip = async (
     for (const c of ep.cuts) {
       // Start絵
       if (c.imageBase64) {
-        const cleanImg = c.imageBase64.replace(/^data:[^;]+;base64,/, '');
+        const cleanImg = c.imageBase64.split('base64,').pop() || c.imageBase64;
         folder.file(`cut_${c.id}.png`, cleanImg, { base64: true });
       }
       // After絵（Veo補間用 到達点フレーム）
       if (c.endFrameImageBase64) {
-        const cleanEndImg = c.endFrameImageBase64.replace(/^data:[^;]+;base64,/, '');
+        const cleanEndImg = c.endFrameImageBase64.split('base64,').pop() || c.endFrameImageBase64;
         folder.file(`cut_${c.id}_after.png`, cleanEndImg, { base64: true });
       }
       // 生成動画
       if (c.videoBase64) {
-        const cleanVid = c.videoBase64.replace(/^data:[^;]+;base64,/, '');
+        const cleanVid = c.videoBase64.split('base64,').pop() || c.videoBase64;
         folder.file(`cut_${c.id}.mp4`, cleanVid, { base64: true });
       }
       // Event loop breather to prevent UI freeze and allow GC during heavy batch exports
@@ -602,11 +607,11 @@ export const downloadZip = async (
     // 2. キャラクター基準マスターアセット（三面図、Cut 1マスターアンカー）
     const turnaroundBase64 = ep.characterTurnaroundBase64 || manifest?.referenceAsset?.base64;
     if (turnaroundBase64) {
-      const cleanTurnaround = turnaroundBase64.replace(/^data:[^;]+;base64,/, '');
+      const cleanTurnaround = turnaroundBase64.split('base64,').pop() || turnaroundBase64;
       folder.file('character_turnaround.png', cleanTurnaround, { base64: true });
     }
     if (ep.masterAnchorBase64) {
-      const cleanMaster = ep.masterAnchorBase64.replace(/^data:[^;]+;base64,/, '');
+      const cleanMaster = ep.masterAnchorBase64.split('base64,').pop() || ep.masterAnchorBase64;
       folder.file('master_anchor.png', cleanMaster, { base64: true });
     }
     
@@ -615,7 +620,7 @@ export const downloadZip = async (
 
     if (ep.coverBase64) {
       addLog(`🖼️ 世界観適応インフォグラフィック扉絵を格納中...`, 'info');
-      const cleanCover = ep.coverBase64.replace(/^data:[^;]+;base64,/, '');
+      const cleanCover = ep.coverBase64.split('base64,').pop() || ep.coverBase64;
       folder.file('cover.png', cleanCover, { base64: true });
     } else {
       addLog(`🖼️ YouTube用超ド迫力扉絵を合成中...`, 'info');
@@ -642,13 +647,13 @@ export const downloadZip = async (
     const scriptJson = {
       id: ep.id,
       productionMode: ep.productionMode || (ep.isMvMode ? 'mv' : 'episodes'),
-      titleJp: ep.titleJp,
-      titleEn: ep.titleEn,
+      titleJp: ep.titleJp || '無題',
+      titleEn: ep.titleEn || '',
       summary: ep.summary || '',
       theme: ep.theme || '',
       taste: ep.taste || '',
       characterDna: ep.characterDna || '',
-      catchphrase: { jp: ep.coverCatchphraseJp, en: ep.coverCatchphraseEn },
+      catchphrase: { jp: ep.coverCatchphraseJp || '', en: ep.coverCatchphraseEn || '' },
       hasTurnaround: !!ep.characterTurnaroundBase64,
       hasMasterAnchor: !!ep.masterAnchorBase64,
       historicalIntelligence: {
@@ -657,13 +662,22 @@ export const downloadZip = async (
       },
       cuts: ep.cuts.map(c => {
         const narration = c.narrationJp || '';
-        const hl = (c.telop?.highlights && c.telop.highlights.length > 0)
-          ? c.telop.highlights
-          : extractHighlights(narration);
-        const hlWords = hl.map(h => h.word);
+
+        let hl = c.telop?.highlights || [];
+        if (!Array.isArray(hl) || hl.length === 0) {
+            hl = extractHighlights(narration);
+        }
+
+        const safeHl = hl.map(h => ({
+            word: h?.word || '',
+            color: h?.color || '#FFE600',
+            sizeScale: h?.sizeScale || 1.15
+        })).filter(h => h.word.trim() !== '');
+
+        const hlWords = safeHl.map(h => h.word);
 
         return {
-          id: c.id,
+          id: c.id || 1,
           dialogue: narration,
           narrationJp: narration,
           narrationEn: c.narrationEn || '',
@@ -686,7 +700,7 @@ export const downloadZip = async (
           telop: {
             fullText: c.telop?.fullText || narration,
             highlightKeywords: hlWords,
-            highlights: hl,
+            highlights: safeHl,
             style: c.telop?.style || 'cinema-subtle',
             transition: c.telop?.transition || 'aos-fade-soft',
             position: c.telop?.position || 'bottom-center',

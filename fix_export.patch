@@ -1,0 +1,75 @@
+--- src/services/exportService.ts
++++ src/services/exportService.ts
+@@ -642,54 +642,59 @@
+     const scriptJson = {
+       id: ep.id,
+       productionMode: ep.productionMode || (ep.isMvMode ? 'mv' : 'episodes'),
+-      titleJp: ep.titleJp,
+-      titleEn: ep.titleEn,
++      titleJp: ep.titleJp || '無題',
++      titleEn: ep.titleEn || '',
+       summary: ep.summary || '',
+       theme: ep.theme || '',
+       taste: ep.taste || '',
+       characterDna: ep.characterDna || '',
+-      catchphrase: { jp: ep.coverCatchphraseJp, en: ep.coverCatchphraseEn },
++      catchphrase: { jp: ep.coverCatchphraseJp || '', en: ep.coverCatchphraseEn || '' },
+       hasTurnaround: !!ep.characterTurnaroundBase64,
+       hasMasterAnchor: !!ep.masterAnchorBase64,
+       historicalIntelligence: {
+         eraAnalysis: ep.eraAnalysis || '',
+         forbiddenAnachronisms: ep.forbiddenAnachronisms || []
+       },
+       cuts: ep.cuts.map(c => {
+         const narration = c.narrationJp || '';
+-        const hl = (c.telop?.highlights && c.telop.highlights.length > 0)
+-          ? c.telop.highlights
+-          : extractHighlights(narration);
+-        const hlWords = hl.map(h => h.word);
++
++        let hl = c.telop?.highlights || [];
++        if (!Array.isArray(hl) || hl.length === 0) {
++            hl = extractHighlights(narration);
++        }
++
++        const safeHl = hl.map(h => ({
++            word: h?.word || '',
++            color: h?.color || '#FFE600',
++            sizeScale: h?.sizeScale || 1.15
++        })).filter(h => h.word.trim() !== '');
++
++        const hlWords = safeHl.map(h => h.word);
+
+         return {
+-          id: c.id,
++          id: c.id || 1,
+           dialogue: narration,
+           narrationJp: narration,
+           narrationEn: c.narrationEn || '',
+           prompt: c.promptEn || '',
+           startFramePromptEn: c.promptEn || '',
+           endFramePromptEn: c.endFramePromptEn || '',
+           veoMotionPrompt: c.veoMotionPrompt || '',
+           isObjectOnly: !!c.isObjectOnly,
+           panelLayout: c.panelLayout || 'single',
+           focalPoint: c.focalPoint || null,
+           compositionPrompt: c.compositionPrompt || '',
+           shotScale: c.shotScale || 'Wide',
+           cameraWork: c.cameraWork || 'static',
+           cameraMotion: c.cameraMotion || '',
+           kenBurnsPreset: c.kenBurnsPreset || 'none',
+           hasStartImage: !!c.imageBase64,
+           hasEndImage: !!c.endFrameImageBase64,
+           hasVideo: !!c.videoBase64,
+           videoModelUsed: c.videoModelUsed || '',
+           telop: {
+             fullText: c.telop?.fullText || narration,
+             highlightKeywords: hlWords,
+-            highlights: hl,
++            highlights: safeHl,
+             style: c.telop?.style || 'cinema-subtle',
+             transition: c.telop?.transition || 'aos-fade-soft',
+             position: c.telop?.position || 'bottom-center',
+             directorNote: c.telop?.directorNote || ''
+           }
+         };

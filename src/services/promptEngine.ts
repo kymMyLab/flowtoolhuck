@@ -410,6 +410,8 @@ export function sanitizePromptForGoogleSafety(prompt: string): string {
   if (!prompt) return prompt;
 
   return prompt
+    // undefinedやnullの混入を除去
+    .replace(/\b(undefined|null)\b/gi, '')
     // 性的・誘惑的・成人向け誤認ワードの無害化
     .replace(/\b(seductive|seductively)\b/gi, 'charismatic')
     .replace(/\b(adult manga|erotic manga|hentai)\b/gi, 'graphic novel')
@@ -421,9 +423,15 @@ export function sanitizePromptForGoogleSafety(prompt: string): string {
     .replace(/\b(childlike|child-like)\b/gi, 'stylized')
     .replace(/\b(naked|nude|nudity)\b/gi, 'artistic silhouette')
     .replace(/\b(skimpy|revealing)\b/gi, 'stylish')
+    // 空のブラケットや括弧を除去
+    .replace(/\[\s*\]/g, '')
+    .replace(/\(\s*\)/g, '')
     // 連続するカンマやピリオド、空白の整理
-    .replace(/,\s*,/g, ',')
-    .replace(/\.\s*\./g, '.')
+    .replace(/,\s*,+/g, ',')
+    .replace(/\.\s*\.+/g, '.')
+    .replace(/,\s*\./g, '.')
+    .replace(/\.\s*,/g, '.')
     .replace(/\s{2,}/g, ' ')
+    .replace(/^[,.\s]+|[,.\s]+$/g, '')
     .trim();
 }

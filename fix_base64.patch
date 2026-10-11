@@ -1,0 +1,65 @@
+--- src/services/exportService.ts
++++ src/services/exportService.ts
+@@ -354,7 +354,7 @@
+       const reader = new FileReader();
+       reader.onloadend = () => {
+         const res = reader.result as string;
+-        resolve(res.replace(/^data:image\/png;base64,/, ''));
++        resolve(res.split('base64,').pop() || res);
+       };
+       reader.onerror = reject;
+       reader.readAsDataURL(blob);
+@@ -360,7 +360,8 @@
+     });
+   } else {
+-    return (canvas as HTMLCanvasElement).toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
++    const res = (canvas as HTMLCanvasElement).toDataURL('image/png');
++    return res.split('base64,').pop() || res;
+   }
+ }
+
+@@ -586,23 +587,23 @@
+     for (const c of ep.cuts) {
+       // Start絵
+       if (c.imageBase64) {
+-        const cleanImg = c.imageBase64.replace(/^data:[^;]+;base64,/, '');
++        const cleanImg = c.imageBase64.split('base64,').pop() || c.imageBase64;
+         folder.file(`cut_${c.id}.png`, cleanImg, { base64: true });
+       }
+       // After絵（Veo補間用 到達点フレーム）
+       if (c.endFrameImageBase64) {
+-        const cleanEndImg = c.endFrameImageBase64.replace(/^data:[^;]+;base64,/, '');
++        const cleanEndImg = c.endFrameImageBase64.split('base64,').pop() || c.endFrameImageBase64;
+         folder.file(`cut_${c.id}_after.png`, cleanEndImg, { base64: true });
+       }
+       // 生成動画
+       if (c.videoBase64) {
+-        const cleanVid = c.videoBase64.replace(/^data:[^;]+;base64,/, '');
++        const cleanVid = c.videoBase64.split('base64,').pop() || c.videoBase64;
+         folder.file(`cut_${c.id}.mp4`, cleanVid, { base64: true });
+       }
+       // Event loop breather to prevent UI freeze and allow GC during heavy batch exports
+@@ -606,20 +607,20 @@
+     // 2. キャラクター基準マスターアセット（三面図、Cut 1マスターアンカー）
+     const turnaroundBase64 = ep.characterTurnaroundBase64 || manifest?.referenceAsset?.base64;
+     if (turnaroundBase64) {
+-      const cleanTurnaround = turnaroundBase64.replace(/^data:[^;]+;base64,/, '');
++      const cleanTurnaround = turnaroundBase64.split('base64,').pop() || turnaroundBase64;
+       folder.file('character_turnaround.png', cleanTurnaround, { base64: true });
+     }
+     if (ep.masterAnchorBase64) {
+-      const cleanMaster = ep.masterAnchorBase64.replace(/^data:[^;]+;base64,/, '');
++      const cleanMaster = ep.masterAnchorBase64.split('base64,').pop() || ep.masterAnchorBase64;
+       folder.file('master_anchor.png', cleanMaster, { base64: true });
+     }
+
+     addLog(`📝 SRT字幕ファイルを生成中...`, 'info');
+     folder.file('subtitles.srt', generateSRT(ep));
+
+     if (ep.coverBase64) {
+       addLog(`🖼️ 世界観適応インフォグラフィック扉絵を格納中...`, 'info');
+-      const cleanCover = ep.coverBase64.replace(/^data:[^;]+;base64,/, '');
++      const cleanCover = ep.coverBase64.split('base64,').pop() || ep.coverBase64;
+       folder.file('cover.png', cleanCover, { base64: true });
+     } else {
+       addLog(`🖼️ YouTube用超ド迫力扉絵を合成中...`, 'info');
