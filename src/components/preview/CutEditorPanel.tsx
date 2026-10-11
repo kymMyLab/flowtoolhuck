@@ -389,23 +389,38 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
           <FieldDropdown
             label="コマ割り構成 (Panel Layout)"
             value={
-              cut.panelLayout === 'single' ? '🖼️ 1コマ大ゴマ (Single)' :
-              cut.panelLayout === 'split-2' ? '◫ 2コマ分割 (2-Panel)' :
-              cut.panelLayout === 'split-3' ? '☰ 3コマ連続 (3-Panel)' :
-              '▦ 変形マルチコマ (Dynamic Multi)'
+              cut.panelLayout === 'single' ? '🖼️ 1コマ大ゴマ (Single Splash)' :
+              cut.panelLayout === 'diagonal-slash' ? '⚔️ 斜めスラッシュ (Diagonal Slash)' :
+              cut.panelLayout === 'l-shaped' ? '📐 L字変形3コマ (L-Shaped 3-Panel)' :
+              cut.panelLayout === 'panoramic-split' ? '🌄 パノラマ+2分割 (Panoramic Split)' :
+              cut.panelLayout === 'inset-reaction' ? '🔍 インセット小ゴマ (Inset Reaction)' :
+              cut.panelLayout === 'vertical-split' ? '▥ 左右縦割り2分割 (Vertical Split)' :
+              cut.panelLayout === 'split-2' ? '◫ 2コマ分割 (2-Panel Split)' :
+              cut.panelLayout === 'split-3' ? '☰ 変形3コマ (Dynamic 3-Panel)' :
+              '🎲 おまかせ変形 (Dynamic Multi)'
             }
             options={[
-              '🖼️ 1コマ大ゴマ (Single)',
-              '◫ 2コマ分割 (2-Panel)',
-              '☰ 3コマ連続 (3-Panel)',
-              '▦ 変形マルチコマ (Dynamic Multi)'
+              '🎲 おまかせ変形 (Dynamic Multi)',
+              '⚔️ 斜めスラッシュ (Diagonal Slash)',
+              '📐 L字変形3コマ (L-Shaped 3-Panel)',
+              '🌄 パノラマ+2分割 (Panoramic Split)',
+              '🔍 インセット小ゴマ (Inset Reaction)',
+              '▥ 左右縦割り2分割 (Vertical Split)',
+              '◫ 2コマ分割 (2-Panel Split)',
+              '☰ 変形3コマ (Dynamic 3-Panel)',
+              '🖼️ 1コマ大ゴマ (Single Splash)'
             ]}
             onChange={l => {
               const map: Record<string, string> = {
-                '🖼️ 1コマ大ゴマ (Single)': 'single',
-                '◫ 2コマ分割 (2-Panel)': 'split-2',
-                '☰ 3コマ連続 (3-Panel)': 'split-3',
-                '▦ 変形マルチコマ (Dynamic Multi)': 'dynamic-multi'
+                '🎲 おまかせ変形 (Dynamic Multi)': 'dynamic-multi',
+                '⚔️ 斜めスラッシュ (Diagonal Slash)': 'diagonal-slash',
+                '📐 L字変形3コマ (L-Shaped 3-Panel)': 'l-shaped',
+                '🌄 パノラマ+2分割 (Panoramic Split)': 'panoramic-split',
+                '🔍 インセット小ゴマ (Inset Reaction)': 'inset-reaction',
+                '▥ 左右縦割り2分割 (Vertical Split)': 'vertical-split',
+                '◫ 2コマ分割 (2-Panel Split)': 'split-2',
+                '☰ 変形3コマ (Dynamic 3-Panel)': 'split-3',
+                '🖼️ 1コマ大ゴマ (Single Splash)': 'single'
               };
               onUpdateCut({ panelLayout: map[l] || 'dynamic-multi' });
             }}

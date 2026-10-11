@@ -302,8 +302,11 @@ export async function runStyleMatrixProduction(ctx: ProductionPipelineContext): 
       
       const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
       cut.shotScale = preset.scale;
-      cut.cinematicAngle = preset.angle;
-      cut.panelLayout = cutData.panelLayout || (settings.isMultiPanel ? 'dynamic-multi' : 'single');
+      const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
+      const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
+        ? cutData.panelLayout
+        : (settings.isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single');
+      cut.panelLayout = chosenLayout;
       const recCw = resolveRecommendedCameraWorkAndKenBurns(j + 1, 'style-matrix', false, false);
       cut.cameraWork = recCw.id;
       cut.cameraMotion = recCw.motionPrompt;
@@ -447,8 +450,11 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       
       const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
       cut.shotScale = preset.scale;
-      cut.cinematicAngle = preset.angle;
-      cut.panelLayout = cutData.panelLayout || (settings.isMultiPanel ? 'dynamic-multi' : 'single');
+      const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
+      const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
+        ? cutData.panelLayout
+        : (settings.isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single');
+      cut.panelLayout = chosenLayout;
       const recCw = resolveRecommendedCameraWorkAndKenBurns(j + 1, curMode, curMode === 'mv', curMode === 'manga' || settings.isMangaMode);
       cut.cameraWork = recCw.id;
       cut.cameraMotion = recCw.motionPrompt;
@@ -760,8 +766,11 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         const cutData = sharedScript.cuts[j] || {} as any;
         const narration = cutData.narrationJp || '';
         const plot = cutData.basicPlot || '';
-        const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
-        cut.panelLayout = cutData.panelLayout || (settings.isMultiPanel ? 'dynamic-multi' : 'single');
+        const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
+        const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
+          ? cutData.panelLayout
+          : (settings.isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single');
+        cut.panelLayout = chosenLayout;
         const preset = getStoryboardPreset(j + 1, isMv, isManga);
         cut.shotScale = preset.scale;
         cut.cinematicAngle = preset.angle;

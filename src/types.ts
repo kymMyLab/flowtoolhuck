@@ -60,7 +60,7 @@ export interface Cut {
   cinematicAngle?: string;
   cameraWork?: string;
   scenePlot?: string;
-  panelLayout?: 'single' | 'split-2' | 'split-3' | 'dynamic-multi' | string;
+  panelLayout?: 'single' | 'split-2' | 'split-3' | 'diagonal-slash' | 'l-shaped' | 'panoramic-split' | 'inset-reaction' | 'vertical-split' | 'dynamic-multi' | string;
   comicPanel?: ComicPanelMeta;
 
   kenBurnsPreset?: KenBurnsPreset; 

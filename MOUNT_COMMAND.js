@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@19d469d/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[話数番号・連番完全排除＆独立サブタイトル化]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@c661e50/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[サムネイル扉絵＆タイトルの第●話・起承転結タグ完全根絶]'); });

@@ -576,6 +576,18 @@ For EVERY cut, specify where the main visual subject is positioned to prevent au
 - If a person is present, position face safely in upper third: "grid": "top-center", "normalizedCoord": [0.5, 0.3], "focalSubject": "character_face".
 - If an object or wide landscape, center it: "grid": "center", "normalizedCoord": [0.5, 0.5], "focalSubject": "object_name".
 
+${isMultiPanel ? `DYNAMIC MANGA COMIC PANEL COMPOSITION:
+Vary panel shapes and cuts dynamically to avoid monotonous layouts!
+Assign "panelLayout" dynamically for each cut from:
+- "diagonal-slash" (kinetic sharp angled diagonal dividing the frame into 2 wedge panels)
+- "l-shaped" (asymmetrical 3-panel: 1 dominant tall vertical hero panel + 2 stacked horizontal sub-panels)
+- "panoramic-split" (wide panoramic establishing panel at top + 2 vertical side-by-side reaction panels below)
+- "inset-reaction" (epic splash shot with a smaller floating inset box showing emotional reaction or detail)
+- "vertical-split" (asymmetrical vertical division splitting into two side-by-side portrait panels)
+- "split-2" (asymmetrical non-uniform 2 panels)
+- "single" (impactful 1-panel splash cut)
+Do NOT output identical layouts sequentially. Create visual drama and rhythm!
+` : ''}
 CRITICAL: NARRATIVE EMOTIONAL ARC & VEO MOTION (START -> END INTERPOLATION):
 Derive motion pacing from the story's emotional flow (Intro -> Struggle -> Chorus Climax -> Settled Afterglow):
 - "veoMotionPrompt": Natural fluid progression using transition adverbs (First ..., then ..., next ..., finally ... smoothly settles). NEVER use exact second numbers like "0-3s"!
@@ -601,7 +613,7 @@ Output ONLY valid JSON matching this exact structure:
   "cuts": [
     { 
       "id": 1, 
-      ${isMultiPanel ? '"panelLayout": "split-2",' : ''}
+      ${isMultiPanel ? '"panelLayout": "diagonal-slash",' : ''}
       "isObjectOnly": false,
       "focalPoint": {
         "grid": "top-center",
@@ -667,7 +679,7 @@ Between Start Frame ("basicPlot") and End Frame ("endFramePlot"), create a DRAMA
 - "basicPlot": Start frame initial situation and camera angle in English.
 - "endFramePlot": The reached visual state 8 seconds later. Maintain 100% identical protagonist, clothing, and room, but CAPTURED FROM A COMPLETELY DIFFERENT ANGLE OR SHIFTED POSTURE (e.g. camera has orbited 180 degrees to show dynamic side-profile or back against glowing backdrop, or character smoothly transitioned to a new posture under dynamic new lighting angle).
 - "veoMotionPrompt": Natural continuous 8-second motion directive for Veo 3.1 interpolation (e.g. "Continuous 8-second cinematic drone orbit: camera smoothly circles 180 degrees around character from front to side-back angle while character naturally turns head, dynamic light sweep, seamless cinematic motion").
-${isMultiPanel ? '5. Panel layout: Use "single", "split-2", or "split-3" per cut.' : ''}
+${isMultiPanel ? '5. Dynamic Manga Panel Layouts: Assign diverse and dynamic comic panel shapes matching the scene rhythm and emotion! Choose from: "diagonal-slash" (kinetic sharp angled slash), "l-shaped" (asymmetric hero panel + 2 stacked sub-panels), "panoramic-split" (wide top establishing shot + 2 vertical sub-panels), "inset-reaction" (splash scene with smaller inset reaction frame), "vertical-split" (side-by-side vertical panels), "split-2" (asymmetric 2-panel), or "single" (full-bleed single splash). VARY the layout dynamically between cuts!' : ''}
 
 Output ONLY valid JSON:
 {
@@ -679,7 +691,7 @@ Output ONLY valid JSON:
   "cuts": [
     { 
       "id": 1, 
-      ${isMultiPanel ? '"panelLayout": "split-2", ' : ''}
+      ${isMultiPanel ? '"panelLayout": "diagonal-slash", ' : ''}
       "isObjectOnly": false,
       "basicPlot": "Front-three-quarters view of protagonist sitting focused at glowing desk in dark room", 
       "endFramePlot": "180-degree reverse drone angle of the same protagonist, seen from behind and side looking across the room illuminated by rim light",
@@ -1102,9 +1114,10 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
           isMangaMode
         });
 
+        const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
         return {
           id: j + 1,
-          panelLayout: isMultiPanel ? (j % 2 === 0 ? 'split-2' : 'dynamic-multi') : 'single',
+          panelLayout: isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single',
           isObjectOnly: isObj,
           focalPoint: {
             grid: defaultGrid as any,
@@ -1167,9 +1180,14 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
       existingVeoMotion: cutData.veoMotionPrompt
     });
 
+    const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
+    const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
+      ? cutData.panelLayout
+      : (isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single');
+
     return {
       id: j + 1,
-      panelLayout: cutData.panelLayout || (isMultiPanel ? (j % 3 === 0 ? 'single' : 'split-2') : 'single'),
+      panelLayout: chosenLayout,
       basicPlot,
       narrationJp: sanitizeForYouTubeSafety(rawNarration),
       highlights: cutData.highlights || parsed.highlightWords || [],

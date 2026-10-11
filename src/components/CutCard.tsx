@@ -111,6 +111,19 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
               🎯 {cut.focalPoint.grid.replace('top-', 'T-').replace('bottom-', 'B-').replace('center', 'CTR').toUpperCase()}
             </div>
           )}
+          {cut.panelLayout && cut.panelLayout !== 'single' && (
+            <div className="px-1.5 py-0.5 rounded-sm bg-indigo-600/90 border border-indigo-400/30 text-[7px] font-black text-indigo-100 uppercase tracking-tighter shadow-lg shrink-0 flex items-center gap-0.5" title={`コマ割り構成: ${cut.panelLayout}`}>
+              <span>
+                {cut.panelLayout === 'diagonal-slash' ? '⚔️ 斜め' :
+                 cut.panelLayout === 'l-shaped' ? '📐 L字3コマ' :
+                 cut.panelLayout === 'panoramic-split' ? '🌄 パノ+2' :
+                 cut.panelLayout === 'inset-reaction' ? '🔍 枠入' :
+                 cut.panelLayout === 'vertical-split' ? '▥ 縦2割' :
+                 cut.panelLayout === 'split-2' ? '◫ 2分割' :
+                 cut.panelLayout === 'split-3' ? '☰ 変形3' : '▦ コマ割'}
+              </span>
+            </div>
+          )}
           {cut.endFrameImageBase64 && (
             <div className="px-1.5 py-0.5 rounded-sm bg-blue-600 text-[7px] font-black text-slate-900 uppercase tracking-tighter shadow-lg shrink-0 flex items-center gap-0.5" title="Veo補間用 After絵（到達点フレーム）生成済">
               <span>🏁 2F</span>
