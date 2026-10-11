@@ -383,6 +383,7 @@ export default function App() {
           onUpdateProject={handleUpdateMangaProject}
           onApplyCharacterToVault={handleApplyCharacterToVault}
           onAddLog={addLog}
+          currentTaste={settings.taste}
         />
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
       </div>

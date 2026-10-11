@@ -432,19 +432,20 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       addLog
     });
 
-    const baseCutsData = Array.from({ length: CUTS_PER_EPISODE }, (_, j) => {
+    const cutsCount = curMode === 'manga' ? 24 : CUTS_PER_EPISODE;
+    const baseCutsData = Array.from({ length: cutsCount }, (_, j) => {
       const cutData = parsed.cuts[j] || {} as any;
       const narration = cutData.narrationJp || '';
       const plot = cutData.basicPlot || '';
       const cutHighlights = cutData.highlights || parsed.highlightWords || [];
-      const preset = getStoryboardPreset(j + 1, curMode === 'mv', false);
+      const preset = getStoryboardPreset(j + 1, curMode === 'mv', curMode === 'manga' || settings.isMangaMode);
       const staging = resolveRecommendedTelopStaging(j + 1, curMode === 'mv', false, undefined, curMode);
       
       const cut = createDefaultCut(j + 1, narration, plot, isCutSelectedForVideo(j, settings.videoRatio));
       cut.shotScale = preset.scale;
       cut.cinematicAngle = preset.angle;
       cut.panelLayout = cutData.panelLayout || (settings.isMultiPanel ? 'dynamic-multi' : 'single');
-      const recCw = resolveRecommendedCameraWorkAndKenBurns(j + 1, curMode, curMode === 'mv', settings.isMangaMode);
+      const recCw = resolveRecommendedCameraWorkAndKenBurns(j + 1, curMode, curMode === 'mv', curMode === 'manga' || settings.isMangaMode);
       cut.cameraWork = recCw.id;
       cut.cameraMotion = recCw.motionPrompt;
       cut.kenBurnsPreset = recCw.recommendedKenBurns;
@@ -500,12 +501,12 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
 
     setEpisodes(prev => [...prev.filter(e => e.id !== epIndex), newEpisode]);
     episodesRef.current = [...episodesRef.current.filter(e => e.id !== epIndex), newEpisode];
-    addLog(`✨ 第${epIndex}${modeInfo.unit}のお題決定！『${newEpisode.titleJp}』全12カットの情景演出が確定！描画を開始します...`, 'success');
+    addLog(`✨ 第${epIndex}${modeInfo.unit}のお題決定！『${newEpisode.titleJp}』全${cutsCount}カットの情景演出が確定！描画を開始します...`, 'success');
 
-    const targetCutCount = Math.min(settings.previewCutCount, CUTS_PER_EPISODE);
+    const targetCutCount = Math.min(settings.previewCutCount, cutsCount);
     await runTasks(buildCutTasks(newEpisode, newEpisode.cuts.slice(0, targetCutCount)));
 
-    const isAllDone = targetCutCount >= CUTS_PER_EPISODE;
+    const isAllDone = targetCutCount >= cutsCount;
     updateEpisode(epIndex, { 
       isGenerating: false, 
       isPreviewDone: true, 

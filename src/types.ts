@@ -1,5 +1,5 @@
 export type VideoModelType = 'veo-lite' | 'omni-flash' | 'veo-fast' | 'browser-0pt';
-export type ProductionMode = 'episodes' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix';
+export type ProductionMode = 'episodes' | 'manga' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix';
 export type RecommendationModel = VideoModelType | 'none';
 export type VideoRatio = 'none' | '30%' | '50%' | '100%';
 
@@ -263,12 +263,29 @@ export interface CastCharacter {
   dnaPromptEn: string;
   avatarBase64?: string;
   expressions: Record<ExpressionType, CastExpression>;
+  turnaroundBase64?: string;
+  turnaroundMediaId?: string;
+  turnaroundPromptEn?: string;
+}
+
+export interface MangaStoryConcept {
+  id: string;
+  genre: string;
+  title: string;
+  logline: string;
+  characters: {
+    name: string;
+    role: 'protagonist' | 'partner' | 'antagonist' | 'supporting';
+    concept: string;
+    dnaPromptEn: string;
+  }[];
 }
 
 export interface MangaProject {
   id: string;
   title: string;
   description?: string;
+  storyConcept?: MangaStoryConcept;
   characters: CastCharacter[];
   activeCharacterId?: string;
   updatedAt: string;

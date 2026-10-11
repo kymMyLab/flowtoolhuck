@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { MangaProject, CastCharacter, ExpressionType, CastExpression } from '../types';
+import { MangaProject, CastCharacter, ExpressionType, CastExpression, MangaStoryConcept } from '../types';
 import { EXPRESSION_METAS, createDefaultCastCharacter, exportProjectJson, importProjectJson } from '../services/castStorage';
 import { PrimaryButton, SecondaryButton, SectionLabel } from './Primitives';
 import { Flow } from 'flow-sdk';
 import { resolveImageModel } from '../constants';
-import { callWithRetry, formatErrorMessage } from '../services/utils';
+import { safeJsonParse, callWithRetry, formatErrorMessage } from '../services/utils';
 
 interface CastManagerModalProps {
   isOpen: boolean;
@@ -13,6 +13,7 @@ interface CastManagerModalProps {
   onUpdateProject: (updated: MangaProject) => void;
   onApplyCharacterToVault: (character: CastCharacter, expressionType?: ExpressionType) => void;
   onAddLog: (msg: string, type?: any) => void;
+  currentTaste?: string;
 }
 
 export const CastManagerModal: React.FC<CastManagerModalProps> = ({
@@ -22,14 +23,20 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
   onUpdateProject,
   onApplyCharacterToVault,
   onAddLog,
+  currentTaste,
 }) => {
   const [selectedCharId, setSelectedCharId] = useState<string>(
     project.activeCharacterId || project.characters[0]?.id || 'char_1'
   );
   const [generatingExp, setGeneratingExp] = useState<string | null>(null);
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
+  const [isGeneratingTurnaround, setIsGeneratingTurnaround] = useState(false);
+  const [isBrainstorming, setIsBrainstorming] = useState(false);
+  const [brainstormConcepts, setBrainstormConcepts] = useState<MangaStoryConcept[] | null>(null);
+  const [zoomImage, setZoomImage] = useState<{ base64: string; title: string; prompt?: string } | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadTargetExpRef = useRef<ExpressionType | null>(null);
+  const uploadTargetExpRef = useRef<ExpressionType | 'turnaround' | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement>(null);
 
   const projectRef = useRef(project);
@@ -113,7 +120,7 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
   };
 
   // 画像アップロード処理
-  const handleUploadImage = (file: File, expType: ExpressionType) => {
+  const handleUploadImage = (file: File, target: ExpressionType | 'turnaround') => {
     if (!file.type.startsWith('image/')) {
       onAddLog('❌ 画像ファイルを選択してください', 'error');
       return;
@@ -122,10 +129,154 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
     reader.onload = (e) => {
       const base64WithPrefix = e.target?.result as string;
       const base64 = base64WithPrefix.split(',')[1];
-      updateExpression(expType, { imageBase64: base64 });
-      onAddLog(`✨ 「${EXPRESSION_METAS[expType].label}」スロットに画像を登録しました`, 'success');
+      if (target === 'turnaround') {
+        updateCurrentChar({ turnaroundBase64: base64 });
+        onAddLog(`✨ 三面図シートに手動画像を登録しました`, 'success');
+      } else {
+        updateExpression(target, { imageBase64: base64 });
+        onAddLog(`✨ 「${EXPRESSION_METAS[target].label}」スロットに画像を登録しました`, 'success');
+      }
     };
     reader.readAsDataURL(file);
+  };
+
+  // キャラクター三面図（正面・側面・背面 / 16:9）のAI自動生成
+  const handleGenerateTurnaround = async () => {
+    const curProject = projectRef.current;
+    const curCharId = selectedCharIdRef.current;
+    const targetChar = curProject.characters.find(c => c.id === curCharId) || curProject.characters[0];
+    if (!targetChar) return;
+
+    const fullPrompt = `${targetChar.dnaPromptEn}, anime character turnaround sheet, model sheet, three views, full body front view, full body side view, full body back view, clean plain white background, high-contrast crisp anime lineart, consistent clothing and proportions, masterpiece`;
+    const safeNegative = 'worst quality, normal quality, lowres, deformed, distorted, bad anatomy, bad hands, blurry, complex background, text, watermark';
+
+    setIsGeneratingTurnaround(true);
+    onAddLog(`📐 ${targetChar.name} の三面図シート（正面・側面・背面）をAI作画中...`, 'process');
+
+    try {
+      const modelDef = resolveImageModel();
+      const safeModelName = modelDef?.name || '🍌 Nano Banana 2';
+
+      const res = await callWithRetry<any>(
+        () => Flow.generate.image({
+          prompt: fullPrompt,
+          negativePrompt: safeNegative,
+          aspectRatio: '16:9',
+          modelDisplayName: safeModelName,
+        }),
+        (attempt, max, delay, err) => {
+          onAddLog(`⚠️ 三面図作画リトライ (${attempt}/${max}) ${Math.round(delay / 1000)}秒後... (理由: ${formatErrorMessage(err)})`, 'warning');
+        },
+        3
+      );
+
+      const base64 = res?.base64 || res?.image?.base64;
+      const mediaId = res?.mediaId || res?.image?.mediaId;
+
+      if (base64) {
+        updateCurrentChar({
+          turnaroundBase64: base64,
+          turnaroundMediaId: mediaId,
+          turnaroundPromptEn: fullPrompt
+        });
+        onAddLog(`✨ ${targetChar.name} の三面図シートが完成しました！`, 'success');
+      } else {
+        throw new Error('三面図データが返却されませんでした');
+      }
+    } catch (err: any) {
+      onAddLog(`❌ 三面図作画エラー: ${formatErrorMessage(err)}`, 'error');
+    } finally {
+      setIsGeneratingTurnaround(false);
+    }
+  };
+
+  // 物語企画・ジャンルAIブレスト（10選）の生成
+  const handleBrainstormConcepts = async () => {
+    setIsBrainstorming(true);
+    onAddLog(`🎲 現在の画風にマッチする「物語企画（10選）」をAIブレスト中...`, 'process');
+
+    const tasteInstruction = currentTaste ? `\n対象の画風テイスト: 「${currentTaste}」` : '';
+    const prompt = `あなたは日本屈指の敏腕漫画編集者・アニメ映画プロデューサーです。
+短編読み切り漫画（1話完結 / 24カット構成）として極めて面白く、読者が引き込まれるオリジナルストーリーの企画・世界観・主要キャラクター案を【10種類】ランダムにブレストして提案してください。
+${tasteInstruction}
+
+【バリエーション豊かなジャンル網羅】
+探偵・サスペンス、下町・人情日常、怪異・オカルトホラー、SFサイバー潜入、学園青春・部活、スチームパンク冒険、和風伝奇、飯テロ・職人、ファンタジー異世界、コメディなどをバランス良く盛り込んでください。
+
+以下の厳密なJSON形式（Markdownコードブロックのない純粋なJSON配列）で出力してください:
+[
+  {
+    "id": "concept_1",
+    "genre": "🕵️‍♂️ 探偵・サスペンス",
+    "title": "物語タイトル",
+    "logline": "1行の魅力的なあらすじ（どんな主人公がどんな事件や非日常に巻き込まれるか）",
+    "characters": [
+      {
+        "name": "主人公名 (肩書)",
+        "role": "protagonist",
+        "concept": "主人公の性格・特徴・武器など",
+        "dnaPromptEn": "A detailed English character appearance prompt: gender, age, hairstyle, hair color, eye shape, eye color, distinctive facial expression, clothing, accessories"
+      },
+      {
+        "name": "相棒/ヒロイン名 (肩書)",
+        "role": "partner",
+        "concept": "相棒やヒロインの性格・役割",
+        "dnaPromptEn": "A detailed English character appearance prompt"
+      },
+      {
+        "name": "宿敵/依頼人名 (肩書)",
+        "role": "antagonist",
+        "concept": "ライバルや謎の依頼人の設定",
+        "dnaPromptEn": "A detailed English character appearance prompt"
+      }
+    ]
+  }
+]`;
+
+    try {
+      const res = await Flow.generate.text(prompt);
+      const text = res?.text || (typeof res === 'string' ? res : '');
+      const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const concepts = safeJsonParse<MangaStoryConcept[]>(cleaned, []);
+      if (Array.isArray(concepts) && concepts.length > 0) {
+        setBrainstormConcepts(concepts);
+        onAddLog(`✨ 10種類の物語企画アイデアが完成しました！お好きな企画を選択してください。`, 'success');
+      } else {
+        throw new Error('企画データのパースに失敗しました');
+      }
+    } catch (err: any) {
+      onAddLog(`❌ 物語企画ブレスト失敗: ${formatErrorMessage(err)}`, 'error');
+    } finally {
+      setIsBrainstorming(false);
+    }
+  };
+
+  // 企画を選択してプロジェクトに一括反映
+  const handleSelectConcept = (concept: MangaStoryConcept) => {
+    const newCharacters: CastCharacter[] = concept.characters.map((c, idx) => {
+      const charId = `char_${idx + 1}_${Date.now()}`;
+      return createDefaultCastCharacter(
+        charId,
+        c.name,
+        c.role,
+        c.dnaPromptEn
+      );
+    });
+
+    const updatedProject: MangaProject = {
+      ...projectRef.current,
+      title: concept.title,
+      description: `【${concept.genre}】${concept.logline}`,
+      storyConcept: concept,
+      characters: newCharacters,
+      activeCharacterId: newCharacters[0]?.id || 'char_1'
+    };
+
+    projectRef.current = updatedProject;
+    onUpdateProject(updatedProject);
+    setSelectedCharId(newCharacters[0]?.id || 'char_1');
+    setBrainstormConcepts(null);
+    onAddLog(`🎉 物語「${concept.title}」を採用し、主要キャスト3名を台帳に自動配役しました！`, 'success');
   };
 
   // 単一表情のAI自動生成 (Flow.generate.image を呼出)
@@ -244,6 +395,19 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* 物語企画AI発案 (10選) ボタン */}
+            <button
+              onClick={handleBrainstormConcepts}
+              disabled={isBrainstorming}
+              className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all animate-pulse"
+              title="現在の画風に合わせた10種類の物語企画と主要キャストをAIがブレスト提案"
+            >
+              <span className={`material-symbols-outlined text-sm ${isBrainstorming ? 'animate-spin' : ''}`}>
+                {isBrainstorming ? 'autorenew' : 'casino'}
+              </span>
+              <span>{isBrainstorming ? '企画をAI発案中...' : '🎲 物語企画をAI発案 (10選)'}</span>
+            </button>
+
             <input 
               type="file" 
               ref={projectFileInputRef} 
@@ -355,40 +519,62 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
         {currentChar && (
           <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
             
-            {/* Top: Character Profile & DNA */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/70 p-4 rounded-xl border border-slate-200/80">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm text-slate-500">badge</span>
-                  キャラクター名
-                </label>
-                <input
-                  type="text"
-                  value={currentChar.name}
-                  onChange={e => updateCurrentChar({ name: e.target.value })}
-                  placeholder="例: 沖田総司 / 密偵 千代"
-                  className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-slate-800 font-semibold"
-                />
-              </div>
+            {/* Top: Character Profile & DNA & Turnaround */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 bg-slate-50/70 p-4 rounded-xl border border-slate-200/80">
+              
+              {/* Left Column: Name, Role, Vault button (7 cols) */}
+              <div className="lg:col-span-7 flex flex-col gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm text-slate-500">badge</span>
+                      キャラクター名
+                    </label>
+                    <input
+                      type="text"
+                      value={currentChar.name}
+                      onChange={e => updateCurrentChar({ name: e.target.value })}
+                      placeholder="例: 沖田総司 / 探偵 工藤"
+                      className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-slate-800 font-semibold"
+                    />
+                  </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm text-slate-500">category</span>
-                  物語上の役割
-                </label>
-                <select
-                  value={currentChar.role}
-                  onChange={e => updateCurrentChar({ role: e.target.value as any })}
-                  className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-slate-800 font-semibold"
-                >
-                  <option value="protagonist">⚔️ 主人公 (Protagonist)</option>
-                  <option value="partner">🤝 相棒・ヒロイン (Partner)</option>
-                  <option value="antagonist">🔥 宿敵・ライバル (Antagonist)</option>
-                  <option value="supporting">👥 サブキャラクター (Supporting)</option>
-                </select>
-              </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm text-slate-500">category</span>
+                      物語上の役割
+                    </label>
+                    <select
+                      value={currentChar.role}
+                      onChange={e => updateCurrentChar({ role: e.target.value as any })}
+                      className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-slate-800 font-semibold"
+                    >
+                      <option value="protagonist">⚔️ 主人公 (Protagonist)</option>
+                      <option value="partner">🤝 相棒・ヒロイン (Partner)</option>
+                      <option value="antagonist">🔥 宿敵・ライバル (Antagonist)</option>
+                      <option value="supporting">👥 サブキャラクター (Supporting)</option>
+                    </select>
+                  </div>
+                </div>
 
-              <div className="flex flex-col justify-end">
+                {/* DNA Prompt */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm text-indigo-500">fingerprint</span>
+                      容姿・装飾 DNAプロンプト (Base Appearance DNA)
+                    </label>
+                    <span className="text-[10px] text-slate-400">※ 全カット共通の髪型・瞳・衣装</span>
+                  </div>
+                  <textarea
+                    rows={2}
+                    value={currentChar.dnaPromptEn}
+                    onChange={e => updateCurrentChar({ dnaPromptEn: e.target.value })}
+                    placeholder="A dashing young samurai with dark topknot, sharp jawline, wearing indigo haori with white dandaraya zig-zag pattern, holding katana"
+                    className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono text-slate-700 resize-none leading-relaxed"
+                  />
+                </div>
+
                 <button
                   onClick={() => {
                     onApplyCharacterToVault(currentChar, 'neutral');
@@ -397,27 +583,113 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
                   className="w-full px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
                 >
                   <span className="material-symbols-outlined text-sm">lock_person</span>
-                  参照庫に適用 (Active DNA)
+                  このキャラをメイン参照庫へ注入 (Active DNA)
                 </button>
               </div>
 
-              {/* DNA Prompt Full Width */}
-              <div className="md:col-span-3 flex flex-col gap-1.5 mt-1">
+              {/* Right Column: Turnaround Sheet (16:9) (5 cols) */}
+              <div className="lg:col-span-5 flex flex-col gap-1.5 bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm text-indigo-500">fingerprint</span>
-                    容姿・装飾 DNAプロンプト (Base Appearance DNA)
+                    <span className="material-symbols-outlined text-sm text-emerald-600">view_in_ar</span>
+                    <span>三面図シート (16:9 正面・側面・背面)</span>
                   </label>
-                  <span className="text-[10px] text-slate-400">※ 全カットの基準となる髪型・瞳・体型・衣装</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+                    全身三面
+                  </span>
                 </div>
-                <textarea
-                  rows={2}
-                  value={currentChar.dnaPromptEn}
-                  onChange={e => updateCurrentChar({ dnaPromptEn: e.target.value })}
-                  placeholder="A dashing young samurai with dark topknot, sharp jawline, wearing indigo haori with white dandaraya zig-zag pattern, holding katana"
-                  className="px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono text-slate-700 resize-none leading-relaxed"
-                />
+
+                {/* 16:9 Image Preview Box */}
+                <div 
+                  className="relative aspect-video w-full rounded-lg bg-slate-100 overflow-hidden border border-slate-200/80 group flex items-center justify-center"
+                >
+                  {currentChar.turnaroundBase64 ? (
+                    <>
+                      <img 
+                        src={`data:image/png;base64,${currentChar.turnaroundBase64}`} 
+                        alt="Turnaround" 
+                        className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => setZoomImage({
+                          base64: currentChar.turnaroundBase64!,
+                          title: `📐 ${currentChar.name} - キャラクター三面図 (正面・側面・背面)`,
+                          prompt: currentChar.turnaroundPromptEn || currentChar.dnaPromptEn
+                        })}
+                      />
+                      {/* Hover Zoom Overlay */}
+                      <div 
+                        onClick={() => setZoomImage({
+                          base64: currentChar.turnaroundBase64!,
+                          title: `📐 ${currentChar.name} - キャラクター三面図 (正面・側面・背面)`,
+                          prompt: currentChar.turnaroundPromptEn || currentChar.dnaPromptEn
+                        })}
+                        className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer gap-1.5 text-white"
+                      >
+                        <span className="material-symbols-outlined text-xl">zoom_in</span>
+                        <span className="text-xs font-bold">クリックで拡大表示</span>
+                      </div>
+
+                      {/* Top Right Action Delete */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateCurrentChar({ turnaroundBase64: undefined, turnaroundMediaId: undefined });
+                        }}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-md bg-slate-900/70 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                        title="三面図を削除"
+                      >
+                        <span className="material-symbols-outlined text-xs">delete</span>
+                      </button>
+                    </>
+                  ) : (
+                    <div 
+                      onClick={() => {
+                        uploadTargetExpRef.current = 'turnaround';
+                        fileInputRef.current?.click();
+                      }}
+                      className="flex flex-col items-center justify-center p-3 text-center gap-1 cursor-pointer hover:bg-slate-200/50 transition-colors w-full h-full"
+                    >
+                      <span className="material-symbols-outlined text-3xl text-slate-300">view_sidebar</span>
+                      <span className="text-[11px] font-bold text-slate-600">三面図が未作成です</span>
+                      <span className="text-[9px] text-slate-400">「三面図をAI作画」またはクリックして画像アップロード</span>
+                    </div>
+                  )}
+
+                  {/* Generating Spinner Overlay */}
+                  {isGeneratingTurnaround && (
+                    <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-2 z-10">
+                      <span className="material-symbols-outlined animate-spin text-2xl text-emerald-400">autorenew</span>
+                      <span className="text-xs font-bold">三面図をAI作画中 (16:9)...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons for Turnaround */}
+                <div className="flex items-center gap-2 mt-0.5">
+                  <button
+                    onClick={handleGenerateTurnaround}
+                    disabled={isGeneratingTurnaround}
+                    className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 shadow-2xs transition-all"
+                  >
+                    <span className="material-symbols-outlined text-xs">
+                      {isGeneratingTurnaround ? 'progress_activity' : 'palette'}
+                    </span>
+                    <span>{isGeneratingTurnaround ? '作画中...' : '📐 三面図をAI作画 (16:9)'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      uploadTargetExpRef.current = 'turnaround';
+                      fileInputRef.current?.click();
+                    }}
+                    className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                    title="手動で三面図画像をアップロード"
+                  >
+                    <span className="material-symbols-outlined text-xs">upload</span>
+                    <span>手動</span>
+                  </button>
+                </div>
               </div>
+
             </div>
 
             {/* Bottom: 6 Expression Slots (喜怒哀楽マトリクス) */}
@@ -426,6 +698,7 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-amber-500">face</span>
                   <h3 className="text-sm font-bold text-slate-800">喜怒哀楽・表情マトリクス (6スロット)</h3>
+                  <span className="text-[11px] text-slate-400">※ 画像をクリックすると大画面で細部まで拡大確認できます</span>
                 </div>
                 <button
                   onClick={handleBulkGenerateExpressions}
@@ -454,7 +727,7 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
                   return (
                     <div 
                       key={expType}
-                      className="flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:border-slate-300 transition-all group"
+                      className="flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs hover:border-slate-300 transition-all group"
                     >
                       {/* Slot Header */}
                       <div className="px-2.5 py-1.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-slate-700">
@@ -462,35 +735,65 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
                           <span className="material-symbols-outlined text-xs text-amber-500">{meta.icon}</span>
                           <span className="text-[11px] font-bold">{meta.label.split(' ')[0]}</span>
                         </div>
-                        {exp.imageBase64 && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* アップロードボタン */}
                           <button
-                            onClick={() => updateExpression(expType, { imageBase64: undefined })}
-                            className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="画像を削除"
+                            onClick={() => {
+                              uploadTargetExpRef.current = expType;
+                              fileInputRef.current?.click();
+                            }}
+                            className="text-slate-400 hover:text-indigo-600"
+                            title="画像を手動アップロード"
                           >
-                            <span className="material-symbols-outlined text-xs">delete</span>
+                            <span className="material-symbols-outlined text-xs">upload</span>
                           </button>
-                        )}
+                          {exp.imageBase64 && (
+                            <button
+                              onClick={() => updateExpression(expType, { imageBase64: undefined })}
+                              className="text-slate-400 hover:text-rose-500"
+                              title="画像を削除"
+                            >
+                              <span className="material-symbols-outlined text-xs">delete</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Image Preview / Upload Drop Area */}
+                      {/* Image Preview / Zoom Click Area */}
                       <div 
                         onClick={() => {
                           if (isCurrentlyGenerating || isBulkGenerating) return;
-                          uploadTargetExpRef.current = expType;
-                          fileInputRef.current?.click();
+                          if (exp.imageBase64) {
+                            // 画像がある場合は大画面ズームモーダル表示！
+                            setZoomImage({
+                              base64: exp.imageBase64,
+                              title: `${currentChar.name} - [${meta.label}]`,
+                              prompt: `${currentChar.dnaPromptEn}, ${exp.promptModifierEn}`
+                            });
+                          } else {
+                            // 画像がない場合はアップロード選択
+                            uploadTargetExpRef.current = expType;
+                            fileInputRef.current?.click();
+                          }
                         }}
                         className={`
-                          relative aspect-square bg-slate-100 cursor-pointer overflow-hidden flex flex-col items-center justify-center text-slate-400 hover:bg-slate-200/60 transition-colors
+                          relative aspect-square bg-slate-100 cursor-pointer overflow-hidden flex flex-col items-center justify-center text-slate-400 hover:bg-slate-200/60 transition-colors group/img
                           ${isCurrentlyGenerating ? 'pointer-events-none' : ''}
                         `}
                       >
                         {exp.imageBase64 ? (
-                          <img 
-                            src={`data:image/png;base64,${exp.imageBase64}`} 
-                            alt={meta.label} 
-                            className="w-full h-full object-cover"
-                          />
+                          <>
+                            <img 
+                              src={`data:image/png;base64,${exp.imageBase64}`} 
+                              alt={meta.label} 
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105"
+                            />
+                            {/* Hover Zoom Badge */}
+                            <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-2xs">
+                              <span className="material-symbols-outlined text-2xl drop-shadow">zoom_in</span>
+                              <span className="text-[10px] font-bold bg-slate-900/80 px-2 py-0.5 rounded-full">拡大確認</span>
+                            </div>
+                          </>
                         ) : (
                           <div className="flex flex-col items-center justify-center p-2 text-center gap-1">
                             <span className="material-symbols-outlined text-2xl text-slate-300">add_photo_alternate</span>
@@ -581,6 +884,192 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
         </div>
 
       </div>
+
+      {/* ========================================================
+          1. 物語企画AI発案 (10選) 選択モーダル
+         ======================================================== */}
+      {brainstormConcepts && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950 text-white shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="p-2 rounded-xl bg-amber-500/20 text-amber-400 material-symbols-outlined text-2xl">
+                  casino
+                </span>
+                <div>
+                  <h3 className="text-base font-bold flex items-center gap-2">
+                    <span>AIが発案した物語企画・世界観（10選）</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 font-semibold border border-amber-400/40">
+                      1話完結・短編マンガ
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    お好きな企画を1つ選ぶと、タイトル・あらすじ・主要キャスト3名がキャスト台帳に自動配役されます。
+                    {currentTaste && <span className="ml-2 text-amber-300 font-semibold">（対象画風: {currentTaste}）</span>}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setBrainstormConcepts(null)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Concepts Grid Body */}
+            <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50">
+              {brainstormConcepts.map((concept, idx) => (
+                <div 
+                  key={concept.id || idx}
+                  className="bg-white border border-slate-200/90 rounded-xl p-4 flex flex-col justify-between hover:border-indigo-400 hover:shadow-md transition-all group"
+                >
+                  <div className="flex flex-col gap-2">
+                    {/* Genre & Title */}
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
+                        {concept.genre}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400">PLAN #{idx + 1}</span>
+                    </div>
+
+                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                      {concept.title}
+                    </h4>
+
+                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      {concept.logline}
+                    </p>
+
+                    {/* Characters List */}
+                    <div className="flex flex-col gap-1.5 mt-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">配役キャスト (3名)</span>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {concept.characters.map((c, cIdx) => {
+                          const roleBadge = 
+                            c.role === 'protagonist' ? 'bg-amber-100 text-amber-800' :
+                            c.role === 'partner' ? 'bg-indigo-100 text-indigo-800' : 'bg-rose-100 text-rose-800';
+                          const roleName = 
+                            c.role === 'protagonist' ? '主人公' :
+                            c.role === 'partner' ? '相棒' : '宿敵';
+
+                          return (
+                            <div key={cIdx} className="bg-slate-50 p-1.5 rounded border border-slate-200/70 flex flex-col gap-0.5">
+                              <span className={`text-[9px] px-1 py-0.2 rounded font-bold self-start ${roleBadge}`}>
+                                {roleName}
+                              </span>
+                              <span className="text-[11px] font-bold text-slate-800 truncate" title={c.name}>
+                                {c.name}
+                              </span>
+                              <span className="text-[9px] text-slate-500 line-clamp-2 leading-tight" title={c.concept}>
+                                {c.concept}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Select Button */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
+                    <button
+                      onClick={() => handleSelectConcept(concept)}
+                      className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-amber-600 hover:from-indigo-700 hover:to-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                      <span className="material-symbols-outlined text-sm">check_circle</span>
+                      <span>この企画を採用（キャスト自動配役）</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 border-t border-slate-200 bg-white flex items-center justify-between shrink-0">
+              <span className="text-xs text-slate-500">
+                気に入った企画がない場合は、もう一度「🎲 物語企画をAI発案」を押すと別の10選を即座に再ブレストします。
+              </span>
+              <button
+                onClick={() => setBrainstormConcepts(null)}
+                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          2. 画像大画面拡大ズーム (Lightbox Modal)
+         ======================================================== */}
+      {zoomImage && (
+        <div 
+          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn"
+          onClick={() => setZoomImage(null)}
+        >
+          <div 
+            className="relative max-w-[90vw] max-h-[92vh] flex flex-col items-center bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl animate-scaleUp"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Top Bar */}
+            <div className="w-full px-5 py-3 bg-slate-950/90 border-b border-slate-800/80 flex items-center justify-between text-white shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-400 text-xl">zoom_in</span>
+                <span className="text-sm font-bold text-slate-100">{zoomImage.title}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* ダウンロードボタン */}
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = `data:image/png;base64,${zoomImage.base64}`;
+                    link.download = `${zoomImage.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
+                    link.click();
+                  }}
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                  title="画像をダウンロード保存"
+                >
+                  <span className="material-symbols-outlined text-xs">download</span>
+                  保存
+                </button>
+
+                {/* 閉じるボタン */}
+                <button
+                  onClick={() => setZoomImage(null)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* High-Resolution Image Display Area */}
+            <div className="p-4 flex items-center justify-center overflow-auto max-h-[75vh]">
+              <img 
+                src={`data:image/png;base64,${zoomImage.base64}`} 
+                alt={zoomImage.title} 
+                className="max-h-[72vh] max-w-full object-contain rounded-lg shadow-lg border border-slate-800"
+              />
+            </div>
+
+            {/* Bottom Prompt Info */}
+            {zoomImage.prompt && (
+              <div className="w-full px-5 py-2.5 bg-slate-950/90 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex items-center gap-2 overflow-x-auto shrink-0">
+                <span className="material-symbols-outlined text-xs text-indigo-400 shrink-0">code</span>
+                <span className="truncate" title={zoomImage.prompt}>{zoomImage.prompt}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

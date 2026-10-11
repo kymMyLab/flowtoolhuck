@@ -444,6 +444,7 @@ export function buildScriptPrompt(
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
   const isHistorical = checkIsHistorical(era, theme);
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
+  const cutCount = effMode === 'manga' ? 24 : 12;
 
   const modeConfig = getProductionModeConfig(effMode, isMvMode);
   const directorRole = modeConfig.getDirectorRole(isMangaMode, isHistorical);
@@ -481,14 +482,14 @@ CRITICAL COMPOSITION & SEPARATION RULES (PREVENT OVERCROWDING & OVERLAPPING):
     : "";
 
   return `You are a ${directorRole} and visual researcher.
-Create a 12-cut ${contextTitle} for Episode ${epId} ("${currentPlan.titleJp}").
+Create a ${cutCount}-cut ${contextTitle} for Episode ${epId} ("${currentPlan.titleJp}").
 World Theme & Setting: "${worldSetting}".
 ${visualStyleMandate}
 
 ${modeInstructions}
 
-CRITICAL 12-CUT DYNAMIC CINEMATIC CONTRAST & PACING:
-Design all 12 cuts with continuous, professional cinematic pacing and contrasting framing.
+CRITICAL ${cutCount}-CUT DYNAMIC CINEMATIC CONTRAST & PACING:
+Design all ${cutCount} cuts with continuous, professional narrative pacing and contrasting framing.
 - NEVER use the exact same shot scale, camera angle, or character posture in two consecutive cuts!
 - Dynamically alternate distances: Wide establishing shot -> Intense eye/expression close-up -> Medium profile in motion -> Over-shoulder -> Epic climax splash.
 - Vary character poses: sitting, walking, standing resolute, gazing aside, dynamic action.
@@ -572,6 +573,7 @@ export function buildCompactScriptPrompt(
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
+  const cutCount = effMode === 'manga' ? 24 : 12;
   const modeConfig = getProductionModeConfig(effMode, isMvMode);
   const contextTitle = modeConfig.getContextTitle(isMangaMode, checkIsHistorical(era, theme));
 
@@ -579,7 +581,7 @@ export function buildCompactScriptPrompt(
     ? `\nPREVIOUSLY COVERED TOPICS IN THIS SERIES (DO NOT DUPLICATE OR OVERLAP WITH THESE):\n${existingTitles.map(t => `- ${t}`).join('\n')}\n`
     : '';
 
-  return `You are a creative showrunner directing a 12-cut ${contextTitle} for Episode ${epId} in "${worldSetting}".
+  return `You are a creative showrunner directing a ${cutCount}-cut ${contextTitle} for Episode ${epId} in "${worldSetting}".
 Art Style: "${taste || 'Cinematic'}".
 ${avoidSection}
 RULES:

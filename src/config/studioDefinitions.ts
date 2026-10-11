@@ -371,6 +371,30 @@ export const PRODUCTION_MODES_CONFIG: Record<ProductionMode, ProductionModeConfi
 2. Dialogue & Narration: narrationJp MUST be gripping spoken dialogue or deep cinematic narration (20-30 characters per cut).
 3. Highlights: Highlight 1 to 2 key terms driving emotional weight.`
   },
+  manga: {
+    value: 'manga',
+    label: '📖 短編マンガ・読み切り (24Cut)',
+    icon: 'auto_stories',
+    badge: '1話完結',
+    desc: '起承転結の24Cut短編マンガを一括自動プロデュース',
+    telopNote: '漫画フキダシ・効果音・セリフ',
+    colorClass: 'border-emerald-500/30 bg-emerald-950/40 text-emerald-200',
+    cardTitle: 'Manga Episode Card',
+    cardIcon: 'auto_stories',
+    themeLabel: 'テーマ',
+    unit: '話',
+    themes: [],
+    getDirectorRole: () => 'award-winning manga artist, comic storyboard director, and visual novel creator',
+    getContextTitle: () => '24-Cut Manga Episode Sequence',
+    promptInstructions: `24-CUT SHORT MANGA STORY DIRECTING:
+1. Pacing & Structure (Four Acts):
+   - Act 1 (Cut 1-6 / 起 - Introduction): Establish daily routine, character personalities, and the sudden inciting incident.
+   - Act 2 (Cut 7-12 / 承 - Development): Investigation, journey, obstacle, and deeper character interaction.
+   - Act 3 (Cut 13-18 / 転 - Crisis & Climax): Dramatic confrontation, shocking truth reveal, high-stakes battle or emotional clash.
+   - Act 4 (Cut 19-24 / 結 - Resolution): Aftermath, heartfelt dialogue, sunset/dawn aftermath, and unforgettable ending hook.
+2. Comic Paneling: Utilize cinematic comic panel compositions (close-ups for emotions, wide angles for impacts, dynamic perspective).
+3. Dialogue & Highlights: Every cut must feature vivid manga dialogue or inner monologue in narrationJp.`
+  },
   mv: {
     value: 'mv',
     label: '🎵 音楽MV (12カット)',
