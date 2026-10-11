@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@0eb549c/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[全機能総合監査＆全トグルスイッチ・再開機能完全保証]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@19d469d/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[話数番号・連番完全排除＆独立サブタイトル化]'); });

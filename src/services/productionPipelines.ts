@@ -115,10 +115,10 @@ async function ensureInfographicCover(
     updateEpisode(freshEp.id, { isGeneratingCover: true });
 
     const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
-      titleJp: freshEp.titleJp,
-      titleEn: freshEp.titleEn,
-      coverCatchphraseJp: freshEp.coverCatchphraseJp,
-      coverCatchphraseEn: freshEp.coverCatchphraseEn,
+      titleJp: cleanEpisodeTitle(freshEp.titleJp),
+      titleEn: cleanEpisodeTitleEn(freshEp.titleEn),
+      coverCatchphraseJp: cleanEpisodeTitle(freshEp.coverCatchphraseJp),
+      coverCatchphraseEn: cleanEpisodeTitleEn(freshEp.coverCatchphraseEn),
       theme: freshEp.theme || settings.theme,
       era: freshEp.era || settings.era,
       taste: freshEp.taste || settings.taste,

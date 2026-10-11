@@ -32,10 +32,14 @@ export function cleanEpisodeTitle(title: string): string {
     .replace(/^[\s🎵🎬💡🏮🎨⚓🖼️✨🔥\uD800-\uDBFF\uDC00-\uDFFF\u2600-\u27BF]+/g, '')
     // 【第1話】のような角括弧
     .replace(/^【.*?】\s*/, '')
-    // 「第1話：」「第１話:」「第一話 -」「Episode 1:」「Ep.1:」「Track 1:」「Vol.1:」「Part 1:」などの接頭辞
+    // 先頭の「第1話：」「第１話:」「第一話 -」「Episode 1:」「Ep.1:」「Track 1:」「Vol.1:」「Part 1:」などの接頭辞
     .replace(/^(第\s*[\d０-９一二三四五六七八九十百千]+\s*[話曲章幕弾節巻]|Episode\s*[\d０-９一二三四五六七八九十百千]+|Ep\.\s*\d+|Track\s*\d+|Vol\.\s*\d+|Part\s*\d+|Chapter\s*\d+)[:：\s・\-ー]*/i, '')
-    // 末尾の「(第1話)」「(Vol.1)」等
-    .replace(/[\(（【\[]\s*(第\s*[\d０-９一二三四五六七八九十百千]+\s*[話曲章幕弾節巻]|Episode\s*\d+|Vol\.\d+|Track\s*\d+)\s*[\)）】\]]\s*$/i, '')
+    // 文字列中の「第○話：」「第2話」などの連番も全域除去
+    .replace(/(第\s*[\d０-９一二三四五六七八九十百千]+\s*[話曲章幕弾節巻]|Episode\s*[\d０-９一二三四五六七八九十百千]+|Ep\.\s*\d+|Track\s*\d+|Vol\.\s*\d+|Part\s*\d+|Chapter\s*\d+)[:：\s・\-ー]*/gi, '')
+    // 括弧内の連番「(第1話)」「(Vol.1)」等
+    .replace(/[\(（【\[]\s*(第\s*[\d０-９一二三四五六七八九十百千]+\s*[話曲章幕弾節巻]|Episode\s*\d+|Vol\.\d+|Track\s*\d+)\s*[\)）】\]]/gi, '')
+    // 括弧内の起承転結タグ「（起・承）」「（転・結）」「（起）」「（承）」「（転）」「（結）」等
+    .replace(/[\(（【\[]\s*[起承転結・\s]+\s*[\)）】\]]/gi, '')
     // 囲み鉤括弧の除去
     .replace(/^[「『](.*?)[」』]$/, '$1')
     .trim();
@@ -1246,7 +1250,11 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
   // 0. タイトルの徹底的クリーン化（話数連番・絵文字・装飾タグを除去し、純粋な可読日本語テキストを抽出）
   const cleanTitle = cleanEpisodeTitle(titleJp) || titleJp;
 
-  const cleanCatchphrase = cleanEpisodeTitle(coverCatchphraseJp || '');
+  // 3. サブキャッチコピー（話数番号や起承転結タグは絶対に含めない。メインタイトルと同一または極端に短い場合は除外）
+  let cleanSubtitle = cleanEpisodeTitle(coverCatchphraseJp || '');
+  if (cleanSubtitle === cleanTitle || cleanSubtitle.length < 2) {
+    cleanSubtitle = '';
+  }
 
   // 1. 世界観・ジャンルに応じた媒体（Medium）とグラフィックスタイルの動的決定
   let mediumInstruction = '';
@@ -1301,20 +1309,20 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
     focalSubject = `Central hero focal visual with striking presence, framed in a pull-back view positioned in the lower two-thirds beneath the floating title area.`;
   }
 
-  // 3. サブキャッチコピー
-  const subtitleClause = cleanCatchphrase 
-    ? `Integrated punchy subtitle text accent: "${cleanCatchphrase}".` 
+  // 3. サブキャッチコピー句（話数番号を厳禁）
+  const subtitleClause = cleanSubtitle 
+    ? `Integrated punchy subtitle text accent: "${cleanSubtitle}". (CRITICAL: Do NOT write any episode number digits or "第X話").` 
     : '';
 
   // 4. アートスタイル (taste)
   const resolvedTaste = taste ? resolveTastePrompt(taste) : (styleDna || '');
   const styleClause = resolvedTaste ? `Artistic rendering style: ${resolvedTaste}.` : '';
 
-  // 5. プロンプト結合（全画面一体のシームレス背景＋上部8-12%の自然なタイトル看板配置）
+  // 5. プロンプト結合（全画面一体のシームレス背景＋上部8-12%の自然なタイトル看板配置、話数番号の完全排除）
   const promptEn = [
     `Vertical 9:16 high-impact editorial cover poster and commercial infographic key visual.`,
     mediumInstruction + `.`,
-    `Poster Layout & Visual Hierarchy: Cohesive full-bleed environmental scene seamlessly spanning the entire canvas from top to bottom. The horizontal title signboard plaque boldly displaying the exact title "${cleanTitle}" is elegantly positioned in the upper area (centered horizontally, with its top edge floating at a balanced 8% to 12% safe breathing margin below the top canvas border). The atmospheric background scene (architectural ceiling, ambient sky, or room details) naturally flows behind and around the plaque without any awkward blank boxes or empty voids. The plaque maintains clean safe clearance from the top border without touching it.`,
+    `Poster Layout & Visual Hierarchy: Cohesive full-bleed environmental scene seamlessly spanning the entire canvas from top to bottom. The horizontal title signboard plaque boldly displaying ONLY the exact standalone title "${cleanTitle}" is elegantly positioned in the upper area (centered horizontally, with its top edge floating at a balanced 8% to 12% safe breathing margin below the top canvas border). The atmospheric background scene (architectural ceiling, ambient sky, or room details) naturally flows behind and around the plaque without any awkward blank boxes or empty voids. The plaque maintains clean safe clearance from the top border without touching it. CRITICAL MANDATORY RULE: NEVER write or draw any episode numbers, episode counters, chapter badges, or sequence numbers (e.g. ABSOLUTELY NO "第1話", "第2話", "第3話", "第4話", "Episode 1", "Episode 2", "Vol.1", "起・承", "転・結") anywhere on the signboard, poster, or banner!`,
     focalSubject,
     typographyStyle + `.`,
     subtitleClause,
@@ -1322,8 +1330,8 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
     `Camera & Composition: Vertical 9:16 aspect ratio, harmonious professional editorial poster hierarchy. The background scene is unified and full-bleed across the whole canvas. The title plaque is placed in the upper portion with a natural 8% to 12% breathing margin from the top edge. The main character is framed below the title plaque in a medium-wide shot (standing or seated comfortably in the lower two-thirds), with ample visual breathing room between character and title plaque. Unified single-scene composition, no split frames, no giant empty blank areas, crystal clear focal point, professional graphic design, masterpiece, 8k resolution.`
   ].filter(Boolean).join(' ');
 
-  // 6. ネガティブプロンプト（巨大な空白地帯や画面二分割現象、天井張り付きを徹底排除）
-  const baseNegative = `giant blank void at top, massive empty space at top, plain blank paper section, huge blank area above sign, two-tier split canvas, horizon dividing canvas into blank top and busy bottom, signboard placed in the dead center, empty notepad header, banner touching top edge, signboard touching top border, banner flush with ceiling, text crammed against the ceiling, text cut off at top edge, signboard at very top of frame, zero top margin, cropped title banner, text touching canvas boundary, missing first character, extreme close-up portrait with head at top ceiling, text overlapping character's head, banner colliding with hair, text covering face, cluttered overlap between subject and title, awkwardly placed text, blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts`;
+  // 6. ネガティブプロンプト（話数番号、巨大な空白地帯や画面二分割現象、天井張り付きを徹底排除）
+  const baseNegative = `episode number, episode numbers, episode counter, chapter number, "第1話", "第2話", "第3話", "第4話", "Episode 1", "Episode 2", "Episode 3", "Episode 4", "Vol.1", "Vol.2", "起・承", "転・結", numbered badge, numbered plaque, episode header, giant blank void at top, massive empty space at top, plain blank paper section, huge blank area above sign, two-tier split canvas, horizon dividing canvas into blank top and busy bottom, signboard placed in the dead center, empty notepad header, banner touching top edge, signboard touching top border, banner flush with ceiling, text crammed against the ceiling, text cut off at top edge, signboard at very top of frame, zero top margin, cropped title banner, text touching canvas boundary, missing first character, extreme close-up portrait with head at top ceiling, text overlapping character's head, banner colliding with hair, text covering face, cluttered overlap between subject and title, awkwardly placed text, blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts`;
   const forbiddenAnachStr = forbiddenAnachronisms.length > 0 ? forbiddenAnachronisms.join(', ') : '';
   const negativePromptEn = [
     baseNegative,

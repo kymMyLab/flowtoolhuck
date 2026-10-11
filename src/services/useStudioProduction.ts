@@ -517,14 +517,14 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
     updateEpisode(epId, { isGeneratingCover: true });
     const modelDef = resolveImageModel(settings.imageModel);
-    addLog(`🎨 Ep.${epId}: 「${ep.titleJp}」世界観適応インフォグラフィック扉絵（9:16特大ポスター）をAI描画中...`, 'process');
+    addLog(`🎨 Ep.${epId}: 「${cleanEpisodeTitle(ep.titleJp)}」世界観適応インフォグラフィック扉絵（9:16特大ポスター）をAI描画中...`, 'process');
 
     try {
       const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
-        titleJp: ep.titleJp,
-        titleEn: ep.titleEn,
-        coverCatchphraseJp: ep.coverCatchphraseJp,
-        coverCatchphraseEn: ep.coverCatchphraseEn,
+        titleJp: cleanEpisodeTitle(ep.titleJp),
+        titleEn: cleanEpisodeTitleEn(ep.titleEn),
+        coverCatchphraseJp: cleanEpisodeTitle(ep.coverCatchphraseJp),
+        coverCatchphraseEn: cleanEpisodeTitleEn(ep.coverCatchphraseEn),
         theme: ep.theme || settings.theme,
         era: ep.era || settings.era,
         taste: ep.taste || settings.taste,
