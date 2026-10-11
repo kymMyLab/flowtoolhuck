@@ -24,6 +24,7 @@ export default defineConfig({
     target: 'es2020',
     sourcemap: false,
     rollupOptions: {
+      preserveEntrySignatures: 'strict',
       input: path.resolve(__dirname, 'src/index.tsx'),
       output: {
         entryFileNames: 'bundle.js',
