@@ -1,7 +1,7 @@
 import { MangaProject, CastCharacter, ExpressionType, CastExpression } from '../types';
 
-const STORAGE_KEY = 'flowtool_manga_project_v4';
-const OLD_STORAGE_KEYS = ['flowtool_manga_project_v3', 'flowtool_manga_project_v2', 'flowtool_manga_project_v1'];
+const STORAGE_KEY = 'flowtool_manga_project_v5';
+const OLD_STORAGE_KEYS = ['flowtool_manga_project_v4', 'flowtool_manga_project_v3', 'flowtool_manga_project_v2', 'flowtool_manga_project_v1'];
 
 export const EXPRESSION_METAS: Record<ExpressionType, { label: string; promptModifierEn: string; icon: string }> = {
   neutral: { 
