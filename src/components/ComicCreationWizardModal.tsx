@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { THEMES, resolveImageModel } from '../constants';
+import { THEMES, THEME_CATEGORIES, resolveImageModel } from '../constants';
 import { CastCharacter, SeriesEpisodePlan, SeriesManifest, ExpressionType } from '../types';
 import { createDefaultCastCharacter, EXPRESSION_METAS } from '../services/castStorage';
 import { Flow } from 'flow-sdk';
@@ -19,6 +19,23 @@ export interface TurnaroundCandidate {
   status: 'idle' | 'generating_image' | 'completed' | 'error';
   errorMessage?: string;
   isUserSpecified?: boolean; // ユーザーが明示的に指定した画風か
+}
+
+export interface ProduceSnapshot {
+  version: '1.0';
+  timestamp: string;
+  selectedTheme: string;
+  tasteMode: 'ai_auto' | 'custom_pick';
+  selectedCustomTastes: string[];
+  candidates: TurnaroundCandidate[];
+  selectedCandidateId: string | null;
+  subCharacters: CastCharacter[];
+  episodeCount: number;
+  cutsPerEpisode: number;
+  seriesTitle: string;
+  overallSynopsis: string;
+  episodesPlan: SeriesEpisodePlan[];
+  step: 1 | 2 | 3;
 }
 
 // Comic Wizard 3-Step Flow:
@@ -56,6 +73,77 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
 
   // Step 1: 世界観テーマ
   const [selectedTheme, setSelectedTheme] = useState<string>(currentTheme || THEMES[0]);
+  // カテゴリ絞り込みフィルタ ('all' または カテゴリ名)
+  const [selectedThemeCategory, setSelectedThemeCategory] = useState<string>('all');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // プロデュース設定をJSONとしてダウンロード保存
+  const handleExportSnapshot = () => {
+    try {
+      const snapshot: ProduceSnapshot = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        selectedTheme,
+        tasteMode,
+        selectedCustomTastes,
+        candidates,
+        selectedCandidateId,
+        subCharacters,
+        episodeCount,
+        cutsPerEpisode,
+        seriesTitle,
+        overallSynopsis,
+        episodesPlan,
+        step,
+      };
+      const filename = `produce_plan_${(seriesTitle || selectedTheme.slice(0, 15)).replace(/[\s/\\?%*:|"<>]/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
+      const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      onAddLog(`💾 プロデュース設定JSONをダウンロード保存しました: 「${filename}」`, 'info');
+    } catch (err: any) {
+      onAddLog(`❌ JSON保存に失敗しました: ${err?.message || err}`, 'error');
+    }
+  };
+
+  // プロデュース設定JSONをファイルから読み込んで復元
+  const handleImportSnapshot = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed: Partial<ProduceSnapshot> = JSON.parse(text);
+        if (parsed.selectedTheme) setSelectedTheme(parsed.selectedTheme);
+        if (parsed.tasteMode) setTasteMode(parsed.tasteMode);
+        if (Array.isArray(parsed.selectedCustomTastes)) setSelectedCustomTastes(parsed.selectedCustomTastes);
+        if (Array.isArray(parsed.candidates) && parsed.candidates.length > 0) {
+          setCandidates(parsed.candidates);
+          setSelectedCandidateId(parsed.selectedCandidateId || parsed.candidates[0].id);
+        }
+        if (Array.isArray(parsed.subCharacters)) setSubCharacters(parsed.subCharacters);
+        if (typeof parsed.episodeCount === 'number') setEpisodeCount(parsed.episodeCount);
+        if (typeof parsed.cutsPerEpisode === 'number') setCutsPerEpisode(parsed.cutsPerEpisode);
+        if (parsed.seriesTitle) setSeriesTitle(parsed.seriesTitle);
+        if (parsed.overallSynopsis) setOverallSynopsis(parsed.overallSynopsis);
+        if (Array.isArray(parsed.episodesPlan)) setEpisodesPlan(parsed.episodesPlan);
+        if (parsed.step && [1, 2, 3].includes(parsed.step)) setStep(parsed.step);
+        onAddLog(`📂 プロデュース設定JSON「${file.name}」を正常に読み込み復元しました！`, 'info');
+      } catch (err: any) {
+        onAddLog(`❌ JSON読み込みに失敗しました: ${err?.message || err}`, 'error');
+      } finally {
+        if (e.target) e.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
 
   // Step 1: 画風選定モード ('ai_auto': 完全おまかせ, 'custom_pick': ユーザーが任意数指定)
   const [tasteMode, setTasteMode] = useState<'ai_auto' | 'custom_pick'>('ai_auto');
@@ -729,12 +817,39 @@ ${customTastesInstruction}
             </div>
           </div>
 
-          <button 
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleImportSnapshot} 
+              accept=".json" 
+              className="hidden" 
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-all border border-white/20 cursor-pointer shadow-2xs"
+              title="以前ダウンロードしたプロデュース設定(JSON)を読み込んで復元"
+            >
+              <span className="material-symbols-outlined text-[16px]">file_upload</span>
+              <span>JSON読込</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExportSnapshot}
+              className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all border border-indigo-400/50 cursor-pointer shadow-2xs"
+              title="現在のプロデュース設定（三面図・配役・プロット等）をJSONとしてダウンロード保存"
+            >
+              <span className="material-symbols-outlined text-[16px]">download</span>
+              <span>JSON保存</span>
+            </button>
+            <button 
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
         </div>
 
         {/* Step Progress Bar */}
@@ -779,7 +894,8 @@ ${customTastesInstruction}
                 <div className="text-xs leading-relaxed">
                   <p className="font-bold">世界観を選び、「三面図を一括AI作画」ボタンを押してください。</p>
                   <p className="text-indigo-700 mt-0.5">
-                    基本は<strong>「AIおまかせ」</strong>で世界観に最適な5画風×三面図を自動作画しますが、<strong>「自分で画風を指定」</strong>で新画風「📜 レトロ淡彩アトリエ」など好きな画風を1〜5個ピンポイント指定することも可能です！
+                    基本は<strong>「AIおまかせ」</strong>で世界観に最適な5画風×三面図を自動作画しますが、<strong>「自分で画風を指定」</strong>で好きな画風を1〜5個ピンポイント指定することも可能です！
+                    上部の<strong>「JSON保存」「JSON読込」</strong>で、設定内容をいつでもローカルにバックアップ・復元できます。
                   </p>
                 </div>
               </div>
@@ -787,10 +903,15 @@ ${customTastesInstruction}
               {/* Theme Selector Section */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-3 shadow-2xs">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-sm text-amber-500">public</span>
-                    世界観・テーマ (World Theme)
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm text-amber-500">public</span>
+                      世界観・テーマ (World Theme)
+                    </label>
+                    <span className="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200/60 font-semibold">
+                      ※ 1つの世界観から1〜50話の大河連載を展開可能
+                    </span>
+                  </div>
                   <button
                     onClick={handleRandomTheme}
                     className="px-3 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
@@ -800,14 +921,55 @@ ${customTastesInstruction}
                   </button>
                 </div>
 
+                {/* ジャンル区切りフィルタ・タブ */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedThemeCategory('all')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      selectedThemeCategory === 'all'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    すべて ({THEMES.length})
+                  </button>
+                  {THEME_CATEGORIES.map((cat, idx) => {
+                    const isSelected = selectedThemeCategory === cat.category;
+                    const shortLabel = cat.category.split(' ')[0] + ' ' + cat.category.split(' ')[1];
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setSelectedThemeCategory(cat.category)}
+                        className={`px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                        }`}
+                        title={cat.category}
+                      >
+                        {shortLabel} ({cat.items.length})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* 世界観ドロップダウン（optgroupでカテゴリごとに明確に区切り表示） */}
                 <div className="flex items-center gap-3">
                   <select
                     value={selectedTheme}
                     onChange={e => setSelectedTheme(e.target.value)}
-                    className="flex-1 px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-800 font-semibold"
+                    className="flex-1 px-3 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 font-bold leading-relaxed cursor-pointer"
                   >
-                    {THEMES.map((themeItem, idx) => (
-                      <option key={idx} value={themeItem}>{themeItem}</option>
+                    {THEME_CATEGORIES.filter(c => selectedThemeCategory === 'all' || selectedThemeCategory === c.category).map((cat, cIdx) => (
+                      <optgroup key={cIdx} label={`━━━ ${cat.category} ━━━`} className="font-extrabold text-indigo-900 bg-slate-100 py-1">
+                        {cat.items.map((themeItem, idx) => (
+                          <option key={idx} value={themeItem} className="text-slate-800 bg-white font-medium py-1">
+                            {themeItem}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { FieldDropdown, PillButton } from './Primitives';
 import { GeneratorSettings, ProductionMode } from '../types';
 import { PRODUCTION_MODES, THEMES, MV_THEMES, TRIVIA_THEMES, QUOTES_THEMES, CRAFT_THEMES, THEME_CATEGORIES, TASTES } from '../constants';
 import { CustomThemeMap } from '../services/themeStorage';
+import { exportProjectJson, importProjectJson, loadMangaProject, saveMangaProject } from '../services/castStorage';
 
 interface StudioHeaderProps {
   settings: GeneratorSettings;
@@ -28,6 +29,31 @@ interface StudioHeaderProps {
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
   settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenCastModal, onOpenComicWizard, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen
 }) => {
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportJson = () => {
+    try {
+      const proj = loadMangaProject();
+      exportProjectJson(proj);
+    } catch (e) {
+      console.error('Failed to export JSON', e);
+    }
+  };
+
+  const handleImportJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const proj = await importProjectJson(file);
+      saveMangaProject(proj);
+      alert(`✅ プロジェクト設定・キャスト（${proj.characters?.length || 0}人）を正常に復元しました！`);
+      window.location.reload();
+    } catch (err: any) {
+      alert(`❌ JSON復元エラー: ${err?.message || err}`);
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
   const currentModeDef = PRODUCTION_MODES.find(m => m.value === settings.productionMode) || PRODUCTION_MODES[0];
 
   const handleModeChange = (modeVal: string) => {
@@ -108,9 +134,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
       <div className="w-px h-7 bg-slate-200 shrink-0"></div>
 
       {/* ② 次にお任せエリア (モード・テーマ・画風を今まで通り自由に選べる) */}
-      <div className="flex items-center gap-2 p-1 bg-slate-50/80 rounded-xl border border-slate-200/80 shrink-0">
-        <div className="flex items-center gap-1 text-[11px] font-black text-slate-500 px-1 whitespace-nowrap">
-          <span className="material-symbols-outlined text-sm text-indigo-500">casino</span>
+      <div className="flex items-center gap-2 p-1 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 rounded-xl border border-emerald-300/90 shadow-2xs shrink-0">
+        <div className="flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-100/90 px-2 py-1 rounded-lg border border-emerald-300/80 whitespace-nowrap shadow-2xs">
+          <span className="material-symbols-outlined text-sm text-emerald-600">casino</span>
           <span>② お任せ設定</span>
         </div>
 
@@ -127,12 +153,12 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             disabled={isProducing}
             className="w-[130px]"
           />
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white text-slate-700 font-bold border border-slate-200 whitespace-nowrap shadow-2xs">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white text-emerald-800 font-bold border border-emerald-200 whitespace-nowrap shadow-2xs">
             {currentModeDef.badge}
           </span>
         </div>
 
-        <div className="w-px h-6 bg-slate-200 shrink-0"></div>
+        <div className="w-px h-6 bg-emerald-200/90 shrink-0"></div>
 
         {/* テーマ選択 */}
         <div className="flex items-center gap-1">
@@ -149,14 +175,14 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             type="button"
             onClick={onOpenThemeEditor}
             disabled={isProducing}
-            className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 flex items-center justify-center transition-colors shadow-xs cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-lg bg-emerald-100/80 text-emerald-800 hover:bg-emerald-200 border border-emerald-300 flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
             title="テーマ編集"
           >
             <span className="material-symbols-outlined text-[16px]">edit</span>
           </button>
         </div>
 
-        <div className="w-px h-6 bg-slate-200 shrink-0"></div>
+        <div className="w-px h-6 bg-emerald-200/90 shrink-0"></div>
 
         {/* 画風選択 */}
         <div className="flex items-center gap-1">
@@ -178,7 +204,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             type="button"
             onClick={onOpenTasteEditor}
             disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId}
-            className="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 flex items-center justify-center transition-colors disabled:opacity-40 shadow-xs cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-lg bg-teal-100/80 text-teal-800 hover:bg-teal-200 border border-teal-300 flex items-center justify-center transition-colors disabled:opacity-40 shadow-2xs cursor-pointer shrink-0"
             title="画風プロンプト編集(JSON)"
           >
             <span className="material-symbols-outlined text-[16px]">data_object</span>
@@ -190,19 +216,40 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
       {/* ③ 最後に作成ボタン ＆ ツール群 */}
       <div className="flex items-center gap-2 shrink-0">
+        {/* JSON 保存・復元 (リロードしても消えないようにダウンロード/アップロード) */}
+        <input 
+          type="file" 
+          ref={jsonFileInputRef} 
+          onChange={handleImportJson} 
+          accept=".json" 
+          className="hidden" 
+        />
+        <button 
+          type="button"
+          onClick={handleExportJson}
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 transition-colors border border-slate-200 shrink-0 cursor-pointer"
+          title="プロジェクト設定・キャスト・プロットをJSONダウンロード保存"
+        >
+          <span className="material-symbols-outlined text-[18px]">download</span>
+        </button>
+        <button 
+          type="button"
+          onClick={() => jsonFileInputRef.current?.click()}
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 transition-colors border border-slate-200 shrink-0 cursor-pointer"
+          title="保存済みJSON設定ファイルをアップロードして復元"
+        >
+          <span className="material-symbols-outlined text-[18px]">file_upload</span>
+        </button>
+
         {onOpenCastModal && (
           <button 
             type="button"
             disabled={isProducing}
             onClick={onOpenCastModal}
-            className="h-10 px-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 flex items-center gap-1 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
-            title="キャスト台帳＆登場人物管理を開く"
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 shrink-0 cursor-pointer transition-colors"
+            title={`登場人物キャスト台帳を開く (${castCount}人)`}
           >
-            <span className="material-symbols-outlined text-[18px] text-amber-600">theater_comedy</span>
-            <span>台帳</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-200 text-amber-900 font-black">
-              {castCount}人
-            </span>
+            <span className="material-symbols-outlined text-[18px]">theater_comedy</span>
           </button>
         )}
 
