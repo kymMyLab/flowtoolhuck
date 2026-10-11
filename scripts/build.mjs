@@ -74,25 +74,29 @@ async function runBuild() {
   log('Executing Vite build...');
   execSync('npx vite build', { cwd: localBuildDir, stdio: 'inherit' });
 
-  // 3. dist/bundle.js を元のワークスペースへ書き戻す
-  const localBundle = path.join(localBuildDir, 'dist', 'bundle.js');
+  // 3. dist/ ディレクトリ全体（bundle.js, chunks, assets）を元のワークスペースへ書き戻す
+  const localDistDir = path.join(localBuildDir, 'dist');
   const targetDistDir = path.join(sourceDir, 'dist');
-  const targetBundle = path.join(targetDistDir, 'bundle.js');
 
-  if (!fs.existsSync(localBundle)) {
-    throw new Error('dist/bundle.js was not generated in local build dir.');
+  if (!fs.existsSync(localDistDir)) {
+    throw new Error('dist directory was not generated in local build dir.');
   }
 
-  if (!fs.existsSync(targetDistDir)) {
-    fs.mkdirSync(targetDistDir, { recursive: true });
+  try {
+    if (!fs.existsSync(targetDistDir)) {
+      fs.mkdirSync(targetDistDir, { recursive: true });
+    }
+    // 個別にコピー（rmSyncを避け、上書きコピー）
+    copySync(localDistDir, targetDistDir);
+    const bundleStat = fs.statSync(path.join(targetDistDir, 'bundle.js'));
+    log(`Successfully copied dist/ (including split chunks) to workspace. Router bundle.js: ${(bundleStat.size / 1024).toFixed(1)} KB`);
+  } catch (copyErr) {
+    console.error('Copy to workspace failed:', copyErr);
+    throw copyErr;
   }
-
-  fs.copyFileSync(localBundle, targetBundle);
-  const bundleStat = fs.statSync(targetBundle);
-  log(`Successfully copied dist/bundle.js to workspace (${(bundleStat.size / 1024).toFixed(1)} KB)`);
 }
 
 runBuild().catch(err => {
-  console.error('❌ Build failed:', err);
+  console.error('❌ Build failed with error:', err && err.stack ? err.stack : err);
   process.exit(1);
 });

@@ -139,8 +139,9 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
       'process'
     );
 
-    // ユーザー指定画風のプロンプト指示文
-    let customTastesInstruction = '';
+    try {
+      // ユーザー指定画風のプロンプト指示文
+      let customTastesInstruction = '';
     if (isCustomMode) {
       customTastesInstruction = `
 【ユーザーが意図的に指定した画風 (${userPicksCount}個)】:
@@ -209,78 +210,84 @@ ${customTastesInstruction}
   }
 ]`;
 
+    let initialCandidates: TurnaroundCandidate[] = [];
+
     try {
       const res = await callWithRetry<any>(
         () => Flow.generate.text(prompt),
         undefined,
-        3
+        2
       );
       const text = res?.text || (typeof res === 'string' ? res : '');
       const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
       const list = safeJsonParse<any[]>(cleaned, []);
 
-      let initialCandidates: TurnaroundCandidate[] = [];
-
       if (Array.isArray(list) && list.length >= 3) {
         initialCandidates = list.map((item, idx) => ({
           id: item.id || `cand_${idx + 1}`,
-          tasteName: item.tasteName || `画風案 ${idx + 1}`,
-          tastePromptEn: item.tastePromptEn || 'anime style, masterpiece',
+          tasteName: item.tasteName || (isCustomMode && selectedCustomTastes[idx] ? selectedCustomTastes[idx] : `画風案 ${idx + 1}`),
+          tastePromptEn: item.tastePromptEn || (isCustomMode && selectedCustomTastes[idx] ? availableTastes[selectedCustomTastes[idx]] : 'anime style, masterpiece'),
           name: item.name || `主人公 ${idx + 1}`,
           concept: item.concept || `${selectedTheme}の世界を駆ける主人公`,
           dnaPromptEn: item.dnaPromptEn || `A striking anime character matching ${selectedTheme}`,
           status: 'idle' as const,
         }));
-      } else {
-        // フォールバック
-        initialCandidates = [
-          {
-            id: 'cand_1',
-            tasteName: isCustomMode && selectedCustomTastes[0] ? selectedCustomTastes[0] : '🔥 王道少年熱血・ダイナミック劇画',
-            tastePromptEn: isCustomMode && selectedCustomTastes[0] && availableTastes[selectedCustomTastes[0]] ? availableTastes[selectedCustomTastes[0]] : 'dynamic shonen manga style, bold black ink lines, high contrast shadows, expressive energetic anime aesthetic, masterpiece',
-            name: '疾風の剣士 (熱血型)',
-            concept: '不屈の闘志で困難を切り開く主人公。真っ直ぐな瞳と正義感を宿す。',
-            dnaPromptEn: `A passionate young anime hero, fiery determined eyes, spiky hair, rugged stylish traveler attire matching ${selectedTheme}`,
-            status: 'idle'
-          },
-          {
-            id: 'cand_2',
-            tasteName: isCustomMode && selectedCustomTastes[1] ? selectedCustomTastes[1] : '🏮 レトロ・ノワールセル画調',
-            tastePromptEn: isCustomMode && selectedCustomTastes[1] && availableTastes[selectedCustomTastes[1]] ? availableTastes[selectedCustomTastes[1]] : 'retro 90s anime cel shading, film grain, deep shadows, cinematic noir lighting, moody aesthetic, masterpiece',
-            name: '影の仕事人 (クール型)',
-            concept: '冷静沈着に事件の裏を暴く孤高の主人公。コートと懐中時計がトレードマーク。',
-            dnaPromptEn: `A cool analytical anime protagonist, sharp piercing eyes, dark flowing coat, mysterious aura matching ${selectedTheme}`,
-            status: 'idle'
-          },
-          {
-            id: 'cand_3',
-            tasteName: isCustomMode && selectedCustomTastes[2] ? selectedCustomTastes[2] : '🎨 エモーショナル水彩・ネオシティ',
-            tastePromptEn: isCustomMode && selectedCustomTastes[2] && availableTastes[selectedCustomTastes[2]] ? availableTastes[selectedCustomTastes[2]] : 'soft watercolor anime style, pastel gradients, vibrant emotional rim lighting, clean delicate lines, masterpiece',
-            name: '奇跡の使い手 (神秘型)',
-            concept: '隠された力を持ち、人々の心を救う主人公。透明感ある佇まい。',
-            dnaPromptEn: `A delicate ethereal anime protagonist, expressive gentle eyes, soft pastel colored hair, ornate modern outfit matching ${selectedTheme}`,
-            status: 'idle'
-          },
-          {
-            id: 'cand_4',
-            tasteName: isCustomMode && selectedCustomTastes[3] ? selectedCustomTastes[3] : '⚔️ 重厚ダークファンタジー劇画',
-            tastePromptEn: isCustomMode && selectedCustomTastes[3] && availableTastes[selectedCustomTastes[3]] ? availableTastes[selectedCustomTastes[3]] : 'dark fantasy manga style, intricate cross-hatching lineart, grim atmospheric lighting, heavy contrast, masterpiece',
-            name: '宿命の求道者 (重厚型)',
-            concept: '重い宿命を背負いながら戦い続ける主人公。鍛え抜かれた肉体と歴戦の傷。',
-            dnaPromptEn: `A battle-hardened anime warrior, intense scarred face, weathered mantle, armored details matching ${selectedTheme}`,
-            status: 'idle'
-          },
-          {
-            id: 'cand_5',
-            tasteName: isCustomMode && selectedCustomTastes[4] ? selectedCustomTastes[4] : '✨ 先進的サイバー・スタイリッシュアニメ',
-            tastePromptEn: isCustomMode && selectedCustomTastes[4] && availableTastes[selectedCustomTastes[4]] ? availableTastes[selectedCustomTastes[4]] : 'futuristic modern anime key visual style, crisp sharp linework, vivid accents, sleek high-end anime aesthetic, masterpiece',
-            name: '電脳のトリックスター (スマート型)',
-            concept: '圧倒的な機転とスピードで敵を翻弄する現代風主人公。ヘッドギアとバイザー。',
-            dnaPromptEn: `A stylish sleek anime protagonist, radiant ruby irises, modern tailored jacket with glowing accents matching ${selectedTheme}`,
-            status: 'idle'
-          }
-        ];
       }
+    } catch (textErr: any) {
+      console.warn('[ComicWizard] Flow.generate.text failed, fallback to smart candidates:', textErr);
+      onAddLog(`⚠️ AIテキスト考案が一時応答待ちのため、スマート規定候補（指定画風準拠）を自動適用して三面図作画を開始します`, 'warning');
+    }
+
+    // 候補が空の場合（エラー時含む）は、ユーザー指定画風を確実に反映したフォールバックを自動生成
+    if (initialCandidates.length === 0) {
+      initialCandidates = [
+        {
+          id: 'cand_1',
+          tasteName: isCustomMode && selectedCustomTastes[0] ? selectedCustomTastes[0] : '🔥 王道少年熱血・ダイナミック劇画',
+          tastePromptEn: isCustomMode && selectedCustomTastes[0] && availableTastes[selectedCustomTastes[0]] ? availableTastes[selectedCustomTastes[0]] : 'dynamic shonen manga style, bold black ink lines, high contrast shadows, expressive energetic anime aesthetic, masterpiece',
+          name: '疾風の剣士 (熱血型)',
+          concept: '不屈の闘志で困難を切り開く主人公。真っ直ぐな瞳と正義感を宿す。',
+          dnaPromptEn: `A passionate young anime hero, fiery determined eyes, spiky hair, rugged stylish traveler attire matching ${selectedTheme}`,
+          status: 'idle'
+        },
+        {
+          id: 'cand_2',
+          tasteName: isCustomMode && selectedCustomTastes[1] ? selectedCustomTastes[1] : '🏮 レトロ・ノワールセル画調',
+          tastePromptEn: isCustomMode && selectedCustomTastes[1] && availableTastes[selectedCustomTastes[1]] ? availableTastes[selectedCustomTastes[1]] : 'retro 90s anime cel shading, film grain, deep shadows, cinematic noir lighting, moody aesthetic, masterpiece',
+          name: '影の仕事人 (クール型)',
+          concept: '冷静沈着に事件の裏を暴く孤高の主人公。コートと懐中時計がトレードマーク。',
+          dnaPromptEn: `A cool analytical anime protagonist, sharp piercing eyes, dark flowing coat, mysterious aura matching ${selectedTheme}`,
+          status: 'idle'
+        },
+        {
+          id: 'cand_3',
+          tasteName: isCustomMode && selectedCustomTastes[2] ? selectedCustomTastes[2] : '🎨 エモーショナル水彩・ネオシティ',
+          tastePromptEn: isCustomMode && selectedCustomTastes[2] && availableTastes[selectedCustomTastes[2]] ? availableTastes[selectedCustomTastes[2]] : 'soft watercolor anime style, pastel gradients, vibrant emotional rim lighting, clean delicate lines, masterpiece',
+          name: '奇跡の使い手 (神秘型)',
+          concept: '隠された力を持ち、人々の心を救う主人公。透明感ある佇まい。',
+          dnaPromptEn: `A delicate ethereal anime protagonist, expressive gentle eyes, soft pastel colored hair, ornate modern outfit matching ${selectedTheme}`,
+          status: 'idle'
+        },
+        {
+          id: 'cand_4',
+          tasteName: isCustomMode && selectedCustomTastes[3] ? selectedCustomTastes[3] : '⚔️ 重厚ダークファンタジー劇画',
+          tastePromptEn: isCustomMode && selectedCustomTastes[3] && availableTastes[selectedCustomTastes[3]] ? availableTastes[selectedCustomTastes[3]] : 'dark fantasy manga style, intricate cross-hatching lineart, grim atmospheric lighting, heavy contrast, masterpiece',
+          name: '宿命の求道者 (重厚型)',
+          concept: '重い宿命を背負いながら戦い続ける主人公。鍛え抜かれた肉体と歴戦の傷。',
+          dnaPromptEn: `A battle-hardened anime warrior, intense scarred face, weathered mantle, armored details matching ${selectedTheme}`,
+          status: 'idle'
+        },
+        {
+          id: 'cand_5',
+          tasteName: isCustomMode && selectedCustomTastes[4] ? selectedCustomTastes[4] : '✨ 先進的サイバー・スタイリッシュアニメ',
+          tastePromptEn: isCustomMode && selectedCustomTastes[4] && availableTastes[selectedCustomTastes[4]] ? availableTastes[selectedCustomTastes[4]] : 'futuristic modern anime key visual style, crisp sharp linework, vivid accents, sleek high-end anime aesthetic, masterpiece',
+          name: '電脳のトリックスター (スマート型)',
+          concept: '圧倒的な機転とスピードで敵を翻弄する現代風主人公。ヘッドギアとバイザー。',
+          dnaPromptEn: `A stylish sleek anime protagonist, radiant ruby irises, modern tailored jacket with glowing accents matching ${selectedTheme}`,
+          status: 'idle'
+        }
+      ];
+    }
 
       setCandidates(initialCandidates);
       setSelectedCandidateId(initialCandidates[0].id);

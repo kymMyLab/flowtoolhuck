@@ -4,6 +4,7 @@ import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 import path from 'path';
 
 export default defineConfig({
+  base: './',
   plugins: [
     react(),
     cssInjectedByJsPlugin(),
@@ -22,17 +23,33 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2020',
     sourcemap: false,
-    lib: {
-      entry: path.resolve(__dirname, 'src/index.tsx'),
-      name: 'FlowTool',
-      formats: ['es'],
-      fileName: () => 'bundle.js',
-    },
     rollupOptions: {
+      input: path.resolve(__dirname, 'src/index.tsx'),
       output: {
         entryFileNames: 'bundle.js',
+        chunkFileNames: 'chunks/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         format: 'es',
-        inlineDynamicImports: true,
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'vendor-react';
+          }
+          if (id.includes('ComicCreationWizardModal')) {
+            return 'comic-wizard';
+          }
+          if (id.includes('CastManagerModal')) {
+            return 'cast-manager';
+          }
+          if (id.includes('StudioSidebar')) {
+            return 'studio-sidebar';
+          }
+          if (id.includes('directorService') || id.includes('productionPipelines')) {
+            return 'production-engine';
+          }
+          if (id.includes('constants') || id.includes('studioDefinitions')) {
+            return 'studio-constants';
+          }
+        },
       },
       external: [],
     },
