@@ -344,19 +344,34 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
  */
 export async function renderCoverBase64(ep: Episode): Promise<string> {
   const canvas = await renderCoverCanvas(ep);
-  if (canvas instanceof OffscreenCanvas) {
-    const blob = await canvas.convertToBlob({ type: 'image/png' });
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const res = reader.result as string;
-        resolve(res.replace(/^data:image\/png;base64,/, ''));
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } else {
-    return (canvas as HTMLCanvasElement).toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+  try {
+    if (canvas instanceof OffscreenCanvas) {
+      const blob = await canvas.convertToBlob({ type: 'image/png' });
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const res = reader.result as string;
+          resolve(res.replace(/^data:image\/png;base64,/, ''));
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } else {
+      return (canvas as HTMLCanvasElement).toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+    }
+  } finally {
+    if (canvas instanceof OffscreenCanvas) {
+      const coverCtx = canvas.getContext('2d');
+      if (coverCtx) coverCtx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.width = 0;
+      canvas.height = 0;
+    } else {
+      const cvs = canvas as HTMLCanvasElement;
+      const coverCtx = cvs.getContext('2d');
+      if (coverCtx) coverCtx.clearRect(0, 0, cvs.width, cvs.height);
+      cvs.width = 0;
+      cvs.height = 0;
+    }
   }
 }
 
@@ -486,6 +501,11 @@ export const savePackageFile = async (
 
   // --- 手法 3: window.open (Blob URL / 別タブ経由で iframe sandbox 制限を突破) ---
   const blobUrl = URL.createObjectURL(blob);
+  // メモリリーク防止のため、どの保存手段が成功しても確実に60秒後にBlob URLを解放する
+  setTimeout(() => {
+    try { URL.revokeObjectURL(blobUrl); } catch (_) {}
+  }, 60000);
+
   try {
     console.log('🔄 [Method 3] window.open によるサンドボックス外ダウンロードを試行中...');
     const newWindow = window.open(blobUrl, '_blank');
@@ -511,7 +531,6 @@ export const savePackageFile = async (
     setTimeout(() => {
       try {
         if (a.parentNode) document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
       } catch (_) {}
     }, 10000);
   } catch (domErr: any) {
