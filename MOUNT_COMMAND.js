@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@5be8324/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[起承転結の顔(喜怒哀楽)・サブキャラ配役・新画風キャッシュ対応]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@fa23548/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[ジャンル連動型キャラ考案＆JSONパース完全修正＆起承転結表情対応]'); });
