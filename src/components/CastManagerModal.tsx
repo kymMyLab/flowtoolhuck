@@ -32,30 +32,46 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
   const uploadTargetExpRef = useRef<ExpressionType | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement>(null);
 
+  const projectRef = useRef(project);
+  projectRef.current = project;
+
+  const selectedCharIdRef = useRef(selectedCharId);
+  selectedCharIdRef.current = selectedCharId;
+
   if (!isOpen) return null;
 
   const currentChar = project.characters.find(c => c.id === selectedCharId) || project.characters[0];
 
-  // キャラクターの更新
+  // キャラクターの更新（最新の projectRef から確実にマージ）
   const updateCurrentChar = (patch: Partial<CastCharacter>) => {
-    if (!currentChar) return;
-    const updatedChars = project.characters.map(c => 
-      c.id === currentChar.id ? { ...c, ...patch } : c
+    const curProject = projectRef.current;
+    const curCharId = selectedCharIdRef.current;
+    const targetChar = curProject.characters.find(c => c.id === curCharId) || curProject.characters[0];
+    if (!targetChar) return;
+
+    const updatedChars = curProject.characters.map(c => 
+      c.id === targetChar.id ? { ...c, ...patch } : c
     );
-    onUpdateProject({ ...project, characters: updatedChars });
+    const newProject = { ...curProject, characters: updatedChars };
+    projectRef.current = newProject;
+    onUpdateProject(newProject);
   };
 
   // 表情プロンプト・画像の更新
   const updateExpression = (expType: ExpressionType, patch: Partial<CastExpression>) => {
-    if (!currentChar) return;
+    const curProject = projectRef.current;
+    const curCharId = selectedCharIdRef.current;
+    const targetChar = curProject.characters.find(c => c.id === curCharId) || curProject.characters[0];
+    if (!targetChar) return;
+
     const updatedExpressions = {
-      ...currentChar.expressions,
-      [expType]: { ...currentChar.expressions[expType], ...patch }
+      ...targetChar.expressions,
+      [expType]: { ...targetChar.expressions[expType], ...patch }
     };
     // 通常(neutral)の画像が更新された場合、アバター画像も自動更新
     const avatarBase64 = expType === 'neutral' && patch.imageBase64 !== undefined 
       ? patch.imageBase64 
-      : currentChar.avatarBase64;
+      : targetChar.avatarBase64;
 
     updateCurrentChar({ expressions: updatedExpressions, avatarBase64 });
   };
@@ -114,13 +130,17 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
 
   // 単一表情のAI自動生成 (Flow.generate.image を呼出)
   const handleGenerateExpression = async (expType: ExpressionType) => {
-    if (!currentChar) return;
-    const exp = currentChar.expressions[expType];
-    const fullPrompt = `${currentChar.dnaPromptEn}, ${exp.promptModifierEn}, high aesthetic anime manga character bust-up portrait, vivid sharp clean line art, clean simple background, masterpiece, centered composition`;
+    const curProject = projectRef.current;
+    const curCharId = selectedCharIdRef.current;
+    const targetChar = curProject.characters.find(c => c.id === curCharId) || curProject.characters[0];
+    if (!targetChar) return;
+
+    const exp = targetChar.expressions[expType];
+    const fullPrompt = `${targetChar.dnaPromptEn}, ${exp.promptModifierEn}, high aesthetic anime manga character bust-up portrait, vivid sharp clean line art, clean simple background, masterpiece, centered composition`;
     const safeNegative = 'worst quality, normal quality, lowres, deformed, distorted, bad anatomy, bad hands, blurry';
     
     setGeneratingExp(expType);
-    onAddLog(`🎨 ${currentChar.name} [${exp.label}] をAI生成中...`, 'process');
+    onAddLog(`🎨 ${targetChar.name} [${exp.label}] をAI生成中...`, 'process');
 
     try {
       const modelDef = resolveImageModel();
@@ -428,7 +448,8 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
                     label: meta.label,
                     promptModifierEn: meta.promptModifierEn,
                   };
-                  const isGenerating = generatingExp === expType || isBulkGenerating;
+                  const isCurrentlyGenerating = generatingExp === expType;
+                  const isWaitingInQueue = isBulkGenerating && !isCurrentlyGenerating && !exp.imageBase64;
 
                   return (
                     <div 
@@ -455,12 +476,13 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
                       {/* Image Preview / Upload Drop Area */}
                       <div 
                         onClick={() => {
+                          if (isCurrentlyGenerating || isBulkGenerating) return;
                           uploadTargetExpRef.current = expType;
                           fileInputRef.current?.click();
                         }}
                         className={`
                           relative aspect-square bg-slate-100 cursor-pointer overflow-hidden flex flex-col items-center justify-center text-slate-400 hover:bg-slate-200/60 transition-colors
-                          ${isGenerating ? 'pointer-events-none' : ''}
+                          ${isCurrentlyGenerating ? 'pointer-events-none' : ''}
                         `}
                       >
                         {exp.imageBase64 ? (
@@ -476,11 +498,19 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
                           </div>
                         )}
 
-                        {/* Generating Overlay */}
-                        {isGenerating && (
+                        {/* Generating Overlay: 今まさにこのスロットを作画中 */}
+                        {isCurrentlyGenerating && (
                           <div className="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center text-white gap-1 backdrop-blur-xs">
                             <span className="material-symbols-outlined animate-spin text-xl text-amber-400">autorenew</span>
                             <span className="text-[9px] font-bold">作画中...</span>
+                          </div>
+                        )}
+
+                        {/* Waiting in Queue Overlay: 一括生成中で順番待ち */}
+                        {isWaitingInQueue && (
+                          <div className="absolute inset-0 bg-slate-900/40 flex flex-col items-center justify-center text-white gap-1 backdrop-blur-xs">
+                            <span className="material-symbols-outlined text-base text-slate-300">hourglass_top</span>
+                            <span className="text-[9px] font-medium text-slate-200">待機中...</span>
                           </div>
                         )}
                       </div>
@@ -500,11 +530,13 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
                             e.stopPropagation();
                             handleGenerateExpression(expType);
                           }}
-                          disabled={isGenerating}
-                          className="w-full py-1 bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 text-amber-700 rounded text-[10px] font-bold flex items-center justify-center gap-1 transition-colors"
+                          disabled={isCurrentlyGenerating || isBulkGenerating}
+                          className="w-full py-1 bg-white hover:bg-amber-50 active:bg-amber-100 border border-slate-200 hover:border-amber-300 text-amber-700 rounded text-[10px] font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          <span className="material-symbols-outlined text-[12px]">magic_button</span>
-                          AI作画
+                          <span className="material-symbols-outlined text-[12px] text-amber-500">
+                            {isCurrentlyGenerating ? 'progress_activity' : 'magic_button'}
+                          </span>
+                          {isCurrentlyGenerating ? '作画中...' : 'AI作画'}
                         </button>
                       </div>
                     </div>
