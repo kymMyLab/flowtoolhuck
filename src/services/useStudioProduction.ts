@@ -22,6 +22,8 @@ import {
   checkIsHistorical,
   resolveCinematicEndFrameAndMotion,
   buildAdaptiveInfographicCoverPrompt,
+  cleanEpisodeTitle,
+  cleanEpisodeTitleEn,
   PreviousShotInfo
 } from './directorService';
 import { useEpisodeState } from './useEpisodeState';
@@ -94,8 +96,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       return {
         id: p.epNumber,
         internalId: crypto.randomUUID(),
-        titleJp: p.titleJp,
-        titleEn: p.titleEn,
+        titleJp: cleanEpisodeTitle(p.titleJp),
+        titleEn: cleanEpisodeTitleEn(p.titleEn),
         summary: p.summary,
         cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, manifest.settings?.previewCutCount || 30) }, (_, j) => createDefaultCut(j + 1, isDone ? '制作完了' : '待機中...', '', false)),
         isGenerating: false,

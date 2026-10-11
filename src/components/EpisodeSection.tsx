@@ -4,6 +4,7 @@ import { Episode, Cut, VideoModelType } from '../types';
 import { PillButton } from './Primitives';
 import { CutCard } from './CutCard';
 import { getProductionModeConfig } from '../config/studioDefinitions';
+import { cleanEpisodeTitle, cleanEpisodeTitleEn } from '../services/directorService';
 
 function formatDataUri(b64?: string): string {
   if (!b64) return '';
@@ -330,14 +331,14 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className="font-black italic uppercase tracking-tight text-slate-900 leading-tight text-lg sm:text-xl md:text-2xl break-words">
-                {ep.titleJp || '無題'}
+                {cleanEpisodeTitle(ep.titleJp) || '無題'}
               </h2>
               {ep.isDone && <span className="material-symbols-outlined text-green-500 font-bold text-lg" title="制作完了">check_circle</span>}
               {ep.isGenerating && <div className="w-4 h-4 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin shrink-0" />}
             </div>
             {ep.titleEn && (
               <span className="text-[11px] text-slate-500 uppercase tracking-widest font-mono">
-                {ep.titleEn}
+                {cleanEpisodeTitleEn(ep.titleEn)}
               </span>
             )}
           </div>

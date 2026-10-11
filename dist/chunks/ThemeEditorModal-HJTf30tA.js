@@ -1,7 +1,7 @@
-import{r as x,j as e}from"./vendor-react-Boa1DHsq.js";import{l as j,D as w,r as y,s as v}from"./index-KgtSAz1A.js";import{w as N}from"./production-engine-0MsTvWyf.js";import"./studio-sidebar-Dm004L7g.js";import"./studio-constants-I_8lIOa9.js";import"./cast-manager-QQLiJhS2.js";const W=({isOpen:l,onClose:r,currentMode:s,modeLabel:i,onThemesUpdated:m})=>{const[o,n]=x.useState(""),[c,d]=x.useState(!1);if(x.useEffect(()=>{if(l){const a=j()[s]||w[s]||[];n(a.join(`
+import{r as x,j as e}from"./vendor-react-Boa1DHsq.js";import{l as j,D as y,r as w,s as v}from"./index-BfHegEYi.js";import{y as N}from"./production-engine-Dbb77jrT.js";import"./studio-sidebar-Dm004L7g.js";import"./studio-constants-I_8lIOa9.js";import"./cast-manager-DdJVg1Km.js";const W=({isOpen:l,onClose:r,currentMode:s,modeLabel:i,onThemesUpdated:m})=>{const[o,n]=x.useState(""),[c,d]=x.useState(!1);if(x.useEffect(()=>{if(l){const a=j()[s]||y[s]||[];n(a.join(`
 `)),d(!1)}},[l,s]),!l)return null;const p=o.split(`
 `).map(t=>t.trim()).filter(Boolean).length,b=()=>{const t=o.split(`
-`).map(g=>g.trim()).filter(Boolean),f=v(s,t)[s]||[];m(f),d(!0),setTimeout(()=>{d(!1),r()},600)},h=()=>{if(window.confirm(`「${i}」のテーマを初期デフォルト（10選）に戻しますか？`)){const a=y(s)[s]||[];n(a.join(`
+`).map(g=>g.trim()).filter(Boolean),f=v(s,t)[s]||[];m(f),d(!0),setTimeout(()=>{d(!1),r()},600)},h=()=>{if(window.confirm(`「${i}」のテーマを初期デフォルト（10選）に戻しますか？`)){const a=w(s)[s]||[];n(a.join(`
 `)),m(a)}},u=async()=>{const t=`YouTube Shorts / TikTok で視聴維持率とクリック率が爆発する「${i}」のテーマ企画を、1行あたり絵文字つきで10個提案してください。
 1行1テーマで、余計な前置きや番号付け・解説は含めず、テーマ文のみを出力してください。
 例:

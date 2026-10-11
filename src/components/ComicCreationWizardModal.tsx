@@ -4,7 +4,7 @@ import { CastCharacter, SeriesEpisodePlan, SeriesManifest, ExpressionType, Produ
 import { createDefaultCastCharacter, EXPRESSION_METAS } from '../services/castStorage';
 import { Flow } from 'flow-sdk';
 import { callWithRetry, safeJsonParse, formatErrorMessage } from '../services/utils';
-import { buildGrandDesignPrompt } from '../services/directorService';
+import { buildGrandDesignPrompt, cleanEpisodeTitle, cleanEpisodeTitleEn } from '../services/directorService';
 import { loadCustomTastes, CustomTasteMap } from '../services/tasteStorage';
 import { PRODUCTION_MODES_CONFIG, PRODUCTION_MODES_LIST } from '../config/studioDefinitions';
 
@@ -795,8 +795,27 @@ ${subRoleGuidance}
         setSeriesTitle(parsed.seriesTitle || (productionMode === 'mv' ? `${target.name} MV Collection` : `${target.name}伝`));
         setOverallSynopsis(parsed.overallSynopsis || '');
         
-        // 指定話数 count に厳密に同期
-        let adjustedPlan: SeriesEpisodePlan[] = parsed.episodesPlan;
+        // 指定話数 count に厳密に同期＆話数番号を徹底サニタイズ（削除やスキップ時の欠番事故を防止）
+        let adjustedPlan: SeriesEpisodePlan[] = parsed.episodesPlan.map((p: any, idx: number) => {
+          const epNum = p.epNumber || (idx + 1);
+          const rawTitleJp = p.titleJp || '';
+          const cleanedJp = cleanEpisodeTitle(rawTitleJp);
+          const fallbackJp = productionMode === 'mv' 
+            ? (idx === 0 ? '静寂の夜明け' : idx === count - 1 ? '光の終幕' : '心象のグラデーション')
+            : (idx < Math.round(count * 0.25) ? '運命の幕開け' : idx < Math.round(count * 0.55) ? '深まる謎と試練' : idx < Math.round(count * 0.85) ? '最大の激突と転換' : '大団円と未来');
+          
+          const rawTitleEn = p.titleEn || '';
+          const cleanedEn = cleanEpisodeTitleEn(rawTitleEn);
+          const fallbackEn = productionMode === 'mv' ? 'Atmospheric Melody' : 'Dramatic Scene';
+
+          return {
+            epNumber: epNum,
+            titleJp: cleanedJp || fallbackJp,
+            titleEn: cleanedEn || fallbackEn,
+            summary: p.summary || `${target.name}の物語の情景`
+          };
+        });
+
         if (adjustedPlan.length > count) {
           adjustedPlan = adjustedPlan.slice(0, count);
         } else if (adjustedPlan.length < count) {
@@ -805,9 +824,9 @@ ${subRoleGuidance}
             const epNum = adjustedPlan.length + idx + 1;
             return {
               epNumber: epNum,
-              titleJp: productionMode === 'mv' ? `Track ${epNum} 続く旋律と情景` : `第${epNum}話 続く戦いと希望`,
-              titleEn: productionMode === 'mv' ? `Track ${epNum}` : `Episode ${epNum}`,
-              summary: `${target.name}の壮大な物語の第${epNum}${currentModeConfig.unit}`
+              titleJp: productionMode === 'mv' ? '続く旋律と情景' : '続く戦いと希望',
+              titleEn: productionMode === 'mv' ? 'Resonant Melody' : 'Continuing Struggle and Hope',
+              summary: `${target.name}の壮大な物語の情景`
             };
           });
           adjustedPlan = [...adjustedPlan, ...fillers];
@@ -819,14 +838,16 @@ ${subRoleGuidance}
       }
     } catch (err: any) {
       onAddLog(`❌ プロット生成エラー: ${formatErrorMessage(err)}`, 'error');
-      // フォールバック
+      // フォールバック（削除時の欠番事故を防ぐため、第X話やEpisode Xなどの連番は一切入れない）
       const dummyPlan: SeriesEpisodePlan[] = Array.from({ length: count }, (_, i) => ({
         epNumber: i + 1,
         titleJp: productionMode === 'mv' 
-          ? `Track ${i + 1} ${i === 0 ? '静寂の夜明け' : i === count - 1 ? '光の終幕' : '心象のグラデーション'}` 
-          : `第${i + 1}話 ${i < Math.round(count * 0.25) ? '運命の幕開け' : i < Math.round(count * 0.55) ? '深まる謎と試練' : i < Math.round(count * 0.85) ? '最大の激突と転換' : '大団円と未来'}`,
-        titleEn: productionMode === 'mv' ? `Track ${i + 1}` : `Episode ${i + 1}`,
-        summary: `主人公${target.name}が織りなす第${i + 1}${currentModeConfig.unit}の情景とドラマ`
+          ? (i === 0 ? '静寂の夜明け' : i === count - 1 ? '光の終幕' : '心象のグラデーション') 
+          : (i < Math.round(count * 0.25) ? '運命の幕開け' : i < Math.round(count * 0.55) ? '深まる謎と試練' : i < Math.round(count * 0.85) ? '最大の激突と転換' : '大団円と未来'),
+        titleEn: productionMode === 'mv' 
+          ? (i === 0 ? 'Dawn of Silence' : i === count - 1 ? 'Curtain of Light' : 'Emotional Gradient')
+          : (i < Math.round(count * 0.25) ? 'Destiny Awakens' : i < Math.round(count * 0.55) ? 'Deepening Mystery' : i < Math.round(count * 0.85) ? 'Climactic Clashing' : 'Grand Finale'),
+        summary: `主人公${target.name}が織りなすドラマと情景`
       }));
       setSeriesTitle(productionMode === 'mv' ? `${target.name} MV Project` : `${target.name}活劇録`);
       setOverallSynopsis(`${selectedTheme}の世界で${target.name}が仲間と共に織りなす全${count}${currentModeConfig.unit}のストーリー`);
@@ -865,9 +886,9 @@ ${subRoleGuidance}
       overallSynopsis: overallSynopsis || `${selectedTheme}の世界を舞台にした${currentCandidate.name}の壮大な物語`,
       episodesPlan: displayedEpisodes.length > 0 ? displayedEpisodes : Array.from({ length: episodeCount }, (_, i) => ({
         epNumber: i + 1,
-        titleJp: productionMode === 'mv' ? `Track ${i + 1}` : `第${i + 1}話`,
-        titleEn: productionMode === 'mv' ? `Track ${i + 1}` : `Episode ${i + 1}`,
-        summary: `${currentCandidate.name}の物語 第${i + 1}${currentModeConfig.unit}`
+        titleJp: productionMode === 'mv' ? '心象の旋律' : '運命の序章',
+        titleEn: productionMode === 'mv' ? 'Resonant Melody' : 'Prologue of Destiny',
+        summary: `${currentCandidate.name}の物語`
       })),
       referenceAsset: currentCandidate.turnaroundBase64 ? {
         name: `${currentCandidate.name} (三面図マスター)`,

@@ -21,7 +21,9 @@ import {
   buildGrandDesignPrompt, 
   buildNextEpisodePlanPrompt,
   buildCharacterTurnaroundPrompt,
-  buildAdaptiveInfographicCoverPrompt
+  buildAdaptiveInfographicCoverPrompt,
+  cleanEpisodeTitle,
+  cleanEpisodeTitleEn
 } from './directorService';
 import { LogEntry } from '../components/StudioLogs';
 
@@ -465,18 +467,11 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     });
 
     // 各話固有のお題（サブタイトル）を整形（削除による欠番事故を防ぐため、Vol.Xや第X話などの連番は一切入れない）
-    const cleanParsedTitle = (parsed.titleJp || '')
-      .replace(/^【.*?】\s*/, '')
-      .replace(/^(第\d+話|第\d+曲|Vol\.\d+|Track\s*\d+|Episode\s*\d+)[:：\s]*/i, '')
-      .replace(/\s*\(?(Vol\.\d+|第\d+話)\)?\s*$/i, '')
-      .trim();
+    const cleanParsedTitle = cleanEpisodeTitle(parsed.titleJp || '');
     const safeTopicJp = sanitizeForYouTubeSafety(cleanParsedTitle && cleanParsedTitle !== baseRawTitle ? cleanParsedTitle : `情景の断章`);
     const displayTitleJp = `${modeInfo.icon} ${safeTopicJp}`;
 
-    const cleanParsedEn = (parsed.titleEn || '')
-      .replace(/^(Vol\.\d+|Track\s*\d+|Episode\s*\d+)[:：\s]*/i, '')
-      .replace(/\s*\(?(Vol\.\d+|Ep\.\d+)\)?\s*$/i, '')
-      .trim();
+    const cleanParsedEn = cleanEpisodeTitleEn(parsed.titleEn || '');
     const cleanTopicEn = cleanParsedEn && cleanParsedEn !== defaultEnTitle ? cleanParsedEn : 'Cinematic Story';
     const displayTitleEn = cleanTopicEn;
 
@@ -671,17 +666,22 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
           () => Flow.generate.text(nextPlanPrompt),
           undefined, 4
         );
-        newPlan = safeJsonParse<SeriesEpisodePlan>(planRes.text, {
+        const rawPlan = safeJsonParse<SeriesEpisodePlan>(planRes.text, {
           epNumber: epNum,
-          titleJp: `第${epNum}話 運命の分岐点`,
-          titleEn: `Episode ${epNum} Turning Point`,
+          titleJp: '運命の分岐点',
+          titleEn: 'Turning Point',
           summary: `これまでの物語から続く新たなドラマと波乱の展開`
         });
+        newPlan = {
+          ...rawPlan,
+          titleJp: cleanEpisodeTitle(rawPlan.titleJp) || '運命の分岐点',
+          titleEn: cleanEpisodeTitleEn(rawPlan.titleEn) || 'Turning Point'
+        };
       } catch (e) {
         newPlan = {
           epNumber: epNum,
-          titleJp: `第${epNum}話 運命の継承`,
-          titleEn: `Episode ${epNum} Destiny`,
+          titleJp: '運命の継承',
+          titleEn: 'Destiny',
           summary: `第${epNum - 1}話から続く物語`
         };
       }
@@ -692,8 +692,8 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       const newEpisodeCard: Episode = {
         id: epNum,
         internalId: crypto.randomUUID(),
-        titleJp: newPlan.titleJp,
-        titleEn: newPlan.titleEn,
+        titleJp: cleanEpisodeTitle(newPlan.titleJp),
+        titleEn: cleanEpisodeTitleEn(newPlan.titleEn),
         summary: newPlan.summary,
         cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12) }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
         isGenerating: false,
@@ -795,12 +795,15 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         turnaroundBase64 = turnaround.base64;
       }
 
-      const finalTitleJp = (currentPlan.titleJp && !currentPlan.titleJp.match(/^(第\d+話|第\d+曲|Vol\.\d+|Episode\s*\d+|Untitled)/i))
+      const rawTitleJp = (currentPlan.titleJp && !currentPlan.titleJp.match(/^(第\d+話|第\d+曲|Vol\.\d+|Episode\s*\d+|Untitled)/i))
         ? currentPlan.titleJp
         : (sharedScript.titleJp || currentPlan.titleJp);
-      const finalTitleEn = (currentPlan.titleEn && !currentPlan.titleEn.match(/^(Episode\s*\d+|Track\s*\d+|Untitled)/i))
+      const rawTitleEn = (currentPlan.titleEn && !currentPlan.titleEn.match(/^(Episode\s*\d+|Track\s*\d+|Untitled)/i))
         ? currentPlan.titleEn
         : (sharedScript.titleEn || currentPlan.titleEn);
+
+      const finalTitleJp = cleanEpisodeTitle(rawTitleJp);
+      const finalTitleEn = cleanEpisodeTitleEn(rawTitleEn);
 
       updateEpisode(epId, {
         titleJp: finalTitleJp, 

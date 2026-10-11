@@ -21,6 +21,35 @@ import {
 export type { PreviousShotContext as PreviousShotInfo };
 
 /**
+ * エピソードタイトルから話数連番（第1話、第一話、第１話、Episode 1、Track 1、Vol.1等）を徹底除去。
+ * 理由: ユーザーが途中の話を削除・スキップ・並び替えした際に「とび番（欠番）」になる事故を完全に防ぎ、
+ * 各エピソードを独立した魅力的なサブタイトルとして自立させるため。
+ */
+export function cleanEpisodeTitle(title: string): string {
+  if (!title) return '';
+  return title
+    // 絵文字プレフィックス等の除去
+    .replace(/^[\s🎵🎬💡🏮🎨⚓🖼️✨🔥\uD800-\uDBFF\uDC00-\uDFFF\u2600-\u27BF]+/g, '')
+    // 【第1話】のような角括弧
+    .replace(/^【.*?】\s*/, '')
+    // 「第1話：」「第１話:」「第一話 -」「Episode 1:」「Ep.1:」「Track 1:」「Vol.1:」「Part 1:」などの接頭辞
+    .replace(/^(第\s*[\d０-９一二三四五六七八九十百千]+\s*[話曲章幕弾節巻]|Episode\s*[\d０-９一二三四五六七八九十百千]+|Ep\.\s*\d+|Track\s*\d+|Vol\.\s*\d+|Part\s*\d+|Chapter\s*\d+)[:：\s・\-ー]*/i, '')
+    // 末尾の「(第1話)」「(Vol.1)」等
+    .replace(/[\(（【\[]\s*(第\s*[\d０-９一二三四五六七八九十百千]+\s*[話曲章幕弾節巻]|Episode\s*\d+|Vol\.\d+|Track\s*\d+)\s*[\)）】\]]\s*$/i, '')
+    // 囲み鉤括弧の除去
+    .replace(/^[「『](.*?)[」』]$/, '$1')
+    .trim();
+}
+
+export function cleanEpisodeTitleEn(title: string): string {
+  if (!title) return '';
+  return title
+    .replace(/^(Episode\s*[\d０-９一二三四五六七八九十百千]+|Ep\.\s*\d+|Track\s*\d+|Vol\.\s*\d+|Part\s*\d+|Chapter\s*\d+)[:：\s・\-ー]*/i, '')
+    .replace(/[\(（【\[]\s*(Episode\s*\d+|Vol\.\d+|Track\s*\d+)\s*[\)）】\]]\s*$/i, '')
+    .trim();
+}
+
+/**
  * 舞台設定が歴史・時代劇かどうかを判定（時代・テーマ双方から判定）
  */
 export function checkIsHistorical(era: string = '', theme: string = ''): boolean {
@@ -138,16 +167,24 @@ export function buildGrandDesignPrompt(
   characterName?: string
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
+  const noNumberRule = `CRITICAL RULE FOR TITLES (DO NOT INCLUDE EPISODE NUMBERS):
+- "titleJp" and "titleEn" MUST BE PURE STANDALONE THEMATIC SUBTITLES!
+- NEVER include episode numbers, track numbers, volume prefixes, or acts (e.g. NEVER write "第1話：", "第1話", "第一話", "Episode 1:", "Track 1:", "Vol.1", "起・承", "転・結").
+- Reason: Episodes can be deleted, skipped, or reordered by the creator. Numbered or sequential titles cause broken missing-number gaps (飛び番).
+- GOOD Example: "titleJp": "芳香剤の奥の臭気", "titleEn": "The Scent Beneath the Bleach"
+- BAD Example:  "titleJp": "第1話：芳香剤の奥の臭気（起・承）", "titleEn": "EPISODE 1: THE SCENT BENEATH THE BLEACH"`;
+
   if (isMvMode) {
     return `Create a ${count}-track music video visual series grand design with Concept & Theme: "${worldSetting}".
 Analyze the atmospheric mood, ambient lighting, nostalgic or serene emotion, and visual continuity suitable for an aesthetic music video.
 Keep the mood subdued, ennui, and poetic without dramatic conflicts or chaotic action.
+${noNumberRule}
 Output ONLY valid JSON:
 {
   "seriesTitle": "Aesthetic MV Concept Collection",
   "overallSynopsis": "Overview of the musical and visual atmosphere across all parts",
   "episodesPlan": [
-    { "epNumber": 1, "titleJp": "日本語トラック/情景タイトル", "titleEn": "English Track Title", "summary": "情景と空気感の描写（日本語2〜3行）" }
+    { "epNumber": 1, "titleJp": "情景を象徴する詩的な独立タイトル", "titleEn": "Poetic English Subtitle", "summary": "情景と空気感の描写（日本語2〜3行）" }
   ]
 }
 `;
@@ -167,12 +204,13 @@ Ensure a classic Four-Act (起承転結: Introduction -> Development -> Crisis/C
 Analyze the authentic era, cultural background, human drama, and visual atmosphere directly from this theme.
 ${protagonistInstruction}
 ${mangaInstruction}
+${noNumberRule}
 Output ONLY valid JSON:
 {
   "seriesTitle": "Dramatic Series Title",
   "overallSynopsis": "Overview of the entire narrative arc",
   "episodesPlan": [
-    { "epNumber": 1, "titleJp": "日本語タイトル", "titleEn": "English Title", "summary": "話のあらすじ" }
+    { "epNumber": 1, "titleJp": "この話独自の具体的サブタイトル（第X話は入れない）", "titleEn": "Standalone English Subtitle without numbers", "summary": "話のあらすじ" }
   ]
 }
 `;
@@ -193,7 +231,7 @@ export function buildNextEpisodePlanPrompt(
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const prevSummary = previousEpisodes
-    .map(p => `第${p.epNumber}話「${p.titleJp}」: ${p.summary || ''}`)
+    .map(p => `第${p.epNumber}話「${cleanEpisodeTitle(p.titleJp)}」: ${p.summary || ''}`)
     .join('\n');
   const mangaInstruction = isMangaMode 
     ? "Design with intense comic/manga cliffhangers, high emotional stakes, and dynamic story pacing." 
@@ -211,12 +249,17 @@ Now, create the compelling story outline for the NEXT episode (Episode ${nextEpI
 It must naturally build upon the climax of the previous episodes and introduce exciting developments.
 ${mangaInstruction}
 
+CRITICAL RULE FOR TITLES (DO NOT INCLUDE EPISODE NUMBERS):
+- "titleJp" and "titleEn" MUST BE PURE STANDALONE THEMATIC SUBTITLES!
+- NEVER include episode numbers (e.g. NEVER write "第${nextEpId}話", "Episode ${nextEpId}").
+- Provide ONLY the specific dramatic subtitle itself.
+
 Output ONLY valid JSON:
 {
   "epNumber": ${nextEpId},
-  "titleJp": "日本語サブタイトル",
-  "titleEn": "English Title",
-  "summary": "第${nextEpId}話のあらすじ・展開（日本語2〜3行）"
+  "titleJp": "この話独自の具体的サブタイトル（第X話は入れない）",
+  "titleEn": "Standalone English Subtitle without numbers",
+  "summary": "この話のあらすじ・展開（日本語2〜3行）"
 }`;
 }
 
@@ -600,12 +643,12 @@ export function buildCompactScriptPrompt(
     : '';
 
   const hasPlannedTitle = !!(currentPlan?.titleJp && !currentPlan.titleJp.match(/^(第\d+話|第\d+曲|Vol\.\d+|Episode\s*\d+|Untitled)/i));
-  const plannedTitleJp = hasPlannedTitle ? currentPlan.titleJp : 'このエピソード独自の具体的で引きの強い日本語お題（15〜25文字）';
-  const plannedTitleEn = currentPlan?.titleEn || 'Specific Topic Episode Subtitle in English';
+  const plannedTitleJp = cleanEpisodeTitle(hasPlannedTitle ? currentPlan.titleJp : 'このエピソード独自の具体的で引きの強い日本語お題（15〜25文字）');
+  const plannedTitleEn = cleanEpisodeTitleEn(currentPlan?.titleEn) || 'Specific Topic Episode Subtitle in English';
 
   const titleRule = hasPlannedTitle
-    ? `1. Title: Maintain and harmonize with the designated episode title "${currentPlan.titleJp}" ("titleEn": "${plannedTitleEn}"). Do NOT replace it with a generic or duplicate phrase.`
-    : `1. Title: Create an engaging Japanese title ("titleJp", 15-25 chars) and English title ("titleEn"). No episode numbers.`;
+    ? `1. Title: Maintain and harmonize with the designated episode title "${plannedTitleJp}" ("titleEn": "${plannedTitleEn}"). Do NOT prepend episode numbers like "第${epId}話" or "Episode ${epId}".`
+    : `1. Title: Create an engaging standalone Japanese title ("titleJp", 15-25 chars) and English title ("titleEn"). DO NOT INCLUDE episode numbers (e.g. no "第${epId}話", no "Episode ${epId}").`;
 
   return `You are a creative showrunner directing a ${cutCount}-cut ${contextTitle} for Episode ${epId} in "${worldSetting}".
 Art Style: "${taste || 'Cinematic'}".
@@ -1141,8 +1184,8 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   });
 
   return {
-    titleJp: sanitizeForYouTubeSafety(parsed.titleJp || currentPlan.titleJp),
-    titleEn: parsed.titleEn || currentPlan.titleEn,
+    titleJp: cleanEpisodeTitle(sanitizeForYouTubeSafety(parsed.titleJp || currentPlan.titleJp)),
+    titleEn: cleanEpisodeTitleEn(parsed.titleEn || currentPlan.titleEn),
     summary: sanitizeForYouTubeSafety(parsed.summary || currentPlan.summary || ''),
     characterDna: parsed.characterDna || (isMvMode 
       ? 'Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob hair, gentle eyes, oversized cozy knit cardigan, sleek over-ear headphones' 
@@ -1151,7 +1194,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     forbiddenAnachronisms: parsed.forbiddenAnachronisms || [],
     authenticAttireEn: parsed.authenticAttireEn || '',
     forbiddenKeywordsEn: parsed.forbiddenKeywordsEn || '',
-    coverCatchphraseJp: sanitizeForYouTubeSafety(parsed.coverCatchphraseJp || currentPlan.titleJp),
+    coverCatchphraseJp: cleanEpisodeTitle(sanitizeForYouTubeSafety(parsed.coverCatchphraseJp || currentPlan.titleJp)),
     coverCatchphraseEn: parsed.coverCatchphraseEn || '',
     highlightWords: parsed.highlightWords || [],
     cuts: normalizedCuts
@@ -1200,17 +1243,10 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
   const isHist = checkIsHistorical(era, theme);
   const combinedContext = `${era} ${theme} ${productionMode}`.toLowerCase();
 
-  // 0. タイトルの徹底的クリーン化（絵文字・装飾タグを除去し、純粋な可読日本語テキストを抽出）
-  const cleanTitle = titleJp
-    .replace(/^[\s🎵🎬💡🏮🎨⚓🖼️✨🔥\uD800-\uDBFF\uDC00-\uDFFF\u2600-\u27BF]+/g, '')
-    .replace(/^【.*?】\s*/, '')
-    .replace(/^[「『](.*?)[」』]$/, '$1')
-    .trim() || titleJp;
+  // 0. タイトルの徹底的クリーン化（話数連番・絵文字・装飾タグを除去し、純粋な可読日本語テキストを抽出）
+  const cleanTitle = cleanEpisodeTitle(titleJp) || titleJp;
 
-  const cleanCatchphrase = (coverCatchphraseJp || '')
-    .replace(/^[\s🎵🎬💡🏮🎨⚓🖼️✨🔥\uD800-\uDBFF\uDC00-\uDFFF\u2600-\u27BF]+/g, '')
-    .replace(/^【.*?】\s*/, '')
-    .trim();
+  const cleanCatchphrase = cleanEpisodeTitle(coverCatchphraseJp || '');
 
   // 1. 世界観・ジャンルに応じた媒体（Medium）とグラフィックスタイルの動的決定
   let mediumInstruction = '';
