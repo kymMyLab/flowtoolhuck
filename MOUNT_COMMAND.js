@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@3344b65/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[軽量ルーター化＆チャンク分割・AIテキストエラー時スマート自動フォールバック搭載]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@ced54d8/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[全API共通指数バックオフ・リアルタイム待機ログ・軽量ルーター化]'); });
