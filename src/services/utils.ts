@@ -126,26 +126,30 @@ export function formatDurationMs(ms: number): string {
  * 緊急停止（Abort）を即座に検知可能なスリープ
  */
 export async function sleepWithAbortCheck(durationMs: number, abortCheck?: () => boolean): Promise<boolean> {
+  if (durationMs <= 0) return true;
   return new Promise((resolve) => {
-    let elapsed = 0;
-    const intervalMs = 100;
-    
     // Immediate check
     if (abortCheck && abortCheck()) {
       return resolve(false);
     }
     
-    const timer = setInterval(() => {
-      elapsed += intervalMs;
-      if (abortCheck && abortCheck()) {
-        clearInterval(timer);
-        clearTimeout(timeout);
-        return resolve(false);
-      }
-    }, intervalMs);
+    let timer: any;
+    let timeout: any;
 
-    const timeout = setTimeout(() => {
-      clearInterval(timer);
+    const cleanup = () => {
+      if (timer) clearInterval(timer);
+      if (timeout) clearTimeout(timeout);
+    };
+
+    timer = setInterval(() => {
+      if (abortCheck && abortCheck()) {
+        cleanup();
+        resolve(false);
+      }
+    }, 100);
+
+    timeout = setTimeout(() => {
+      cleanup();
       resolve(true);
     }, durationMs);
   });
@@ -213,7 +217,7 @@ export async function callWithRetry<T>(
         msg.includes('違反') || 
         msg.includes('INVALID_ARGUMENT') || 
         msg.includes('PERMISSION_DENIED') ||
-        msg.includes('400')
+        (msg.includes(' 400 ') || msg.includes('[STATUS 400]') || msg.includes('[CODE 400]'))
       ) {
         throw err;
       }

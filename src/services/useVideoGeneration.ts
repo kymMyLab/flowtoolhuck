@@ -5,6 +5,7 @@ import { LogEntry } from '../components/StudioLogs';
 import { DEFAULT_ASPECT_RATIO, resolveVideoModel } from '../constants';
 import { callWithRetry, formatDurationMs, formatErrorMessage } from './utils';
 import { resolveCameraWork } from '../config/studioDefinitions';
+import { sanitizePromptForGoogleSafety } from './promptEngine';
 import { renderKenBurnsVideo } from './browserVideoService';
 
 interface UseVideoGenerationProps {
@@ -75,32 +76,66 @@ export function useVideoGeneration({
         finalVideoPrompt = 'Cinematic moving shot, high quality';
       }
 
-      const res = await callWithRetry<any>(
-        () => Flow.generate.video({ 
-          prompt: finalVideoPrompt, 
-          firstFrameImageMediaId: mediaId, 
-          // lastFrameImageMediaId: endMediaId || undefined, // ※ユーザー指示: After参照はモーフィング崩壊の害悪となるため無効化
-          modelDisplayName: modelDef.name, 
-          durationSeconds: modelDef.defaultDuration, 
-          aspectRatio: DEFAULT_ASPECT_RATIO as "16:9" | "9:16" 
-        }),
-        (attempt, max, delay, err, isSuper) => {
-          const waitStr = formatDurationMs(delay);
-          const errMsg = formatErrorMessage(err);
-          if (isSuper) {
-            addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
-          } else {
-            addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
+      let res: any;
+      try {
+        res = await callWithRetry<any>(
+          () => Flow.generate.video({
+            prompt: finalVideoPrompt,
+            firstFrameImageMediaId: mediaId,
+            modelDisplayName: modelDef.name,
+            durationSeconds: modelDef.defaultDuration,
+            aspectRatio: DEFAULT_ASPECT_RATIO as "16:9" | "9:16"
+          }),
+          (attempt, max, delay, err, isSuper) => {
+            const waitStr = formatDurationMs(delay);
+            const errMsg = formatErrorMessage(err);
+            if (isSuper) {
+              addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/3] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
+            } else {
+              addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
+            }
+          },
+          {
+            maxRetries: 5,
+            timeoutMs: 180000,
+            timeoutLabel: '動画生成',
+            superBackoff: settings.superBackoff,
+            abortCheck: () => isAbortedRef.current
           }
-        },
-        {
-          maxRetries: 5,
-          timeoutMs: 180000,
-          timeoutLabel: '動画生成',
-          superBackoff: settings.superBackoff,
-          abortCheck: () => isAbortedRef.current
+        );
+      } catch (firstErr: any) {
+        const errMsg = formatErrorMessage(firstErr);
+        const isPolicyError = errMsg.includes('ポリシー') || errMsg.includes('POLICY') || errMsg.includes('SAFETY') || errMsg.includes('BLOCKED');
+
+        if (isPolicyError && !isAbortedRef.current) {
+          addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画生成でセーフティ保護を検知。安全版プロンプトで即時再生成します...`, 'warning');
+          const ultraSafePrompt = sanitizePromptForGoogleSafety(finalVideoPrompt)
+            .replace(/\b(seductive|seductively|adult|intimate|childlike|sensual|erotic|provocative|naked|nude)\b/gi, 'artistic')
+            .replace(/,\s*,/g, ',')
+            .trim();
+
+          res = await callWithRetry<any>(
+            () => Flow.generate.video({
+              prompt: ultraSafePrompt,
+              firstFrameImageMediaId: mediaId,
+              modelDisplayName: modelDef.name,
+              durationSeconds: modelDef.defaultDuration,
+              aspectRatio: DEFAULT_ASPECT_RATIO as "16:9" | "9:16"
+            }),
+            (attempt, max, delay) => {
+              addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画セーフモード再試行中 (${attempt}/${max})...`, 'warning');
+            },
+            {
+              maxRetries: 2,
+              timeoutMs: 180000,
+              timeoutLabel: '安全プロンプト動画生成',
+              abortCheck: () => isAbortedRef.current
+            }
+          );
+        } else {
+          throw firstErr;
         }
-      );
+      }
       const cleanVideoBase64 = res.base64 ? res.base64.replace(/^data:[^;]+;base64,/, '') : '';
       updateCut(epId, cutId, { 
         videoBase64: cleanVideoBase64, 
