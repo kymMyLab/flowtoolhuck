@@ -432,7 +432,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       addLog
     });
 
-    const cutsCount = curMode === 'manga' ? 24 : CUTS_PER_EPISODE;
+    const cutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12, curMode === 'manga' ? 24 : 12);
     const baseCutsData = Array.from({ length: cutsCount }, (_, j) => {
       const cutData = parsed.cuts[j] || {} as any;
       const narration = cutData.narrationJp || '';
@@ -623,7 +623,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       titleJp: p.titleJp,
       titleEn: p.titleEn,
       summary: p.summary,
-      cuts: Array.from({ length: CUTS_PER_EPISODE }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
+      cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12) }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
       isGenerating: false,
       isGeneratingRemainingImages: false,
       isBatchGeneratingVideos: false,
@@ -693,7 +693,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         titleJp: newPlan.titleJp,
         titleEn: newPlan.titleEn,
         summary: newPlan.summary,
-        cuts: Array.from({ length: CUTS_PER_EPISODE }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
+        cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12) }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
         isGenerating: false,
         isGeneratingRemainingImages: false,
         isBatchGeneratingVideos: false,
@@ -742,7 +742,8 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
 
       addLog(`✨ 【第${epId}話】脚本＆時代考証が完成！（考証: ${sharedScript.eraAnalysisJp?.slice(0, 24) || '完了'}...）`, 'success');
 
-      const episodeCuts: Cut[] = Array.from({ length: CUTS_PER_EPISODE }, (_, j) => {
+      const seriesCutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12);
+      const episodeCuts: Cut[] = Array.from({ length: seriesCutsCount }, (_, j) => {
         const cutData = sharedScript.cuts[j] || {} as any;
         const narration = cutData.narrationJp || '';
         const plot = cutData.basicPlot || '';

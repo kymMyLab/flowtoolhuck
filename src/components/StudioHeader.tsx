@@ -18,6 +18,7 @@ interface StudioHeaderProps {
   onOpenThemeEditor: () => void;
   onOpenTasteEditor: () => void;
   onOpenCastModal?: () => void;
+  onOpenComicWizard?: () => void;
   castCount?: number;
   activeSeriesManifest?: any;
   onResumeClick?: () => void;
@@ -25,7 +26,7 @@ interface StudioHeaderProps {
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
-  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenCastModal, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen
+  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenCastModal, onOpenComicWizard, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen
 }) => {
   const currentModeDef = PRODUCTION_MODES.find(m => m.value === settings.productionMode) || PRODUCTION_MODES[0];
 
@@ -156,7 +157,23 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
+        {onOpenComicWizard && (
+          <button 
+            type="button"
+            disabled={isProducing}
+            onClick={onOpenComicWizard}
+            className="h-10 px-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer animate-pulse"
+            title="世界観選定➔三面図➔起承転結➔サブキャラ配役➔30Cut連載（20〜50話）をボタンポチで全自動プロデュース"
+          >
+            <span className="material-symbols-outlined text-[18px]">auto_stories</span>
+            <span>コミック一冊分</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-extrabold">
+              30Cut×20話〜
+            </span>
+          </button>
+        )}
+
         {onOpenCastModal && (
           <button 
             type="button"

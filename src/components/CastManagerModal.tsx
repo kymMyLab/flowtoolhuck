@@ -14,6 +14,7 @@ interface CastManagerModalProps {
   onApplyCharacterToVault: (character: CastCharacter, expressionType?: ExpressionType) => void;
   onAddLog: (msg: string, type?: any) => void;
   currentTaste?: string;
+  onOpenComicWizard?: () => void;
 }
 
 export const CastManagerModal: React.FC<CastManagerModalProps> = ({
@@ -24,6 +25,7 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
   onApplyCharacterToVault,
   onAddLog,
   currentTaste,
+  onOpenComicWizard,
 }) => {
   const [selectedCharId, setSelectedCharId] = useState<string>(
     project.activeCharacterId || project.characters[0]?.id || 'char_1'
@@ -395,6 +397,18 @@ ${tasteInstruction}
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* コミック一冊分 (30Cut×20話〜) 自動制作ボタン */}
+            {onOpenComicWizard && (
+              <button
+                onClick={onOpenComicWizard}
+                className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                title="世界観・三面図・起承転結・サブキャラを順に決定し、30Cut×20話〜50話の連続漫画を一括自動プロデュース"
+              >
+                <span className="material-symbols-outlined text-sm">auto_stories</span>
+                <span>📖 コミック一冊分 (30Cut×20話〜)</span>
+              </button>
+            )}
+
             {/* 物語企画AI発案 (10選) ボタン */}
             <button
               onClick={handleBrainstormConcepts}

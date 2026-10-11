@@ -127,7 +127,16 @@ Output JSON: {
 /**
  * シリーズ全体のグランドデザイン（全話プロット）を生成するためのプロンプト
  */
-export function buildGrandDesignPrompt(count: number, country: string, theme: string, era?: string, isMangaMode?: boolean, isMvMode?: boolean): string {
+export function buildGrandDesignPrompt(
+  count: number, 
+  country: string, 
+  theme: string, 
+  era?: string, 
+  isMangaMode?: boolean, 
+  isMvMode?: boolean,
+  characterDna?: string,
+  characterName?: string
+): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   if (isMvMode) {
     return `Create a ${count}-track music video visual series grand design with Concept & Theme: "${worldSetting}".
@@ -144,10 +153,19 @@ Output ONLY valid JSON:
 `;
   }
   const mangaInstruction = isMangaMode 
-    ? "Design the pacing and narrative structure specifically for a highly dynamic comic/manga serialization (including dramatic cliffhangers and fast-paced story development)." 
+    ? "Design the pacing and narrative structure specifically for a highly dynamic comic/manga serialization (including dramatic cliffhangers, high-stakes comic paneling, and compelling chapter hooks)." 
     : "";
-  return `Create a full ${count}-episode drama grand design with World Theme & Setting: "${worldSetting}".
+  const protagonistInstruction = characterDna
+    ? `CENTRAL PROTAGONIST:
+Name: "${characterName || '主人公'}"
+Appearance DNA: "${characterDna}"
+The overarching ${count}-episode epic story MUST revolve around this central protagonist.
+Ensure a classic Four-Act (起承転結: Introduction -> Development -> Crisis/Climax -> Grand Resolution) continuity arc across all ${count} episodes.`
+    : `Ensure a classic Four-Act (起承転結: Introduction -> Development -> Crisis/Climax -> Grand Resolution) continuity arc across all ${count} episodes.`;
+
+  return `Create a full ${count}-episode serialized story grand design with World Theme & Setting: "${worldSetting}".
 Analyze the authentic era, cultural background, human drama, and visual atmosphere directly from this theme.
+${protagonistInstruction}
 ${mangaInstruction}
 Output ONLY valid JSON:
 {

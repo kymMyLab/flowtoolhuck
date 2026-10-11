@@ -97,7 +97,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         titleJp: p.titleJp,
         titleEn: p.titleEn,
         summary: p.summary,
-        cuts: Array.from({ length: CUTS_PER_EPISODE }, (_, j) => createDefaultCut(j + 1, isDone ? '制作完了' : '待機中...', '', false)),
+        cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, manifest.settings?.previewCutCount || 30) }, (_, j) => createDefaultCut(j + 1, isDone ? '制作完了' : '待機中...', '', false)),
         isGenerating: false,
         isGeneratingRemainingImages: false,
         isBatchGeneratingVideos: false,

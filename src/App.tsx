@@ -19,8 +19,9 @@ import { loadCustomTastes } from './services/tasteStorage';
 import { ThemeEditorModal } from './components/ThemeEditorModal';
 import { TasteEditorModal } from './components/TasteEditorModal';
 import { CastManagerModal } from './components/CastManagerModal';
+import { ComicCreationWizardModal } from './components/ComicCreationWizardModal';
 import { loadMangaProject, saveMangaProject } from './services/castStorage';
-import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset } from './types';
+import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset, SeriesManifest } from './types';
 import { saveReferenceAsset } from './services/db';
 
 export default function App() {
@@ -69,6 +70,7 @@ export default function App() {
   const [isTasteEditorOpen, setIsTasteEditorOpen] = useState(false);
   const [mangaProject, setMangaProject] = useState<MangaProject>(() => loadMangaProject());
   const [isCastModalOpen, setIsCastModalOpen] = useState(false);
+  const [isComicWizardOpen, setIsComicWizardOpen] = useState(false);
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
 
@@ -152,6 +154,51 @@ export default function App() {
 
   const episodesRef = useRef(episodes);
   episodesRef.current = episodes;
+
+  const handleLaunchComicSeries = useCallback(async (payload: {
+    theme: string;
+    taste: string;
+    protagonist: CastCharacter;
+    subCharacters: CastCharacter[];
+    manifest: SeriesManifest;
+    totalEpisodes: number;
+    cutsPerEpisode: number;
+  }) => {
+    addLog(`🚀 コミック一冊分プロデュース開始: 『${payload.manifest.seriesTitle}』(全${payload.totalEpisodes}話 × ${payload.cutsPerEpisode}Cut)`, 'success');
+
+    // 1. キャスト台帳を更新
+    const allCharacters = [payload.protagonist, ...payload.subCharacters];
+    const newProject: MangaProject = {
+      ...mangaProject,
+      title: payload.manifest.seriesTitle,
+      description: payload.manifest.overallSynopsis,
+      characters: allCharacters,
+      activeCharacterId: payload.protagonist.id,
+      updatedAt: new Date().toISOString()
+    };
+    handleUpdateMangaProject(newProject);
+
+    // 2. スタジオ設定をコミック仕様に自動同期（ドラマ連番・漫画コマ割りON・30Cut・話数）
+    setSettings(prev => ({
+      ...prev,
+      productionMode: 'episodes',
+      theme: payload.theme,
+      taste: payload.taste,
+      isMultiPanel: true,
+      previewCutCount: payload.cutsPerEpisode,
+      episodeCount: payload.totalEpisodes,
+    }));
+
+    // 3. シリーズ設計図を復元注入
+    await resumeSeries(payload.manifest, (assetId) => {
+      setSettings(prev => ({ ...prev, selectedAssetId: assetId }));
+    });
+
+    // 4. 連載制作を自動スタート
+    setTimeout(() => {
+      startProduction();
+    }, 500);
+  }, [mangaProject, handleUpdateMangaProject, resumeSeries, startProduction, addLog]);
 
   const handleDownloadZip = useCallback(async (ep: Episode) => {
     const filename = ep.packageZipFilename || `Episode_${ep.id}_Package.zip`;
@@ -257,6 +304,7 @@ export default function App() {
           onOpenThemeEditor={() => setIsThemeEditorOpen(true)}
           onOpenTasteEditor={() => setIsTasteEditorOpen(true)}
           onOpenCastModal={() => setIsCastModalOpen(true)}
+          onOpenComicWizard={() => setIsComicWizardOpen(true)}
           castCount={mangaProject.characters.length}
           activeSeriesManifest={activeSeriesManifest}
           onResumeClick={() => resumeFileRef.current?.click()}
@@ -384,6 +432,18 @@ export default function App() {
           onApplyCharacterToVault={handleApplyCharacterToVault}
           onAddLog={addLog}
           currentTaste={settings.taste}
+          onOpenComicWizard={() => {
+            setIsCastModalOpen(false);
+            setIsComicWizardOpen(true);
+          }}
+        />
+        <ComicCreationWizardModal
+          isOpen={isComicWizardOpen}
+          onClose={() => setIsComicWizardOpen(false)}
+          currentTheme={settings.theme}
+          currentTaste={settings.taste}
+          onLaunchComicSeries={handleLaunchComicSeries}
+          onAddLog={addLog}
         />
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
       </div>
