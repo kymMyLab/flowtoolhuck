@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@d6a544d/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[①紫プロデュース ➔ ②エメラルドお任せ ➔ ③作成開始 + 50話大河世界観拡充＆フォーム区切り＆JSON保存復元]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@b0562af/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[①プロデュース確定 ➔ サイドバー微調整 ➔ ③作成開始 / ②ざっくり設定]'); });
