@@ -157,19 +157,19 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 shrink-0">
         {onOpenComicWizard && (
           <button 
             type="button"
             disabled={isProducing}
             onClick={onOpenComicWizard}
-            className="h-10 px-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer animate-pulse"
-            title="世界観選定➔三面図➔起承転結➔サブキャラ配役➔30Cut連載（20〜50話）をボタンポチで全自動プロデュース"
+            className="h-10 px-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 hover:brightness-110 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
+            title="主人公三面図・配役・全話プロットを事前決定し、作品の方向性を確立（大前提設定）"
           >
             <span className="material-symbols-outlined text-[18px]">auto_stories</span>
-            <span>コミック一冊分</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-extrabold">
-              30Cut×20話〜
+            <span>作品プロデュース</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white font-extrabold tracking-wide">
+              大前提
             </span>
           </button>
         )}
@@ -179,12 +179,12 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             type="button"
             disabled={isProducing}
             onClick={onOpenCastModal}
-            className="h-10 px-3.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-900 border border-amber-300/80 flex items-center gap-2 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
-            title="キャスト台帳＆マンガプロジェクト管理を開く"
+            className="h-10 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 flex items-center gap-1.5 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
+            title="キャスト台帳＆登場人物管理を開く"
           >
             <span className="material-symbols-outlined text-[18px] text-amber-600">theater_comedy</span>
             <span>キャスト台帳</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-200/90 text-amber-900 font-black">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-200/90 text-amber-900 font-black">
               {castCount}人
             </span>
           </button>

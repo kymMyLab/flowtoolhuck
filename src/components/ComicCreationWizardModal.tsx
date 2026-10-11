@@ -718,13 +718,13 @@ ${customTastesInstruction}
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold">コミック一冊分 自動プロデュース</h3>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 font-extrabold shadow-sm">
-                  COMIC WIZARD PRO
+                <h3 className="text-base font-bold">作品プロデュース (大前提設定)</h3>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-extrabold shadow-sm">
+                  DIRECTION MASTER
                 </span>
               </div>
               <p className="text-[11px] text-slate-300">
-                世界観選定 ➔ 三面図 ➔ 起承転結の顔 ➔ サブキャラ配役 ➔ 1〜50話プロット ➔ 30Cut連載
+                世界観・主人公三面図・配役・全話プロットを事前に決定し、一貫した作品の方向性を確立します
               </p>
             </div>
           </div>
@@ -740,9 +740,9 @@ ${customTastesInstruction}
         {/* Step Progress Bar */}
         <div className="px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold shrink-0">
           {[
-            { num: 1, label: '① 世界観＆三面図5選' },
-            { num: 2, label: '② お友達・サブキャラ配役' },
-            { num: 3, label: '③ 全話プロット＆連載開始' },
+            { num: 1, label: '① 世界観＆主人公三面図' },
+            { num: 2, label: '② お友達・相棒配役' },
+            { num: 3, label: '③ 話数・プロット＆方向性確定' },
           ].map(s => {
             const isActive = step === s.num;
             const isPassed = step > s.num;
@@ -1186,11 +1186,11 @@ ${customTastesInstruction}
               
               {/* Volume & Cuts Guidance */}
               <div className="bg-amber-50/70 border border-amber-200/80 p-3.5 rounded-xl flex items-start gap-3 text-amber-950 shadow-2xs">
-                <span className="material-symbols-outlined text-amber-600 mt-0.5 text-xl">auto_stories</span>
+                <span className="material-symbols-outlined text-amber-600 mt-0.5 text-xl">tune</span>
                 <div className="text-xs leading-relaxed">
                   <p className="font-bold">制作ボリューム（話数・カット数）を設定し、全話プロットを確定します。</p>
                   <p className="text-amber-800 mt-0.5">
-                    1話〜50話の自由連載に対応。各話<strong>【30Cut (コマ割り演出ON)】</strong>を標準とし、ボタン1つでコミック一冊分の連載を完全自動プロデュースします。
+                    1話〜50話の連載に対応。制作時に<strong>【マンガ風コマ割り】</strong>をONにすれば変形マルチコマ漫画に、OFFなら本格シネマドラマとして制作されます。
                   </p>
                 </div>
               </div>
@@ -1231,7 +1231,7 @@ ${customTastesInstruction}
                       1話あたりの作画カット数
                     </label>
                     <span className="text-xs font-extrabold text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
-                      {cutsPerEpisode} Cut (コマ割り演出ON)
+                      {cutsPerEpisode} Cut
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
@@ -1251,7 +1251,7 @@ ${customTastesInstruction}
                     ))}
                   </div>
                   <span className="text-[10px] text-slate-500 leading-tight">
-                    ※ 1カット内に2〜5コマの変形マルチコマが自動配置されます。30Cut ＝ 約70〜100コマの重厚な漫画仕立てになります。
+                    ※ 『マンガ風コマ割り』ON時は1カット内に2〜5コマが自動配置されます。OFF時は1カット1枚のシネマ作画になります。
                   </span>
                 </div>
               </div>
@@ -1435,7 +1435,7 @@ ${customTastesInstruction}
                 <span>
                   {episodesPlan.length === 0
                     ? `⚠️ 先にプロットを生成してください（${cutsPerEpisode}Cut × 全${episodeCount}話）`
-                    : `🚀 コミック一冊分の自動制作をスタート！（${cutsPerEpisode}Cut × 全${episodeCount}話）`}
+                    : `🚀 この設定（大前提）を適用して制作スタート！（${cutsPerEpisode}Cut × 全${episodeCount}話）`}
                 </span>
               </button>
             )}
