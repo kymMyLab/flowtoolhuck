@@ -329,10 +329,14 @@ export default function App() {
         <div className="max-w-[1300px] mx-auto flex flex-col gap-12">
           {/* 🎬 待機中誘導バナー（大前提確定後やスタンバイ状態で未作画カットがある場合） */}
           {isWaitingForStart && (
-            <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 border-2 border-purple-400 rounded-2xl p-5 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in text-white">
+            <div 
+              onClick={startProduction}
+              className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 border-2 border-purple-400 rounded-2xl p-4.5 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in text-white cursor-pointer hover:border-pink-400 transition-all group"
+              title="クリック、または右上の【③ 作成開始】を押して本編作成をスタート"
+            >
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-400/50 flex items-center justify-center text-purple-300 shrink-0">
-                  <span className="material-symbols-outlined text-2xl animate-spin" style={{ animationDuration: '4s' }}>pending_actions</span>
+                <div className="w-11 h-11 rounded-xl bg-purple-500/20 border border-purple-400/50 flex items-center justify-center text-purple-300 shrink-0 group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-2xl text-pink-400 animate-pulse">pending_actions</span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -346,19 +350,15 @@ export default function App() {
                     </h2>
                   </div>
                   <p className="text-purple-200/90 text-xs mt-1">
-                    左サイドバーで【アスペクト比】や【動画化割合】等の最終確認後、右上の光る【③ 作成開始】または右のボタンを押して本編作画をスタートしてください。
+                    左サイドバーで設定確認後、右上の光る【③ 作成開始】を押して本編作画をスタートしてください。
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={startProduction}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 hover:from-purple-400 hover:via-pink-400 hover:to-indigo-400 text-white font-black text-sm shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:shadow-[0_0_30px_rgba(217,70,239,0.9)] transition-all cursor-pointer flex items-center gap-2 active:scale-95 animate-pulse"
-                >
-                  <span className="material-symbols-outlined text-xl">play_circle</span>
-                  <span>③ 今すぐ本編を作成開始</span>
-                </button>
+                <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-purple-200 text-xs font-bold group-hover:bg-pink-600 group-hover:text-white transition-all shadow-sm">
+                  <span>右上のボタンで開始</span>
+                  <span className="material-symbols-outlined text-[16px] text-pink-300 group-hover:text-white">north_east</span>
+                </div>
               </div>
             </div>
           )}

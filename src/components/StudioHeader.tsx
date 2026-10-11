@@ -260,11 +260,6 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               {isWaitingForStart ? 'play_arrow' : startBtn.icon}
             </span>
             <span>③ 作成開始</span>
-            {isWaitingForStart && (
-              <span className="ml-0.5 px-1.5 py-0.5 rounded-md bg-white text-purple-700 font-black text-[10px] shadow-2xs tracking-tighter">
-                START ▶
-              </span>
-            )}
           </button>
         )}
 
