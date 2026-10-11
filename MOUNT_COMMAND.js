@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@4453e3b/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[レトロ淡彩アトリエ画風・リス魔女追加・即時画面遷移＆固定フッターナビ]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@3344b65/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！[軽量ルーター化＆チャンク分割・AIテキストエラー時スマート自動フォールバック搭載]'); });
