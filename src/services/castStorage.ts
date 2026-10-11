@@ -1,7 +1,7 @@
 import { MangaProject, CastCharacter, ExpressionType, CastExpression } from '../types';
 
-const STORAGE_KEY = 'flowtool_manga_project_v3';
-const OLD_STORAGE_KEYS = ['flowtool_manga_project_v2', 'flowtool_manga_project_v1'];
+const STORAGE_KEY = 'flowtool_manga_project_v4';
+const OLD_STORAGE_KEYS = ['flowtool_manga_project_v3', 'flowtool_manga_project_v2', 'flowtool_manga_project_v1'];
 
 export const EXPRESSION_METAS: Record<ExpressionType, { label: string; promptModifierEn: string; icon: string }> = {
   neutral: { 
@@ -105,6 +105,12 @@ export const DEFAULT_MANGA_PROJECT: MangaProject = {
       'バーの小悪魔・ノワール (黒髪猫耳)',
       'protagonist',
       'A gorgeous alluring catgirl with short messy jet-black hair and fluffy cat ears, sharp delicate V-shaped chin and slender jawline, mesmerizing almond-shaped eyes with thick dark upper eyeliner and glowing deep ruby-red irises, seductive teasing half-smile, wearing a chic off-shoulder black dress and ornate gold rings, mature seductive charm'
+    ),
+    createDefaultCastCharacter(
+      'char_squirrel_witch',
+      'リス魔女 (パッツンジト目)',
+      'protagonist',
+      'A tiny chubby young anime witch girl with blunt straight-cut fringe bangs, messy longer light ash-blonde hair, large half-closed drowsy unamused sullen teal-blue eyes, slightly grumpy pouty expression, two large fluffy furry animal ears sprouting naturally from head sides below hat brim, a massive bushy heavily textured furry squirrel tail, oversized floppy dark purple-black witch hat decorated with gold stars and large ribbon badge, roomy dark hooded witch cloak, dark dress, patterned tights, chunky lace-up boots'
     ),
   ],
 };

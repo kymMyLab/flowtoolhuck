@@ -166,7 +166,10 @@ export const TASTES: Record<string, string> = {
     "Minimalist Bauhaus kinetic sculpture, floating geometric brass spheres and matte concrete monoliths, frosted glass shadows, elegant brutalist gallery lighting, Swiss graphic design aesthetic, high-contrast abstract architectural balance, ultra-clean commercial look",
 
   "📜 ダ・ヴィンチ古代手稿・飛行機械スケッチ (Da Vinci Codex & Antique Sketch)":
-    "Authentic Leonardo da Vinci codex manuscript sketch, complex flying ornithopter mechanism and astronomical clockwork, sepia aged parchment paper texture, vintage brown fountain ink linework, Renaissance engineering studies, anatomical and mechanical notations, museum archival illustration"
+    "Authentic Leonardo da Vinci codex manuscript sketch, complex flying ornithopter mechanism and astronomical clockwork, sepia aged parchment paper texture, vintage brown fountain ink linework, Renaissance engineering studies, anatomical and mechanical notations, museum archival illustration",
+
+  "📜 レトロ淡彩アトリエ・極細線画 (Nostalgic Faded Pastel Whisper-Line)":
+    "2D anime illustration, retro fantasy anime style, detailed flat coloring, extremely fine whisper-thin pencil-like outline, ultra-delicate and intricate line art with paper-thin slightly rough borders blending softly with colors, grainy heavily textured flat anime aesthetic, vintage film grain, rustic soft digital painting quality, muted and desaturated color palette with warm faded natural pastel tones (soft beige, pale orange, muted green, faded browns), gentle natural daylight paper-like warmth, cluttered atmospheric lived-in details, natural camera-grain overlay"
 };
 
 import {

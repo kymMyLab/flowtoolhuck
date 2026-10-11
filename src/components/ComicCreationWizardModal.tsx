@@ -346,20 +346,35 @@ ${customTastesInstruction}
   };
 
   // =========================================================================
-  // Step 2: 選択した主人公三面図から起承転結（全1〜50話）ストーリー策定
+  // Step 2 への決定＆遷移ハンドラー（直接キャラクターを渡して即遷移可能）
   // =========================================================================
-  const handleProceedToStep2 = () => {
-    if (!currentCandidate || !currentCandidate.turnaroundBase64) {
+  const handleProceedToStep2 = (cand?: TurnaroundCandidate) => {
+    const target = cand || currentCandidate;
+    if (!target || !target.turnaroundBase64) {
       onAddLog(`⚠️ 三面図が完成しているキャラクターを1つ選択してください`, 'warning');
       return;
     }
+    setSelectedCandidateId(target.id);
     setStep(2);
+    onAddLog(`✨ 主人公「${target.name}」(${target.tasteName}) で決定しました！全${episodeCount}話のストーリーを策定します。`, 'success');
+
+    // まだプロットが策定されていなければ、自動で起承転結プロット生成をトリガー！
+    if (episodesPlan.length === 0) {
+      setTimeout(() => {
+        handleGenerateStoryPlan(target);
+      }, 200);
+    }
   };
 
-  const handleGenerateStoryPlan = async () => {
-    if (!currentCandidate) return;
+  // =========================================================================
+  // Step 2: 選択した主人公三面図から起承転結（全1〜50話）ストーリー策定
+  // =========================================================================
+  const handleGenerateStoryPlan = async (overrideTarget?: TurnaroundCandidate) => {
+    const target = overrideTarget || currentCandidate;
+    if (!target) return;
+
     setIsGeneratingPlan(true);
-    onAddLog(`📜 主人公「${currentCandidate.name}」を軸に、全${episodeCount}話（各話${cutsPerEpisode}Cut）の起承転結ストーリーをAI策定中...`, 'process');
+    onAddLog(`📜 主人公「${target.name}」を軸に、全${episodeCount}話（各話${cutsPerEpisode}Cut）の起承転結ストーリーをAI策定中...`, 'process');
 
     const prompt = buildGrandDesignPrompt(
       episodeCount,
@@ -368,8 +383,8 @@ ${customTastesInstruction}
       undefined,
       true, // isMangaMode
       false,
-      currentCandidate.dnaPromptEn,
-      currentCandidate.name
+      target.dnaPromptEn,
+      target.name
     );
 
     try {
@@ -383,7 +398,7 @@ ${customTastesInstruction}
       const parsed = safeJsonParse<any>(cleaned, null);
 
       if (parsed && Array.isArray(parsed.episodesPlan) && parsed.episodesPlan.length > 0) {
-        setSeriesTitle(parsed.seriesTitle || `${currentCandidate.name}伝`);
+        setSeriesTitle(parsed.seriesTitle || `${target.name}伝`);
         setOverallSynopsis(parsed.overallSynopsis || '');
         setEpisodesPlan(parsed.episodesPlan);
         onAddLog(`🎉 コミック連載『${parsed.seriesTitle}』（全${parsed.episodesPlan.length}話）の起承転結プロットが確定しました！`, 'success');
@@ -397,10 +412,10 @@ ${customTastesInstruction}
         epNumber: i + 1,
         titleJp: `第${i + 1}話 ${i < Math.round(episodeCount * 0.25) ? '運命の幕開け' : i < Math.round(episodeCount * 0.55) ? '深まる謎と試練' : i < Math.round(episodeCount * 0.85) ? '最大の激突と転換' : '大団円と未来'}`,
         titleEn: `Episode ${i + 1} Arc`,
-        summary: `主人公${currentCandidate.name}が立ち向かう第${i + 1}話の試練と成長`
+        summary: `主人公${target.name}が立ち向かう第${i + 1}話の試練と成長`
       }));
-      setSeriesTitle(`${currentCandidate.name}活劇録`);
-      setOverallSynopsis(`${selectedTheme}の世界で${currentCandidate.name}が仲間と共に織りなす全${episodeCount}話の大河ストーリー`);
+      setSeriesTitle(`${target.name}活劇録`);
+      setOverallSynopsis(`${selectedTheme}の世界で${target.name}が仲間と共に織りなす全${episodeCount}話の大河ストーリー`);
       setEpisodesPlan(dummyPlan);
     } finally {
       setIsGeneratingPlan(false);
@@ -823,7 +838,7 @@ ${customTastesInstruction}
                           }}
                           className={`relative bg-white rounded-xl border-2 transition-all flex flex-col overflow-hidden shadow-2xs cursor-pointer ${
                             isSelected 
-                              ? 'border-indigo-600 ring-2 ring-indigo-500/20 shadow-md' 
+                              ? 'border-indigo-600 ring-2 ring-indigo-500/30 shadow-md' 
                               : hasImage 
                               ? 'border-slate-200 hover:border-indigo-300' 
                               : 'border-slate-200 opacity-80'
@@ -899,22 +914,33 @@ ${customTastesInstruction}
                               </p>
                             </div>
 
+                            {/* Action Button inside card */}
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (hasImage) setSelectedCandidateId(cand.id);
+                                if (!hasImage) return;
+                                // すでに選択されている場合、またはクリックされた時に即座に Step 2 に進む！
+                                handleProceedToStep2(cand);
                               }}
                               disabled={!hasImage}
-                              className={`w-full py-1 rounded text-[11px] font-bold transition-all ${
+                              className={`w-full py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-2xs ${
                                 isSelected 
-                                  ? 'bg-indigo-600 text-white' 
+                                  ? 'bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-700 hover:to-indigo-700 text-white animate-pulse' 
                                   : hasImage 
-                                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
-                                  : 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                                  ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200' 
+                                  : 'bg-slate-50 text-slate-300 cursor-not-allowed border border-slate-100'
                               }`}
                             >
-                              {isSelected ? '✓ 選択済み' : hasImage ? 'このキャラを選ぶ' : '作画中...'}
+                              {isSelected ? (
+                                <>
+                                  <span>🚀 決定して次へ ➔</span>
+                                </>
+                              ) : hasImage ? (
+                                'このキャラで決定'
+                              ) : (
+                                '作画中...'
+                              )}
                             </button>
                           </div>
                         </div>
@@ -922,18 +948,6 @@ ${customTastesInstruction}
                     })}
                   </div>
                 )}
-              </div>
-
-              {/* Next Step Action Button */}
-              <div className="flex justify-end mt-2">
-                <button
-                  onClick={handleProceedToStep2}
-                  disabled={!currentCandidate || !currentCandidate.turnaroundBase64}
-                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
-                >
-                  <span>この主人公＆画風で起承転結を作る (全1〜50話) ➔</span>
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
               </div>
 
             </div>
@@ -987,7 +1001,7 @@ ${customTastesInstruction}
                 
                 {/* 1話〜50話 選択セクション */}
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-sm text-indigo-500">library_books</span>
                       連載話数: <span className="text-indigo-600 font-black text-sm">{episodeCount} 話</span>
@@ -1071,7 +1085,7 @@ ${customTastesInstruction}
                 {/* AIプロット策定トリガーボタン */}
                 <button
                   type="button"
-                  onClick={handleGenerateStoryPlan}
+                  onClick={() => handleGenerateStoryPlan()}
                   disabled={isGeneratingPlan}
                   className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
                 >
@@ -1132,25 +1146,6 @@ ${customTastesInstruction}
                   </div>
                 </div>
               )}
-
-              {/* Navigation Action Buttons */}
-              <div className="flex justify-between items-center mt-2">
-                <button
-                  onClick={() => setStep(1)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                >
-                  戻る
-                </button>
-
-                <button
-                  onClick={handleProceedToStep3}
-                  disabled={isGeneratingPlan}
-                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
-                >
-                  <span>次へ：お友達・サブキャラを自動配役 ➔</span>
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
-              </div>
 
             </div>
           )}
@@ -1216,24 +1211,6 @@ ${customTastesInstruction}
                 </div>
               )}
 
-              {/* Navigation Action Buttons */}
-              <div className="flex justify-between items-center mt-2">
-                <button
-                  onClick={() => setStep(2)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                >
-                  戻る
-                </button>
-
-                <button
-                  onClick={() => setStep(4)}
-                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
-                >
-                  <span>次へ：連載スタートの最終確認 ➔</span>
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
-              </div>
-
             </div>
           )}
 
@@ -1291,27 +1268,96 @@ ${customTastesInstruction}
                 </div>
               </div>
 
-              {/* Navigation Action Buttons */}
-              <div className="flex justify-between items-center mt-2">
-                <button
-                  onClick={() => setStep(3)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                >
-                  戻る
-                </button>
-
-                <button
-                  onClick={handleLaunch}
-                  className="px-6 py-3 bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:from-emerald-700 hover:to-purple-700 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-lg transition-all transform hover:scale-102"
-                >
-                  <span className="material-symbols-outlined text-lg">rocket_launch</span>
-                  <span>🚀 コミック一冊分の自動制作をスタート！</span>
-                </button>
-              </div>
-
             </div>
           )}
 
+        </div>
+
+        {/* ========================================================
+            FIXED MODAL FOOTER: 常に最下部に固定表示されるナビゲーション
+           ======================================================== */}
+        <div className="px-6 py-3.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0 shadow-lg z-20">
+          {/* Left Info / Back Button */}
+          <div>
+            {step === 1 ? (
+              currentCandidate && currentCandidate.turnaroundBase64 ? (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={`data:image/png;base64,${currentCandidate.turnaroundBase64}`}
+                    alt="Current"
+                    className="w-12 h-8 object-cover rounded border border-indigo-200 shrink-0"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span>選択中:</span>
+                      <span className="text-indigo-600 font-extrabold">{currentCandidate.name}</span>
+                    </span>
+                    <span className="text-[11px] text-slate-500 truncate max-w-xs">{currentCandidate.tasteName}</span>
+                  </div>
+                </div>
+              ) : (
+                <span className="text-xs text-slate-400 font-medium">三面図を作画し、お気に入りのキャラクターを選んでください</span>
+              )
+            ) : (
+              <button
+                type="button"
+                onClick={() => setStep(prev => Math.max(1, prev - 1) as any)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-sm">arrow_back</span>
+                <span>戻る</span>
+              </button>
+            )}
+          </div>
+
+          {/* Right Primary Action Button */}
+          <div>
+            {step === 1 && (
+              <button
+                type="button"
+                onClick={() => handleProceedToStep2()}
+                disabled={!currentCandidate || !currentCandidate.turnaroundBase64}
+                className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:from-emerald-700 hover:to-purple-700 disabled:opacity-40 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-md transition-all transform hover:scale-102 cursor-pointer"
+              >
+                <span>この主人公で決定し、起承転結プロットへ (全1〜50話)</span>
+                <span className="material-symbols-outlined text-base">arrow_forward</span>
+              </button>
+            )}
+
+            {step === 2 && (
+              <button
+                type="button"
+                onClick={handleProceedToStep3}
+                disabled={isGeneratingPlan}
+                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+              >
+                <span>次へ：お友達・サブキャラを自動配役</span>
+                <span className="material-symbols-outlined text-base">arrow_forward</span>
+              </button>
+            )}
+
+            {step === 3 && (
+              <button
+                type="button"
+                onClick={() => setStep(4)}
+                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+              >
+                <span>次へ：連載スタートの最終確認</span>
+                <span className="material-symbols-outlined text-base">arrow_forward</span>
+              </button>
+            )}
+
+            {step === 4 && (
+              <button
+                type="button"
+                onClick={handleLaunch}
+                className="px-7 py-3 bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 hover:from-emerald-700 hover:to-purple-700 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-lg transition-all transform hover:scale-102"
+              >
+                <span className="material-symbols-outlined text-lg">rocket_launch</span>
+                <span>🚀 コミック一冊分の自動制作をスタート！</span>
+              </button>
+            )}
+          </div>
         </div>
 
       </div>
