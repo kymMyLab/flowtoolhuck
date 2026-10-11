@@ -148,7 +148,7 @@ export async function ensureInfographicCover(
   ep: Episode,
   force = false
 ): Promise<{ mediaId?: string; base64?: string; promptEn?: string }> {
-  const { settings, addLog, isAbortedRef, activeReferenceRef, updateEpisode, episodesRef } = ctx;
+  const { settings, addLog, isAbortedRef, activeReferenceRef, updateEpisode, episodesRef, setEpisodes } = ctx;
 
   if (isAbortedRef.current) return {};
 

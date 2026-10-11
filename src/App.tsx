@@ -6,7 +6,7 @@ import { StudioSidebar } from './components/StudioSidebar';
 import { StudioHeader } from './components/StudioHeader';
 import { EpisodeSection } from './components/EpisodeSection';
 import { StudioLogs, LogEntry } from './components/StudioLogs';
-import { Cut, GeneratorSettings, VideoModelType, Episode } from './types';
+import { Cut, GeneratorSettings, VideoModelType, Episode, ProductionMode } from './types';
 import { THEMES, TASTES, IMAGE_MODELS, VIDEO_MODELS } from './constants';
 import { createLogMessage } from './services/utils';
 import { initDB, getAllStories, StoryRecord } from './services/db';
@@ -157,6 +157,7 @@ export default function App() {
   episodesRef.current = episodes;
 
   const handleLaunchComicSeries = useCallback(async (payload: {
+    productionMode: ProductionMode;
     theme: string;
     taste: string;
     protagonist: CastCharacter;
@@ -189,7 +190,6 @@ export default function App() {
       taste: payload.taste,
       previewCutCount: payload.cutsPerEpisode,
       episodeCount: payload.totalEpisodes,
-      totalEpisodes: payload.totalEpisodes,
     };
     setSettings(prev => ({
       ...prev,

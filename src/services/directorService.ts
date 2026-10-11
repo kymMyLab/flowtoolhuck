@@ -20,11 +20,46 @@ import {
 
 export type { PreviousShotContext as PreviousShotInfo };
 
-// ── テキスト整形・抽出ヘルパー群（directorTextHelpers.ts に集約・再エクスポート） ──
-export * from './directorTextHelpers';
+// ── テキスト整形・抽出ヘルパー群 ──
+import {
+  cleanEpisodeTitle,
+  cleanEpisodeTitleEn,
+  checkIsHistorical,
+  extractHighlights,
+  buildLyricLines,
+  sanitizeForYouTubeSafety,
+  LyricSegment,
+  LyricLine
+} from './directorTextHelpers';
 
-// ── 映画監督プロンプト生成群（directorPrompts.ts に集約・再エクスポート） ──
-export * from './directorPrompts';
+// ── 映画監督プロンプト生成群 ──
+import {
+  buildCharacterTurnaroundPrompt,
+  buildCharacterScreeningPrompt,
+  buildGrandDesignPrompt,
+  buildNextEpisodePlanPrompt,
+  buildScriptPrompt,
+  buildCompactScriptPrompt,
+  buildAdaptiveInfographicCoverPrompt,
+  InfographicCoverPromptOptions
+} from './directorPrompts';
+
+export {
+  cleanEpisodeTitle,
+  cleanEpisodeTitleEn,
+  checkIsHistorical,
+  extractHighlights,
+  buildLyricLines,
+  sanitizeForYouTubeSafety,
+  buildCharacterTurnaroundPrompt,
+  buildCharacterScreeningPrompt,
+  buildGrandDesignPrompt,
+  buildNextEpisodePlanPrompt,
+  buildScriptPrompt,
+  buildCompactScriptPrompt,
+  buildAdaptiveInfographicCoverPrompt
+};
+export type { LyricSegment, LyricLine, InfographicCoverPromptOptions };
 
 /**
  * 直前のカットの構図・ポーズ・アングルを排除するための動的ネガティブプロンプト
