@@ -5,6 +5,9 @@ import { PrimaryButton, SecondaryButton, SectionLabel } from './Primitives';
 import { Flow } from 'flow-sdk';
 import { resolveImageModel } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage } from '../services/utils';
+import { CastTabsBar } from './cast/CastTabsBar';
+import { CastBrainstormModal } from './cast/CastBrainstormModal';
+import { CastImageZoomModal } from './cast/CastImageZoomModal';
 
 interface CastManagerModalProps {
   isOpen: boolean;
@@ -466,74 +469,13 @@ ${tasteInstruction}
         </div>
 
         {/* Character Tabs Selector */}
-        <div className="px-6 py-2 border-b border-slate-100 bg-slate-50 flex items-center gap-3 shrink-0">
-          <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
-            {project.characters.map((char, index) => {
-              const isSelected = char.id === selectedCharId;
-              const roleBadgeColor = 
-                char.role === 'protagonist' ? 'bg-amber-100 text-amber-800 border-amber-300' :
-                char.role === 'partner' ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
-                char.role === 'antagonist' ? 'bg-rose-100 text-rose-800 border-rose-300' :
-                'bg-slate-100 text-slate-700 border-slate-300';
-              
-              const roleLabels: Record<string, string> = {
-                protagonist: '主人公',
-                partner: '相棒',
-                antagonist: '宿敵',
-                supporting: 'サブ'
-              };
-
-              return (
-                <button
-                  key={char.id}
-                  onClick={() => setSelectedCharId(char.id)}
-                  className={`
-                    flex items-center gap-2.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shrink-0 whitespace-nowrap
-                    ${isSelected 
-                      ? 'bg-white border-amber-500 text-slate-900 shadow-sm ring-2 ring-amber-500/20' 
-                      : 'bg-slate-100/70 border-slate-200 text-slate-600 hover:bg-slate-200/50 hover:text-slate-800'
-                    }
-                  `}
-                >
-                  {/* Mini Avatar */}
-                  <div className="w-6 h-6 rounded-lg bg-slate-200 overflow-hidden shrink-0 flex items-center justify-center border border-slate-300/50">
-                    {char.avatarBase64 ? (
-                      <img src={`data:image/png;base64,${char.avatarBase64}`} alt={char.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="material-symbols-outlined text-xs text-slate-400">person</span>
-                    )}
-                  </div>
-                  <span>{char.name || `キャラ ${index + 1}`}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded border font-semibold ${roleBadgeColor}`}>
-                    {roleLabels[char.role]}
-                  </span>
-                </button>
-              );
-            })}
-
-            {project.characters.length < 8 && (
-              <button
-                onClick={handleAddCharacter}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-slate-300 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:border-slate-400 hover:bg-white transition-all shrink-0 whitespace-nowrap"
-              >
-                <span className="material-symbols-outlined text-sm">add</span>
-                キャラ追加
-              </button>
-            )}
-          </div>
-
-          {/* Delete Current Character Button */}
-          {currentChar && project.characters.length > 1 && (
-            <button
-              onClick={() => handleDeleteCharacter(currentChar.id)}
-              className="text-xs text-slate-400 hover:text-rose-600 flex items-center gap-1 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-rose-50 border border-transparent hover:border-rose-200 shrink-0 whitespace-nowrap"
-              title="選択中のキャラクターを削除"
-            >
-              <span className="material-symbols-outlined text-sm">delete</span>
-              <span>削除</span>
-            </button>
-          )}
-        </div>
+        <CastTabsBar
+          characters={project.characters}
+          selectedCharId={selectedCharId}
+          onSelectCharId={setSelectedCharId}
+          onAddCharacter={handleAddCharacter}
+          onDeleteCharacter={handleDeleteCharacter}
+        />
 
         {/* Main Body (Split into Left: Info & Right: Expression Matrix) */}
         {currentChar && (
@@ -905,190 +847,19 @@ ${tasteInstruction}
 
       </div>
 
-      {/* ========================================================
-          1. 物語企画AI発案 (10選) 選択モーダル
-         ======================================================== */}
-      {brainstormConcepts && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-            
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950 text-white shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="p-2 rounded-xl bg-amber-500/20 text-amber-400 material-symbols-outlined text-2xl">
-                  casino
-                </span>
-                <div>
-                  <h3 className="text-base font-bold flex items-center gap-2">
-                    <span>AIが発案した物語企画・世界観（10選）</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 font-semibold border border-amber-400/40">
-                      1話完結・短編マンガ
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-0.5">
-                    お好きな企画を1つ選ぶと、タイトル・あらすじ・主要キャスト3名がキャスト台帳に自動配役されます。
-                    {currentTaste && <span className="ml-2 text-amber-300 font-semibold">（対象画風: {currentTaste}）</span>}
-                  </p>
-                </div>
-              </div>
+      {/* 1. 物語企画AI発案 (10選) 選択モーダル */}
+      <CastBrainstormModal
+        concepts={brainstormConcepts}
+        currentTaste={currentTaste}
+        onSelectConcept={handleSelectConcept}
+        onClose={() => setBrainstormConcepts(null)}
+      />
 
-              <button
-                onClick={() => setBrainstormConcepts(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            {/* Concepts Grid Body */}
-            <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50">
-              {brainstormConcepts.map((concept, idx) => (
-                <div 
-                  key={concept.id || idx}
-                  className="bg-white border border-slate-200/90 rounded-xl p-4 flex flex-col justify-between hover:border-indigo-400 hover:shadow-md transition-all group"
-                >
-                  <div className="flex flex-col gap-2">
-                    {/* Genre & Title */}
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
-                        {concept.genre}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400">PLAN #{idx + 1}</span>
-                    </div>
-
-                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                      {concept.title}
-                    </h4>
-
-                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                      {concept.logline}
-                    </p>
-
-                    {/* Characters List */}
-                    <div className="flex flex-col gap-1.5 mt-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">配役キャスト (3名)</span>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {concept.characters.map((c, cIdx) => {
-                          const roleBadge = 
-                            c.role === 'protagonist' ? 'bg-amber-100 text-amber-800' :
-                            c.role === 'partner' ? 'bg-indigo-100 text-indigo-800' : 'bg-rose-100 text-rose-800';
-                          const roleName = 
-                            c.role === 'protagonist' ? '主人公' :
-                            c.role === 'partner' ? '相棒' : '宿敵';
-
-                          return (
-                            <div key={cIdx} className="bg-slate-50 p-1.5 rounded border border-slate-200/70 flex flex-col gap-0.5">
-                              <span className={`text-[9px] px-1 py-0.2 rounded font-bold self-start ${roleBadge}`}>
-                                {roleName}
-                              </span>
-                              <span className="text-[11px] font-bold text-slate-800 truncate" title={c.name}>
-                                {c.name}
-                              </span>
-                              <span className="text-[9px] text-slate-500 line-clamp-2 leading-tight" title={c.concept}>
-                                {c.concept}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Select Button */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
-                    <button
-                      onClick={() => handleSelectConcept(concept)}
-                      className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-amber-600 hover:from-indigo-700 hover:to-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-                    >
-                      <span className="material-symbols-outlined text-sm">check_circle</span>
-                      <span>この企画を採用（キャスト自動配役）</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-3 border-t border-slate-200 bg-white flex items-center justify-between shrink-0">
-              <span className="text-xs text-slate-500">
-                気に入った企画がない場合は、もう一度「🎲 物語企画をAI発案」を押すと別の10選を即座に再ブレストします。
-              </span>
-              <button
-                onClick={() => setBrainstormConcepts(null)}
-                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors"
-              >
-                キャンセル
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          2. 画像大画面拡大ズーム (Lightbox Modal)
-         ======================================================== */}
-      {zoomImage && (
-        <div 
-          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn"
-          onClick={() => setZoomImage(null)}
-        >
-          <div 
-            className="relative max-w-[90vw] max-h-[92vh] flex flex-col items-center bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl animate-scaleUp"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Top Bar */}
-            <div className="w-full px-5 py-3 bg-slate-950/90 border-b border-slate-800/80 flex items-center justify-between text-white shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-400 text-xl">zoom_in</span>
-                <span className="text-sm font-bold text-slate-100">{zoomImage.title}</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* ダウンロードボタン */}
-                <button
-                  onClick={() => {
-                    const link = document.createElement('a');
-                    link.href = `data:image/png;base64,${zoomImage.base64}`;
-                    link.download = `${zoomImage.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
-                    link.click();
-                  }}
-                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
-                  title="画像をダウンロード保存"
-                >
-                  <span className="material-symbols-outlined text-xs">download</span>
-                  保存
-                </button>
-
-                {/* 閉じるボタン */}
-                <button
-                  onClick={() => setZoomImage(null)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-            </div>
-
-            {/* High-Resolution Image Display Area */}
-            <div className="p-4 flex items-center justify-center overflow-auto max-h-[75vh]">
-              <img 
-                src={`data:image/png;base64,${zoomImage.base64}`} 
-                alt={zoomImage.title} 
-                className="max-h-[72vh] max-w-full object-contain rounded-lg shadow-lg border border-slate-800"
-              />
-            </div>
-
-            {/* Bottom Prompt Info */}
-            {zoomImage.prompt && (
-              <div className="w-full px-5 py-2.5 bg-slate-950/90 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex items-center gap-2 overflow-x-auto shrink-0">
-                <span className="material-symbols-outlined text-xs text-indigo-400 shrink-0">code</span>
-                <span className="truncate" title={zoomImage.prompt}>{zoomImage.prompt}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* 2. 画像大画面拡大ズーム (Lightbox Modal) */}
+      <CastImageZoomModal
+        zoomImage={zoomImage}
+        onClose={() => setZoomImage(null)}
+      />
 
     </div>
   );
