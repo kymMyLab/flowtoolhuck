@@ -268,7 +268,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           </button>
         )}
 
-        {activeSeriesManifest && settings.productionMode === 'episodes' && (
+        {activeSeriesManifest && (
           <button 
             type="button" 
             disabled={isProducing}

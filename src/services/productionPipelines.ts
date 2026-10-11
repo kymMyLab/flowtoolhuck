@@ -455,7 +455,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       cut.telop.highlights = extractHighlights(narration, cutHighlights);
 
       // 新仕様: 人物なし物体カット、9分割注視点構図、Veo補間用モーション
-      cut.isObjectOnly = cutData.isObjectOnly || false;
+      cut.isObjectOnly = settings.enableObjectCut !== false ? (cutData.isObjectOnly || false) : false;
       cut.focalPoint = cutData.focalPoint;
       cut.compositionPrompt = cutData.compositionPrompt;
       cut.veoMotionPrompt = cutData.veoMotionPrompt;
@@ -774,7 +774,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         cut.telop.highlights = extractHighlights(narration, cutData.highlights || sharedScript.highlightWords);
 
         // 新仕様: 人物なし物体カット、9分割注視点構図、Veo補間用モーション
-        cut.isObjectOnly = cutData.isObjectOnly || false;
+        cut.isObjectOnly = settings.enableObjectCut !== false ? (cutData.isObjectOnly || false) : false;
         cut.focalPoint = cutData.focalPoint;
         cut.compositionPrompt = cutData.compositionPrompt;
         cut.veoMotionPrompt = cutData.veoMotionPrompt;
