@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@6978099/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[大前提プロデュース画面リアルタイム同期修復]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@b622ce0/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[制作完了時の③発光解除＆待機時のみ光るように最適化]'); });
