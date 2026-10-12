@@ -1,6 +1,6 @@
 {
-  "schema_version": "2.1.0-FullProduction",
-  "document_title": "Proxmoxクラスタ3者共通グランドマスター規格（全9大プール即時本番仕様）",
+  "schema_version": "2.2.0-GrandProduction",
+  "document_title": "Proxmoxクラスタ3者共通グランドマスター規格：master_categories.json (v2.2.0-GrandProduction)",
   "effective_date": "2026-10-12",
 
   "formats": {

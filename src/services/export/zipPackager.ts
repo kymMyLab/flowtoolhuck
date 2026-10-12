@@ -47,12 +47,14 @@ export const downloadZip = async (
     if (!folder) throw new Error('ZIP creation failed');
 
     // 1. 各カット素材（Start絵、After絵/到達点フレーム、動画）をすべて同梱
+    // ★Trap 1 是正: 2桁ゼロ埋め（cut_01.png〜cut_12.png, cut_01.mp4）で文字列ソート逆転事故を根絶
     for (const c of ep.cuts) {
+      const cutPad = String(c.id || 1).padStart(2, '0');
       // Start絵
       if (c.imageBase64) {
         try {
           const cleanImg = c.imageBase64.split('base64,').pop() || c.imageBase64;
-          folder.file(`cut_${c.id}.png`, cleanImg, { base64: true });
+          folder.file(`cut_${cutPad}.png`, cleanImg, { base64: true });
         } catch (e) {
           console.warn(`Failed to inject start image for cut ${c.id}:`, e);
         }
@@ -61,7 +63,7 @@ export const downloadZip = async (
       if (c.endFrameImageBase64) {
         try {
           const cleanEndImg = c.endFrameImageBase64.split('base64,').pop() || c.endFrameImageBase64;
-          folder.file(`cut_${c.id}_after.png`, cleanEndImg, { base64: true });
+          folder.file(`cut_${cutPad}_after.png`, cleanEndImg, { base64: true });
         } catch (e) {
           console.warn(`Failed to inject end frame image for cut ${c.id}:`, e);
         }
@@ -70,7 +72,7 @@ export const downloadZip = async (
       if (c.videoBase64) {
         try {
           const cleanVid = c.videoBase64.split('base64,').pop() || c.videoBase64;
-          folder.file(`cut_${c.id}.mp4`, cleanVid, { base64: true });
+          folder.file(`cut_${cutPad}.mp4`, cleanVid, { base64: true });
         } catch (e) {
           console.warn(`Failed to inject video for cut ${c.id}:`, e);
         }
@@ -182,13 +184,15 @@ export const downloadZip = async (
 
         const hlWords = safeHl.map(h => h.word);
 
+        const cutPad = String(c.id || 1).padStart(2, '0');
+
         return {
-          // Media Vault Integration Fields (REQ-02)
+          // Media Vault Integration Fields (REQ-02 & Trap 1 Fix)
           cut_no: c.id || 1,
           duration_sec: c.duration || 3.0,
           narration: narration,
-          image_file: `cut_${c.id}.png`,
-          video_file: `cut_${c.id}.mp4`,
+          image_file: `cut_${cutPad}.png`,
+          video_file: `cut_${cutPad}.mp4`,
 
           // FlowTool Native Fields
           id: c.id || 1,
