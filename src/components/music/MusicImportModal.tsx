@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ImportedTrack, parseMusicTracksJson, convertTrackToEpisode } from '../../services/musicImporter';
-import { Episode } from '../../types';
+import { Episode, CastCharacter } from '../../types';
+import { loadMangaProject } from '../../services/castStorage';
 
 interface MusicImportModalProps {
   isOpen: boolean;
@@ -26,6 +27,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [failedCovers, setFailedCovers] = useState<Record<string, boolean>>({});
+  const [castCharacters, setCastCharacters] = useState<CastCharacter[]>([]);
+  const [selectedCastId, setSelectedCastId] = useState<string>('none');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
@@ -86,6 +89,19 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         processFile(initialFile);
       }
     }
+
+    if (isOpen) {
+      const project = loadMangaProject();
+      const chars = project.characters || [];
+      setCastCharacters(chars);
+      if (chars.length > 0) {
+        const protagonist = chars.find(c => c.role === 'protagonist');
+        setSelectedCastId(protagonist ? protagonist.id : chars[0].id);
+      } else {
+        setSelectedCastId('none');
+      }
+    }
+
   }, [isOpen, initialJsonText, initialFile, handleParse, processFile]);
 
   // グローバルなCtrl+V（ペースト）の自動捕捉＆全画面D&D完全対応
@@ -236,7 +252,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
   const handleDeploySingle = (track: ImportedTrack) => {
     try {
-      const episode = convertTrackToEpisode(track, videoRatio);
+      const selectedCharacter = selectedCastId === 'none' ? undefined : castCharacters.find(c => c.id === selectedCastId);
+      const episode = convertTrackToEpisode(track, videoRatio, selectedCharacter);
       onDeployEpisode(episode);
       onClose();
     } catch (err: any) {
@@ -247,7 +264,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const handleDeployAll = () => {
     if (parsedTracks.length === 0) return;
     try {
-      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio));
+      const selectedCharacter = selectedCastId === 'none' ? undefined : castCharacters.find(c => c.id === selectedCastId);
+      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio, selectedCharacter));
       if (onDeployBatchEpisodes) {
         onDeployBatchEpisodes(episodes);
       } else {
@@ -316,6 +334,64 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 dark-scrollbar">
           
+          {/* 🎬 主演キャスト (Protagonist Cast) Selection Bar */}
+          <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative overflow-hidden group">
+            {/* Background glowing effect */}
+            <div className="absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-purple-500/0 via-amber-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none blur-xl"></div>
+
+            <div className="flex items-center gap-2 relative z-10">
+              <span className="material-symbols-outlined text-[18px] text-amber-400">movie_creation</span>
+              <span className="text-sm font-bold text-white">🎬 主演キャスト設定</span>
+            </div>
+            <p className="text-[10px] text-white/50 relative z-10">
+              MVの主人公として展開するキャストを選択します。指定したキャストのDNA（三面図・プロンプト・表情）が自動的に全カットに適用されます。
+            </p>
+            <div className="relative z-10 mt-1">
+              <select
+                value={selectedCastId}
+                onChange={(e) => setSelectedCastId(e.target.value)}
+                className="w-full p-2.5 rounded-lg bg-black/60 border border-purple-500/30 text-xs font-bold text-white outline-none focus:border-purple-400 hover:border-purple-500/50 appearance-none transition-colors cursor-pointer shadow-inner"
+                style={{ paddingRight: '2rem' }}
+              >
+                <option value="none">🎲 キャスト指定なし (AI完全おまかせ)</option>
+                {castCharacters.map(char => (
+                  <option key={char.id} value={char.id} className="bg-slate-900 text-white">
+                    {char.role === 'protagonist' ? '👑 ' : ''}{char.name} ({char.role})
+                  </option>
+                ))}
+              </select>
+              {/* Custom dropdown arrow */}
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-purple-400 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[18px]">expand_more</span>
+              </div>
+            </div>
+
+            {/* Selected Cast Preview */}
+            {selectedCastId !== 'none' && (
+              <div className="flex items-center gap-2 mt-2 p-2 bg-black/40 rounded-lg border border-purple-500/20 relative z-10 shadow-sm">
+                {castCharacters.find(c => c.id === selectedCastId)?.avatarBase64 ? (
+                  <img
+                    src={castCharacters.find(c => c.id === selectedCastId)?.avatarBase64}
+                    alt="avatar"
+                    className="w-8 h-8 rounded-full border-2 border-purple-500/50 object-cover shadow-[0_0_8px_rgba(168,85,247,0.4)] shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-900/60 to-slate-900 flex items-center justify-center border-2 border-purple-500/30 shrink-0 shadow-inner">
+                    <span className="material-symbols-outlined text-[16px] text-purple-300">person</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <span className="text-[10px] text-purple-200 font-bold truncate leading-tight">
+                    {castCharacters.find(c => c.id === selectedCastId)?.name}
+                  </span>
+                  <span className="text-[9px] text-purple-300/70 font-mono truncate leading-tight">
+                    {castCharacters.find(c => c.id === selectedCastId)?.dnaPromptEn}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Drop & Input Area */}
           <div 
             onDragEnter={handleDragEnter}
