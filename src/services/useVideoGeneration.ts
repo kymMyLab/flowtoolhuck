@@ -75,17 +75,38 @@ export function useVideoGeneration({
         finalVideoPrompt = 'Cinematic moving shot, high quality';
       }
 
+      // 動画のアスペクト比決定: 16:9 以外はショート・MV特化の 9:16（縦型）に確定（Veo APIは 1:1 を拒絶するため）
+      const targetAspectRatio: "16:9" | "9:16" = settings.aspectRatio === '16:9' ? '16:9' : '9:16';
+      const safeVideoModelName = modelDef.name || 'Veo 3.1 - Fast';
+
       let res: any;
       try {
         res = await callWithRetry<any>(
-          () => Flow.generate.video({ 
-            prompt: finalVideoPrompt, 
-            firstFrameImageMediaId: mediaId, 
-            // lastFrameImageMediaId: endMediaId || undefined, // ※ユーザー指示: After参照はモーフィング崩壊の害悪となるため無効化
-            modelDisplayName: modelDef.name, 
-            durationSeconds: modelDef.defaultDuration, 
-            aspectRatio: DEFAULT_ASPECT_RATIO as "16:9" | "9:16" 
-          }),
+          async () => {
+            try {
+              return await Flow.generate.video({ 
+                prompt: finalVideoPrompt, 
+                firstFrameImageMediaId: mediaId, 
+                // lastFrameImageMediaId: endMediaId || undefined, // ※ユーザー指示: After参照はモーフィング崩壊の害悪となるため無効化
+                modelDisplayName: safeVideoModelName, 
+                durationSeconds: modelDef.defaultDuration || 8, 
+                aspectRatio: targetAspectRatio 
+              });
+            } catch (innerErr: any) {
+              const innerMsg = String(innerErr?.message || innerErr);
+              // もしモデル名指定が原因で「利用できません」「NOT_FOUND」等になった場合、modelDisplayNameを外して標準デフォルトで即座にフォールバック
+              if (innerMsg.includes('利用できません') || innerMsg.includes('NOT_FOUND') || innerMsg.includes('INVALID_ARGUMENT')) {
+                console.warn(`[FlowTool Video] modelDisplayName(${safeVideoModelName})でエラー発生。モデル指定なしで標準動画生成を実行:`, innerMsg);
+                return await Flow.generate.video({ 
+                  prompt: finalVideoPrompt, 
+                  firstFrameImageMediaId: mediaId, 
+                  durationSeconds: modelDef.defaultDuration || 8, 
+                  aspectRatio: targetAspectRatio 
+                });
+              }
+              throw innerErr;
+            }
+          },
           (attempt, max, delay, err, isSuper) => {
             const waitStr = formatDurationMs(delay);
             const errMsg = formatErrorMessage(err);
@@ -115,13 +136,24 @@ export function useVideoGeneration({
             .trim();
 
           res = await callWithRetry<any>(
-            () => Flow.generate.video({
-              prompt: ultraSafePrompt,
-              firstFrameImageMediaId: mediaId,
-              modelDisplayName: modelDef.name,
-              durationSeconds: modelDef.defaultDuration,
-              aspectRatio: DEFAULT_ASPECT_RATIO as "16:9" | "9:16"
-            }),
+            async () => {
+              try {
+                return await Flow.generate.video({
+                  prompt: ultraSafePrompt,
+                  firstFrameImageMediaId: mediaId,
+                  modelDisplayName: safeVideoModelName,
+                  durationSeconds: modelDef.defaultDuration || 8,
+                  aspectRatio: targetAspectRatio
+                });
+              } catch (innerErr: any) {
+                return await Flow.generate.video({
+                  prompt: ultraSafePrompt,
+                  firstFrameImageMediaId: mediaId,
+                  durationSeconds: modelDef.defaultDuration || 8,
+                  aspectRatio: targetAspectRatio
+                });
+              }
+            },
             (attempt, max, delay) => {
               addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画セーフモード再試行中 (${attempt}/${max})...`, 'warning');
             },
