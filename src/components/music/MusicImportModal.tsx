@@ -8,6 +8,7 @@ interface MusicImportModalProps {
   onDeployEpisode: (episode: Episode) => void;
   onDeployBatchEpisodes?: (episodes: Episode[]) => void;
   initialFile?: File | null;
+  initialJsonText?: string;
 }
 
 export const MusicImportModal: React.FC<MusicImportModalProps> = ({
@@ -15,7 +16,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   onClose,
   onDeployEpisode,
   onDeployBatchEpisodes,
-  initialFile
+  initialFile,
+  initialJsonText
 }) => {
   const [jsonText, setJsonText] = useState('');
   const [parsedTracks, setParsedTracks] = useState<ImportedTrack[]>([]);
@@ -43,34 +45,46 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     }
   }, []);
 
-  const processFile = useCallback((file: File) => {
+  const processFile = useCallback(async (file: File) => {
     if (!file) return;
     console.log('📖 [MusicImporter] ファイル解析開始:', {
       name: file.name,
       size: `${Math.round(file.size / 1024)} KB`,
       type: file.type || 'unknown'
     });
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = String(event.target?.result || '');
+    try {
+      const content = await file.text();
       console.log(`✅ [MusicImporter] ファイル読み込み完了 (${content.length}文字)`);
       setJsonText(content);
       handleParse(content);
-    };
-    reader.onerror = (err) => {
-      console.error('❌ [MusicImporter] FileReader エラー:', err);
-      setErrorMessage('ファイルの読み込みに失敗しました。');
-    };
-    reader.readAsText(file);
+    } catch (err: any) {
+      console.error('❌ [MusicImporter] file.text() エラー、FileReaderフォールバック:', err);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = String(event.target?.result || '');
+        setJsonText(content);
+        handleParse(content);
+      };
+      reader.onerror = () => {
+        setErrorMessage('ファイルの読み込みに失敗しました。');
+      };
+      reader.readAsText(file);
+    }
   }, [handleParse]);
 
-  // initialFile が外部（全画面D&D等）から渡された場合に即時パース
+  // initialJsonText または initialFile が外部（全画面D&D等）から渡された場合に即時パース
   useEffect(() => {
-    if (isOpen && initialFile) {
-      console.log('📦 [MusicImportModal] initialFile 受信:', initialFile.name);
-      processFile(initialFile);
+    if (isOpen) {
+      if (initialJsonText) {
+        console.log('📦 [MusicImportModal] initialJsonText 受信:', initialJsonText.length, '文字');
+        setJsonText(initialJsonText);
+        handleParse(initialJsonText);
+      } else if (initialFile) {
+        console.log('📦 [MusicImportModal] initialFile 受信:', initialFile.name);
+        processFile(initialFile);
+      }
     }
-  }, [isOpen, initialFile, processFile]);
+  }, [isOpen, initialJsonText, initialFile, handleParse, processFile]);
 
   // グローバルなCtrl+V（ペースト）の自動捕捉＆全画面D&D完全対応
   useEffect(() => {
@@ -297,6 +311,10 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
           
           {/* Drop & Input Area */}
           <div 
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
             className={`border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 ${
               isDragging ? 'border-purple-400 bg-purple-500/20 scale-[0.99]' : 'border-white/15 bg-white/5 hover:border-purple-500/30'
             }`}

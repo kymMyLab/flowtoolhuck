@@ -74,7 +74,7 @@ export default function App() {
   const [isCastModalOpen, setIsCastModalOpen] = useState(false);
   const [isComicWizardOpen, setIsComicWizardOpen] = useState(false);
   const [isMusicImportOpen, setIsMusicImportOpen] = useState(false);
-  const [draggedJsonFile, setDraggedJsonFile] = useState<File | null>(null);
+  const [injectedJsonText, setInjectedJsonText] = useState<string>('');
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const globalDragCounterRef = useRef(0);
   const resumeFileRef = useRef<HTMLInputElement>(null);
@@ -113,7 +113,7 @@ export default function App() {
       }
     };
 
-    const handleGlobalDrop = (e: DragEvent) => {
+    const handleGlobalDrop = async (e: DragEvent) => {
       e.preventDefault();
       setIsGlobalDragging(false);
       globalDragCounterRef.current = 0;
@@ -129,12 +129,48 @@ export default function App() {
         dataTransferTypes: Array.from(e.dataTransfer?.types || [])
       });
 
-      if (file) {
-        setDraggedJsonFile(file);
-        setIsMusicImportOpen(true);
-        addLog(`📥 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をドロップインポートしました！`, 'process');
-      } else {
+      if (!file) {
         console.warn('⚠️ [FlowTool D&D] ドロップイベントが発生しましたが、files が空でした。', e.dataTransfer);
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        console.log(`📥 [FlowTool D&D] ファイル即座読み取り成功 (${text.length}文字)`);
+
+        // JSONの中身をパースして自動仕分け
+        let parsed: any = null;
+        try {
+          parsed = JSON.parse(text);
+        } catch (jsonErr: any) {
+          console.warn('⚠️ [FlowTool D&D] JSON解析警告:', jsonErr);
+        }
+
+        // A. 連載シリーズ設定JSON (seriesTitle または episodesPlan)
+        if (parsed && (parsed.seriesTitle || parsed.episodesPlan)) {
+          addLog(`📂 連載シリーズ設定「${parsed.seriesTitle || file.name}」を復元します`, 'process');
+          await handleResumeSeries(parsed);
+          return;
+        }
+
+        // B. キャスト設定JSON (characters 配列)
+        if (parsed && Array.isArray(parsed.characters) && parsed.characters.length > 0 && !parsed.tracks) {
+          addLog(`🎭 キャスト設定「${parsed.title || file.name}」を復元します`, 'process');
+          saveMangaProject(parsed);
+          setMangaProject(parsed);
+          alert(`✅ キャスト（${parsed.characters.length}人）を正常に復元しました！`);
+          return;
+        }
+
+        // C. 楽曲メタデータ（またはその他JSON）
+        // 音楽インポートモーダルを開き、テキストを直接注入！
+        setInjectedJsonText(text);
+        setIsMusicImportOpen(true);
+        addLog(`🎵 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をインポーターへ展開しました！`, 'process');
+
+      } catch (readErr: any) {
+        console.error('❌ [FlowTool D&D] ファイル読み取り失敗:', readErr);
+        addLog(`❌ ファイル読み取り失敗: ${readErr.message}`, 'error');
       }
     };
 
@@ -154,7 +190,7 @@ export default function App() {
       document.removeEventListener('dragover', handleGlobalDragOver);
       document.removeEventListener('drop', handleGlobalDrop);
     };
-  }, [addLog]);
+  }, [addLog, handleResumeSeries]);
 
   const handleUpdateMangaProject = useCallback((updated: MangaProject) => {
     setMangaProject(prev => {
@@ -617,10 +653,10 @@ export default function App() {
         </React.Suspense>
         <MusicImportModal
           isOpen={isMusicImportOpen}
-          initialFile={draggedJsonFile}
+          initialJsonText={injectedJsonText}
           onClose={() => {
             setIsMusicImportOpen(false);
-            setDraggedJsonFile(null);
+            setInjectedJsonText('');
           }}
           onDeployEpisode={handleDeployMusicEpisode}
           onDeployBatchEpisodes={handleDeployBatchMusicEpisodes}
