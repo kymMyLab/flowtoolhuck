@@ -24,6 +24,7 @@ yarn-error.log*
 
 # Temporary scratch repo & downloads
 scratch_repo/
+scratch/
 tmp/
 *.zip
 *.zip.txt

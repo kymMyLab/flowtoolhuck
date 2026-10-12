@@ -4,9 +4,6 @@ import {
   CAMERA_WORK_REGISTRY,
   VIDEO_MODELS_REGISTRY,
   KEN_BURNS_PRESETS, 
-  TELOP_STYLE_REGISTRY,
-  TELOP_TRANSITION_REGISTRY,
-  TELOP_POSITION_REGISTRY,
   STUDIO_NEON_PALETTE,
   sanitizeFilename,
   resolveImageModel,
@@ -19,7 +16,9 @@ import { Flow } from 'flow-sdk';
 import { callWithRetry } from '../../services/utils';
 import { extractHighlights } from '../../services/directorService';
 import { normalizeKenBurnsPreset } from '../../services/renderers/kenBurns';
-import { TextInput, SectionLabel, PillButton, ToggleSwitch, FieldDropdown } from '../Primitives';
+import { TextInput, SectionLabel, PillButton, FieldDropdown } from '../Primitives';
+import { CutTelopEditor } from './CutTelopEditor';
+import { CutVideoControls } from './CutVideoControls';
 
 export interface CutEditorPanelProps {
   cut: Cut;
@@ -57,13 +56,6 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
   onGenerateEndFrame
 }) => {
   const [aiWish, setAiWish] = useState('');
-  const [newKeyword, setNewKeyword] = useState('');
-  const [downloadState, setDownloadState] = useState<'idle' | 'saving' | 'done'>('idle');
-
-  const videoSrc = cut.videoBase64
-    ? (cut.videoBase64.startsWith('data:') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`)
-    : null;
-
   const handleAiWishRequest = async () => {
     if (!aiWish.trim() || isRewriting || cut.isGeneratingImage) return;
     setIsRewriting(true);
@@ -83,42 +75,6 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
       console.error(err);
     } finally {
       setIsRewriting(false);
-    }
-  };
-
-  const handleAddKeyword = () => {
-    const target = newKeyword.trim();
-    if (!target) return;
-    const currentHighlights = cut.telop?.highlights || [];
-    if (!currentHighlights.some(h => h.word === target)) {
-      const next = [...currentHighlights, { word: target, color: '#FFE600', sizeScale: 1.1 }];
-      onUpdateCut({ telop: { ...(cut.telop || {}), fullText: cut.telop?.fullText || '', highlights: next } });
-    }
-    setNewKeyword('');
-  };
-
-  const handleRemoveKeyword = (wordToRemove: string) => {
-    const currentHighlights = cut.telop?.highlights || [];
-    const next = currentHighlights.filter(h => h.word !== wordToRemove);
-    onUpdateCut({ telop: { ...(cut.telop || {}), fullText: cut.telop?.fullText || '', highlights: next } });
-  };
-
-  const handleAutoExtract = () => {
-    const text = cut.telop?.fullText || cut.narrationJp || '';
-    const auto = extractHighlights(text);
-    onUpdateCut({ telop: { ...cut.telop!, fullText: text, highlights: auto } });
-  };
-
-  const handleDownloadVideo = async () => {
-    if (!cut.videoBase64 || downloadState !== 'idle') return;
-    setDownloadState('saving');
-    try {
-      const base64 = cut.videoBase64.includes('base64,') ? cut.videoBase64.split('base64,')[1] : cut.videoBase64;
-      await Flow.download({ base64, mimeType: 'video/mp4', filename: `${sanitizeFilename(cut.narrationJp || 'cut')}_video.mp4` });
-      setDownloadState('done');
-      setTimeout(() => setDownloadState('idle'), 2000);
-    } catch (err) {
-      setDownloadState('idle');
     }
   };
 
@@ -200,166 +156,15 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
           </div>
 
           {/* テロップ設定 */}
-          <div className="flex items-center justify-between">
-            <SectionLabel>テロップ設定</SectionLabel>
-            <button
-              type="button"
-              onClick={rerollStaging}
-              className="px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-500/20 hover:bg-purple-500/35 text-purple-300 border border-purple-500/40 flex items-center gap-1 transition-all"
-              title="画像は変更せず、このカットのテロップ演出（動き・配置・スタイル）だけを再抽選します"
-            >
-              <span className="material-symbols-outlined text-[13px]">casino</span>
-              演出リロール
-            </button>
-          </div>
-
-          <div className="bg-white/5 p-3.5 rounded-xl border border-white/5 flex flex-col gap-3">
-            <ToggleSwitch label="字幕を表示する" checked={showTelop} onChange={setShowTelop} />
-            
-            <TextInput 
-              label="字幕テキスト" 
-              value={cut.telop?.fullText || ''} 
-              onChange={v => {
-                const currentHighlights = cut.telop?.highlights || [];
-                const validExisting = currentHighlights.filter(h => h.word && v.includes(h.word));
-                const nextHighlights = validExisting.length > 0 ? validExisting : extractHighlights(v);
-                onUpdateCut({ telop: { ...(cut.telop || {}), fullText: v, highlights: nextHighlights } });
-              }} 
-            />
-
-            {/* ── 🎬 Vook風テロップ演出セレクター ── */}
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5">
-              <FieldDropdown 
-                label="演出スタイル" 
-                value={TELOP_STYLE_REGISTRY.find(s => s.id === cut.telop?.style)?.name || TELOP_STYLE_REGISTRY[0].name} 
-                options={TELOP_STYLE_REGISTRY.map(s => s.name)} 
-                onChange={name => {
-                  const found = TELOP_STYLE_REGISTRY.find(s => s.name === name);
-                  if (found) {
-                    onUpdateCut({ 
-                      telop: { 
-                        ...(cut.telop || {}), 
-                        fullText: cut.telop?.fullText || cut.narrationJp || '',
-                        style: found.id,
-                        transition: cut.telop?.transition || found.defaultTransition,
-                        position: cut.telop?.position || found.defaultPosition
-                      } 
-                    });
-                  }
-                }} 
-              />
-              <FieldDropdown 
-                label="トランジション" 
-                value={TELOP_TRANSITION_REGISTRY.find(t => t.id === cut.telop?.transition)?.name || TELOP_TRANSITION_REGISTRY[0].name} 
-                options={TELOP_TRANSITION_REGISTRY.map(t => t.name)} 
-                onChange={name => {
-                  const found = TELOP_TRANSITION_REGISTRY.find(t => t.name === name);
-                  if (found) {
-                    onUpdateCut({ 
-                      telop: { 
-                        ...(cut.telop || {}), 
-                        fullText: cut.telop?.fullText || cut.narrationJp || '',
-                        transition: found.id 
-                      } 
-                    });
-                  }
-                }} 
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              <FieldDropdown 
-                label="テロップ配置構図" 
-                value={TELOP_POSITION_REGISTRY.find(p => p.id === cut.telop?.position)?.name || TELOP_POSITION_REGISTRY[0].name} 
-                options={TELOP_POSITION_REGISTRY.map(p => p.name)} 
-                onChange={name => {
-                  const found = TELOP_POSITION_REGISTRY.find(p => p.name === name);
-                  if (found) {
-                    onUpdateCut({ 
-                      telop: { 
-                        ...(cut.telop || {}), 
-                        fullText: cut.telop?.fullText || cut.narrationJp || '',
-                        position: found.id 
-                      } 
-                    });
-                  }
-                }} 
-              />
-            </div>
-
-            {/* キーワード管理エリア */}
-            <div className="flex flex-col gap-2 pt-1 border-t border-white/5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-amber-400 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">stars</span>
-                  金文字強調キーワード
-                </span>
-                <button 
-                  type="button"
-                  onClick={handleAutoExtract}
-                  className="text-[10px] text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 flex items-center gap-0.5 transition-colors"
-                  title="本文中の漢字熟語から自動抽出"
-                >
-                  <span className="material-symbols-outlined text-[12px]">sync</span>
-                  本文から自動抽出
-                </button>
-              </div>
-
-              {/* 現在登録されているキーワードの一覧 */}
-              <div className="flex flex-wrap gap-1.5 min-h-[26px]">
-                {cut.telop?.highlights && cut.telop.highlights.length > 0 ? (
-                  cut.telop.highlights.map((h, i) => {
-                    const currentFullText = cut.telop?.fullText || '';
-                    const isMatch = h.word && currentFullText.includes(h.word);
-                    return (
-                      <span 
-                        key={i} 
-                        className={`px-2 py-0.5 rounded-md border text-[10px] font-bold flex items-center gap-1 transition-all ${
-                          isMatch 
-                            ? 'bg-amber-500/15 border-amber-400 text-amber-300 shadow-[0_0_8px_rgba(255,230,0,0.2)]' 
-                            : 'bg-white/5 border-white/10 text-white/35'
-                        }`}
-                      >
-                        <span>{isMatch ? '✨' : '⚠️'} {h.word}</span>
-                        <span className={`text-[9px] ${isMatch ? 'text-amber-400/80 font-normal' : 'text-white/20'}`}>
-                          {isMatch ? '(点灯中)' : '(未出現)'}
-                        </span>
-                        <button 
-                          type="button"
-                          onClick={() => handleRemoveKeyword(h.word)}
-                          className="ml-0.5 hover:text-red-400 transition-colors flex items-center"
-                          title="キーワードから削除"
-                        >
-                          <span className="material-symbols-outlined text-[11px]">close</span>
-                        </button>
-                      </span>
-                    );
-                  })
-                ) : (
-                  <span className="text-[10px] text-white/30 italic">キーワードなし（すべて白色で表示中）</span>
-                )}
-              </div>
-
-              {/* キーワード手動追加フォーム */}
-              <div className="flex gap-1.5 mt-1">
-                <input 
-                  type="text" 
-                  value={newKeyword} 
-                  onChange={e => setNewKeyword(e.target.value)} 
-                  onKeyDown={e => e.key === 'Enter' && handleAddKeyword()}
-                  placeholder="強調する単語を追加..." 
-                  className="flex-1 bg-black/50 border border-white/10 rounded-lg px-2.5 py-1 text-[11px] outline-none focus:border-amber-400/70 text-white placeholder:text-white/25"
-                />
-                <button 
-                  type="button" 
-                  onClick={handleAddKeyword}
-                  disabled={!newKeyword.trim()}
-                  className="px-2.5 py-1 bg-white/10 hover:bg-amber-500 hover:text-black text-white text-[11px] font-bold rounded-lg border border-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                >
-                  ＋追加
-                </button>
-              </div>
-            </div>
-          </div>
+          <CutTelopEditor
+            cut={cut}
+            episodeId={episodeId}
+            showTelop={showTelop}
+            setShowTelop={setShowTelop}
+            onUpdateCut={onUpdateCut}
+            onBulkRerollTelop={onBulkRerollTelop}
+            isMvMode={isMvMode}
+          />
 
           {/* カメラワーク & ケンバーン */}
           <div className="grid grid-cols-2 gap-2">
@@ -702,45 +507,12 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
         </div>
 
         {/* 動画生成 */}
-        <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
-          <SectionLabel>動画生成</SectionLabel>
-          <PillButton
-            variant="filled"
-            className="bg-amber-600 hover:bg-amber-500 text-white font-black h-[42px]"
-            onClick={onBrowserAnimate}
-            disabled={cut.isGeneratingVideo || !cut.imageBase64}
-          >
-            ⚡ ブラウザで即座に動画化 (0pt)
-          </PillButton>
-          <div className="grid grid-cols-2 gap-2">
-            {VIDEO_MODELS_REGISTRY.slice(0, 2).map(m => {
-              const isSelected = cut.targetVideoModel === m.id;
-              const colorClass = m.id === 'omni-flash' ? 'bg-purple-600' : 'bg-blue-600';
-              return (
-                <PillButton 
-                  key={m.id}
-                  variant="filled" 
-                  className={`${colorClass} text-white font-black h-[40px] text-[10px] ${isSelected ? 'ring-2 ring-amber-400' : ''}`} 
-                  onClick={() => onAnimate(m.id)} 
-                  disabled={cut.isGeneratingVideo || (!cut.imageMediaId && !cut.imageBase64)}
-                >
-                  🎬 {m.name} ({m.defaultDuration}s)
-                </PillButton>
-              );
-            })}
-          </div>
-          {videoSrc && (
-            <PillButton
-              variant="outline"
-              className="h-10 mt-2 border-amber-500/50 text-amber-500 font-black"
-              onClick={handleDownloadVideo}
-              disabled={downloadState !== 'idle'}
-              icon={<span className="material-symbols-outlined text-[18px]">download</span>}
-            >
-              {downloadState === 'idle' ? '💾 保存 (MP4)' : '保存中...'}
-            </PillButton>
-          )}
-        </div>
+        <CutVideoControls
+          cut={cut}
+          episodeId={episodeId}
+          onAnimate={onAnimate}
+          onBrowserAnimate={onBrowserAnimate}
+        />
       </div>
 
       {/* Bottom Action Footer */}

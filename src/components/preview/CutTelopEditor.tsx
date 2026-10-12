@@ -49,13 +49,25 @@ export const CutTelopEditor: React.FC<CutTelopEditorProps> = ({
     });
   };
 
+  const handleAutoExtract = () => {
+    const rawText = cut.telop?.fullText || cut.narrationJp || '';
+    const hl = extractHighlights(rawText);
+    onUpdateCut({
+      telop: {
+        ...(cut.telop || {}),
+        fullText: rawText,
+        highlights: hl
+      }
+    });
+  };
+
   const handleAddKeyword = () => {
     const target = newKeyword.trim();
     if (!target) return;
     const currentHighlights = cut.telop?.highlights || [];
     if (!currentHighlights.some(h => h.word === target)) {
       const next = [...currentHighlights, { word: target, color: '#FFE600', sizeScale: 1.1 }];
-      onUpdateCut({ telop: { ...cut.telop!, fullText: cut.telop?.fullText || '', highlights: next } });
+      onUpdateCut({ telop: { ...(cut.telop || {}), fullText: cut.telop?.fullText || '', highlights: next } });
     }
     setNewKeyword('');
   };
@@ -63,7 +75,7 @@ export const CutTelopEditor: React.FC<CutTelopEditorProps> = ({
   const handleRemoveKeyword = (wordToRemove: string) => {
     const currentHighlights = cut.telop?.highlights || [];
     const next = currentHighlights.filter(h => h.word !== wordToRemove);
-    onUpdateCut({ telop: { ...cut.telop!, fullText: cut.telop?.fullText || '', highlights: next } });
+    onUpdateCut({ telop: { ...(cut.telop || {}), fullText: cut.telop?.fullText || '', highlights: next } });
   };
 
   const telopText = cut.telop?.fullText || '';
@@ -98,7 +110,7 @@ export const CutTelopEditor: React.FC<CutTelopEditorProps> = ({
             const currentHighlights = cut.telop?.highlights || [];
             const validExisting = currentHighlights.filter(h => h.word && v.includes(h.word));
             const nextHighlights = validExisting.length > 0 ? validExisting : extractHighlights(v);
-            onUpdateCut({ telop: { ...cut.telop!, fullText: v, highlights: nextHighlights } });
+            onUpdateCut({ telop: { ...(cut.telop || {}), fullText: v, highlights: nextHighlights } });
           }} 
         />
 
@@ -113,7 +125,7 @@ export const CutTelopEditor: React.FC<CutTelopEditorProps> = ({
               if (found) {
                 onUpdateCut({ 
                   telop: { 
-                    ...cut.telop!, 
+                    ...(cut.telop || {}), 
                     style: found.id,
                     transition: found.defaultTransition
                   } 
@@ -127,17 +139,17 @@ export const CutTelopEditor: React.FC<CutTelopEditorProps> = ({
             options={TELOP_TRANSITION_REGISTRY.map(s => s.name)} 
             onChange={name => {
               const found = TELOP_TRANSITION_REGISTRY.find(s => s.name === name);
-              if (found) onUpdateCut({ telop: { ...cut.telop!, fullText: cut.telop?.fullText || '', transition: found.id } });
+              if (found) onUpdateCut({ telop: { ...(cut.telop || {}), fullText: cut.telop?.fullText || '', transition: found.id } });
             }} 
           />
           <div className="col-span-2 mt-1">
             <FieldDropdown 
               label="配置レイアウト" 
               value={TELOP_POSITION_REGISTRY.find(s => s.id === cut.telop?.position)?.name || TELOP_POSITION_REGISTRY[0].name} 
-              options={TELOP_POSITION_REGISTRY.map(s => s.name)} 
+              options={TELOP_POSITION_REGISTRY.map(p => p.name)} 
               onChange={name => {
                 const found = TELOP_POSITION_REGISTRY.find(s => s.name === name);
-                if (found) onUpdateCut({ telop: { ...cut.telop!, fullText: cut.telop?.fullText || '', position: found.id } });
+                if (found) onUpdateCut({ telop: { ...(cut.telop || {}), fullText: cut.telop?.fullText || '', position: found.id } });
               }} 
             />
           </div>
@@ -147,7 +159,18 @@ export const CutTelopEditor: React.FC<CutTelopEditorProps> = ({
         <div className="flex flex-col gap-1.5 pt-2 border-t border-white/5">
           <div className="flex items-center justify-between">
             <label className="text-[11px] font-black text-amber-400">✨ ハイライト検出</label>
-            <span className="text-[10px] text-white/40">Kinetic Pop等はハイライト単語に演出が乗ります</span>
+            <div className="flex items-center gap-1.5">
+              <button 
+                type="button"
+                onClick={handleAutoExtract}
+                className="text-[10px] text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 flex items-center gap-0.5 transition-colors"
+                title="本文中の漢字熟語から自動抽出"
+              >
+                <span className="material-symbols-outlined text-[12px]">sync</span>
+                自動抽出
+              </button>
+              <span className="text-[10px] text-white/40">Kinetic Pop等は単語に演出が乗ります</span>
+            </div>
           </div>
           
           <div className="bg-black/40 rounded-lg p-2.5 border border-white/5 flex flex-col gap-2">
