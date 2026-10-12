@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@a684c60/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[1:1正方形マスター完全標準化＆CT192動画結合連携版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@d3f9d60/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[MV先行カット最適化＆1:1正方形マスター完全標準化版]'); });
