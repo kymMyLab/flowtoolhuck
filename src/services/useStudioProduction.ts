@@ -32,6 +32,7 @@ import { saveReferenceAsset } from './db';
 import { resolveCameraWork } from '../config/studioDefinitions';
 import type { LogEntry } from '../components/StudioLogs';
 import { useVideoGeneration } from './useVideoGeneration';
+import { extractLyricVisualPlot } from './musicImporter';
 
 interface UseStudioProductionProps {
   settings: GeneratorSettings;
@@ -171,10 +172,20 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         ? undefined
         : (ep.masterAnchorMediaId || ep.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId);
 
+      let effectivePrompt = c.promptEn || '';
+      const rawLyric = c.telop?.fullText || c.narrationJp || '';
+      // MVモードで歌詞が存在し、かつpromptEnにまだ歌詞ビジュアル指示が反映されていない場合は動的に補完
+      if (ep.isMvMode && rawLyric && !effectivePrompt.includes('embodying lyric')) {
+        const visualPlot = extractLyricVisualPlot(rawLyric, c.telop?.directorNote || '', ep.theme || ep.titleJp || '', c.id, !!c.isObjectOnly);
+        if (!effectivePrompt.includes(visualPlot)) {
+          effectivePrompt = `${effectivePrompt}, ${visualPlot}`;
+        }
+      }
+
       return {
         epId: ep.id,
         cutId: c.id,
-        prompt: c.promptEn,
+        prompt: effectivePrompt,
         styleKey: styleKey || ep.taste || settings.taste,
         imageModel: settings.imageModel,
         isMvMode: ep.isMvMode,

@@ -151,6 +151,126 @@ export function parseLyricsSections(lyricsText: string): Record<string, string[]
 }
 
 /**
+ * 歌詞テキスト・演出ヒント・カット位置から、AI作画が1対1で呼応する具体的な情景・被写体・小道具プロンプトを錬成
+ * （「あればそれを意識し、なければ楽曲世界観から自動生成補完する」FlowTool映画的演出ロジック）
+ */
+export function extractLyricVisualPlot(
+  lyric: string,
+  hint: string,
+  theme: string,
+  cutIndex: number,
+  isPropCut: boolean
+): string {
+  // 1. 小道具カット（Cut 10: 伏線アイテム）の神域マクロ処理
+  if (isPropCut) {
+    let propName = hint ? hint.replace(/★\s*/g, '').trim() : '';
+    if (!propName) {
+      if (/鍵|かぎ|合鍵|key/i.test(lyric)) propName = 'an old weathered brass key with tarnished metallic patina and rustic scratches';
+      else if (/ネジ|ねじ|ボルト|銀の粒|粒|screw/i.test(lyric)) propName = 'a tiny shiny silver screw lying on the wooden floor, catching sharp light reflections';
+      else if (/爪|銀の爪|指輪|リング|アクセサリー/i.test(lyric)) propName = 'a delicate silver ring or accessory with subtle metallic gleam';
+      else if (/ダンボール|段ボール|箱|荷造り|box/i.test(lyric)) propName = 'a small open cardboard box containing nostalgic forgotten memories';
+      else if (/時計|針|秒針/i.test(lyric)) propName = 'a vintage ticking wristwatch with worn leather strap resting quietly';
+      else if (/手紙|写真|ノート|便箋/i.test(lyric)) propName = 'a faded handwritten letter and a vintage polaroid snapshot';
+      else propName = 'a solitary symbolic metallic keepsake object';
+    }
+    return `[STRICT STILL-LIFE INSERT]: Extreme close-up macro product still-life photography of the key symbolic prop (${propName}), resting on a weathered wooden surface, completely deserted scene with strictly NO humans, shallow depth of field, dramatic dust motes floating in sunbeam, crisp metallic textures and reflections.`;
+  }
+
+  // 2. 歌詞（セリフ）の解析
+  const cleanLyric = (lyric || '').trim();
+  const isInstrumental = !cleanLyric || cleanLyric.startsWith('♪') || /^\(.*\)$/.test(cleanLyric);
+
+  const detectedMotifs: string[] = [];
+
+  // (A) 小道具・キーオブジェクト
+  if (/鍵|かぎ|合鍵/i.test(cleanLyric)) detectedMotifs.push("holding an old weathered brass key with rusted metallic sheen");
+  if (/ネジ|ねじ|銀の粒|粒/i.test(cleanLyric)) detectedMotifs.push("a tiny shiny silver screw lying on the floor in the corner of the room catching the light");
+  if (/ダンボール|段ボール|箱|荷造り|荷物/i.test(cleanLyric)) detectedMotifs.push("tall stacks of brown cardboard moving boxes sealed with packing tape");
+  if (/爪|銀の爪|指輪|リング/i.test(cleanLyric)) detectedMotifs.push("delicate silver accessory with subtle metallic glimmer");
+  if (/傘|ビニール傘|雨傘/i.test(cleanLyric)) detectedMotifs.push("a clear transparent umbrella glistening with water droplets");
+  if (/窓|カーテン/i.test(cleanLyric)) detectedMotifs.push("a large window with sheer white curtains fluttering gently in the breeze");
+  if (/扉|ドア|開かない/i.test(cleanLyric)) detectedMotifs.push("a closed vintage wooden door with antique brass doorknob");
+  if (/手紙|便箋|写真|ノート|日記/i.test(cleanLyric)) detectedMotifs.push("an open handwritten notebook and nostalgic polaroid photo");
+  if (/靴|スニーカー|足元|足音/i.test(cleanLyric)) detectedMotifs.push("close-up of worn shoes on the bare wooden floorboards");
+
+  // (B) 身体部位・仕草・身体感覚
+  if (/右手|左手|手元|手のひら|指先|指/i.test(cleanLyric)) {
+    if (/錆び|艶/i.test(cleanLyric)) {
+      detectedMotifs.push("extreme intimate focus on character's hand with rusted metallic patina residue on fingertips, subtle emotional trembling");
+    } else {
+      detectedMotifs.push("intimate close-up on character's hand and fingers, delicate emotional gesture");
+    }
+  }
+  if (/影|伸びる影/i.test(cleanLyric)) detectedMotifs.push("dramatic elongated shadows stretching across the bare wooden floor");
+  if (/床|冷たい床|座る|しゃがむ/i.test(cleanLyric)) detectedMotifs.push("character sitting or crouching quietly on the cold hardwood floor");
+  if (/振り返る|後ろ姿|背中/i.test(cleanLyric)) detectedMotifs.push("character seen from behind or three-quarter profile, pausing in contemplation");
+  if (/歩く|歩き出|進む/i.test(cleanLyric)) detectedMotifs.push("character taking a resolute forward step towards the light");
+  if (/瞳|目|見つめ|見上げる/i.test(cleanLyric)) detectedMotifs.push("contemplative introspective gaze, looking down quietly in deep thought");
+  if (/冷たい|冷たさ/i.test(cleanLyric)) detectedMotifs.push("cold atmospheric lighting, subtle melancholic chill in the room");
+  if (/べたつ|音/i.test(cleanLyric)) detectedMotifs.push("quiet solitary indoor setting with rich tactile ambiance");
+
+  // (C) 天候・光・時間帯・環境
+  if (/風|そよ風|駆け抜け/i.test(cleanLyric)) detectedMotifs.push("gentle wind drifting into the room, swaying hair and fabrics");
+  if (/夕|日暮れ|日が落ちる|茜色|黄昏|夕暮れ/i.test(cleanLyric)) detectedMotifs.push("intense golden hour sunset light streaming horizontally across the room, warm amber tones");
+  if (/朝|朝日|夜明け|日差し|光/i.test(cleanLyric)) detectedMotifs.push("brilliant morning sunbeams piercing through the haze, radiant dust motes");
+  if (/夜|星|月|暗/i.test(cleanLyric)) detectedMotifs.push("deep twilight dusk, cool indigo ambient tones with distant city night lights");
+  if (/雨|濡れ|水たまり/i.test(cleanLyric)) detectedMotifs.push("rain streaks washing down the glass window, moody reflective surfaces");
+  if (/空間|部屋|何もない|広くなった/i.test(cleanLyric)) detectedMotifs.push("vast spacious empty room with clean hardwood floors and bare walls");
+
+  // (D) カット別の役割に応じたストーリーテリング構成（「なければ生成」フォールバック）
+  let defaultCutAction = '';
+  switch (cutIndex) {
+    case 1:
+      defaultCutAction = 'Cinematic establishing wide shot of the room and environment, quiet atmospheric ambiance setting the emotional tone';
+      break;
+    case 2:
+      defaultCutAction = 'Medium shot of the protagonist standing quietly in the room beside moving boxes, long cast shadows on the floor';
+      break;
+    case 3:
+      defaultCutAction = 'Intimate medium close-up, protagonist interacting with personal belongings, contemplative melancholic mood';
+      break;
+    case 4:
+      defaultCutAction = 'Dutch-tilt medium angle capturing the protagonist pausing amidst the empty space, quiet anticipation before change';
+      break;
+    case 5:
+      defaultCutAction = 'Dynamic wide chorus opening shot, emotional wind fluttering curtains, radiant sunlight bursting into the space';
+      break;
+    case 6:
+      defaultCutAction = 'Sweeping cinematic medium shot of the protagonist in glowing ambient light, profound emotional release';
+      break;
+    case 7:
+      defaultCutAction = "Intense close-up on the protagonist's hands or poignant gesture, visceral emotional resonance";
+      break;
+    case 8:
+      defaultCutAction = 'Dynamic climax framing, protagonist bathed in dramatic sunset illumination, emotional catharsis';
+      break;
+    case 9:
+      defaultCutAction = 'Low angle shot looking down towards the floor corner, discovering a small overlooked keepsake or detail';
+      break;
+    case 11:
+      defaultCutAction = 'Heroic medium close-up, protagonist turning towards the open illuminated doorway with calm hope';
+      break;
+    case 12:
+      defaultCutAction = 'Cinematic crane-up pull-out wide shot, empty room bathed in golden sunlight, poetic lingering wind and settled peace';
+      break;
+    default:
+      defaultCutAction = 'Cinematic framing matching the music video narrative';
+      break;
+  }
+
+  const baseTheme = hint ? hint.replace(/★\s*/g, '').trim() : theme;
+  const visualMotifsText = detectedMotifs.length > 0 ? detectedMotifs.join(', ') : '';
+
+  if (isInstrumental || !visualMotifsText) {
+    // 歌詞がない、または抽象的な場合：「なければ生成」でカットごとのドラマアクションとテーマを結合
+    return `${defaultCutAction}, set in ${baseTheme}. Atmospheric cinematic depth, natural lighting.`;
+  }
+
+  // 歌詞がある場合：「あればそれを意識する」で歌詞モチーフを主役に据えた構図を構築
+  return `Scene visually embodying lyric "${cleanLyric}": ${visualMotifsText}. ${defaultCutAction}, set in ${baseTheme}.`;
+}
+
+/**
  * CT198のインポートトラックから、FlowToolの完全な 12カット MV Episode を自動錬成
  */
 export function convertTrackToEpisode(track: ImportedTrack): Episode {
@@ -228,11 +348,13 @@ export function convertTrackToEpisode(track: ImportedTrack): Episode {
     }
 
     const hl = extractHighlights(lyric);
+    const visualPlot = extractLyricVisualPlot(lyric, hint, track.surface_theme || track.title, i, isPropCut);
+
     const promptEn = [
       `Masterpiece, high production music video, authentic ${masterCat.pool.visual_contract.style_preset},`,
-      `${hint || track.surface_theme || track.title}.`,
+      visualPlot,
       isPropCut 
-        ? `Extreme close-up macro product photography of the key symbolic prop (${hint.replace('★', '')}), shallow depth of field, dramatic dust motes in sunbeam, dramatic reflections.` 
+        ? `Shallow depth of field, dramatic dust motes in sunbeam, crisp macro reflections.` 
         : `Atmospheric cinematography, 8k resolution, cinematic lighting, photorealistic texture.`
     ].join(' ');
 
@@ -253,7 +375,7 @@ export function convertTrackToEpisode(track: ImportedTrack): Episode {
         style: telopStyle,
         transition: telopTransition,
         position: telopPosition,
-        directorNote: hint ? `[CT198 Direct] ${hint}` : `Music Video Cut #${i}`
+        directorNote: hint ? `[CT198 Direct] ${hint}` : (isPropCut ? `[Key Prop] ${lyric}` : `[Lyric Motif] ${lyric}`)
       }
     });
   }
