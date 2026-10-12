@@ -203,8 +203,13 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                   <NumberChoice 
                     label={settings.productionMode === 'mv' ? '先行カット数' : '生成カット数'} 
                     value={settings.previewCutCount} 
-                    options={[1, 3, 5, 12, 24, 30]} 
-                    formatLabel={v => v === 30 ? '30枚 (コミック)' : v === 24 ? '24枚' : v === 12 ? '12枚 (全)' : `${v}枚`} 
+                    options={settings.productionMode === 'mv' ? [1, 3, 5, 12] : [1, 3, 5, 12, 24, 30]} 
+                    formatLabel={v => {
+                      if (settings.productionMode === 'mv') {
+                        return v === 12 ? '12枚 (全カット)' : `${v}枚`;
+                      }
+                      return v === 30 ? '30枚 (コミック)' : v === 24 ? '24枚' : v === 12 ? '12枚 (全)' : `${v}枚`;
+                    }} 
                     onChange={v => setSettings(s => ({ ...s, previewCutCount: v }))} 
                   />
                   <SegmentedToggle label="動画化する割合" value={settings.videoRatio} onChange={v => setSettings(s => ({ ...s, videoRatio: v as any }))} items={VIDEO_RATIO_OPTIONS} />
