@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@22590c9/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[徹底モジュール化＆超指数バックオフ9回1時間待機マスター版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@6bd77f1/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[Media Vault連携最適化（縦横両看板＆ユニークZIP＆メタデータ強化）マスター版]'); });
