@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@6bd77f1/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[Media Vault連携最適化（縦横両看板＆ユニークZIP＆メタデータ強化）マスター版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@b96cc63/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[全9大プール即時本番稼働＆3者統合グランドマスター規格(v2.1.0)完全配備版]'); });
