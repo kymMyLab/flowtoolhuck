@@ -26,12 +26,23 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
   const [previewImage, setPreviewImage] = React.useState<{ src: string; title: string } | null>(null);
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [isRenderingH, setIsRenderingH] = React.useState(false);
+  const [coverHUri, setCoverHUri] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    if (ep.coverBase64 || ep.masterAnchorBase64 || ep.cuts[0]?.imageBase64) {
+      renderCoverBase64Horizontal(ep).then(b64 => {
+        if (isMounted) setCoverHUri(formatDataUri(b64));
+      }).catch(() => {});
+    }
+    return () => { isMounted = false; };
+  }, [ep.coverBase64, ep.masterAnchorBase64, ep.cuts[0]?.imageBase64, ep.titleJp]);
 
   const handleOpenHorizontalCover = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       setIsRenderingH(true);
-      const b64 = await renderCoverBase64Horizontal(ep);
+      const b64 = coverHUri || await renderCoverBase64Horizontal(ep);
       setPreviewImage({
         src: formatDataUri(b64),
         title: `🎬 第${ep.id}話 16:9 マスターカバー (YouTube横型サムネイル・シネマ看板)`
@@ -329,26 +340,40 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                 )}
                 {(ep.coverBase64 || ep.masterAnchorBase64 || ep.cuts[0]?.imageBase64) && (
                   <div className="flex items-center gap-2.5 bg-white border border-purple-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
-                    <button
-                      type="button"
-                      onClick={handleOpenHorizontalCover}
-                      disabled={isRenderingH}
-                      className="w-14 h-12 bg-slate-900 hover:bg-purple-950/80 border border-purple-400/50 rounded-lg flex flex-col items-center justify-center gap-0.5 text-purple-300 hover:text-purple-100 cursor-pointer transition-all shadow-sm group"
-                      title="クリックで拡大表示（16:9 マスターカバー・YouTube横型サムネイル）"
-                    >
-                      {isRenderingH ? (
-                        <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-base group-hover:scale-110 transition-transform">aspect_ratio</span>
-                          <span className="text-[8px] font-black tracking-wider text-purple-400">16:9</span>
-                        </>
-                      )}
-                    </button>
-                    <div className="flex flex-col pr-2">
+                    {coverHUri ? (
+                      <div className="relative group cursor-pointer" onClick={handleOpenHorizontalCover}>
+                        <img 
+                          src={coverHUri} 
+                          alt="16:9 マスターカバー" 
+                          className="w-18 h-12 object-cover rounded-lg border border-purple-400/50 hover:scale-105 transition-transform shadow-sm"
+                          title="クリックで拡大表示（16:9 マスターカバー・YouTube横型サムネイル）" 
+                        />
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent rounded-lg flex items-center justify-center transition-colors pointer-events-none">
+                          <span className="material-symbols-outlined text-white text-xs opacity-80 drop-shadow">zoom_in</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleOpenHorizontalCover}
+                        disabled={isRenderingH}
+                        className="w-18 h-12 bg-slate-900 hover:bg-purple-950/80 border border-purple-400/50 rounded-lg flex flex-col items-center justify-center gap-0.5 text-purple-300 hover:text-purple-100 cursor-pointer transition-all shadow-sm group"
+                        title="クリックで拡大表示（16:9 マスターカバー・YouTube横型サムネイル）"
+                      >
+                        {isRenderingH ? (
+                          <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined text-base group-hover:scale-110 transition-transform">aspect_ratio</span>
+                            <span className="text-[8px] font-black tracking-wider text-purple-400">16:9</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    <div className="flex flex-col pr-2 cursor-pointer" onClick={handleOpenHorizontalCover}>
                       <div className="flex items-center gap-1">
-                        <span className="text-[11px] font-bold text-purple-300">16:9 マスターカバー</span>
-                        <span className="px-1.5 py-0.2 bg-purple-500/20 text-purple-400 text-[8px] font-bold rounded">16:9 Master</span>
+                        <span className="text-[11px] font-bold text-purple-600">16:9 マスターカバー</span>
+                        <span className="px-1.5 py-0.2 bg-purple-500/20 text-purple-600 text-[8px] font-bold rounded">16:9 Cover</span>
                       </div>
                       <span className="text-[9px] text-slate-500 leading-tight mt-0.5">YouTube横型サムネ・シネマ看板</span>
                     </div>
