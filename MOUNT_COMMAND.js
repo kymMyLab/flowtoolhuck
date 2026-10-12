@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@b69783a/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[超指数バックオフ9回1時間待機＆Jules全4タスク完全統合マスター版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@22590c9/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[徹底モジュール化＆超指数バックオフ9回1時間待機マスター版]'); });
