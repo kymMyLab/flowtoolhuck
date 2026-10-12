@@ -142,17 +142,22 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     };
 
     window.addEventListener('paste', handleWindowPaste);
-    window.addEventListener('dragover', handleWindowDragOver);
-    window.addEventListener('dragenter', handleWindowDragEnter);
-    window.addEventListener('dragleave', handleWindowDragLeave);
-    window.addEventListener('drop', handleWindowDrop);
+    window.addEventListener('dragover', handleWindowDragOver, true);
+    window.addEventListener('dragenter', handleWindowDragEnter, true);
+    window.addEventListener('dragleave', handleWindowDragLeave, true);
+    window.addEventListener('drop', handleWindowDrop, true);
+
+    document.addEventListener('dragover', handleWindowDragOver, true);
+    document.addEventListener('drop', handleWindowDrop, true);
 
     return () => {
       window.removeEventListener('paste', handleWindowPaste);
-      window.removeEventListener('dragover', handleWindowDragOver);
-      window.removeEventListener('dragenter', handleWindowDragEnter);
-      window.removeEventListener('dragleave', handleWindowDragLeave);
-      window.removeEventListener('drop', handleWindowDrop);
+      window.removeEventListener('dragover', handleWindowDragOver, true);
+      window.removeEventListener('dragenter', handleWindowDragEnter, true);
+      window.removeEventListener('dragleave', handleWindowDragLeave, true);
+      window.removeEventListener('drop', handleWindowDrop, true);
+      document.removeEventListener('dragover', handleWindowDragOver, true);
+      document.removeEventListener('drop', handleWindowDrop, true);
     };
   }, [isOpen, handleParse, processFile]);
 

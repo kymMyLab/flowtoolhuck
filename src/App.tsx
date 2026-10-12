@@ -417,21 +417,25 @@ export default function App() {
       }
     };
 
-    window.addEventListener('dragenter', handleGlobalDragEnter);
-    window.addEventListener('dragleave', handleGlobalDragLeave);
-    window.addEventListener('dragover', handleGlobalDragOver);
-    window.addEventListener('drop', handleGlobalDrop);
+    window.addEventListener('dragenter', handleGlobalDragEnter, true);
+    window.addEventListener('dragleave', handleGlobalDragLeave, true);
+    window.addEventListener('dragover', handleGlobalDragOver, true);
+    window.addEventListener('drop', handleGlobalDrop, true);
 
-    document.addEventListener('dragover', handleGlobalDragOver);
-    document.addEventListener('drop', handleGlobalDrop);
+    document.addEventListener('dragenter', handleGlobalDragEnter, true);
+    document.addEventListener('dragleave', handleGlobalDragLeave, true);
+    document.addEventListener('dragover', handleGlobalDragOver, true);
+    document.addEventListener('drop', handleGlobalDrop, true);
 
     return () => {
-      window.removeEventListener('dragenter', handleGlobalDragEnter);
-      window.removeEventListener('dragleave', handleGlobalDragLeave);
-      window.removeEventListener('dragover', handleGlobalDragOver);
-      window.removeEventListener('drop', handleGlobalDrop);
-      document.removeEventListener('dragover', handleGlobalDragOver);
-      document.removeEventListener('drop', handleGlobalDrop);
+      window.removeEventListener('dragenter', handleGlobalDragEnter, true);
+      window.removeEventListener('dragleave', handleGlobalDragLeave, true);
+      window.removeEventListener('dragover', handleGlobalDragOver, true);
+      window.removeEventListener('drop', handleGlobalDrop, true);
+      document.removeEventListener('dragenter', handleGlobalDragEnter, true);
+      document.removeEventListener('dragleave', handleGlobalDragLeave, true);
+      document.removeEventListener('dragover', handleGlobalDragOver, true);
+      document.removeEventListener('drop', handleGlobalDrop, true);
     };
   }, [addLog, handleResumeSeries]);
 
