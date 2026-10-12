@@ -80,117 +80,7 @@ export default function App() {
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
 
-  // アプリ全体の全画面ドラッグ＆ドロップ監視（JSONファイルならいつでも即座に音楽インポーターを自動起動）
-  useEffect(() => {
-    const handleGlobalDragEnter = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-      globalDragCounterRef.current += 1;
-      setIsGlobalDragging(true);
-      console.log('📥 [FlowTool D&D] dragenter検知', {
-        types: Array.from(e.dataTransfer?.types || []),
-        counter: globalDragCounterRef.current,
-        target: (e.target as HTMLElement)?.tagName
-      });
-    };
 
-    const handleGlobalDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      globalDragCounterRef.current -= 1;
-      if (globalDragCounterRef.current <= 0) {
-        globalDragCounterRef.current = 0;
-        setIsGlobalDragging(false);
-      }
-      console.log('📤 [FlowTool D&D] dragleave', { counter: globalDragCounterRef.current });
-    };
-
-    const handleGlobalDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    };
-
-    const handleGlobalDrop = async (e: DragEvent) => {
-      e.preventDefault();
-      setIsGlobalDragging(false);
-      globalDragCounterRef.current = 0;
-
-      const fileList = e.dataTransfer?.files;
-      const file = fileList?.[0];
-
-      console.log('🚀 [FlowTool D&D] 全画面ドロップ検知!!', {
-        filesLength: fileList?.length || 0,
-        fileName: file?.name,
-        fileSize: file?.size,
-        fileType: file?.type,
-        dataTransferTypes: Array.from(e.dataTransfer?.types || [])
-      });
-
-      if (!file) {
-        console.warn('⚠️ [FlowTool D&D] ドロップイベントが発生しましたが、files が空でした。', e.dataTransfer);
-        return;
-      }
-
-      try {
-        const text = await file.text();
-        console.log(`📥 [FlowTool D&D] ファイル即座読み取り成功 (${text.length}文字)`);
-
-        // JSONの中身をパースして自動仕分け
-        let parsed: any = null;
-        try {
-          parsed = JSON.parse(text);
-        } catch (jsonErr: any) {
-          console.warn('⚠️ [FlowTool D&D] JSON解析警告:', jsonErr);
-        }
-
-        // A. 連載シリーズ設定JSON (seriesTitle または episodesPlan)
-        if (parsed && (parsed.seriesTitle || parsed.episodesPlan)) {
-          addLog(`📂 連載シリーズ設定「${parsed.seriesTitle || file.name}」を復元します`, 'process');
-          await handleResumeSeries(parsed);
-          return;
-        }
-
-        // B. キャスト設定JSON (characters 配列)
-        if (parsed && Array.isArray(parsed.characters) && parsed.characters.length > 0 && !parsed.tracks) {
-          addLog(`🎭 キャスト設定「${parsed.title || file.name}」を復元します`, 'process');
-          saveMangaProject(parsed);
-          setMangaProject(parsed);
-          alert(`✅ キャスト（${parsed.characters.length}人）を正常に復元しました！`);
-          return;
-        }
-
-        // C. 楽曲メタデータ（またはその他JSON）
-        // 音楽インポートモーダルを開き、テキストを直接注入！
-        setInjectedJsonText(text);
-        setIsMusicImportOpen(true);
-        addLog(`🎵 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をインポーターへ展開しました！`, 'process');
-
-      } catch (readErr: any) {
-        console.error('❌ [FlowTool D&D] ファイル読み取り失敗:', readErr);
-        addLog(`❌ ファイル読み取り失敗: ${readErr.message}`, 'error');
-      }
-    };
-
-    window.addEventListener('dragenter', handleGlobalDragEnter);
-    window.addEventListener('dragleave', handleGlobalDragLeave);
-    window.addEventListener('dragover', handleGlobalDragOver);
-    window.addEventListener('drop', handleGlobalDrop);
-
-    document.addEventListener('dragover', handleGlobalDragOver);
-    document.addEventListener('drop', handleGlobalDrop);
-
-    return () => {
-      window.removeEventListener('dragenter', handleGlobalDragEnter);
-      window.removeEventListener('dragleave', handleGlobalDragLeave);
-      window.removeEventListener('dragover', handleGlobalDragOver);
-      window.removeEventListener('drop', handleGlobalDrop);
-      document.removeEventListener('dragover', handleGlobalDragOver);
-      document.removeEventListener('drop', handleGlobalDrop);
-    };
-  }, [addLog, handleResumeSeries]);
 
   const handleUpdateMangaProject = useCallback((updated: MangaProject) => {
     setMangaProject(prev => {
@@ -432,6 +322,118 @@ export default function App() {
       setSettings(prev => ({ ...prev, selectedAssetId: assetId }));
     });
   }, [resumeSeries, addLog]);
+
+  // アプリ全体の全画面ドラッグ＆ドロップ監視（JSONファイルならいつでも即座に音楽インポーターまたはシリーズ/キャスト復元を自動起動）
+  useEffect(() => {
+    const handleGlobalDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
+      globalDragCounterRef.current += 1;
+      setIsGlobalDragging(true);
+      console.log('📥 [FlowTool D&D] dragenter検知', {
+        types: Array.from(e.dataTransfer?.types || []),
+        counter: globalDragCounterRef.current,
+        target: (e.target as HTMLElement)?.tagName
+      });
+    };
+
+    const handleGlobalDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      globalDragCounterRef.current -= 1;
+      if (globalDragCounterRef.current <= 0) {
+        globalDragCounterRef.current = 0;
+        setIsGlobalDragging(false);
+      }
+      console.log('📤 [FlowTool D&D] dragleave', { counter: globalDragCounterRef.current });
+    };
+
+    const handleGlobalDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    };
+
+    const handleGlobalDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      setIsGlobalDragging(false);
+      globalDragCounterRef.current = 0;
+
+      const fileList = e.dataTransfer?.files;
+      const file = fileList?.[0];
+
+      console.log('🚀 [FlowTool D&D] 全画面ドロップ検知!!', {
+        filesLength: fileList?.length || 0,
+        fileName: file?.name,
+        fileSize: file?.size,
+        fileType: file?.type,
+        dataTransferTypes: Array.from(e.dataTransfer?.types || [])
+      });
+
+      if (!file) {
+        console.warn('⚠️ [FlowTool D&D] ドロップイベントが発生しましたが、files が空でした。', e.dataTransfer);
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        console.log(`📥 [FlowTool D&D] ファイル即座読み取り成功 (${text.length}文字)`);
+
+        // JSONの中身をパースして自動仕分け
+        let parsed: any = null;
+        try {
+          parsed = JSON.parse(text);
+        } catch (jsonErr: any) {
+          console.warn('⚠️ [FlowTool D&D] JSON解析警告:', jsonErr);
+        }
+
+        // A. 連載シリーズ設定JSON (seriesTitle または episodesPlan)
+        if (parsed && (parsed.seriesTitle || parsed.episodesPlan)) {
+          addLog(`📂 連載シリーズ設定「${parsed.seriesTitle || file.name}」を復元します`, 'process');
+          await handleResumeSeries(parsed);
+          return;
+        }
+
+        // B. キャスト設定JSON (characters 配列)
+        if (parsed && Array.isArray(parsed.characters) && parsed.characters.length > 0 && !parsed.tracks) {
+          addLog(`🎭 キャスト設定「${parsed.title || file.name}」を復元します`, 'process');
+          saveMangaProject(parsed);
+          setMangaProject(parsed);
+          alert(`✅ キャスト（${parsed.characters.length}人）を正常に復元しました！`);
+          return;
+        }
+
+        // C. 楽曲メタデータ（またはその他JSON）
+        // 音楽インポートモーダルを開き、テキストを直接注入！
+        setInjectedJsonText(text);
+        setIsMusicImportOpen(true);
+        addLog(`🎵 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をインポーターへ展開しました！`, 'process');
+
+      } catch (readErr: any) {
+        console.error('❌ [FlowTool D&D] ファイル読み取り失敗:', readErr);
+        addLog(`❌ ファイル読み取り失敗: ${readErr.message}`, 'error');
+      }
+    };
+
+    window.addEventListener('dragenter', handleGlobalDragEnter);
+    window.addEventListener('dragleave', handleGlobalDragLeave);
+    window.addEventListener('dragover', handleGlobalDragOver);
+    window.addEventListener('drop', handleGlobalDrop);
+
+    document.addEventListener('dragover', handleGlobalDragOver);
+    document.addEventListener('drop', handleGlobalDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleGlobalDragEnter);
+      window.removeEventListener('dragleave', handleGlobalDragLeave);
+      window.removeEventListener('dragover', handleGlobalDragOver);
+      window.removeEventListener('drop', handleGlobalDrop);
+      document.removeEventListener('dragover', handleGlobalDragOver);
+      document.removeEventListener('drop', handleGlobalDrop);
+    };
+  }, [addLog, handleResumeSeries]);
 
   const updateCutWrapped = useCallback((epId: number, cutId: number, updates: Partial<Cut>) => {
     // ナレーションが更新された場合はテロップテキストとハイライトも自動同期（演出設定は保持）
