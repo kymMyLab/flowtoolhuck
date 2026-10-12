@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@04d9615/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[歌詞・セリフ1:1情景連動＆小道具・仕草直結版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@9bf8c01/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[映画的ポーズ対比＆同一構図連続防止版]'); });
