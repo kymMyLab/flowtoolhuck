@@ -9,6 +9,7 @@ interface MusicImportModalProps {
   onDeployBatchEpisodes?: (episodes: Episode[]) => void;
   initialFile?: File | null;
   initialJsonText?: string;
+  videoRatio?: string;
 }
 
 export const MusicImportModal: React.FC<MusicImportModalProps> = ({
@@ -17,7 +18,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   onDeployEpisode,
   onDeployBatchEpisodes,
   initialFile,
-  initialJsonText
+  initialJsonText,
+  videoRatio = '30%'
 }) => {
   const [jsonText, setJsonText] = useState('');
   const [parsedTracks, setParsedTracks] = useState<ImportedTrack[]>([]);
@@ -234,7 +236,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
   const handleDeploySingle = (track: ImportedTrack) => {
     try {
-      const episode = convertTrackToEpisode(track);
+      const episode = convertTrackToEpisode(track, videoRatio);
       onDeployEpisode(episode);
       onClose();
     } catch (err: any) {
@@ -245,7 +247,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const handleDeployAll = () => {
     if (parsedTracks.length === 0) return;
     try {
-      const episodes = parsedTracks.map(t => convertTrackToEpisode(t));
+      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio));
       if (onDeployBatchEpisodes) {
         onDeployBatchEpisodes(episodes);
       } else {

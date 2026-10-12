@@ -11,6 +11,7 @@ import {
 import { ProductionPipelineContext, SHORTS_CONFIG_MAP, cleanupEpisodeMemory } from './pipelineTypes';
 import { createPipelineCut } from './pipelineCutFactory';
 import { ensureCharacterTurnaround, ensureInfographicCover } from './pipelineAssetFactory';
+import { isCutSelectedForVideo } from '../utils';
 
 /**
  * ── 2. YouTube Shorts / 音楽MV（指定本数 × 各12カット）制作パイプライン ──
@@ -95,7 +96,20 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
 
       if (settings.autoVideo && !isAbortedRef.current) {
         const currentEpForVideo = episodesRef.current.find(e => e.id === epIndex);
-        const selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
+        let selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
+
+        // ★ セーフティネット: autoVideoがONなのに全カット未選択の場合、videoRatioに基づき自動救済選定
+        if (selectedCuts.length === 0 && settings.videoRatio !== 'none' && currentEpForVideo) {
+          addLog(`💡 [動画化自動救済] カット選択が0枚のため、設定割合「${settings.videoRatio || '30%'}」に基づきキメカットを自動選定して動画化を開始します`, 'info');
+          currentEpForVideo.cuts.forEach((c, idx) => {
+            if (isCutSelectedForVideo(idx, settings.videoRatio || '30%')) {
+              c.isSelectedForVideo = true;
+            }
+          });
+          setEpisodes(prev => prev.map(e => e.id === epIndex ? { ...e, cuts: currentEpForVideo.cuts } : e));
+          selectedCuts = currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo);
+        }
+
         if (selectedCuts.length > 0) {
           addLog(`🎬 第${epIndex}${modeInfo.unit}の自動動画化を開始します（対象: ${selectedCuts.length}カット）...`, 'process');
           await handleBulkVideo(epIndex);
@@ -187,7 +201,20 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
 
     if (settings.autoVideo && !isAbortedRef.current) {
       const currentEpForVideo = episodesRef.current.find(e => e.id === epIndex);
-      const selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
+      let selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
+
+      // ★ セーフティネット: autoVideoがONなのに全カット未選択の場合、videoRatioに基づき自動救済選定
+      if (selectedCuts.length === 0 && settings.videoRatio !== 'none' && currentEpForVideo) {
+        addLog(`💡 [動画化自動救済] カット選択が0枚のため、設定割合「${settings.videoRatio || '30%'}」に基づきキメカットを自動選定して動画化を開始します`, 'info');
+        currentEpForVideo.cuts.forEach((c, idx) => {
+          if (isCutSelectedForVideo(idx, settings.videoRatio || '30%')) {
+            c.isSelectedForVideo = true;
+          }
+        });
+        setEpisodes(prev => prev.map(e => e.id === epIndex ? { ...e, cuts: currentEpForVideo.cuts } : e));
+        selectedCuts = currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo);
+      }
+
       if (selectedCuts.length > 0) {
         addLog(`🎬 第${epIndex}${modeInfo.unit}の自動動画化を開始します（対象: ${selectedCuts.length}カット）...`, 'process');
         await handleBulkVideo(epIndex);

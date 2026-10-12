@@ -8,7 +8,7 @@ import { EpisodeSection } from './components/EpisodeSection';
 import { StudioLogs, LogEntry } from './components/StudioLogs';
 import { Cut, GeneratorSettings, VideoModelType, Episode, ProductionMode } from './types';
 import { THEMES, TASTES, IMAGE_MODELS, VIDEO_MODELS } from './constants';
-import { createLogMessage } from './services/utils';
+import { createLogMessage, isCutSelectedForVideo } from './services/utils';
 import { initDB, getAllStories, StoryRecord } from './services/db';
 import { downloadZip, triggerBrowserDownload, savePackageFile } from './services/exportService';
 import { useStudioProduction } from './services/useStudioProduction';
@@ -207,6 +207,28 @@ export default function App() {
       return changed ? next : prev;
     });
   }, [settings.taste, setEpisodes]);
+
+  // サイドバー等で動画化割合（videoRatio）が変更された際、未動画化カットの isSelectedForVideo も即座に同期
+  useEffect(() => {
+    if (!settings.videoRatio) return;
+    setEpisodes(prev => {
+      let changed = false;
+      const next = prev.map(ep => {
+        const nextCuts = ep.cuts.map((c, idx) => {
+          // すでに動画生成済み(videoBase64やvideoMediaIdがある)のカットは維持
+          if (c.videoBase64 || c.videoMediaId) return c;
+          const expected = isCutSelectedForVideo(idx, settings.videoRatio);
+          if (c.isSelectedForVideo !== expected) {
+            changed = true;
+            return { ...c, isSelectedForVideo: expected };
+          }
+          return c;
+        });
+        return changed ? { ...ep, cuts: nextCuts } : ep;
+      });
+      return changed ? next : prev;
+    });
+  }, [settings.videoRatio, setEpisodes]);
 
   // グローバル（コンソール）から全エピソードデータにいつでも直接アクセス・救出可能にする
   useEffect(() => {
@@ -660,6 +682,7 @@ export default function App() {
         <MusicImportModal
           isOpen={isMusicImportOpen}
           initialJsonText={injectedJsonText}
+          videoRatio={settings.videoRatio}
           onClose={() => {
             setIsMusicImportOpen(false);
             setInjectedJsonText('');

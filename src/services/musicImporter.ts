@@ -2,6 +2,7 @@ import { Episode, Cut, ProductionMode } from '../types';
 import { extractHighlights } from './directorService';
 import { resolveMasterCategory } from '../config/masterCategories';
 import { CAMERA_WORK_REGISTRY } from '../constants';
+import { isCutSelectedForVideo } from './utils';
 
 export interface ImportedTrack {
   id: string;
@@ -223,11 +224,12 @@ export function extractLyricVisualPlot(
   if (/雨|濡れ|水たまり/i.test(cleanLyric)) detectedMotifs.push("rain streaks washing down the glass window, moody reflective surfaces");
   if (/空間|部屋|何もない|広くなった/i.test(cleanLyric)) detectedMotifs.push("vast spacious empty room with clean hardwood floors and bare walls");
 
-  // (D) カット別の映画的ストーリーテリング構成（自然なシチュエーション展開）
+  // (D) カット別の映画的ストーリーテリング構成（YouTube Shortsアルゴリズム攻略・神域設計）
   let defaultCutAction = '';
   switch (cutIndex) {
     case 1:
-      defaultCutAction = 'Cinematic establishing wide shot of the room and environment, character standing quietly by the open doorway looking inside, gentle ambient morning light setting the emotional tone';
+      // ★ 批評家絶賛フック: 冒頭0.5秒スワイプキラー（引きの風景を排除し、息を呑む極限の感情接写）
+      defaultCutAction = 'Arresting cinematic extreme close-up visual hook on character\'s intense emotional eyes and face, dramatic directional lighting highlighting sparkling iris reflections, subtle whispering gesture with finger touching parted lip, arresting gaze directly captivating the viewer, shallow depth of field, instant swipe-stopping impact';
       break;
     case 2:
       defaultCutAction = 'Downward medium angle, protagonist crouching down or seated on the wooden floor beside stacked brown cardboard moving boxes, long cast shadows, packing belongings';
@@ -236,7 +238,8 @@ export function extractLyricVisualPlot(
       defaultCutAction = 'Extreme close-up macro framing purely on character\'s hands applying packing tape to a cardboard box or touching personal belongings, tactile texture, intimate focus';
       break;
     case 4:
-      defaultCutAction = 'Dutch-tilt medium shot, protagonist standing quietly amidst the spacious room, gazing towards the bare walls and doorway with quiet anticipation';
+      // ★ 一時停止トラップ（考察フック）: 画面の隅に謎めいた走り書きメモや未送信画面の微細な違和感を仕込む
+      defaultCutAction = 'Dutch-tilt medium shot, protagonist pausing amidst the spacious room with an enigmatic contemplative gaze; in the foreground on a surface lies a mysterious handwritten memo or subtle smartphone screen clue inviting the viewer to pause and scrutinize';
       break;
     case 5:
       defaultCutAction = 'Dynamic wide chorus opening shot, emotional wind billowing curtains and hair, radiant sunlight streaming through, stepping forward into the open space';
@@ -249,15 +252,16 @@ export function extractLyricVisualPlot(
       break;
     case 8:
       defaultCutAction = 'Cinematic wide climax, protagonist walking forward through the glowing hallway, seen from behind or three-quarter view, bathed in dramatic illumination, resolute forward motion';
-      break;
     case 9:
-      defaultCutAction = 'Low angle shot looking down towards the floor corner, discovering a small shiny screw or keepsake, pausing in reflection';
+      // ★ 考察回収フック: 物語の真相に関わる小さな遺留品を発見する驚きの構図
+      defaultCutAction = 'Low angle dramatic discovery shot, protagonist looking down towards a shadowed floor corner, uncovering a tiny gleaming keepsake or fateful clue object, high contrast lighting sparking curiosity';
       break;
     case 11:
       defaultCutAction = 'Heroic medium close-up, protagonist with hand resting on the antique door handle, looking towards the open exit with calm resolve and hope, ready to depart';
       break;
     case 12:
-      defaultCutAction = 'Cinematic crane-up pull-out wide shot of the empty room, open doorway with sunlight pouring in, deserted and peaceful, gentle lingering breeze and settled peace';
+      // ★ 不在の余韻 ＆ 無限ループ構造: 主人公が消え去り、静寂の空間とキーアイテムだけが残り、Cut 1へと滑らかにループ回帰する
+      defaultCutAction = 'Cinematic crane-up pull-out wide shot of the deserted quiet room, protagonist has completely disappeared leaving a poignant emotional void, only the fateful key keepsake resting quietly on the surface in a single sunbeam, seamless circular composition naturally looping back into Cut 1';
       break;
     default:
       defaultCutAction = 'Cinematic framing matching the music video narrative';
@@ -279,7 +283,7 @@ export function extractLyricVisualPlot(
 /**
  * CT198のインポートトラックから、FlowToolの完全な 12カット MV Episode を自動錬成
  */
-export function convertTrackToEpisode(track: ImportedTrack): Episode {
+export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string = '30%'): Episode {
   const visualMap = parseVisualHints(track.visual_hints || '');
   const preferredLyrics = track.lyrics_kanji || track.input_lyrics || '';
   const lyricsSec = parseLyricsSections(preferredLyrics);
@@ -323,20 +327,22 @@ export function convertTrackToEpisode(track: ImportedTrack): Episode {
     let telopPosition: any = 'bottom-center';
 
     if (i === 1) {
-      shotScale = 'Cinematic Wide';
-      cameraWork = 'cinematic-pan';
+      // ★ アルゴリズム必勝: 冒頭0.5秒スワイプキラー（極限顔面・瞳のアップ）
+      shotScale = 'Extreme Close-Up (Swipe Hook)';
+      cameraWork = 'push-in-heroic';
+      telopPosition = 'bottom-center';
     } else if (i === 2 || i === 3) {
       shotScale = 'Medium Close-Up';
       cameraWork = 'push-in';
     } else if (i === 4) {
-      shotScale = 'Dutch Angle Medium';
+      shotScale = 'Dutch Angle Medium (Clue Hook)';
       cameraWork = 'dutch-tilt';
     } else if (isChorus) {
       shotScale = i === 5 ? 'Extreme Wide' : (i === 6 ? 'Medium Dynamic' : (i === 7 ? 'Close-Up' : 'Wide Dynamic'));
       cameraWork = i % 2 === 0 ? 'cinematic-orbit' : 'dynamic-pan-zoom';
       telopPosition = 'center-stagger';
     } else if (i === 9) {
-      shotScale = 'Low Angle Medium';
+      shotScale = 'Low Angle Medium (Discovery)';
       cameraWork = 'pull-out';
     } else if (isPropCut) {
       shotScale = 'Extreme Close-Up Macro';
@@ -349,8 +355,10 @@ export function convertTrackToEpisode(track: ImportedTrack): Episode {
       cameraWork = 'push-in-heroic';
       telopPosition = 'center-climax';
     } else if (i === 12) {
-      shotScale = 'Extreme Wide';
+      // ★ 不在の余韻 ＆ 無限ループ構図
+      shotScale = 'Cinematic Wide (Void Loop)';
       cameraWork = 'crane-up-fade';
+      telopPosition = 'bottom-center';
     }
 
     const hl = extractHighlights(lyric);
@@ -375,6 +383,7 @@ export function convertTrackToEpisode(track: ImportedTrack): Episode {
       panelLayout: isPropCut ? 'single' : (isChorus ? 'diagonal-slash' : 'single'),
       focalPoint: isPropCut ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'key_prop' } : undefined,
       duration: isChorus ? 7.5 : 5.0,
+      isSelectedForVideo: isCutSelectedForVideo(i - 1, videoRatio),
       telop: {
         fullText: lyric,
         highlights: hl,

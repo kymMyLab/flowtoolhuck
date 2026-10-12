@@ -1,7 +1,7 @@
 import { Flow } from 'flow-sdk';
 import { Episode, Cut, SeriesEpisodePlan, VideoModelType } from '../../types';
 import { CUTS_PER_EPISODE, resolveVideoModel } from '../../constants';
-import { createDefaultCut, safeJsonParse, callWithRetry, formatErrorMessage } from '../utils';
+import { createDefaultCut, safeJsonParse, callWithRetry, formatErrorMessage, isCutSelectedForVideo } from '../utils';
 import { saveStory } from '../db';
 import { downloadZip, downloadManifestFile } from '../exportService';
 import { 
@@ -282,7 +282,20 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epId) || currentEp);
 
       const currentEpForVideo = episodesRef.current.find(e => e.id === epId);
-      const cutsToAnimate = currentEpForVideo ? currentEpForVideo.cuts.filter(c => c.isSelectedForVideo) : [];
+      let cutsToAnimate = currentEpForVideo ? currentEpForVideo.cuts.filter(c => c.isSelectedForVideo) : [];
+
+      // ★ セーフティネット: autoVideoがONなのに全カット未選択の場合、videoRatioに基づき自動救済選定
+      if (settings.autoVideo && cutsToAnimate.length === 0 && settings.videoRatio !== 'none' && currentEpForVideo) {
+        addLog(`💡 [動画化自動救済] カット選択が0枚のため、設定割合「${settings.videoRatio || '30%'}」に基づきキメカットを自動選定して動画化を開始します`, 'info');
+        currentEpForVideo.cuts.forEach((c, idx) => {
+          if (isCutSelectedForVideo(idx, settings.videoRatio || '30%')) {
+            c.isSelectedForVideo = true;
+          }
+        });
+        setEpisodes(prev => prev.map(e => e.id === epId ? { ...e, cuts: currentEpForVideo.cuts } : e));
+        cutsToAnimate = currentEpForVideo.cuts.filter(c => c.isSelectedForVideo);
+      }
+
       if (settings.autoVideo && cutsToAnimate.length > 0 && !isAbortedRef.current) {
         updateEpisode(epId, { isBatchGeneratingVideos: true });
         for (const cutTask of cutsToAnimate) {
