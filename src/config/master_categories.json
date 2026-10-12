@@ -1,0 +1,254 @@
+{
+  "schema_version": "2.1.0-FullProduction",
+  "document_title": "Proxmoxクラスタ3者共通グランドマスター規格（全9大プール即時本番仕様）",
+  "effective_date": "2026-10-12",
+
+  "formats": {
+    "music_mv": {
+      "format_id": "music_mv",
+      "name_ja": "音楽MV (12カット)",
+      "default_cuts": 12,
+      "recommended_aspect_ratio": "both",
+      "audio_role": "歌モノ（サビ30秒神仕様）。chorus_start_sec / chorus_end_sec の出力必須。",
+      "story_role": "セリフなし。世界観と12カット起承転結・カメラワーク演出。",
+      "visual_role": "サビ秒数（カット5〜8）とカット10（伏線小道具）のビート同期結合。キネティック歌詞テロップ。"
+    },
+    "drama_manga": {
+      "format_id": "drama_manga",
+      "name_ja": "ドラマ連番・短編マンガ (24カット)",
+      "default_cuts": 24,
+      "recommended_aspect_ratio": "16:9",
+      "audio_role": "セリフを邪魔しない控えめな劇伴BGM（インスト）。",
+      "story_role": "登場人物の掛け合いセリフ、時代考証・禁忌語句チェックの厳格適用。",
+      "visual_role": "Voicevox音声尺へのカット表示時間自動追従。セリフ字幕テロップ。"
+    },
+    "trivia_shorts": {
+      "format_id": "trivia_shorts",
+      "name_ja": "雑学・解説Shorts",
+      "default_cuts": 5,
+      "recommended_aspect_ratio": "9:16",
+      "audio_role": "完全シームレスループ・インストゥルメンタル（途切れずループするBGM）。",
+      "story_role": "衝撃事実・解説ナレーション台本と箇条書き要約の作成。",
+      "visual_role": "ナレーション尺ぴったりでのループ配置＆末尾1秒フェードアウト結合。"
+    }
+  },
+
+  "lyric_rules": {
+    "rule_1_particles": "助詞の『は』は『わ』、『を』は『お』へ強制変換（AI棒読み・誤読防止）",
+    "rule_2_phonetic": "歌詞はすべて『ひらがな 分かち書き』。中黒（・）やドット（.）は読み上げ誤爆防止のため完全禁止",
+    "rule_3_brackets": "角カッコ [ ] はAIト書き専用（Intro, Verse, Chorus）、丸カッコ ( ) は副音声・歌唱コーラス専用",
+    "rule_4_naming_taboo": "日常テーマの具体名詞（ラーメン、家具等）は歌詞中で直接言及禁止。五感と動作のみで描写",
+    "rule_5_double_layer": "表面の日常テーマに対し、100回聴いて気付く『裏設定（Hidden-Drama）』を伏線として仕込む"
+  },
+
+  "pools": [
+    {
+      "pool_code": 10,
+      "name_ja": "切ない・哀愁",
+      "taste_key": "emotional",
+      "story_contract": {
+        "themes": ["雨宿り", "夕暮れ", "別れ", "再会", "届かない手紙"],
+        "banned_words": ["ハイテンション", "ギャル", "パリピ", "激辛", "爆走"]
+      },
+      "audio_contract": {
+        "default_bpm": 76,
+        "bpm_range": "70-85 BPM",
+        "sound_texture": "Acoustic Piano, Mellow Strings, Vinyl Crackle",
+        "sub_styles": {
+          "11": { "name": "ピアノ哀愁バラード", "bpm": 74 },
+          "12": { "name": "アコギ叙情フォーク", "bpm": 78 },
+          "13": { "name": "アンニュイLo-Fiチル", "bpm": 80 }
+        }
+      },
+      "visual_contract": {
+        "style_preset": "水彩・淡い光彩・シネマティックライティング・微粒子テクスチャ",
+        "prompt_prefix": "masterpiece, emotional watercolor style, soft cinematic rim light, nostalgic dust particles, muted colors"
+      }
+    },
+    {
+      "pool_code": 20,
+      "name_ja": "日常・アオハル",
+      "taste_key": "youth_pop",
+      "story_contract": {
+        "themes": ["喫茶店", "放課後", "通学路", "家具組立", "スーパー買出", "スマホ機種変"],
+        "banned_words": ["切腹", "刀", "サイボーグ", "禁足地", "血煙"]
+      },
+      "audio_contract": {
+        "default_bpm": 138,
+        "bpm_range": "125-145 BPM",
+        "sound_texture": "Kawaii Future Pop, Bouncy 808 Bass, Glitch Arps",
+        "sub_styles": {
+          "21": { "name": "本命アオハル・トラップ", "bpm": 125 },
+          "22": { "name": "弾むカワイイ・フューチャーベース", "bpm": 138 },
+          "23": { "name": "ベッドルーム・ローファイポップ", "bpm": 84 },
+          "24": { "name": "雑学Shorts用シームレス・インストループ", "bpm": 128 }
+        }
+      },
+      "visual_contract": {
+        "style_preset": "日常萌えアニメ・透明感チーク・明るい自然光・パステルカラー",
+        "prompt_prefix": "masterpiece, cute anime style, bright natural sunlight, pastel color palette, vivid soft shadows"
+      }
+    },
+    {
+      "pool_code": 30,
+      "name_ja": "サイバー・近未来",
+      "taste_key": "cyberpunk",
+      "story_contract": {
+        "themes": ["首都高", "深夜ドライブ", "電脳都市", "AI", "拡張現実"],
+        "banned_words": ["城下町", "藁葺き屋根", "提灯", "着物", "下駄"]
+      },
+      "audio_contract": {
+        "default_bpm": 128,
+        "bpm_range": "120-135 BPM",
+        "sound_texture": "Synthwave, Acid Bass, Glitch Beats, Cyber Electro",
+        "sub_styles": {
+          "31": { "name": "ネオン・シンセウェーブ", "bpm": 122 },
+          "32": { "name": "サイバー・グリッチエレクトロ", "bpm": 130 },
+          "33": { "name": "高速フューチャー・ドラムンベース", "bpm": 174 }
+        }
+      },
+      "visual_contract": {
+        "style_preset": "ネオサイバー・発光ライン・ホログラム・ダークネオン・シャープコントラスト",
+        "prompt_prefix": "masterpiece, cyberpunk style, glowing neon accents, holographic UI overlays, deep dark contrast, volumetric foggy lights"
+      }
+    },
+    {
+      "pool_code": 40,
+      "name_ja": "ダーク・ノワール",
+      "taste_key": "noir",
+      "story_contract": {
+        "themes": ["裏路地", "探偵", "紫煙", "冷徹な孤独", "密室", "サスペンス"],
+        "banned_words": ["アオハル", "キラキラ", "スイーツ", "萌え", "お祭り"]
+      },
+      "audio_contract": {
+        "default_bpm": 82,
+        "bpm_range": "75-90 BPM",
+        "sound_texture": "Dark Jazz Sax, Upright Bass, Trip Hop, Smoky Brass",
+        "sub_styles": {
+          "41": { "name": "紫煙・ジャズサックス", "bpm": 78 },
+          "42": { "name": "ダーク・トリップホップ", "bpm": 85 },
+          "43": { "name": "冷徹・シネマティックサスペンス", "bpm": 80 }
+        }
+      },
+      "visual_contract": {
+        "style_preset": "モノクロ・ハイコントラスト・フィルムノワール・深い陰影・煙霧",
+        "prompt_prefix": "masterpiece, film noir aesthetic, heavy chiaroscuro lighting, deep cinematic shadows, cigarette smoke ambiance, high contrast monochrome"
+      }
+    },
+    {
+      "pool_code": 50,
+      "name_ja": "和風・歴史古典",
+      "taste_key": "traditional",
+      "story_contract": {
+        "themes": ["江戸大河", "日本橋旅籠", "城下町", "武将", "花街", "浮世絵"],
+        "banned_words": ["ソーダ", "スマホ", "アプリ", "交差点", "パンチライン", "ネオン", "カフェ"]
+      },
+      "audio_contract": {
+        "default_bpm": 124,
+        "bpm_range": "110-130 BPM",
+        "sound_texture": "Koto, Shamisen, Shakuhachi, Epic Taiko, Gagaku Flute",
+        "sub_styles": {
+          "51": { "name": "浮世絵・和風トラップEDM", "bpm": 128 },
+          "52": { "name": "大河シネマ・和太鼓オーケストラ", "bpm": 115 },
+          "53": { "name": "町家叙情・和風アコースティック", "bpm": 96 }
+        }
+      },
+      "visual_contract": {
+        "style_preset": "翡翠青磁・浮世絵錦絵・和紙テクスチャ・金箔散らし・墨絵タッチ",
+        "prompt_prefix": "masterpiece, authentic ukiyo-e modern cinema style, washi paper texture, gold leaf accents, sumi-e ink brush strokes, lantern lighting"
+      }
+    },
+    {
+      "pool_code": 60,
+      "name_ja": "怪異・狂気伝承",
+      "taste_key": "folklore",
+      "story_contract": {
+        "themes": ["禁足地", "廃村", "妖刀", "呪言", "民俗怪異", "未解決事件"],
+        "banned_words": ["ハッピーエンド", "デート", "青空", "爽やか", "青春"]
+      },
+      "audio_contract": {
+        "default_bpm": 88,
+        "bpm_range": "60-100 BPM",
+        "sound_texture": "Dissonant Music Box, Eerie Vocal Chants, Reverse Reverb, Deep Sub Drone",
+        "sub_styles": {
+          "61": { "name": "廃村・呪言オルゴール", "bpm": 68 },
+          "62": { "name": "民俗・狂気サイコパス", "bpm": 92 },
+          "63": { "name": "未解決事件・ドキュメンタリー怪異", "bpm": 78 }
+        }
+      },
+      "visual_contract": {
+        "style_preset": "ダークファンタジー・インク滲み・歪んだ空間・寒色ビネット・不気味な質感",
+        "prompt_prefix": "masterpiece, psychological horror aesthetic, distorted perspective, cold dark vignette, ink bleeding texture, unsettling surreal atmosphere"
+      }
+    },
+    {
+      "pool_code": 70,
+      "name_ja": "ファンタジー・神話",
+      "taste_key": "fantasy",
+      "story_contract": {
+        "themes": ["異世界", "古代遺跡", "エルフ", "魔法詠唱", "浮遊島", "聖剣・封印"],
+        "banned_words": ["高層ビル", "電柱", "銃火器", "サラリーマン", "コンビニ", "アスファルト"]
+      },
+      "audio_contract": {
+        "default_bpm": 110,
+        "bpm_range": "85-125 BPM",
+        "sound_texture": "Celtic Harp, Tin Whistle, Grand Choir, Epic Orchestral Brass",
+        "sub_styles": {
+          "71": { "name": "ケルト風・民族ファンタジー", "bpm": 108 },
+          "72": { "name": "大聖堂・エピック聖歌オーケストラ", "bpm": 92 },
+          "73": { "name": "酒場・冒険者ギルドポルカ", "bpm": 120 }
+        }
+      },
+      "visual_contract": {
+        "style_preset": "壮大ファンタジーアート・光の粒子・神秘的グラデーション",
+        "prompt_prefix": "masterpiece, epic fantasy illustration, ethereal glowing particles, ancient mystical ruins, grand crystalline architecture, majestic cinematic lighting"
+      }
+    },
+    {
+      "pool_code": 80,
+      "name_ja": "バトル・熱血ロック",
+      "taste_key": "action",
+      "story_contract": {
+        "themes": ["格闘", "真剣勝負", "競技", "覚醒", "宿命の対決", "限界突破"],
+        "banned_words": ["お昼寝", "ほのぼの", "脱力", "チル", "平穏", "ティータイム"]
+      },
+      "audio_contract": {
+        "default_bpm": 160,
+        "bpm_range": "150-185 BPM",
+        "sound_texture": "Distortion Electric Guitar, Screaming Bass, Fast Double Kick, Aggressive Synth",
+        "sub_styles": {
+          "81": { "name": "疾走アニメ・熱血J-ROCK", "bpm": 172 },
+          "82": { "name": "重低音・オルタナティブメタル", "bpm": 155 },
+          "83": { "name": "闘志・シンフォニックバトルロック", "bpm": 164 }
+        }
+      },
+      "visual_contract": {
+        "style_preset": "ダイナミックアングル・スピード線・鮮烈なエフェクト作画",
+        "prompt_prefix": "masterpiece, dynamic anime action, intense speed lines, blazing impact effects, dramatic low angle, shockwaves, high adrenaline perspective"
+      }
+    },
+    {
+      "pool_code": 90,
+      "name_ja": "職人・伝統工芸",
+      "taste_key": "craft",
+      "story_contract": {
+        "themes": ["超絶技巧", "刀鍛冶", "陶芸", "木工", "魂の削り出し", "受け継がれる技"],
+        "banned_words": ["大量生産", "プラスチック", "手抜き", "AI自動化", "使い捨て", "ファストファッション"]
+      },
+      "audio_contract": {
+        "default_bpm": 95,
+        "bpm_range": "75-95 BPM",
+        "sound_texture": "Artisan ASMR, Hammer Strikes, Wood Carving Sounds, Ambient Minimal Chords",
+        "sub_styles": {
+          "91": { "name": "火花散る・刀鍛冶ASMRビート", "bpm": 90 },
+          "92": { "name": "静謐・茶器陶芸アンビエント", "bpm": 80 },
+          "93": { "name": "息吹・指物木工アコースティック", "bpm": 96 }
+        }
+      },
+      "visual_contract": {
+        "style_preset": "職人の手元マクロ撮影・火花・削りカス・重厚な質感描写",
+        "prompt_prefix": "masterpiece, artisan hands macro cinematography, flying bright sparks, delicate shaved wood texture, profound master craftsman atmosphere, extreme detail focus"
+      }
+    }
+  ]
+}

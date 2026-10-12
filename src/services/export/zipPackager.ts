@@ -5,6 +5,7 @@ import { extractHighlights } from '../directorService';
 import { generateSRT } from './srtGenerator';
 import { renderCoverCanvas, renderCoverCanvasHorizontal } from './coverRenderer';
 import { generateSafeFilenames, savePackageFile, safeJsonStringify } from './fileDownloader';
+import { resolveMasterCategory } from '../../config/masterCategories';
 
 /**
  * Canvasメモリ解放ヘルパー
@@ -130,8 +131,19 @@ export const downloadZip = async (
       console.warn('Horizontal cover generation skipped:', e);
     }
     
+    // ━━━ 3者統合グランドマスター規格 (v2.1.0-FullProduction) 自動解決 ━━━
+    const masterCat = resolveMasterCategory(ep.theme, ep.productionMode);
+
     // ━━━ REQ-02: script.json トップレベルへの作品・話数メタデータの明記 ━━━
     const scriptJson = {
+      // Proxmox Cluster Unified Standard (v2.1.0)
+      pool_code: masterCat.pool_code,
+      style_code: masterCat.style_code,
+      format_id: masterCat.format_id,
+      category_name_ja: masterCat.pool.name_ja,
+      default_bpm: masterCat.pool.audio_contract.default_bpm,
+      sound_texture: masterCat.pool.audio_contract.sound_texture,
+
       // Media Vault Integration Schema (REQ-02)
       title: ep.titleJp || ep.titleEn || '無題',
       episode_no: ep.id || 1,
@@ -220,7 +232,16 @@ export const downloadZip = async (
 
     if (manifest) {
       try {
-        folder.file('series_manifest.json', safeJsonStringify(manifest, 2));
+        const enrichedManifest = {
+          pool_code: masterCat.pool_code,
+          style_code: masterCat.style_code,
+          format_id: masterCat.format_id,
+          category_name_ja: masterCat.pool.name_ja,
+          default_bpm: masterCat.pool.audio_contract.default_bpm,
+          sound_texture: masterCat.pool.audio_contract.sound_texture,
+          ...manifest
+        };
+        folder.file('series_manifest.json', safeJsonStringify(enrichedManifest, 2));
       } catch (e: any) {
         console.warn('series_manifest.json serialization failed, skipping manifest file', e);
       }
