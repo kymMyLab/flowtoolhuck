@@ -84,27 +84,30 @@ export default function App() {
   useEffect(() => {
     const handleGlobalDragEnter = (e: DragEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
       globalDragCounterRef.current += 1;
       setIsGlobalDragging(true);
+      console.log('📥 [FlowTool D&D] dragenter検知', {
+        types: Array.from(e.dataTransfer?.types || []),
+        counter: globalDragCounterRef.current,
+        target: (e.target as HTMLElement)?.tagName
+      });
     };
 
     const handleGlobalDragLeave = (e: DragEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       globalDragCounterRef.current -= 1;
       if (globalDragCounterRef.current <= 0) {
         globalDragCounterRef.current = 0;
         setIsGlobalDragging(false);
       }
+      console.log('📤 [FlowTool D&D] dragleave', { counter: globalDragCounterRef.current });
     };
 
     const handleGlobalDragOver = (e: DragEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
@@ -112,33 +115,44 @@ export default function App() {
 
     const handleGlobalDrop = (e: DragEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       setIsGlobalDragging(false);
       globalDragCounterRef.current = 0;
-      const file = e.dataTransfer?.files?.[0];
+
+      const fileList = e.dataTransfer?.files;
+      const file = fileList?.[0];
+
+      console.log('🚀 [FlowTool D&D] 全画面ドロップ検知!!', {
+        filesLength: fileList?.length || 0,
+        fileName: file?.name,
+        fileSize: file?.size,
+        fileType: file?.type,
+        dataTransferTypes: Array.from(e.dataTransfer?.types || [])
+      });
+
       if (file) {
         setDraggedJsonFile(file);
         setIsMusicImportOpen(true);
-        addLog(`📥 楽曲メタデータ「${file.name}」をドロップインポートしました！`, 'process');
+        addLog(`📥 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をドロップインポートしました！`, 'process');
+      } else {
+        console.warn('⚠️ [FlowTool D&D] ドロップイベントが発生しましたが、files が空でした。', e.dataTransfer);
       }
     };
 
-    // capture: true で登録し、親DOMやFlowのイベントハンドラより最優先で捕捉
-    window.addEventListener('dragenter', handleGlobalDragEnter, true);
-    window.addEventListener('dragleave', handleGlobalDragLeave, true);
-    window.addEventListener('dragover', handleGlobalDragOver, true);
-    window.addEventListener('drop', handleGlobalDrop, true);
+    window.addEventListener('dragenter', handleGlobalDragEnter);
+    window.addEventListener('dragleave', handleGlobalDragLeave);
+    window.addEventListener('dragover', handleGlobalDragOver);
+    window.addEventListener('drop', handleGlobalDrop);
 
-    document.addEventListener('dragover', handleGlobalDragOver, true);
-    document.addEventListener('drop', handleGlobalDrop, true);
+    document.addEventListener('dragover', handleGlobalDragOver);
+    document.addEventListener('drop', handleGlobalDrop);
 
     return () => {
-      window.removeEventListener('dragenter', handleGlobalDragEnter, true);
-      window.removeEventListener('dragleave', handleGlobalDragLeave, true);
-      window.removeEventListener('dragover', handleGlobalDragOver, true);
-      window.removeEventListener('drop', handleGlobalDrop, true);
-      document.removeEventListener('dragover', handleGlobalDragOver, true);
-      document.removeEventListener('drop', handleGlobalDrop, true);
+      window.removeEventListener('dragenter', handleGlobalDragEnter);
+      window.removeEventListener('dragleave', handleGlobalDragLeave);
+      window.removeEventListener('dragover', handleGlobalDragOver);
+      window.removeEventListener('drop', handleGlobalDrop);
+      document.removeEventListener('dragover', handleGlobalDragOver);
+      document.removeEventListener('drop', handleGlobalDrop);
     };
   }, [addLog]);
 

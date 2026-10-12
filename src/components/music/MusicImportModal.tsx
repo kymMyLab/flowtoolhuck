@@ -45,13 +45,20 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
   const processFile = useCallback((file: File) => {
     if (!file) return;
+    console.log('📖 [MusicImporter] ファイル解析開始:', {
+      name: file.name,
+      size: `${Math.round(file.size / 1024)} KB`,
+      type: file.type || 'unknown'
+    });
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = String(event.target?.result || '');
+      console.log(`✅ [MusicImporter] ファイル読み込み完了 (${content.length}文字)`);
       setJsonText(content);
       handleParse(content);
     };
-    reader.onerror = () => {
+    reader.onerror = (err) => {
+      console.error('❌ [MusicImporter] FileReader エラー:', err);
       setErrorMessage('ファイルの読み込みに失敗しました。');
     };
     reader.readAsText(file);
@@ -60,6 +67,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   // initialFile が外部（全画面D&D等）から渡された場合に即時パース
   useEffect(() => {
     if (isOpen && initialFile) {
+      console.log('📦 [MusicImportModal] initialFile 受信:', initialFile.name);
       processFile(initialFile);
     }
   }, [isOpen, initialFile, processFile]);
@@ -77,6 +85,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       const text = e.clipboardData?.getData('text');
       if (text && (text.includes('{') || text.includes('['))) {
         e.preventDefault();
+        console.log('📋 [MusicImportModal] クリップボードテキスト検知＆パース実行');
         setJsonText(text);
         handleParse(text);
       }
@@ -84,7 +93,6 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDragOver = (e: DragEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
@@ -92,19 +100,15 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDragEnter = (e: DragEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
       dragCounterRef.current += 1;
-      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
-        setIsDragging(true);
-      }
+      setIsDragging(true);
     };
 
     const handleWindowDragLeave = (e: DragEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       dragCounterRef.current -= 1;
       if (dragCounterRef.current <= 0) {
         dragCounterRef.current = 0;
@@ -114,27 +118,27 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDrop = (e: DragEvent) => {
       e.preventDefault();
-      e.stopPropagation();
       setIsDragging(false);
       dragCounterRef.current = 0;
       const file = e.dataTransfer?.files?.[0];
+      console.log('🎯 [MusicImportModal] Window Drop検知:', file?.name);
       if (file) {
         processFile(file);
       }
     };
 
     window.addEventListener('paste', handleWindowPaste);
-    window.addEventListener('dragover', handleWindowDragOver, true);
-    window.addEventListener('dragenter', handleWindowDragEnter, true);
-    window.addEventListener('dragleave', handleWindowDragLeave, true);
-    window.addEventListener('drop', handleWindowDrop, true);
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('dragenter', handleWindowDragEnter);
+    window.addEventListener('dragleave', handleWindowDragLeave);
+    window.addEventListener('drop', handleWindowDrop);
 
     return () => {
       window.removeEventListener('paste', handleWindowPaste);
-      window.removeEventListener('dragover', handleWindowDragOver, true);
-      window.removeEventListener('dragenter', handleWindowDragEnter, true);
-      window.removeEventListener('dragleave', handleWindowDragLeave, true);
-      window.removeEventListener('drop', handleWindowDrop, true);
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('dragenter', handleWindowDragEnter);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
+      window.removeEventListener('drop', handleWindowDrop);
     };
   }, [isOpen, handleParse, processFile]);
 
@@ -175,6 +179,10 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     setIsDragging(false);
     dragCounterRef.current = 0;
     const file = e.dataTransfer.files?.[0];
+    console.log('🎯 [MusicImportModal React onDrop検知]', {
+      filesCount: e.dataTransfer.files?.length,
+      fileName: file?.name
+    });
     if (file) {
       processFile(file);
     }
