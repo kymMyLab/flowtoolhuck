@@ -7,6 +7,7 @@ interface CutCardProps {
   cut: Cut;
   episodeId: number;
   isMvMode?: boolean;
+  aspectRatio?: '9:16' | '1:1' | '16:9';
   onAnimateRequest: (epId: number, cutId: number, modelType: VideoModelType) => void;
   onPreviewCut: (epId: number, cutId: number) => void;
   onUpdateSelection: (epId: number, cutId: number, isSelected: boolean) => void;
@@ -15,7 +16,7 @@ interface CutCardProps {
 }
 
 export const CutCard: React.FC<CutCardProps> = React.memo(({ 
-  cut, episodeId, isMvMode, onAnimateRequest, onPreviewCut, onUpdateSelection, onUpdateModel, onRetry 
+  cut, episodeId, isMvMode, aspectRatio = '1:1', onAnimateRequest, onPreviewCut, onUpdateSelection, onUpdateModel, onRetry 
 }) => {
   const imageSrc = cut.imageBase64 ? (cut.imageBase64.startsWith('data:') ? cut.imageBase64 : `data:image/png;base64,${cut.imageBase64}`) : null;
   const videoSrc = cut.videoBase64 ? (cut.videoBase64.startsWith('data:') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`) : null;
@@ -54,14 +55,19 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
     return `studio-kb-${preset}`;
   };
 
+  const isSquare = aspectRatio === '1:1';
+  const isLandscape = aspectRatio === '16:9';
+  const cardWidthClass = isSquare ? 'w-[155px]' : (isLandscape ? 'w-[185px]' : 'w-[140px]');
+  const aspectClass = isSquare ? 'aspect-square' : (isLandscape ? 'aspect-video' : 'aspect-[9/16]');
+
   return (
     <div 
       onClick={() => onPreviewCut(episodeId, cut.id)}
-      className={`flex-shrink-0 w-[140px] bg-white border rounded-xl overflow-hidden flex flex-col group transition-all relative shadow-lg cursor-pointer ${
+      className={`flex-shrink-0 ${cardWidthClass} bg-white border rounded-xl overflow-hidden flex flex-col group transition-all relative shadow-lg cursor-pointer ${
         cut.isSelectedForVideo ? 'border-amber-500/50 shadow-amber-500/10' : 'border-[#333] hover:border-[#969696]'
       }`}
     >
-      <div className="relative aspect-[9/16] bg-slate-200 flex items-center justify-center overflow-hidden">
+      <div className={`relative ${aspectClass} bg-slate-200 flex items-center justify-center overflow-hidden`}>
         {videoSrc ? (
           <video src={videoSrc} className="w-full h-full object-cover" autoPlay loop muted playsInline />
         ) : imageSrc ? (

@@ -304,6 +304,7 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
 
 interface EpisodeSectionProps {
   ep: Episode;
+  aspectRatio?: '9:16' | '1:1' | '16:9';
   onGenerateRemaining: (epId: number) => void;
   onBulkVideo: (epId: number) => void;
   onBulkBrowserVideo: (epId: number) => void;
@@ -318,7 +319,7 @@ interface EpisodeSectionProps {
 }
 
 export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
-  ep, onGenerateRemaining, onBulkVideo, onBulkBrowserVideo, onExportFullMovie, onDownloadZip, onAnimateRequest, onPreviewCut, onUpdateCut, onBulkRerollTelop, onGenerateCover, onRetry
+  ep, aspectRatio = '1:1', onGenerateRemaining, onBulkVideo, onBulkBrowserVideo, onExportFullMovie, onDownloadZip, onAnimateRequest, onPreviewCut, onUpdateCut, onBulkRerollTelop, onGenerateCover, onRetry
 }) => {
   // 先行プレビュー完了(isPreviewDone)または全体完了(isDone)していれば操作可能
   const isPending = !ep.isGenerating && !ep.isDone && !ep.isPreviewDone;
@@ -425,7 +426,7 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
       <div className={`no-wrap-row gap-4 pb-6 dark-scrollbar ${isPending ? 'grayscale pointer-events-none' : ''}`}>
         {ep.cuts.map(cut => (
           <CutCard 
-            key={cut.id} cut={cut} episodeId={ep.id} isMvMode={ep.isMvMode}
+            key={cut.id} cut={cut} episodeId={ep.id} isMvMode={ep.isMvMode} aspectRatio={aspectRatio}
             onAnimateRequest={onAnimateRequest}
             onPreviewCut={() => onPreviewCut(ep.id, cut)}
             onUpdateSelection={(eId, cId, sel) => onUpdateCut(eId, cId, { isSelectedForVideo: sel })}

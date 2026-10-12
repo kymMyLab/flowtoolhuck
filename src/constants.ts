@@ -366,4 +366,4 @@ export function resolveNeonTheme(word: string, highlightIdx: number, cutId: numb
 // システム動作に必要なテクニカル定数
 export const STRICT_STYLE_SUFFIX = ' seamless full-bleed vertical 9:16 artwork. Strictly upright vertical perspective. Grounded immersive cinematic human eye-level framing. Absolutely NO drone shots, NO modern aerial drones, NO borders, NO text, NO kanji, NO numbers, NO year labels, NO signs indicating the year or date.';
 export const CUTS_PER_EPISODE = 12;
-export const DEFAULT_ASPECT_RATIO = '9:16';
+export const DEFAULT_ASPECT_RATIO = '1:1';

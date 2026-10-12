@@ -28,7 +28,7 @@ import { saveReferenceAsset } from './services/db';
 
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
-    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: '30%', episodeCount: 1, previewCutCount: 3, parallelCount: 2, autoVideo: false, autoDownload: false, superBackoff: false, isMvMode: false, isMultiPanel: false, aspectRatio: '9:16',
+    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: '30%', episodeCount: 1, previewCutCount: 3, parallelCount: 2, autoVideo: false, autoDownload: false, superBackoff: false, isMvMode: false, isMultiPanel: false, aspectRatio: '1:1',
     enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: true
   });
 
@@ -391,7 +391,7 @@ export default function App() {
 
           {episodes.map(ep => (
             <EpisodeSection 
-              key={ep.id} ep={ep} onGenerateRemaining={handleGenerateRemaining} onBulkVideo={handleBulkVideo} onBulkBrowserVideo={handleBulkBrowserVideo} onExportFullMovie={handleExportFullMovie} onDownloadZip={handleDownloadZip} onAnimateRequest={generateVideo} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onUpdateCut={updateCutWrapped} onBulkRerollTelop={handleBulkRerollTelop} onGenerateCover={generateInfographicCover} onRetry={(type, eId, cId) => {
+              key={ep.id} ep={ep} aspectRatio={settings.aspectRatio || '1:1'} onGenerateRemaining={handleGenerateRemaining} onBulkVideo={handleBulkVideo} onBulkBrowserVideo={handleBulkBrowserVideo} onExportFullMovie={handleExportFullMovie} onDownloadZip={handleDownloadZip} onAnimateRequest={generateVideo} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onUpdateCut={updateCutWrapped} onBulkRerollTelop={handleBulkRerollTelop} onGenerateCover={generateInfographicCover} onRetry={(type, eId, cId) => {
                 const epFound = episodes.find(e => e.id === eId);
                 const cutFound = epFound?.cuts.find(c => c.id === cId);
                 if (type === 'image' && cutFound) {
