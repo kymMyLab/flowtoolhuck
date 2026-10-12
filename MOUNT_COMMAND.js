@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@f1f2055/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[CT198音楽インポーター＆3者統合規格(v2.2.0-GrandProduction)＆12カットMV自動展開配備版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@3ca1338/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[全域D&D＆Ctrl+V対応＆CT198音楽インポーター完全配備版]'); });
