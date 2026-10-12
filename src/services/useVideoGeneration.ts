@@ -83,29 +83,14 @@ export function useVideoGeneration({
       try {
         res = await callWithRetry<any>(
           async () => {
-            try {
-              return await Flow.generate.video({ 
-                prompt: finalVideoPrompt, 
-                firstFrameImageMediaId: mediaId, 
-                // lastFrameImageMediaId: endMediaId || undefined, // ※ユーザー指示: After参照はモーフィング崩壊の害悪となるため無効化
-                modelDisplayName: safeVideoModelName, 
-                durationSeconds: modelDef.defaultDuration || 8, 
-                aspectRatio: targetAspectRatio 
-              });
-            } catch (innerErr: any) {
-              const innerMsg = String(innerErr?.message || innerErr);
-              // もしモデル名指定が原因で「利用できません」「NOT_FOUND」等になった場合、modelDisplayNameを外して標準デフォルトで即座にフォールバック
-              if (innerMsg.includes('利用できません') || innerMsg.includes('NOT_FOUND') || innerMsg.includes('INVALID_ARGUMENT')) {
-                console.warn(`[FlowTool Video] modelDisplayName(${safeVideoModelName})でエラー発生。モデル指定なしで標準動画生成を実行:`, innerMsg);
-                return await Flow.generate.video({ 
-                  prompt: finalVideoPrompt, 
-                  firstFrameImageMediaId: mediaId, 
-                  durationSeconds: modelDef.defaultDuration || 8, 
-                  aspectRatio: targetAspectRatio 
-                });
-              }
-              throw innerErr;
-            }
+            // Google Flow内部仕様: Flow.generate.videoはmodelDisplayNameを指定すると「利用できません」エラーになるため、指定なし(デフォルト)で呼び出すのが正規仕様
+            return await Flow.generate.video({ 
+              prompt: finalVideoPrompt, 
+              firstFrameImageMediaId: mediaId, 
+              // lastFrameImageMediaId: endMediaId || undefined, // ※ユーザー指示: After参照はモーフィング崩壊の害悪となるため無効化
+              durationSeconds: modelDef.defaultDuration || 8, 
+              aspectRatio: targetAspectRatio 
+            });
           },
           (attempt, max, delay, err, isSuper) => {
             const waitStr = formatDurationMs(delay);
@@ -137,22 +122,12 @@ export function useVideoGeneration({
 
           res = await callWithRetry<any>(
             async () => {
-              try {
-                return await Flow.generate.video({
-                  prompt: ultraSafePrompt,
-                  firstFrameImageMediaId: mediaId,
-                  modelDisplayName: safeVideoModelName,
-                  durationSeconds: modelDef.defaultDuration || 8,
-                  aspectRatio: targetAspectRatio
-                });
-              } catch (innerErr: any) {
-                return await Flow.generate.video({
-                  prompt: ultraSafePrompt,
-                  firstFrameImageMediaId: mediaId,
-                  durationSeconds: modelDef.defaultDuration || 8,
-                  aspectRatio: targetAspectRatio
-                });
-              }
+              return await Flow.generate.video({
+                prompt: ultraSafePrompt,
+                firstFrameImageMediaId: mediaId,
+                durationSeconds: modelDef.defaultDuration || 8,
+                aspectRatio: targetAspectRatio
+              });
             },
             (attempt, max, delay) => {
               addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画セーフモード再試行中 (${attempt}/${max})...`, 'warning');
