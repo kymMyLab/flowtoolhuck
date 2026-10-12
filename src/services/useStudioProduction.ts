@@ -11,7 +11,7 @@ import {
   resolveRecommendedTelopStaging
 } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs } from './utils';
-import { sanitizePromptForGoogleSafety } from './promptEngine';
+import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative } from './promptEngine';
 import { getAllReferenceAssets } from './db';
 import { renderFullEpisodeMovie, renderKenBurnsVideo } from './browserVideoService';
 import { renderCoverBase64 } from './exportService';
@@ -340,7 +340,30 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎨 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成中 [${modelDef.label}]...`, 'process');
 
     try {
-      const { finalPrompt, finalNegative, referenceImageMediaIds } = buildImagePromptAndNegative(task, settings, activeReferenceRef.current);
+      // ★ ユーザー設計規範: 直前カット（cutId - 1）のプロンプト・構図を動的ネガティブプロンプトとして完全バインド
+      let effectiveNegative = task.negativePrompt || '';
+      if (cutId > 1) {
+        const ep = episodesRef.current.find(e => e.id === epId);
+        const prevCut = ep?.cuts.find(c => c.id === cutId - 1);
+        if (prevCut && prevCut.promptEn) {
+          const antiPrev = buildDynamicAntiPreviousNegative({
+            scale: prevCut.shotScale,
+            angle: prevCut.cinematicAngle,
+            prompt: prevCut.promptEn,
+            tag: prevCut.cameraWork
+          });
+          if (antiPrev) {
+            effectiveNegative = effectiveNegative ? `${effectiveNegative}, ${antiPrev}` : antiPrev;
+          }
+        }
+      }
+
+      const taskWithAntiPrevious: GenerationTask = {
+        ...task,
+        negativePrompt: effectiveNegative
+      };
+
+      const { finalPrompt, finalNegative, referenceImageMediaIds } = buildImagePromptAndNegative(taskWithAntiPrevious, settings, activeReferenceRef.current);
       
       // 生成前に投入パラメータを保存（失敗してもインスペクターで追えるようにする）
       updateCut(epId, cutId, {

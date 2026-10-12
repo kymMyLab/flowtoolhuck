@@ -223,26 +223,26 @@ export function extractLyricVisualPlot(
   if (/雨|濡れ|水たまり/i.test(cleanLyric)) detectedMotifs.push("rain streaks washing down the glass window, moody reflective surfaces");
   if (/空間|部屋|何もない|広くなった/i.test(cleanLyric)) detectedMotifs.push("vast spacious empty room with clean hardwood floors and bare walls");
 
-  // (D) カット別の映画的ポーズ・視線・アングル・方角の完全差別化（似通った構図の連続を根絶）
+  // (D) カット別の映画的ストーリーテリング構成（自然なシチュエーション展開）
   let defaultCutAction = '';
   switch (cutIndex) {
     case 1:
-      defaultCutAction = 'Cinematic establishing wide shot of the world and room, character standing quietly by the open doorway looking inside, gentle ambient morning light setting the emotional tone';
+      defaultCutAction = 'Cinematic establishing wide shot of the room and environment, character standing quietly by the open doorway looking inside, gentle ambient morning light setting the emotional tone';
       break;
     case 2:
       defaultCutAction = 'Downward medium angle, protagonist crouching down or seated on the wooden floor beside stacked brown cardboard moving boxes, long cast shadows, packing belongings';
       break;
     case 3:
-      defaultCutAction = 'Extreme close-up macro framing purely on character\'s hands applying packing tape to a cardboard box or touching a keepsake, tactile texture, intimate focus with no full body';
+      defaultCutAction = 'Extreme close-up macro framing purely on character\'s hands applying packing tape to a cardboard box or touching personal belongings, tactile texture, intimate focus';
       break;
     case 4:
-      defaultCutAction = 'Dutch-tilt medium shot, protagonist has stood up tall and is standing upright in the center, gazing towards the bare interior walls and doorway, spacious room, strictly NOT sitting, upright standing posture';
+      defaultCutAction = 'Dutch-tilt medium shot, protagonist standing quietly amidst the spacious room, gazing towards the bare walls and doorway with quiet anticipation';
       break;
     case 5:
-      defaultCutAction = 'Dynamic wide chorus opening shot, protagonist standing firmly facing the open air as wind billows through clothes and hair, stepping forward into the light, dramatic motion and emotional surge';
+      defaultCutAction = 'Dynamic wide chorus opening shot, emotional wind billowing curtains and hair, radiant sunlight streaming through, stepping forward into the open space';
       break;
     case 6:
-      defaultCutAction = 'Emotional medium close-up bust portrait, character turning around over their shoulder, warm golden sunset illumination highlighting their side profile, standing pose, quiet catharsis, strictly NOT on floor';
+      defaultCutAction = 'Emotional medium close-up bust portrait, character bathed in warm golden sunset illumination from the side, contemplative atmosphere and quiet catharsis';
       break;
     case 7:
       defaultCutAction = "Intense close-up focusing purely on the character's hands and fingertips holding an old key or touching a surface, intimate emotional gesture, shallow depth of field";
@@ -251,7 +251,7 @@ export function extractLyricVisualPlot(
       defaultCutAction = 'Cinematic wide climax, protagonist walking forward through the glowing hallway, seen from behind or three-quarter view, bathed in dramatic illumination, resolute forward motion';
       break;
     case 9:
-      defaultCutAction = 'Low angle shot looking down towards the floor corner, discovering a small shiny screw or keepsake, character pausing mid-stride and looking down from above';
+      defaultCutAction = 'Low angle shot looking down towards the floor corner, discovering a small shiny screw or keepsake, pausing in reflection';
       break;
     case 11:
       defaultCutAction = 'Heroic medium close-up, protagonist with hand resting on the antique door handle, looking towards the open exit with calm resolve and hope, ready to depart';

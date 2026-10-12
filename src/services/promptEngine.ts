@@ -48,7 +48,7 @@ export function buildDynamicAntiPreviousNegative(previous?: PreviousShotContext)
     antiTokens.push(`identical ${previous.scale} framing`, `same shot scale as previous scene`);
   } else if (previous.scale) {
     if (previous.scale.toLowerCase().includes('close')) {
-      antiTokens.push('extreme close-up', 'macro face', 'zoomed in headshot');
+      antiTokens.push('extreme close-up', 'macro face', 'zoomed in headshot', 'tight portrait');
     } else if (previous.scale.toLowerCase().includes('wide')) {
       antiTokens.push('distant tiny figure', 'extreme wide shot', 'panoramic view');
     } else if (previous.scale.toLowerCase().includes('medium')) {
@@ -66,9 +66,35 @@ export function buildDynamicAntiPreviousNegative(previous?: PreviousShotContext)
     }
   }
 
-  // 3. 直前のポーズ・姿勢（床座り、立ち等）に基づく動的除外（POSE_CONTRAST_RULES を検索）
+  // 3. 直前のポーズ・姿勢・背景要素のダイレクトネガティブ化（直前カットを次カットのネガティブにする）
   if (previous.prompt) {
     const lowerPrompt = previous.prompt.toLowerCase();
+
+    // (A) 姿勢・ポーズの除外
+    if (lowerPrompt.includes('sit') || lowerPrompt.includes('crouch') || lowerPrompt.includes('seated') || lowerPrompt.includes('floor') || lowerPrompt.includes('ground')) {
+      antiTokens.push('sitting on floor', 'sitting down', 'seated posture', 'crouching pose', 'squatting on ground', 'sitting pose', 'hugging knees on floor');
+    }
+    if (lowerPrompt.includes('stand') || lowerPrompt.includes('standing')) {
+      antiTokens.push('identical standing pose', 'repeating standing posture', 'static upright standing');
+    }
+    if (lowerPrompt.includes('walk') || lowerPrompt.includes('walking')) {
+      antiTokens.push('walking in same direction', 'repeating walking pose');
+    }
+    if (lowerPrompt.includes('turn') || lowerPrompt.includes('behind') || lowerPrompt.includes('back view')) {
+      antiTokens.push('seen from behind', 'looking back over shoulder', 'back turned');
+    }
+
+    // (B) 特徴的な背景・小道具シチュエーションの重複防止
+    if (lowerPrompt.includes('window') || lowerPrompt.includes('balcony')) {
+      antiTokens.push('identical window background', 'same window frame backdrop', 'repeating window perspective');
+    }
+    if (lowerPrompt.includes('cardboard') || lowerPrompt.includes('moving box')) {
+      antiTokens.push('identical cardboard boxes background', 'repeating stacked moving boxes');
+    }
+    if (lowerPrompt.includes('door') || lowerPrompt.includes('doorway')) {
+      antiTokens.push('identical doorway framing', 'same door backdrop');
+    }
+
     for (const rule of POSE_CONTRAST_RULES) {
       if (rule.triggerKeywords.some(keyword => lowerPrompt.includes(keyword))) {
         antiTokens.push(...rule.antiRepeatNegatives);
