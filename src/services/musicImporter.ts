@@ -296,16 +296,16 @@ export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string =
   // 12カットの歌詞配分マップ
   const cutLyricsMap: Record<number, string> = {
     1: lyricsSec['intro']?.[0] || '♪ (Intro Instrumental)',
-    2: lyricsSec['verse1']?.slice(0, 2).join(' ') || '冷たい床に伸びる影',
-    3: lyricsSec['verse1']?.slice(2, 4).join(' ') || 'べたつく音が響くたび',
-    4: lyricsSec['prechorus']?.slice(0, 2).join(' ') || '広くなった空間は',
+    2: lyricsSec['verse1']?.slice(0, 2)?.join(' ') || '冷たい床に伸びる影',
+    3: lyricsSec['verse1']?.slice(2, 4)?.join(' ') || 'べたつく音が響くたび',
+    4: lyricsSec['prechorus']?.slice(0, 2)?.join(' ') || '広くなった空間は',
     5: chorusLines[0] || '透き通る風が駆け抜けて',
     6: chorusLines[1] || '何もない部屋に日が落ちる',
     7: chorusLines[2] || '右手に残る錆びた艶',
     8: chorusLines[3] || '開かない扉の幻を',
-    9: lyricsSec['verse2']?.slice(0, 2).join(' ') || '隅に落ちてた銀の粒',
-    10: lyricsSec['bridge']?.slice(0, 2).join(' ') || 'あの日置いてった銀の爪',
-    11: lyricsSec['final_chorus']?.slice(0, 2).join(' ') || '新しい明日へ歩き出す',
+    9: lyricsSec['verse2']?.slice(0, 2)?.join(' ') || '隅に落ちてた銀の粒',
+    10: lyricsSec['bridge']?.slice(0, 2)?.join(' ') || 'あの日置いてった銀の爪',
+    11: lyricsSec['final_chorus']?.slice(0, 2)?.join(' ') || '新しい明日へ歩き出す',
     12: lyricsSec['outro']?.[0] || '♪ (Outro / Reverb Tail)'
   };
 
