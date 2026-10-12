@@ -274,10 +274,262 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
 }
 
 /**
- * 扉絵をBase64文字列（PNG）として取得
+ * 横型看板（16:9, 1920x1080）
+ * YouTube通常動画サムネイル・Media Vault横型看板用
+ * 左側にシネマインフォグラフィック看板、右側にキメ絵をシームレス融合配置
+ */
+export async function renderCoverCanvasHorizontal(ep: Episode): Promise<OffscreenCanvas | HTMLCanvasElement> {
+  const width = 1920;
+  const height = 1080;
+  const canvas = (typeof OffscreenCanvas !== 'undefined')
+    ? new OffscreenCanvas(width, height)
+    : document.createElement('canvas');
+  if (!(canvas instanceof OffscreenCanvas)) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+  if (!ctx) throw new Error('Canvas context failed');
+
+  // 世界観・モード判定
+  const isMv = !!ep.isMvMode || (ep.titleJp || '').startsWith('🎵') || ep.productionMode === 'mv';
+  const isHist = checkIsHistorical(ep.era, ep.theme);
+  const mode = ep.productionMode || (isMv ? 'mv' : 'episodes');
+  const combinedContext = `${ep.era || ''} ${ep.theme || ''} ${mode}`.toLowerCase();
+  const isTrivia = mode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('トリビア') || combinedContext.includes('科学') || combinedContext.includes('解説');
+  const isManzai = mode === 'manzai' || combinedContext.includes('漫才') || combinedContext.includes('お笑い') || combinedContext.includes('寄席');
+
+  // 背景ベース色
+  ctx.fillStyle = '#08080A';
+  ctx.fillRect(0, 0, width, height);
+
+  // 1. 右側：キメ絵（またはマスターアンカー）を配置
+  const cut1Base64 = ep.masterAnchorBase64 || ep.cuts[0]?.imageBase64;
+  const textPanelWidth = 840; // 左側文字エリア幅
+
+  if (cut1Base64) {
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image();
+        i.crossOrigin = "anonymous";
+        i.onload = () => resolve(i);
+        i.onerror = () => reject(new Error('Image load failed'));
+        i.src = cut1Base64.startsWith('data:') ? cut1Base64 : `data:image/png;base64,${cut1Base64}`;
+      });
+
+      const imgTargetX = 640;
+      const imgTargetW = width - imgTargetX;
+      const imgScale = Math.max(imgTargetW / img.width, height / img.height);
+      const scaledW = img.width * imgScale;
+      const scaledH = img.height * imgScale;
+      const imgOffsetX = imgTargetX + (imgTargetW - scaledW) / 2;
+      const imgOffsetY = (height - scaledH) / 2;
+
+      ctx.save();
+      ctx.drawImage(img, imgOffsetX, imgOffsetY, scaledW, scaledH);
+
+      // 左側文字エリアとのブレンド暗幕グラデーション（右向きフェード）
+      const leftFade = ctx.createLinearGradient(imgTargetX - 100, 0, imgTargetX + 450, 0);
+      leftFade.addColorStop(0, '#08080A');
+      leftFade.addColorStop(0.4, 'rgba(8, 8, 10, 0.92)');
+      leftFade.addColorStop(0.8, 'rgba(8, 8, 10, 0.4)');
+      leftFade.addColorStop(1, 'rgba(8, 8, 10, 0)');
+      ctx.fillStyle = leftFade;
+      ctx.fillRect(imgTargetX - 100, 0, 550, height);
+
+      // 上下シネマシャドウ
+      const topBottomScrim = ctx.createLinearGradient(0, 0, 0, 160);
+      topBottomScrim.addColorStop(0, 'rgba(8, 8, 10, 0.85)');
+      topBottomScrim.addColorStop(1, 'rgba(8, 8, 10, 0)');
+      ctx.fillStyle = topBottomScrim;
+      ctx.fillRect(imgTargetX, 0, imgTargetW, 160);
+
+      const btmScrim = ctx.createLinearGradient(0, height - 160, 0, height);
+      btmScrim.addColorStop(0, 'rgba(8, 8, 10, 0)');
+      btmScrim.addColorStop(1, 'rgba(8, 8, 10, 0.85)');
+      ctx.fillStyle = btmScrim;
+      ctx.fillRect(imgTargetX, height - 160, imgTargetW, 160);
+
+      ctx.restore();
+    } catch (e) {
+      console.warn('Horizontal cover image render fallback', e);
+    }
+  }
+
+  // 2. 左側：高級看板プレート（背景グラデーション）
+  ctx.save();
+  const panelGrad = ctx.createLinearGradient(0, 0, textPanelWidth, 0);
+  if (isMv) {
+    panelGrad.addColorStop(0, 'rgba(26, 14, 46, 0.98)');
+    panelGrad.addColorStop(0.8, 'rgba(13, 8, 20, 0.95)');
+    panelGrad.addColorStop(1, 'rgba(8, 8, 10, 0.9)');
+  } else if (isHist) {
+    panelGrad.addColorStop(0, 'rgba(36, 20, 10, 0.98)');
+    panelGrad.addColorStop(0.8, 'rgba(18, 10, 5, 0.95)');
+    panelGrad.addColorStop(1, 'rgba(8, 8, 10, 0.9)');
+  } else if (isTrivia) {
+    panelGrad.addColorStop(0, 'rgba(8, 32, 51, 0.98)');
+    panelGrad.addColorStop(0.8, 'rgba(4, 16, 26, 0.95)');
+    panelGrad.addColorStop(1, 'rgba(8, 8, 10, 0.9)');
+  } else {
+    panelGrad.addColorStop(0, 'rgba(24, 24, 34, 0.98)');
+    panelGrad.addColorStop(0.8, 'rgba(13, 13, 18, 0.95)');
+    panelGrad.addColorStop(1, 'rgba(8, 8, 10, 0.9)');
+  }
+  ctx.fillStyle = panelGrad;
+  ctx.fillRect(0, 0, textPanelWidth, height);
+
+  // 境界アクセントライン
+  const lineGrad = ctx.createLinearGradient(0, 0, 0, height);
+  if (isMv) {
+    lineGrad.addColorStop(0, '#FF0055');
+    lineGrad.addColorStop(0.5, '#A855F7');
+    lineGrad.addColorStop(1, '#00F0FF');
+  } else if (isHist) {
+    lineGrad.addColorStop(0, '#F59E0B');
+    lineGrad.addColorStop(0.5, '#B45309');
+    lineGrad.addColorStop(1, '#D97706');
+  } else {
+    lineGrad.addColorStop(0, '#6366F1');
+    lineGrad.addColorStop(0.5, '#8B5CF6');
+    lineGrad.addColorStop(1, '#EC4899');
+  }
+  ctx.fillStyle = lineGrad;
+  ctx.fillRect(textPanelWidth - 4, 0, 4, height);
+
+  // 3. 左側タイポグラフィレイアウト
+  const leftMargin = 80;
+
+  // A. モード＆エピソードバッジ
+  ctx.save();
+  const badgeY = 110;
+  const badgeText = isMv ? '🎵 CINEMATIC MUSIC VIDEO' : isHist ? '📜 HISTORICAL DRAMA' : isTrivia ? '💡 KNOWLEDGE SHORTS' : isManzai ? '🎙️ COMEDY MANZAI' : '🎬 EPISODIC CINEMA';
+  ctx.font = '900 18px "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif';
+  ctx.fillStyle = isMv ? '#F43F5E' : isHist ? '#F59E0B' : '#818CF8';
+  ctx.textAlign = 'left';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowBlur = 8;
+  ctx.fillText(badgeText, leftMargin, badgeY);
+
+  const epBadgeText = `EPISODE ${String(ep.id).padStart(2, '0')}`;
+  ctx.font = '800 16px monospace';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText(`|   ${epBadgeText}`, leftMargin + ctx.measureText(badgeText).width + 20, badgeY);
+  ctx.restore();
+
+  // B. メインタイトル（特大・2行まで自動分割）
+  ctx.save();
+  const rawTitle = cleanTitle(ep.titleJp || '無題');
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 6;
+
+  let titleFontSize = 64;
+  if (rawTitle.length > 18) titleFontSize = 48;
+  else if (rawTitle.length > 12) titleFontSize = 54;
+  ctx.font = `900 ${titleFontSize}px "Hiragino Mincho ProN", "Yu Mincho", serif`;
+
+  const maxTitleW = textPanelWidth - leftMargin - 60;
+  const titleY = 240;
+
+  if (ctx.measureText(rawTitle).width <= maxTitleW) {
+    ctx.fillText(rawTitle, leftMargin, titleY);
+  } else {
+    // 2行分割
+    const mid = Math.ceil(rawTitle.length / 2);
+    const line1 = rawTitle.slice(0, mid);
+    const line2 = rawTitle.slice(mid);
+    ctx.fillText(line1, leftMargin, titleY - 20);
+    ctx.fillText(line2, leftMargin, titleY + titleFontSize + 5);
+  }
+  ctx.restore();
+
+  // C. キャッチコピーリボン
+  const catchphrase = ep.coverCatchphraseJp || ep.summary || '';
+  if (catchphrase) {
+    ctx.save();
+    const ribbonY = 460;
+    const ribbonH = 70;
+    const ribbonW = textPanelWidth - leftMargin - 60;
+
+    const rGrad = ctx.createLinearGradient(leftMargin, ribbonY, leftMargin + ribbonW, ribbonY);
+    if (isMv) {
+      rGrad.addColorStop(0, '#BE185D');
+      rGrad.addColorStop(1, '#6D28D9');
+    } else if (isHist) {
+      rGrad.addColorStop(0, '#B45309');
+      rGrad.addColorStop(1, '#78350F');
+    } else {
+      rGrad.addColorStop(0, '#4338CA');
+      rGrad.addColorStop(1, '#1E1B4B');
+    }
+    ctx.fillStyle = rGrad;
+    ctx.beginPath();
+    ctx.roundRect(leftMargin, ribbonY, ribbonW, ribbonH, 14);
+    ctx.fill();
+
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.stroke();
+
+    ctx.font = 'bold 24px "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 8;
+    const cleanCatch = catchphrase.length > 28 ? catchphrase.slice(0, 27) + '…' : catchphrase;
+    ctx.fillText(`“ ${cleanCatch} ”`, leftMargin + ribbonW / 2, ribbonY + 45);
+    ctx.restore();
+  }
+
+  // D. メタデータタグ群
+  ctx.save();
+  const tagsY = 620;
+  const tags: string[] = [];
+  if (ep.era) tags.push(ep.era);
+  if (ep.theme) tags.push(ep.theme);
+  if (ep.taste) tags.push(ep.taste);
+  if (isMv) tags.push('4K CINEMATIC MV');
+
+  if (tags.length > 0) {
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(tags.map(t => `#${t}`).join('   •   '), leftMargin, tagsY);
+  }
+  ctx.restore();
+
+  // E. 最下部ブランド透かし
+  ctx.save();
+  ctx.font = '600 16px monospace';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.textAlign = 'left';
+  ctx.fillText('STUDIO PRO PRODUCTION  |  16:9 MASTER COVER', leftMargin, height - 60);
+  ctx.restore();
+
+  return canvas;
+}
+
+/**
+ * 扉絵（縦型 9:16）をBase64文字列（PNG）として取得
  */
 export async function renderCoverBase64(ep: Episode): Promise<string> {
   const canvas = await renderCoverCanvas(ep);
+  return canvasToBase64(canvas);
+}
+
+/**
+ * 扉絵（横型 16:9）をBase64文字列（PNG）として取得
+ */
+export async function renderCoverBase64Horizontal(ep: Episode): Promise<string> {
+  const canvas = await renderCoverCanvasHorizontal(ep);
+  return canvasToBase64(canvas);
+}
+
+async function canvasToBase64(canvas: OffscreenCanvas | HTMLCanvasElement): Promise<string> {
   try {
     if (canvas instanceof OffscreenCanvas) {
       const blob = await canvas.convertToBlob({ type: 'image/png' });
@@ -309,3 +561,4 @@ export async function renderCoverBase64(ep: Episode): Promise<string> {
     }
   }
 }
+

@@ -3,11 +3,31 @@ import { Episode, SeriesManifest } from '../../types';
 import { LogEntry } from '../../components/StudioLogs';
 import { extractHighlights } from '../directorService';
 import { generateSRT } from './srtGenerator';
-import { renderCoverCanvas } from './coverRenderer';
+import { renderCoverCanvas, renderCoverCanvasHorizontal } from './coverRenderer';
 import { generateSafeFilenames, savePackageFile, safeJsonStringify } from './fileDownloader';
 
 /**
- * エピソード全体のアセット（各カット画像/動画、三面図、SRT字幕、扉絵、script.json、ログ）を同梱したZIPパッケージを作成・保存
+ * Canvasメモリ解放ヘルパー
+ */
+function cleanupCanvas(canvas: OffscreenCanvas | HTMLCanvasElement) {
+  try {
+    if (canvas instanceof OffscreenCanvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.width = 0;
+      canvas.height = 0;
+    } else {
+      const cvs = canvas as HTMLCanvasElement;
+      const ctx = cvs.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, cvs.width, cvs.height);
+      cvs.width = 0;
+      cvs.height = 0;
+    }
+  } catch (_) {}
+}
+
+/**
+ * エピソード全体のアセット（各カット画像/動画、三面図、SRT字幕、縦横両面看板、script.json、ログ）を同梱したZIPパッケージを作成・保存
  */
 export const downloadZip = async (
   ep: Episode, 
@@ -17,8 +37,12 @@ export const downloadZip = async (
 ): Promise<{ filename: string; blobUrl: string; sizeStr: string; flowSuccess: boolean } | null> => {
   addLog(`📦 Ep.${ep.id} パッケージング中...`, 'process');
   try {
+    const { asciiFilename, displayFilename } = generateSafeFilenames(ep);
+
+    // ━━━ REQ-01: ZIP内ルートフォルダ名をタイムスタンプ付きユニーク名にして衝突完全根絶 ━━━
+    const uniquePackageFolderName = displayFilename.replace(/\.zip$/i, '');
     const zip = new JSZip();
-    const folder = zip.folder(`Episode_${ep.id}_Package`);
+    const folder = zip.folder(uniquePackageFolderName);
     if (!folder) throw new Error('ZIP creation failed');
 
     // 1. 各カット素材（Start絵、After絵/到達点フレーム、動画）をすべて同梱
@@ -76,39 +100,51 @@ export const downloadZip = async (
     addLog(`📝 SRT字幕ファイルを生成中...`, 'info');
     folder.file('subtitles.srt', generateSRT(ep));
 
+    // ━━━ REQ-03: 看板画像（cover）の縦型（9:16）＆ 横型（16:9）両面同梱 ━━━
+    addLog(`🖼️ 看板画像（縦型 cover_v & 横型 cover_h）を合成中...`, 'info');
+    
+    // A. 縦型看板（1080x1920 / 9:16 縦型看板・ショート動画用）
     if (ep.coverBase64) {
-      addLog(`🖼️ 世界観適応インフォグラフィック扉絵を格納中...`, 'info');
       const cleanCover = ep.coverBase64.split('base64,').pop() || ep.coverBase64;
-      folder.file('cover.png', cleanCover, { base64: true });
+      folder.file('cover_v.png', cleanCover, { base64: true });
+      folder.file('cover.png', cleanCover, { base64: true }); // 既存後方互換
     } else {
-      addLog(`🖼️ YouTube用超ド迫力扉絵を合成中...`, 'info');
-      const coverCanvas = await renderCoverCanvas(ep);
-      const coverBlob = await (coverCanvas instanceof OffscreenCanvas 
-        ? coverCanvas.convertToBlob({ type: 'image/png' }) 
-        : new Promise<Blob>(r => (coverCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
-      folder.file('cover.png', coverBlob);
-      if (coverCanvas instanceof OffscreenCanvas) {
-        const coverCtx = coverCanvas.getContext('2d');
-        if (coverCtx) coverCtx.clearRect(0, 0, coverCanvas.width, coverCanvas.height);
-        coverCanvas.width = 0;
-        coverCanvas.height = 0;
-      } else {
-        const cvs = coverCanvas as HTMLCanvasElement;
-        const coverCtx = cvs.getContext('2d');
-        if (coverCtx) coverCtx.clearRect(0, 0, cvs.width, cvs.height);
-        cvs.width = 0;
-        cvs.height = 0;
-      }
+      const coverVCanvas = await renderCoverCanvas(ep);
+      const vBlob = await (coverVCanvas instanceof OffscreenCanvas 
+        ? coverVCanvas.convertToBlob({ type: 'image/png' }) 
+        : new Promise<Blob>(r => (coverVCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
+      folder.file('cover_v.png', vBlob);
+      folder.file('cover.png', vBlob); // 既存後方互換
+      cleanupCanvas(coverVCanvas);
+    }
+
+    // B. 横型看板（1920x1080 / 16:9 横型看板・YouTube通常動画用）
+    try {
+      const coverHCanvas = await renderCoverCanvasHorizontal(ep);
+      const hBlob = await (coverHCanvas instanceof OffscreenCanvas
+        ? coverHCanvas.convertToBlob({ type: 'image/png' })
+        : new Promise<Blob>(r => (coverHCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
+      folder.file('cover_h.png', hBlob);
+      cleanupCanvas(coverHCanvas);
+    } catch (e) {
+      console.warn('Horizontal cover generation skipped:', e);
     }
     
-    // ※未結合の各カット素材（cut_*.png / cut_*_after.png / cut_*.mp4）と完全版 script.json を同梱
+    // ━━━ REQ-02: script.json トップレベルへの作品・話数メタデータの明記 ━━━
     const scriptJson = {
+      // Media Vault Integration Schema (REQ-02)
+      title: ep.titleJp || ep.titleEn || '無題',
+      episode_no: ep.id || 1,
+      total_episodes: manifest?.totalEpisodes || 1,
+      theme: ep.theme || '',
+      created_at: new Date().toISOString(),
+
+      // FlowTool Native Properties (100% Backward Compatibility)
       id: ep.id,
       productionMode: ep.productionMode || (ep.isMvMode ? 'mv' : 'episodes'),
       titleJp: ep.titleJp || '無題',
       titleEn: ep.titleEn || '',
       summary: ep.summary || '',
-      theme: ep.theme || '',
       taste: ep.taste || '',
       characterDna: ep.characterDna || '',
       catchphrase: { jp: ep.coverCatchphraseJp || '', en: ep.coverCatchphraseEn || '' },
@@ -135,6 +171,14 @@ export const downloadZip = async (
         const hlWords = safeHl.map(h => h.word);
 
         return {
+          // Media Vault Integration Fields (REQ-02)
+          cut_no: c.id || 1,
+          duration_sec: c.duration || 3.0,
+          narration: narration,
+          image_file: `cut_${c.id}.png`,
+          video_file: `cut_${c.id}.mp4`,
+
+          // FlowTool Native Fields
           id: c.id || 1,
           dialogue: narration,
           narrationJp: narration,
@@ -193,7 +237,6 @@ export const downloadZip = async (
     // Using compression: 'STORE' to prevent massive memory spikes and crashes during large batch generation
     const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
 
-    const { asciiFilename, displayFilename } = generateSafeFilenames(ep);
     const filename = displayFilename;
     const sizeMb = (zipBlob.size / (1024 * 1024)).toFixed(1);
     const sizeStr = `${sizeMb} MB`;
