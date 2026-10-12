@@ -74,8 +74,62 @@ export default function App() {
   const [isCastModalOpen, setIsCastModalOpen] = useState(false);
   const [isComicWizardOpen, setIsComicWizardOpen] = useState(false);
   const [isMusicImportOpen, setIsMusicImportOpen] = useState(false);
+  const [draggedJsonFile, setDraggedJsonFile] = useState<File | null>(null);
+  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
+  const globalDragCounterRef = useRef(0);
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
+
+  // アプリ全体の全画面ドラッグ＆ドロップ監視（JSONファイルならいつでも即座に音楽インポーターを自動起動）
+  useEffect(() => {
+    const handleGlobalDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      globalDragCounterRef.current += 1;
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+        setIsGlobalDragging(true);
+      }
+    };
+
+    const handleGlobalDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      globalDragCounterRef.current -= 1;
+      if (globalDragCounterRef.current <= 0) {
+        globalDragCounterRef.current = 0;
+        setIsGlobalDragging(false);
+      }
+    };
+
+    const handleGlobalDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleGlobalDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsGlobalDragging(false);
+      globalDragCounterRef.current = 0;
+      const file = e.dataTransfer?.files?.[0];
+      if (file) {
+        const isJson = file.name.toLowerCase().endsWith('.json') || file.type === 'application/json';
+        if (isJson || file.name.includes('metadata') || file.name.includes('song')) {
+          setDraggedJsonFile(file);
+          setIsMusicImportOpen(true);
+          addLog(`📥 楽曲メタデータ「${file.name}」をドロップインポートしました！`, 'process');
+        }
+      }
+    };
+
+    window.addEventListener('dragenter', handleGlobalDragEnter);
+    window.addEventListener('dragleave', handleGlobalDragLeave);
+    window.addEventListener('dragover', handleGlobalDragOver);
+    window.addEventListener('drop', handleGlobalDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleGlobalDragEnter);
+      window.removeEventListener('dragleave', handleGlobalDragLeave);
+      window.removeEventListener('dragover', handleGlobalDragOver);
+      window.removeEventListener('drop', handleGlobalDrop);
+    };
+  }, [addLog]);
 
   const handleUpdateMangaProject = useCallback((updated: MangaProject) => {
     setMangaProject(prev => {
@@ -359,7 +413,21 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-screen w-screen bg-slate-50 text-slate-900 select-none overflow-hidden">
+      <div className="flex flex-col h-screen w-screen bg-slate-50 text-slate-900 select-none overflow-hidden relative">
+        {/* 全画面 JSON ドロップゾーン オーバーレイ */}
+        {isGlobalDragging && (
+          <div className="absolute inset-0 z-[9999] bg-violet-950/85 backdrop-blur-md flex flex-col items-center justify-center pointer-events-none animate-fadeIn border-4 border-dashed border-violet-400 m-4 rounded-3xl shadow-2xl">
+            <div className="w-24 h-24 rounded-full bg-violet-600/50 flex items-center justify-center mb-6 ring-8 ring-violet-400/30 animate-bounce">
+              <span className="text-5xl">🎵</span>
+            </div>
+            <h2 className="text-3xl font-black text-white tracking-wider mb-3 drop-shadow">
+              楽曲メタデータ (JSON) をドロップ
+            </h2>
+            <p className="text-violet-200 text-base font-bold bg-violet-900/60 px-6 py-2 rounded-full border border-violet-400/40">
+              画面のどこに落としても即座にMV制作インポーターが起動します
+            </p>
+          </div>
+        )}
         <StudioHeader 
           settings={settings}
           setSettings={setSettings}
@@ -523,7 +591,11 @@ export default function App() {
           />
           <MusicImportModal
             isOpen={isMusicImportOpen}
-            onClose={() => setIsMusicImportOpen(false)}
+            initialFile={draggedJsonFile}
+            onClose={() => {
+              setIsMusicImportOpen(false);
+              setDraggedJsonFile(null);
+            }}
             onDeployEpisode={handleDeployMusicEpisode}
             onDeployBatchEpisodes={handleDeployBatchMusicEpisodes}
           />

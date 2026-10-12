@@ -7,13 +7,15 @@ interface MusicImportModalProps {
   onClose: () => void;
   onDeployEpisode: (episode: Episode) => void;
   onDeployBatchEpisodes?: (episodes: Episode[]) => void;
+  initialFile?: File | null;
 }
 
 export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   isOpen,
   onClose,
   onDeployEpisode,
-  onDeployBatchEpisodes
+  onDeployBatchEpisodes,
+  initialFile
 }) => {
   const [jsonText, setJsonText] = useState('');
   const [parsedTracks, setParsedTracks] = useState<ImportedTrack[]>([]);
@@ -49,10 +51,20 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       setJsonText(content);
       handleParse(content);
     };
+    reader.onerror = () => {
+      setErrorMessage('ファイルの読み込みに失敗しました。');
+    };
     reader.readAsText(file);
   }, [handleParse]);
 
-  // グローバルなCtrl+V（ペースト）の自動捕捉
+  // initialFile が外部（全画面D&D等）から渡された場合に即時パース
+  useEffect(() => {
+    if (isOpen && initialFile) {
+      processFile(initialFile);
+    }
+  }, [isOpen, initialFile, processFile]);
+
+  // グローバルなCtrl+V（ペースト）の自動捕捉＆全画面D&D完全対応
   useEffect(() => {
     if (!isOpen) return;
 
@@ -70,24 +82,51 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       }
     };
 
-    // ブラウザが誤ってファイルを開いてしまうのを防止
     const handleWindowDragOver = (e: DragEvent) => {
       e.preventDefault();
     };
+
+    const handleWindowDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current += 1;
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+        setIsDragging(true);
+      }
+    };
+
+    const handleWindowDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current -= 1;
+      if (dragCounterRef.current <= 0) {
+        dragCounterRef.current = 0;
+        setIsDragging(false);
+      }
+    };
+
     const handleWindowDrop = (e: DragEvent) => {
       e.preventDefault();
+      setIsDragging(false);
+      dragCounterRef.current = 0;
+      const file = e.dataTransfer?.files?.[0];
+      if (file) {
+        processFile(file);
+      }
     };
 
     window.addEventListener('paste', handleWindowPaste);
     window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('dragenter', handleWindowDragEnter);
+    window.addEventListener('dragleave', handleWindowDragLeave);
     window.addEventListener('drop', handleWindowDrop);
 
     return () => {
       window.removeEventListener('paste', handleWindowPaste);
       window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('dragenter', handleWindowDragEnter);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
       window.removeEventListener('drop', handleWindowDrop);
     };
-  }, [isOpen, handleParse]);
+  }, [isOpen, handleParse, processFile]);
 
   // モーダル全体でのドラッグ＆ドロップ監視（チラつき防止のカウント管理）
   const handleDragEnter = (e: React.DragEvent) => {
