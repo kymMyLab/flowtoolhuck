@@ -160,6 +160,15 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                           return res;
                         })()
                       : (() => {
+                          if (settings.productionMode === 'mv' && settings.totalEpisodes) {
+                            const max = settings.totalEpisodes;
+                            const steps = [1, 2, 4, 10, 20, 50].filter(n => n < max);
+                            const res = Array.from(new Set([...steps, max])).sort((a, b) => a - b);
+                            if (!res.includes(settings.episodeCount)) {
+                              return Array.from(new Set([...res, settings.episodeCount])).sort((a, b) => a - b);
+                            }
+                            return res;
+                          }
                           const base = [1, 2, 4, 10, 20, 50];
                           if (!base.includes(settings.episodeCount)) {
                             return [...base, settings.episodeCount].sort((a, b) => a - b);
@@ -171,6 +180,9 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                     if (settings.productionMode === 'style-matrix') {
                       const totalTastesCount = Object.keys({ ...TASTES, ...loadCustomTastes() }).length;
                       return v >= totalTastesCount ? `${v}種 (全)` : `${v}種`;
+                    }
+                    if (settings.productionMode === 'mv' && settings.totalEpisodes && v >= settings.totalEpisodes) {
+                      return `${v}曲 (全)`;
                     }
                     return `${v}${settings.productionMode === 'mv' ? '曲' : (settings.productionMode === 'episodes' ? '話' : '本')}`;
                   }}

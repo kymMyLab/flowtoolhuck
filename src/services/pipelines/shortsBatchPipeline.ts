@@ -53,6 +53,58 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       .map(e => e.titleJp.replace(/^[^\w\s一-龯]+/, '').trim())
       .filter(Boolean);
 
+    // ★ 最重要: すでにインポートされた絵コンテ（CT198楽曲等）が既に存在するか判定！
+    const existingEp = episodesRef.current.find(e => e.id === epIndex);
+    const hasPreloadedStory = existingEp && existingEp.cuts.length > 0 && existingEp.cuts.some(c => c.narrationJp || c.telop?.fullText);
+
+    if (hasPreloadedStory) {
+      addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit} / 今回制作: ${currentBatchStep}${modeInfo.unit}目】インポート済み楽曲『${existingEp.titleJp}』の作画を開始します！`, 'process');
+      updateEpisode(epIndex, { isGenerating: true });
+
+      // 三面図マスターシートの自動生成（未生成かつ設定有効時）
+      if (!existingEp.characterTurnaroundMediaId && settings.enableTurnaroundSheet) {
+        const turnaround = await ensureCharacterTurnaround(ctx, existingEp);
+        if (turnaround.mediaId) {
+          existingEp.characterTurnaroundMediaId = turnaround.mediaId;
+          existingEp.characterTurnaroundBase64 = turnaround.base64;
+          updateEpisode(epIndex, {
+            characterTurnaroundMediaId: turnaround.mediaId,
+            characterTurnaroundBase64: turnaround.base64
+          });
+        }
+      }
+
+      // 先行カット数分の描画を実行
+      const cutsCount = existingEp.cuts.length;
+      const targetCutCount = Math.min(settings.previewCutCount || 12, cutsCount);
+      const pendingCuts = existingEp.cuts.slice(0, targetCutCount).filter(c => !(c.imageBase64 || c.imageMediaId));
+      if (pendingCuts.length > 0) {
+        await runTasks(buildCutTasks(existingEp, pendingCuts));
+      }
+
+      const isAllDone = targetCutCount >= cutsCount;
+      updateEpisode(epIndex, { 
+        isGenerating: false, 
+        isPreviewDone: true, 
+        isDone: isAllDone 
+      });
+      addLog(`✅ 第${epIndex}${modeInfo.unit}『${existingEp.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！`, 'success');
+
+      // インフォグラフィック扉絵
+      await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epIndex) || existingEp);
+
+      if (settings.autoVideo && !isAbortedRef.current) {
+        const currentEpForVideo = episodesRef.current.find(e => e.id === epIndex);
+        const selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
+        if (selectedCuts.length > 0) {
+          addLog(`🎬 第${epIndex}${modeInfo.unit}の自動動画化を開始します（対象: ${selectedCuts.length}カット）...`, 'process');
+          await handleBulkVideo(epIndex);
+        }
+      }
+
+      continue; // インポート済みエピソードの作画完了、次の曲へ
+    }
+
     addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit} / 今回制作: ${currentBatchStep}${modeInfo.unit}目（全${totalEpCount}${modeInfo.unit}）】「${baseRawTitle}」第${epIndex}弾のお題＆脚本（12カット）をAIが考案中...`, 'process');
 
     const curPlan = {

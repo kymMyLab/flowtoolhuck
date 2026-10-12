@@ -165,7 +165,9 @@ export default function App() {
       productionMode: 'mv',
       isMvMode: true,
       theme: ep.theme || prev.theme,
-      taste: ep.taste || prev.taste
+      taste: ep.taste || prev.taste,
+      episodeCount: 1,
+      totalEpisodes: 1
     }));
     addLog(`🎵 CT198楽曲「${ep.titleJp}」の12カット絵コンテを展開しました！（サビ30秒テロップ＆伏線小道具自動バインド済）`, 'success');
   }, [setEpisodes, setSettings, addLog]);
@@ -177,10 +179,29 @@ export default function App() {
       productionMode: 'mv',
       isMvMode: true,
       theme: eps[0]?.theme || prev.theme,
-      taste: eps[0]?.taste || prev.taste
+      taste: eps[0]?.taste || prev.taste,
+      episodeCount: eps.length,
+      totalEpisodes: eps.length
     }));
     addLog(`🎵 CT198楽曲 全${eps.length}曲の12カット絵コンテを一括展開しました！`, 'success');
   }, [setEpisodes, setSettings, addLog]);
+
+  // ヘッダー等で画風（taste）が変更された際、画像未生成のエピソード群のtasteも即座に同期
+  useEffect(() => {
+    if (!settings.taste) return;
+    setEpisodes(prev => {
+      let changed = false;
+      const next = prev.map(ep => {
+        const hasImages = ep.cuts.some(c => !!(c.imageBase64 || c.imageMediaId));
+        if (!hasImages && ep.taste !== settings.taste) {
+          changed = true;
+          return { ...ep, taste: settings.taste };
+        }
+        return ep;
+      });
+      return changed ? next : prev;
+    });
+  }, [settings.taste, setEpisodes]);
 
   // グローバル（コンソール）から全エピソードデータにいつでも直接アクセス・救出可能にする
   useEffect(() => {
