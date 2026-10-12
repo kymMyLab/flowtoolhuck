@@ -320,10 +320,28 @@ Output ONLY valid JSON:
     antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${multiPanelNeg}` : multiPanelNeg;
   }
 
+  // ── 直前カットとの映画的ポーズ＆背景方角対比ディレクティブ（Positive Pose & Spatial Contrast） ──
+  const contrastDirectives: string[] = [];
+  if (previousShotInfo?.prompt) {
+    const prevText = previousShotInfo.prompt.toLowerCase();
 
+    // 1. 姿勢の対比: 直前が床座り・うずくまりだった場合、次カットは絶対に立ち姿・歩き姿へ強制転換
+    if (prevText.includes('sit') || prevText.includes('crouch') || prevText.includes('floor') || prevText.includes('seated') || prevText.includes('ground')) {
+      contrastDirectives.push('Character is STANDING UPRIGHT or WALKING, dynamic active posture, strictly NOT sitting or crouching on floor, radical pose contrast from previous scene');
+    } else if (prevText.includes('stand') || prevText.includes('standing')) {
+      contrastDirectives.push('Closer intimate framing, moving, turning around, or examining an item with hands, strictly different posture from previous standing pose');
+    }
+
+    // 2. カメラの向き・背景方角の対比: 直前が窓背景だった場合、扉や壁・部屋の内側へ反転
+    if (prevText.includes('window') || prevText.includes('balcony') || prevText.includes('curtain')) {
+      contrastDirectives.push('Camera points towards the interior room, wooden doorway or bare inner wall, strictly NOT repeating the same window background');
+    }
+  }
+
+  const contrastPrompt = contrastDirectives.length > 0 ? `[MANDATORY CINEMATIC CONTRAST: ${contrastDirectives.join('. ')}]. ` : '';
 
   return {
-    promptEn: `${preset.angle}. ${prompt}`,
+    promptEn: `${contrastPrompt}${preset.angle}. ${prompt}`,
     negativePrompt: antiPreviousNegative,
     cameraWork: recCw.id,
     cameraMotion: recCw.motionPrompt,

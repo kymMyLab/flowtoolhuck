@@ -1,4 +1,4 @@
-import{r as x,j as e}from"./vendor-react-Boa1DHsq.js";import{l as j,D as y,r as w,s as v}from"./index-DFzYHY6v.js";import{G as N}from"./production-engine-BXMTzleq.js";import"./studio-constants-CkGDSXFU.js";import"./cast-manager-EGLdEnFq.js";const S=({isOpen:l,onClose:r,currentMode:s,modeLabel:i,onThemesUpdated:m})=>{const[o,n]=x.useState(""),[c,d]=x.useState(!1);if(x.useEffect(()=>{if(l){const a=j()[s]||y[s]||[];n(a.join(`
+import{r as x,j as e}from"./vendor-react-Boa1DHsq.js";import{l as j,D as y,r as w,s as v}from"./index-CMNkIn5C.js";import{G as N}from"./production-engine-C2y5ETft.js";import"./studio-constants-CkGDSXFU.js";import"./cast-manager-4dxCMs_a.js";const S=({isOpen:l,onClose:r,currentMode:s,modeLabel:i,onThemesUpdated:m})=>{const[o,n]=x.useState(""),[c,d]=x.useState(!1);if(x.useEffect(()=>{if(l){const a=j()[s]||y[s]||[];n(a.join(`
 `)),d(!1)}},[l,s]),!l)return null;const p=o.split(`
 `).map(t=>t.trim()).filter(Boolean).length,b=()=>{const t=o.split(`
 `).map(g=>g.trim()).filter(Boolean),f=v(s,t)[s]||[];m(f),d(!0),setTimeout(()=>{d(!1),r()},600)},h=()=>{if(window.confirm(`「${i}」のテーマを初期デフォルト（10選）に戻しますか？`)){const a=w(s)[s]||[];n(a.join(`

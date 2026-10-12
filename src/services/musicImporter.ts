@@ -202,7 +202,13 @@ export function extractLyricVisualPlot(
     }
   }
   if (/影|伸びる影/i.test(cleanLyric)) detectedMotifs.push("dramatic elongated shadows stretching across the bare wooden floor");
-  if (/床|冷たい床|座る|しゃがむ/i.test(cleanLyric)) detectedMotifs.push("character sitting or crouching quietly on the cold hardwood floor");
+  if (/床|冷たい床|座る|しゃがむ/i.test(cleanLyric)) {
+    if (cutIndex === 2 || cutIndex === 9) {
+      detectedMotifs.push("character sitting or crouching quietly on the cold hardwood floor");
+    } else {
+      detectedMotifs.push("character standing tall on the hardwood floor, looking across the spacious room");
+    }
+  }
   if (/振り返る|後ろ姿|背中/i.test(cleanLyric)) detectedMotifs.push("character seen from behind or three-quarter profile, pausing in contemplation");
   if (/歩く|歩き出|進む/i.test(cleanLyric)) detectedMotifs.push("character taking a resolute forward step towards the light");
   if (/瞳|目|見つめ|見上げる/i.test(cleanLyric)) detectedMotifs.push("contemplative introspective gaze, looking down quietly in deep thought");
@@ -217,41 +223,41 @@ export function extractLyricVisualPlot(
   if (/雨|濡れ|水たまり/i.test(cleanLyric)) detectedMotifs.push("rain streaks washing down the glass window, moody reflective surfaces");
   if (/空間|部屋|何もない|広くなった/i.test(cleanLyric)) detectedMotifs.push("vast spacious empty room with clean hardwood floors and bare walls");
 
-  // (D) カット別の役割に応じたストーリーテリング構成（「なければ生成」フォールバック）
+  // (D) カット別の映画的ポーズ・視線・アングル・方角の完全差別化（似通った構図の連続を根絶）
   let defaultCutAction = '';
   switch (cutIndex) {
     case 1:
-      defaultCutAction = 'Cinematic establishing wide shot of the room and environment, quiet atmospheric ambiance setting the emotional tone';
+      defaultCutAction = 'Cinematic establishing wide shot of the world and room, character standing quietly by the open doorway looking inside, gentle ambient morning light setting the emotional tone';
       break;
     case 2:
-      defaultCutAction = 'Medium shot of the protagonist standing quietly in the room beside moving boxes, long cast shadows on the floor';
+      defaultCutAction = 'Downward medium angle, protagonist crouching down or seated on the wooden floor beside stacked brown cardboard moving boxes, long cast shadows, packing belongings';
       break;
     case 3:
-      defaultCutAction = 'Intimate medium close-up, protagonist interacting with personal belongings, contemplative melancholic mood';
+      defaultCutAction = 'Extreme close-up macro framing purely on character\'s hands applying packing tape to a cardboard box or touching a keepsake, tactile texture, intimate focus with no full body';
       break;
     case 4:
-      defaultCutAction = 'Dutch-tilt medium angle capturing the protagonist pausing amidst the empty space, quiet anticipation before change';
+      defaultCutAction = 'Dutch-tilt medium shot, protagonist has stood up tall and is standing upright in the center, gazing towards the bare interior walls and doorway, spacious room, strictly NOT sitting, upright standing posture';
       break;
     case 5:
-      defaultCutAction = 'Dynamic wide chorus opening shot, emotional wind fluttering curtains, radiant sunlight bursting into the space';
+      defaultCutAction = 'Dynamic wide chorus opening shot, protagonist standing firmly facing the open air as wind billows through clothes and hair, stepping forward into the light, dramatic motion and emotional surge';
       break;
     case 6:
-      defaultCutAction = 'Sweeping cinematic medium shot of the protagonist in glowing ambient light, profound emotional release';
+      defaultCutAction = 'Emotional medium close-up bust portrait, character turning around over their shoulder, warm golden sunset illumination highlighting their side profile, standing pose, quiet catharsis, strictly NOT on floor';
       break;
     case 7:
-      defaultCutAction = "Intense close-up on the protagonist's hands or poignant gesture, visceral emotional resonance";
+      defaultCutAction = "Intense close-up focusing purely on the character's hands and fingertips holding an old key or touching a surface, intimate emotional gesture, shallow depth of field";
       break;
     case 8:
-      defaultCutAction = 'Dynamic climax framing, protagonist bathed in dramatic sunset illumination, emotional catharsis';
+      defaultCutAction = 'Cinematic wide climax, protagonist walking forward through the glowing hallway, seen from behind or three-quarter view, bathed in dramatic illumination, resolute forward motion';
       break;
     case 9:
-      defaultCutAction = 'Low angle shot looking down towards the floor corner, discovering a small overlooked keepsake or detail';
+      defaultCutAction = 'Low angle shot looking down towards the floor corner, discovering a small shiny screw or keepsake, character pausing mid-stride and looking down from above';
       break;
     case 11:
-      defaultCutAction = 'Heroic medium close-up, protagonist turning towards the open illuminated doorway with calm hope';
+      defaultCutAction = 'Heroic medium close-up, protagonist with hand resting on the antique door handle, looking towards the open exit with calm resolve and hope, ready to depart';
       break;
     case 12:
-      defaultCutAction = 'Cinematic crane-up pull-out wide shot, empty room bathed in golden sunlight, poetic lingering wind and settled peace';
+      defaultCutAction = 'Cinematic crane-up pull-out wide shot of the empty room, open doorway with sunlight pouring in, deserted and peaceful, gentle lingering breeze and settled peace';
       break;
     default:
       defaultCutAction = 'Cinematic framing matching the music video narrative';
