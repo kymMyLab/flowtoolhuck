@@ -5,6 +5,7 @@ import { PillButton } from './Primitives';
 import { CutCard } from './CutCard';
 import { getProductionModeConfig } from '../config/studioDefinitions';
 import { cleanEpisodeTitle, cleanEpisodeTitleEn } from '../services/directorService';
+import { renderCoverBase64Horizontal } from '../services/export/coverRenderer';
 
 function formatDataUri(b64?: string): string {
   if (!b64) return '';
@@ -24,6 +25,23 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
 
   const [previewImage, setPreviewImage] = React.useState<{ src: string; title: string } | null>(null);
   const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isRenderingH, setIsRenderingH] = React.useState(false);
+
+  const handleOpenHorizontalCover = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      setIsRenderingH(true);
+      const b64 = await renderCoverBase64Horizontal(ep);
+      setPreviewImage({
+        src: formatDataUri(b64),
+        title: `🎬 第${ep.id}話 16:9 マスターカバー (YouTube横型サムネイル・シネマ看板)`
+      });
+    } catch (err) {
+      console.error('Horizontal cover render failed', err);
+    } finally {
+      setIsRenderingH(false);
+    }
+  };
 
   React.useEffect(() => {
     if (!previewImage) return;
@@ -54,14 +72,25 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                 <span className="text-teal-400 text-sm material-symbols-outlined">zoom_in</span>
                 <span className="text-xs font-bold text-slate-800 truncate">{previewImage.title}</span>
               </div>
-              <button 
-                type="button"
-                onClick={() => setPreviewImage(null)}
-                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 flex items-center gap-1.5 text-slate-700 hover:text-slate-900 cursor-pointer text-xs font-bold transition-colors shrink-0"
-              >
-                <span className="material-symbols-outlined text-[16px]">close</span>
-                <span>閉じる (Esc)</span>
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={previewImage.src}
+                  download={`ep${ep.id}_${previewImage.title.includes('16:9') ? 'master_cover_16x9' : 'infographic_cover_9x16'}.png`}
+                  className="px-3 py-1.5 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <span className="material-symbols-outlined text-[16px]">download</span>
+                  <span>PNG保存</span>
+                </a>
+                <button 
+                  type="button"
+                  onClick={() => setPreviewImage(null)}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 flex items-center gap-1.5 text-slate-700 hover:text-slate-900 cursor-pointer text-xs font-bold transition-colors shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                  <span>閉じる (Esc)</span>
+                </button>
+              </div>
             </div>
             {/* 画像本体（9:16縦長でも16:9横長でも画面内に100%収まり、ヘッダーを押し出さない） */}
             <div className="flex-1 min-h-0 p-3 sm:p-4 flex items-center justify-center bg-slate-100 overflow-hidden w-full">
@@ -154,8 +183,24 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                   title: '🖼️ 9:16 インフォグラフィック特大扉絵 (サムネイル・ポスター)'
                 });
               }}
-              title="インフォグラフィック扉絵（クリックで拡大）"
+              title="9:16 扉絵（クリックで拡大）"
             />
+          )}
+          {(ep.coverBase64 || ep.masterAnchorBase64 || ep.cuts[0]?.imageBase64) && (
+            <button
+              type="button"
+              onClick={handleOpenHorizontalCover}
+              disabled={isRenderingH}
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-950/40 hover:bg-purple-900/60 border border-purple-400/50 text-purple-300 hover:text-purple-100 text-[9px] font-bold cursor-pointer transition-colors shadow-sm"
+              title="16:9 マスターカバーをプレビュー表示（クリックで拡大）"
+            >
+              {isRenderingH ? (
+                <div className="w-2.5 h-2.5 border border-purple-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <span className="material-symbols-outlined text-[12px]">aspect_ratio</span>
+              )}
+              <span>16:9看板</span>
+            </button>
           )}
           <button 
             type="button" 
@@ -279,6 +324,33 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
                         <span className="px-1.5 py-0.2 bg-teal-500/20 text-teal-400 text-[8px] font-bold rounded">9:16 Cover</span>
                       </div>
                       <span className="text-[9px] text-slate-500 leading-tight mt-0.5">世界観適応 高CTRポスター</span>
+                    </div>
+                  </div>
+                )}
+                {(ep.coverBase64 || ep.masterAnchorBase64 || ep.cuts[0]?.imageBase64) && (
+                  <div className="flex items-center gap-2.5 bg-white border border-purple-500/40 rounded-xl p-1.5 shrink-0 shadow-md">
+                    <button
+                      type="button"
+                      onClick={handleOpenHorizontalCover}
+                      disabled={isRenderingH}
+                      className="w-14 h-12 bg-slate-900 hover:bg-purple-950/80 border border-purple-400/50 rounded-lg flex flex-col items-center justify-center gap-0.5 text-purple-300 hover:text-purple-100 cursor-pointer transition-all shadow-sm group"
+                      title="クリックで拡大表示（16:9 マスターカバー・YouTube横型サムネイル）"
+                    >
+                      {isRenderingH ? (
+                        <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-base group-hover:scale-110 transition-transform">aspect_ratio</span>
+                          <span className="text-[8px] font-black tracking-wider text-purple-400">16:9</span>
+                        </>
+                      )}
+                    </button>
+                    <div className="flex flex-col pr-2">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] font-bold text-purple-300">16:9 マスターカバー</span>
+                        <span className="px-1.5 py-0.2 bg-purple-500/20 text-purple-400 text-[8px] font-bold rounded">16:9 Master</span>
+                      </div>
+                      <span className="text-[9px] text-slate-500 leading-tight mt-0.5">YouTube横型サムネ・シネマ看板</span>
                     </div>
                   </div>
                 )}

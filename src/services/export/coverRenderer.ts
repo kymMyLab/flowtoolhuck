@@ -274,6 +274,91 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
 }
 
 /**
+ * 16:9マスターカバー用の自然なタイトル改行分割ロジック
+ * 括弧、コロン、スペース、単語境界を優先し、英単語の途中でぶつ切りになるのを防ぐ
+ */
+function splitTitleForCover(
+  rawTitle: string, 
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, 
+  maxW: number
+): string[] {
+  // すでに1行に収まるならそのまま
+  if (ctx.measureText(rawTitle).width <= maxW) {
+    return [rawTitle];
+  }
+
+  // 1. 括弧（丸括弧、角括弧、全角半角）の前で自然に分割できるか？
+  // 例: "まわす銀色の鍵 (Silver L-Key Spin)" -> ["まわす銀色の鍵", "(Silver L-Key Spin)"]
+  const parenRegex = /[\s　]*([(\[（【].+)$/;
+  const parenMatch = rawTitle.match(parenRegex);
+  if (parenMatch && parenMatch.index && parenMatch.index > 0) {
+    const mainPart = rawTitle.slice(0, parenMatch.index).trim();
+    const subPart = parenMatch[0].trim();
+    if (ctx.measureText(mainPart).width <= maxW && ctx.measureText(subPart).width <= maxW) {
+      return [mainPart, subPart];
+    }
+  }
+
+  // 2. コロン、ハイフン、スラッシュなどの区切り文字で分割
+  const delims = [' - ', ' — ', ' : ', ': ', ' / ', '〜', '～'];
+  for (const d of delims) {
+    const idx = rawTitle.indexOf(d);
+    if (idx > 0 && idx < rawTitle.length - 1) {
+      const p1 = rawTitle.slice(0, idx).trim();
+      const p2 = rawTitle.slice(idx).trim();
+      if (ctx.measureText(p1).width <= maxW && ctx.measureText(p2).width <= maxW) {
+        return [p1, p2];
+      }
+    }
+  }
+
+  // 3. 半角スペースなどの単語区切りで、1行目に収まる限界を探す（英単語途中で切れないように）
+  const words = rawTitle.split(/(\s+)/);
+  if (words.length > 2) {
+    let currentLine = '';
+    let breakIdx = -1;
+    for (let i = 0; i < words.length; i++) {
+      const candidate = currentLine + words[i];
+      if (ctx.measureText(candidate.trim()).width <= maxW) {
+        currentLine = candidate;
+      } else {
+        breakIdx = i;
+        break;
+      }
+    }
+    if (breakIdx > 0) {
+      const l1 = words.slice(0, breakIdx).join('').trim();
+      const l2 = words.slice(breakIdx).join('').trim();
+      if (l1 && l2 && ctx.measureText(l2).width <= maxW) {
+        return [l1, l2];
+      }
+    }
+  }
+
+  // 4. 日本語文字列など単語区切りがない場合：maxWに収まる最大文字数で分割（ただし末尾が半角英字なら単語境界まで巻き戻す）
+  let bestCut = 1;
+  for (let i = 1; i <= rawTitle.length; i++) {
+    const sub = rawTitle.slice(0, i);
+    if (ctx.measureText(sub).width <= maxW) {
+      bestCut = i;
+    } else {
+      break;
+    }
+  }
+  // もしbestCutの直前・直後が半角英字なら、英単語の途中なので直前のスペースまで巻き戻す
+  if (bestCut < rawTitle.length && /[a-zA-Z0-9]/.test(rawTitle[bestCut]) && /[a-zA-Z0-9]/.test(rawTitle[bestCut - 1])) {
+    const lastSpace = rawTitle.lastIndexOf(' ', bestCut);
+    if (lastSpace > 0) {
+      bestCut = lastSpace;
+    }
+  }
+
+  const l1 = rawTitle.slice(0, bestCut).trim();
+  const l2 = rawTitle.slice(bestCut).trim();
+  return [l1, l2];
+}
+
+/**
  * 横型看板（16:9, 1920x1080）
  * YouTube通常動画サムネイル・Media Vault横型看板用
  * 左側にシネマインフォグラフィック看板、右側にキメ絵をシームレス融合配置
@@ -427,22 +512,21 @@ export async function renderCoverCanvasHorizontal(ep: Episode): Promise<Offscree
   ctx.shadowOffsetY = 6;
 
   let titleFontSize = 64;
-  if (rawTitle.length > 18) titleFontSize = 48;
-  else if (rawTitle.length > 12) titleFontSize = 54;
+  if (rawTitle.length > 24) titleFontSize = 44;
+  else if (rawTitle.length > 16) titleFontSize = 50;
+  else if (rawTitle.length > 10) titleFontSize = 56;
   ctx.font = `900 ${titleFontSize}px "Hiragino Mincho ProN", "Yu Mincho", serif`;
 
   const maxTitleW = textPanelWidth - leftMargin - 60;
   const titleY = 240;
 
-  if (ctx.measureText(rawTitle).width <= maxTitleW) {
-    ctx.fillText(rawTitle, leftMargin, titleY);
+  // スマートタイトル分割（括弧・単語境界・区切り記号を優先して美しく改行）
+  const titleLines = splitTitleForCover(rawTitle, ctx, maxTitleW);
+  if (titleLines.length === 1) {
+    ctx.fillText(titleLines[0], leftMargin, titleY);
   } else {
-    // 2行分割
-    const mid = Math.ceil(rawTitle.length / 2);
-    const line1 = rawTitle.slice(0, mid);
-    const line2 = rawTitle.slice(mid);
-    ctx.fillText(line1, leftMargin, titleY - 20);
-    ctx.fillText(line2, leftMargin, titleY + titleFontSize + 5);
+    ctx.fillText(titleLines[0], leftMargin, titleY - 20);
+    ctx.fillText(titleLines[1], leftMargin, titleY + titleFontSize + 5);
   }
   ctx.restore();
 
@@ -484,21 +568,43 @@ export async function renderCoverCanvasHorizontal(ep: Episode): Promise<Offscree
     ctx.restore();
   }
 
-  // D. メタデータタグ群
+  // D. メタデータタグ群（右側画像領域への突き抜けを完全防止）
   ctx.save();
   const tagsY = 620;
-  const tags: string[] = [];
-  if (ep.era) tags.push(ep.era);
-  if (ep.theme) tags.push(ep.theme);
-  if (ep.taste) tags.push(ep.taste);
-  if (isMv) tags.push('4K CINEMATIC MV');
+  const rawTags: string[] = [];
+  if (ep.era) rawTags.push(ep.era);
+  if (ep.theme) rawTags.push(ep.theme);
+  if (ep.taste) rawTags.push(ep.taste);
+  if (isMv) rawTags.push('4K CINEMATIC MV');
 
-  if (tags.length > 0) {
+  // 長大なプロンプト補足（括弧やカンマ）をクリーンアップし、すっきりした商用ハッシュタグにする
+  const cleanTags = rawTags.map(t => {
+    const stripped = t.replace(/[\(（].*?[\)）]/g, '').trim();
+    return stripped.length > 16 ? stripped.slice(0, 15) + '…' : stripped;
+  }).filter(t => t.length > 0);
+
+  if (cleanTags.length > 0) {
     ctx.font = 'bold 20px sans-serif';
     ctx.textAlign = 'left';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.shadowBlur = 4;
-    ctx.fillText(tags.map(t => `#${t}`).join('   •   '), leftMargin, tagsY);
+    
+    // maxTitleW を超えないよう動的に調整
+    const maxTagW = textPanelWidth - leftMargin - 60;
+    const separator = '   •   ';
+    let tagString = cleanTags.map(t => `#${t}`).join(separator);
+    
+    while (ctx.measureText(tagString).width > maxTagW && cleanTags.length > 1) {
+      cleanTags.pop();
+      tagString = cleanTags.map(t => `#${t}`).join(separator);
+    }
+    if (ctx.measureText(tagString).width > maxTagW) {
+      while (ctx.measureText(tagString).width > maxTagW && tagString.length > 5) {
+        tagString = tagString.slice(0, -2) + '…';
+      }
+    }
+    
+    ctx.fillText(tagString, leftMargin, tagsY);
   }
   ctx.restore();
 
