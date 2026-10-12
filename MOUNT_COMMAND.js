@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@c14925d/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[Shortsアルゴリズム完全攻略＆Veo自動完走保証版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@d1f8330/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[Veo動画アスペクト比＆モデル名完全修復版]'); });
