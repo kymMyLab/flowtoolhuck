@@ -20,6 +20,7 @@ interface StudioHeaderProps {
   onOpenTasteEditor: () => void;
   onOpenCastModal?: () => void;
   onOpenComicWizard?: () => void;
+  onOpenMusicImport?: () => void;
   castCount?: number;
   activeSeriesManifest?: any;
   onResumeClick?: () => void;
@@ -28,7 +29,7 @@ interface StudioHeaderProps {
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
-  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenCastModal, onOpenComicWizard, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen, isWaitingForStart = false
+  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenCastModal, onOpenComicWizard, onOpenMusicImport, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen, isWaitingForStart = false
 }) => {
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -315,6 +316,19 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             title={`登場人物キャスト台帳を開く (${castCount}人)`}
           >
             <span className="material-symbols-outlined text-[18px]">theater_comedy</span>
+          </button>
+        )}
+
+        {onOpenMusicImport && (
+          <button 
+            type="button"
+            disabled={isProducing}
+            onClick={onOpenMusicImport}
+            className="h-9 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800 transition-colors border border-purple-200 shrink-0 cursor-pointer flex items-center gap-1.5 font-bold text-xs shadow-2xs"
+            title="CT198楽曲JSONインポート (12カットMV自動展開)"
+          >
+            <span className="material-symbols-outlined text-[18px] text-purple-600">library_music</span>
+            <span className="hidden sm:inline">音楽インポート</span>
           </button>
         )}
 

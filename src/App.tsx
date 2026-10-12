@@ -21,6 +21,7 @@ const ThemeEditorModal = React.lazy(() => import('./components/ThemeEditorModal'
 const TasteEditorModal = React.lazy(() => import('./components/TasteEditorModal').then(m => ({ default: m.TasteEditorModal })));
 const CastManagerModal = React.lazy(() => import('./components/CastManagerModal').then(m => ({ default: m.CastManagerModal })));
 const ComicCreationWizardModal = React.lazy(() => import('./components/ComicCreationWizardModal').then(m => ({ default: m.ComicCreationWizardModal })));
+const MusicImportModal = React.lazy(() => import('./components/music/MusicImportModal').then(m => ({ default: m.MusicImportModal })));
 import { loadMangaProject, saveMangaProject } from './services/castStorage';
 import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset, SeriesManifest } from './types';
 import { saveReferenceAsset } from './services/db';
@@ -72,6 +73,7 @@ export default function App() {
   const [mangaProject, setMangaProject] = useState<MangaProject>(() => loadMangaProject());
   const [isCastModalOpen, setIsCastModalOpen] = useState(false);
   const [isComicWizardOpen, setIsComicWizardOpen] = useState(false);
+  const [isMusicImportOpen, setIsMusicImportOpen] = useState(false);
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
 
@@ -146,7 +148,7 @@ export default function App() {
     setStories(all);
   }, []);
 
-  const { episodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
+  const { episodes, setEpisodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
     settings, 
     addLog, 
     refreshStories,
@@ -155,6 +157,30 @@ export default function App() {
 
   const episodesRef = useRef(episodes);
   episodesRef.current = episodes;
+
+  const handleDeployMusicEpisode = useCallback((ep: Episode) => {
+    setEpisodes([ep]);
+    setSettings(prev => ({
+      ...prev,
+      productionMode: 'mv',
+      isMvMode: true,
+      theme: ep.theme || prev.theme,
+      taste: ep.taste || prev.taste
+    }));
+    addLog(`🎵 CT198楽曲「${ep.titleJp}」の12カット絵コンテを展開しました！（サビ30秒テロップ＆伏線小道具自動バインド済）`, 'success');
+  }, [setEpisodes, setSettings, addLog]);
+
+  const handleDeployBatchMusicEpisodes = useCallback((eps: Episode[]) => {
+    setEpisodes(eps);
+    setSettings(prev => ({
+      ...prev,
+      productionMode: 'mv',
+      isMvMode: true,
+      theme: eps[0]?.theme || prev.theme,
+      taste: eps[0]?.taste || prev.taste
+    }));
+    addLog(`🎵 CT198楽曲 全${eps.length}曲の12カット絵コンテを一括展開しました！`, 'success');
+  }, [setEpisodes, setSettings, addLog]);
 
   // グローバル（コンソール）から全エピソードデータにいつでも直接アクセス・救出可能にする
   useEffect(() => {
@@ -328,6 +354,7 @@ export default function App() {
           onOpenTasteEditor={() => setIsTasteEditorOpen(true)}
           onOpenCastModal={() => setIsCastModalOpen(true)}
           onOpenComicWizard={() => setIsComicWizardOpen(true)}
+          onOpenMusicImport={() => setIsMusicImportOpen(true)}
           castCount={mangaProject.characters.length}
           activeSeriesManifest={activeSeriesManifest}
           onResumeClick={() => resumeFileRef.current?.click()}
@@ -472,6 +499,12 @@ export default function App() {
             currentTaste={settings.taste}
             onLaunchComicSeries={handleLaunchComicSeries}
             onAddLog={addLog}
+          />
+          <MusicImportModal
+            isOpen={isMusicImportOpen}
+            onClose={() => setIsMusicImportOpen(false)}
+            onDeployEpisode={handleDeployMusicEpisode}
+            onDeployBatchEpisodes={handleDeployBatchMusicEpisodes}
           />
         </React.Suspense>
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
