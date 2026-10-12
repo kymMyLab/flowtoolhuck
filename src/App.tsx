@@ -21,7 +21,7 @@ const ThemeEditorModal = React.lazy(() => import('./components/ThemeEditorModal'
 const TasteEditorModal = React.lazy(() => import('./components/TasteEditorModal').then(m => ({ default: m.TasteEditorModal })));
 const CastManagerModal = React.lazy(() => import('./components/CastManagerModal').then(m => ({ default: m.CastManagerModal })));
 const ComicCreationWizardModal = React.lazy(() => import('./components/ComicCreationWizardModal').then(m => ({ default: m.ComicCreationWizardModal })));
-const MusicImportModal = React.lazy(() => import('./components/music/MusicImportModal').then(m => ({ default: m.MusicImportModal })));
+import { MusicImportModal } from './components/music/MusicImportModal';
 import { loadMangaProject, saveMangaProject } from './services/castStorage';
 import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset, SeriesManifest } from './types';
 import { saveReferenceAsset } from './services/db';
@@ -84,14 +84,17 @@ export default function App() {
   useEffect(() => {
     const handleGlobalDragEnter = (e: DragEvent) => {
       e.preventDefault();
-      globalDragCounterRef.current += 1;
-      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
-        setIsGlobalDragging(true);
+      e.stopPropagation();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
       }
+      globalDragCounterRef.current += 1;
+      setIsGlobalDragging(true);
     };
 
     const handleGlobalDragLeave = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       globalDragCounterRef.current -= 1;
       if (globalDragCounterRef.current <= 0) {
         globalDragCounterRef.current = 0;
@@ -101,33 +104,41 @@ export default function App() {
 
     const handleGlobalDragOver = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
     };
 
     const handleGlobalDrop = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       setIsGlobalDragging(false);
       globalDragCounterRef.current = 0;
       const file = e.dataTransfer?.files?.[0];
       if (file) {
-        const isJson = file.name.toLowerCase().endsWith('.json') || file.type === 'application/json';
-        if (isJson || file.name.includes('metadata') || file.name.includes('song')) {
-          setDraggedJsonFile(file);
-          setIsMusicImportOpen(true);
-          addLog(`📥 楽曲メタデータ「${file.name}」をドロップインポートしました！`, 'process');
-        }
+        setDraggedJsonFile(file);
+        setIsMusicImportOpen(true);
+        addLog(`📥 楽曲メタデータ「${file.name}」をドロップインポートしました！`, 'process');
       }
     };
 
-    window.addEventListener('dragenter', handleGlobalDragEnter);
-    window.addEventListener('dragleave', handleGlobalDragLeave);
-    window.addEventListener('dragover', handleGlobalDragOver);
-    window.addEventListener('drop', handleGlobalDrop);
+    // capture: true で登録し、親DOMやFlowのイベントハンドラより最優先で捕捉
+    window.addEventListener('dragenter', handleGlobalDragEnter, true);
+    window.addEventListener('dragleave', handleGlobalDragLeave, true);
+    window.addEventListener('dragover', handleGlobalDragOver, true);
+    window.addEventListener('drop', handleGlobalDrop, true);
+
+    document.addEventListener('dragover', handleGlobalDragOver, true);
+    document.addEventListener('drop', handleGlobalDrop, true);
 
     return () => {
-      window.removeEventListener('dragenter', handleGlobalDragEnter);
-      window.removeEventListener('dragleave', handleGlobalDragLeave);
-      window.removeEventListener('dragover', handleGlobalDragOver);
-      window.removeEventListener('drop', handleGlobalDrop);
+      window.removeEventListener('dragenter', handleGlobalDragEnter, true);
+      window.removeEventListener('dragleave', handleGlobalDragLeave, true);
+      window.removeEventListener('dragover', handleGlobalDragOver, true);
+      window.removeEventListener('drop', handleGlobalDrop, true);
+      document.removeEventListener('dragover', handleGlobalDragOver, true);
+      document.removeEventListener('drop', handleGlobalDrop, true);
     };
   }, [addLog]);
 
@@ -589,17 +600,17 @@ export default function App() {
             onLaunchComicSeries={handleLaunchComicSeries}
             onAddLog={addLog}
           />
-          <MusicImportModal
-            isOpen={isMusicImportOpen}
-            initialFile={draggedJsonFile}
-            onClose={() => {
-              setIsMusicImportOpen(false);
-              setDraggedJsonFile(null);
-            }}
-            onDeployEpisode={handleDeployMusicEpisode}
-            onDeployBatchEpisodes={handleDeployBatchMusicEpisodes}
-          />
         </React.Suspense>
+        <MusicImportModal
+          isOpen={isMusicImportOpen}
+          initialFile={draggedJsonFile}
+          onClose={() => {
+            setIsMusicImportOpen(false);
+            setDraggedJsonFile(null);
+          }}
+          onDeployEpisode={handleDeployMusicEpisode}
+          onDeployBatchEpisodes={handleDeployBatchMusicEpisodes}
+        />
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
       </div>
     </ErrorBoundary>

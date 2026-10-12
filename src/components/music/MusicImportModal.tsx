@@ -84,10 +84,18 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDragOver = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
     };
 
     const handleWindowDragEnter = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
       dragCounterRef.current += 1;
       if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
         setIsDragging(true);
@@ -96,6 +104,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDragLeave = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       dragCounterRef.current -= 1;
       if (dragCounterRef.current <= 0) {
         dragCounterRef.current = 0;
@@ -105,6 +114,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDrop = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       setIsDragging(false);
       dragCounterRef.current = 0;
       const file = e.dataTransfer?.files?.[0];
@@ -114,17 +124,17 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     };
 
     window.addEventListener('paste', handleWindowPaste);
-    window.addEventListener('dragover', handleWindowDragOver);
-    window.addEventListener('dragenter', handleWindowDragEnter);
-    window.addEventListener('dragleave', handleWindowDragLeave);
-    window.addEventListener('drop', handleWindowDrop);
+    window.addEventListener('dragover', handleWindowDragOver, true);
+    window.addEventListener('dragenter', handleWindowDragEnter, true);
+    window.addEventListener('dragleave', handleWindowDragLeave, true);
+    window.addEventListener('drop', handleWindowDrop, true);
 
     return () => {
       window.removeEventListener('paste', handleWindowPaste);
-      window.removeEventListener('dragover', handleWindowDragOver);
-      window.removeEventListener('dragenter', handleWindowDragEnter);
-      window.removeEventListener('dragleave', handleWindowDragLeave);
-      window.removeEventListener('drop', handleWindowDrop);
+      window.removeEventListener('dragover', handleWindowDragOver, true);
+      window.removeEventListener('dragenter', handleWindowDragEnter, true);
+      window.removeEventListener('dragleave', handleWindowDragLeave, true);
+      window.removeEventListener('drop', handleWindowDrop, true);
     };
   }, [isOpen, handleParse, processFile]);
 
@@ -132,6 +142,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
     dragCounterRef.current += 1;
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
       setIsDragging(true);
@@ -151,6 +164,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {

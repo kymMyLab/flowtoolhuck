@@ -116,6 +116,22 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
       <div className="w-px h-7 bg-slate-200 shrink-0"></div>
 
+      {/* 音楽インポート (狭い画面でも必ず見える最左特等席配置) */}
+      {onOpenMusicImport && (
+        <button 
+          type="button"
+          disabled={isProducing}
+          onClick={onOpenMusicImport}
+          className="h-10 px-3.5 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:brightness-110 text-white border border-purple-400/40 ring-2 ring-purple-400/30"
+          title="CT198楽曲JSONインポート (12カットMV自動展開) - 狭い画面でも常にアクセス可能"
+        >
+          <span className="material-symbols-outlined text-[18px] text-amber-300">library_music</span>
+          <span>🎵 音楽インポート</span>
+        </button>
+      )}
+
+      <div className="w-px h-7 bg-slate-200 shrink-0"></div>
+
       {/* ① 先頭: プロデュースボタン (大前提) */}
       {onOpenComicWizard && (
         <button 
@@ -319,18 +335,6 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           </button>
         )}
 
-        {onOpenMusicImport && (
-          <button 
-            type="button"
-            disabled={isProducing}
-            onClick={onOpenMusicImport}
-            className="h-9 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800 transition-colors border border-purple-200 shrink-0 cursor-pointer flex items-center gap-1.5 font-bold text-xs shadow-2xs"
-            title="CT198楽曲JSONインポート (12カットMV自動展開)"
-          >
-            <span className="material-symbols-outlined text-[18px] text-purple-600">library_music</span>
-            <span className="hidden sm:inline">音楽インポート</span>
-          </button>
-        )}
 
         <button 
           type="button"
