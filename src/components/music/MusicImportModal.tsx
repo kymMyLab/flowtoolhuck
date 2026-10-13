@@ -237,7 +237,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     }
   }, [isOpen, injectedPayload, initialJsonText, initialFile, handleParse, processFile]);
 
-  // グローバルなCtrl+V（ペースト）＆全画面ドラッグ監視の自動捕捉
+  // グローバルなCtrl+V（ペースト）＆ブラウザデフォルトのファイルオープン防止
   useEffect(() => {
     if (!isOpen) return;
 
@@ -256,134 +256,21 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       }
     };
 
-    const handleWindowDragEnter = (e: DragEvent) => {
+    // ブラウザが誤ってファイルを別タブで開いてしまうのを防止
+    const preventBrowserOpen = (e: DragEvent) => {
       e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-      dragCounterRef.current += 1;
-      setIsDragging(true);
-      console.log('🌐 [D&D Window dragenter検知]', {
-        dragCounter: dragCounterRef.current,
-        types: Array.from(e.dataTransfer?.types || []),
-        itemsLength: e.dataTransfer?.items?.length,
-        targetTag: (e.target as HTMLElement)?.tagName
-      });
-    };
-
-    const handleWindowDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      dragCounterRef.current -= 1;
-      if (dragCounterRef.current <= 0) {
-        dragCounterRef.current = 0;
-        setIsDragging(false);
-        console.log('🌐 [D&D Window dragleave] ドラッグ終了判定 (counter=0)');
-      }
-    };
-
-    const handleWindowDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    };
-
-    const handleWindowDrop = (e: DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      setIsBoxDragging(false);
-      dragCounterRef.current = 0;
-      boxDragCounterRef.current = 0;
-      const file = e.dataTransfer?.files?.[0];
-      console.log('🚀 [D&D Window drop検知!]', {
-        hasFile: !!file,
-        fileName: file?.name,
-        fileSize: file?.size ? `${Math.round(file.size / 1024)} KB` : '0 KB',
-        fileType: file?.type,
-        types: Array.from(e.dataTransfer?.types || [])
-      });
-      if (file) {
-        processFile(file);
-      }
     };
 
     window.addEventListener('paste', handleWindowPaste);
-    window.addEventListener('dragenter', handleWindowDragEnter, true);
-    window.addEventListener('dragleave', handleWindowDragLeave, true);
-    window.addEventListener('dragover', handleWindowDragOver, true);
-    window.addEventListener('drop', handleWindowDrop, true);
-
-    document.addEventListener('dragenter', handleWindowDragEnter, true);
-    document.addEventListener('dragleave', handleWindowDragLeave, true);
-    document.addEventListener('dragover', handleWindowDragOver, true);
-    document.addEventListener('drop', handleWindowDrop, true);
+    window.addEventListener('dragover', preventBrowserOpen);
+    window.addEventListener('drop', preventBrowserOpen);
 
     return () => {
       window.removeEventListener('paste', handleWindowPaste);
-      window.removeEventListener('dragenter', handleWindowDragEnter, true);
-      window.removeEventListener('dragleave', handleWindowDragLeave, true);
-      window.removeEventListener('dragover', handleWindowDragOver, true);
-      window.removeEventListener('drop', handleWindowDrop, true);
-
-      document.removeEventListener('dragenter', handleWindowDragEnter, true);
-      document.removeEventListener('dragleave', handleWindowDragLeave, true);
-      document.removeEventListener('dragover', handleWindowDragOver, true);
-      document.removeEventListener('drop', handleWindowDrop, true);
+      window.removeEventListener('dragover', preventBrowserOpen);
+      window.removeEventListener('drop', preventBrowserOpen);
     };
-  }, [isOpen, handleParse, processFile]);
-
-  // モーダル全体でのドラッグ＆ドロップ監視（チラつき防止のカウント管理）
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'copy';
-    }
-    dragCounterRef.current += 1;
-    setIsDragging(true);
-    console.log('🛡️ [D&D Modal dragenter検知]', {
-      counter: dragCounterRef.current,
-      types: Array.from(e.dataTransfer?.types || []),
-      targetTag: (e.target as HTMLElement)?.tagName
-    });
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounterRef.current -= 1;
-    if (dragCounterRef.current <= 0) {
-      dragCounterRef.current = 0;
-      setIsDragging(false);
-      console.log('🛡️ [D&D Modal dragleave] モーダル枠外へ離脱');
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'copy';
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    setIsBoxDragging(false);
-    dragCounterRef.current = 0;
-    boxDragCounterRef.current = 0;
-    const file = e.dataTransfer.files?.[0];
-    console.log('🎯 [D&D Modal onDrop検知!]', {
-      filesCount: e.dataTransfer.files?.length,
-      fileName: file?.name,
-      fileSize: file?.size
-    });
-    if (file) {
-      processFile(file);
-    }
-  };
+  }, [isOpen, handleParse]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1285,107 +1172,64 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             })()}
           </div>
           
-          {/* Drop & Input Area (点線ドロップ枠) */}
+          {/* Drop & Input Area (点線ドロップ枠: 初期の超安定シンプルな直接イベント方式) */}
           <div 
             onDragEnter={(e) => {
               e.preventDefault();
               e.stopPropagation();
               if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-              boxDragCounterRef.current += 1;
               setIsBoxDragging(true);
-              console.log('🎯 [D&D 点線枠 dragenter検知!]', {
-                boxCounter: boxDragCounterRef.current,
-                types: Array.from(e.dataTransfer?.types || []),
-                itemsCount: e.dataTransfer?.items?.length
-              });
             }}
             onDragOver={(e) => {
               e.preventDefault();
               e.stopPropagation();
               if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+              setIsBoxDragging(true);
             }}
             onDragLeave={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              boxDragCounterRef.current -= 1;
-              if (boxDragCounterRef.current <= 0) {
-                boxDragCounterRef.current = 0;
-                setIsBoxDragging(false);
-                console.log('⚪ [D&D 点線枠 dragleave]');
-              }
+              setIsBoxDragging(false);
             }}
             onDrop={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setIsBoxDragging(false);
-              boxDragCounterRef.current = 0;
-              setIsDragging(false);
-              dragCounterRef.current = 0;
               const file = e.dataTransfer?.files?.[0];
-              console.log('🔥 [D&D 点線枠 onDrop検知! 即時パース開始]', {
-                fileName: file?.name,
-                fileSize: file?.size ? `${Math.round(file.size / 1024)} KB` : '0 KB',
-                fileType: file?.type || 'application/json',
-                allFiles: Array.from(e.dataTransfer?.files || []).map(f => f.name)
-              });
+              console.log('🎯 [MusicImporter Drop検知! 即時パース開始]', file?.name, file?.size);
               if (file) {
                 processFile(file);
-              } else {
-                console.warn('⚠️ [D&D 点線枠 onDrop] ファイルが検出されませんでした');
               }
             }}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-5 transition-all duration-200 text-center flex flex-col items-center justify-center gap-3 shrink-0 select-none cursor-pointer group/dropzone relative ${
-              isBoxDragging || isDragging 
+            className={`border-2 border-dashed rounded-xl p-5 transition-all duration-200 text-center flex flex-col items-center justify-center gap-3 shrink-0 select-none cursor-pointer group/dropzone ${
+              isBoxDragging 
                 ? 'border-amber-400 bg-amber-500/25 ring-4 ring-amber-400/50 scale-[1.01] shadow-[0_0_35px_rgba(245,158,11,0.5)]' 
                 : 'border-white/20 bg-white/5 hover:border-amber-400/60 hover:bg-white/10 shadow-sm'
             }`}
           >
-            {/* 枠全体を完全被覆する透明なネイティブ input[type=file]（ブラウザネイティブのD&Dとクリックを100%確実に捕捉） */}
             <input 
               type="file" 
               ref={fileInputRef} 
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                console.log('🎉 [ネイティブ input onChange検知!]', f?.name);
+                console.log('📁 [MusicImporter ファイル選択]', f?.name);
                 if (f) processFile(f);
                 if (e.target) e.target.value = '';
               }}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                setIsBoxDragging(true);
-                console.log('🎯 [ネイティブ input dragenter検知!]', {
-                  types: Array.from(e.dataTransfer?.types || [])
-                });
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-              }}
-              onDragLeave={() => {
-                setIsBoxDragging(false);
-                console.log('⚪ [ネイティブ input dragleave]');
-              }}
-              onDrop={(e) => {
-                setIsBoxDragging(false);
-                const f = e.dataTransfer?.files?.[0];
-                console.log('🔥 [ネイティブ input onDrop検知!]', f?.name);
-                if (f) processFile(f);
-              }}
               accept=".json,application/json" 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
-              title="session_songs_metadata.json をドラッグ＆ドロップ、またはクリックしてファイル選択"
+              className="hidden" 
             />
 
-            {/* 表示用コンテンツ（pointer-events-none で input へのD&D・クリックを一切邪魔しない） */}
+            {/* 表示用コンテンツ */}
             <div className="flex items-center gap-3 pointer-events-none">
               <span className={`p-3 rounded-full transition-all duration-200 ${
-                isBoxDragging || isDragging 
+                isBoxDragging 
                   ? 'bg-amber-400 text-black scale-110 shadow-lg shadow-amber-400/50 animate-bounce' 
                   : 'bg-purple-500/20 text-purple-300 group-hover/dropzone:bg-amber-500/20 group-hover/dropzone:text-amber-300'
               }`}>
                 <span className="material-symbols-outlined text-[32px]">
-                  {isBoxDragging || isDragging ? 'download' : 'upload_file'}
+                  {isBoxDragging ? 'download' : 'upload_file'}
                 </span>
               </span>
               <div className="text-left">
@@ -1406,11 +1250,11 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                     )}
                   </p>
                   <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold transition-all ${
-                    isBoxDragging || isDragging 
+                    isBoxDragging 
                       ? 'bg-amber-400 text-black animate-pulse shadow-md' 
                       : 'bg-white/10 text-white/60 border border-white/15'
                   }`}>
-                    {isBoxDragging || isDragging ? '⚡ D&D検知中 (Active)' : '🟢 D&D待機中 (Ready)'}
+                    {isBoxDragging ? '⚡ D&D検知中 (Active)' : '🟢 D&D待機中 (Ready)'}
                   </span>
                 </div>
                 <p className="text-xs text-white/50 mt-0.5">
@@ -1421,8 +1265,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               </div>
             </div>
 
-            {/* アクションボタン（z-30 で透明 input より前面にし、手動クリックを確実に受ける） */}
-            <div className="relative z-30 flex items-center gap-2 mt-1">
+            {/* アクションボタン */}
+            <div className="flex items-center gap-2 mt-1">
               <button 
                 type="button"
                 onClick={(e) => {

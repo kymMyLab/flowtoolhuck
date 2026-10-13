@@ -393,6 +393,12 @@ export default function App() {
       setIsGlobalDragging(false);
       globalDragCounterRef.current = 0;
 
+      // もし既にMusicImportModalが開いており、ドロップがその点線枠上で行われた場合は、コンポーネント自身の onDrop に任せる
+      if (isMusicImportOpenRef.current && (e.target as HTMLElement)?.closest?.('.group\\/dropzone')) {
+        console.log('🎯 [FlowTool D&D] 点線枠への直接ドロップのため、インポーターコンポーネントへ処理を委譲します');
+        return;
+      }
+
       const fileList = e.dataTransfer?.files;
       const file = fileList?.[0];
       const rawDroppedText = e.dataTransfer?.getData('text') || '';
@@ -479,26 +485,29 @@ export default function App() {
       }
     };
 
-    window.addEventListener('dragenter', handleGlobalDragEnter, true);
-    window.addEventListener('dragleave', handleGlobalDragLeave, true);
-    window.addEventListener('dragover', handleGlobalDragOver, true);
-    window.addEventListener('drop', handleGlobalDrop, true);
+    window.addEventListener('dragenter', handleGlobalDragEnter);
+    window.addEventListener('dragleave', handleGlobalDragLeave);
+    window.addEventListener('dragover', handleGlobalDragOver);
+    window.addEventListener('drop', handleGlobalDrop);
 
-    document.addEventListener('dragenter', handleGlobalDragEnter, true);
-    document.addEventListener('dragleave', handleGlobalDragLeave, true);
-    document.addEventListener('dragover', handleGlobalDragOver, true);
-    document.addEventListener('drop', handleGlobalDrop, true);
+    // 親フレーム（Google Flowホスト等）が存在する場合のドラッグ許可フォールバック
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.addEventListener('dragover', handleGlobalDragOver);
+      }
+    } catch (_) {}
 
     return () => {
-      window.removeEventListener('dragenter', handleGlobalDragEnter, true);
-      window.removeEventListener('dragleave', handleGlobalDragLeave, true);
-      window.removeEventListener('dragover', handleGlobalDragOver, true);
-      window.removeEventListener('drop', handleGlobalDrop, true);
+      window.removeEventListener('dragenter', handleGlobalDragEnter);
+      window.removeEventListener('dragleave', handleGlobalDragLeave);
+      window.removeEventListener('dragover', handleGlobalDragOver);
+      window.removeEventListener('drop', handleGlobalDrop);
 
-      document.removeEventListener('dragenter', handleGlobalDragEnter, true);
-      document.removeEventListener('dragleave', handleGlobalDragLeave, true);
-      document.removeEventListener('dragover', handleGlobalDragOver, true);
-      document.removeEventListener('drop', handleGlobalDrop, true);
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.removeEventListener('dragover', handleGlobalDragOver);
+        }
+      } catch (_) {}
     };
   }, [addLog, handleResumeSeries]);
 
