@@ -58,6 +58,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🍸 ラグジュアリー・ソシャゲ美麗キービジュアル',
     category: 'anime',
     descriptionJp: '高級感あふれるハイエンドゲームのキービジュアル調。深いグラデーション陰影と金装飾の輝き。',
+    samples: {
+      students: `${CDN_BASE}/luxury_gacha/students.jpg`,
+      edo: `${CDN_BASE}/luxury_gacha/edo.jpg`,
+      adult: `${CDN_BASE}/luxury_gacha/adult.jpg`,
+    }
   },
   {
     id: 'seinen_manga',
@@ -65,6 +70,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🍷 青年誌カバー・艶麗アイライン＆ソリッドセル',
     category: 'anime',
     descriptionJp: '青年誌の表紙を飾るソリッドな2値セル陰影と、濃密なアイラインが際立つスタイリッシュな画風。',
+    samples: {
+      students: `${CDN_BASE}/seinen_manga/students.jpg`,
+      edo: `${CDN_BASE}/seinen_manga/edo.jpg`,
+      adult: `${CDN_BASE}/seinen_manga/adult.jpg`,
+    }
   },
   {
     id: 'neo_japonisme',
@@ -72,6 +82,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🎨 レトロモダン・ネオ・ジャポニスム',
     category: 'japanese',
     descriptionJp: '大正浪漫とサイバーポップが融合した新日本画。金箔や幾何学模様が舞うドラマチックな構図。',
+    samples: {
+      students: `${CDN_BASE}/neo_japonisme/students.jpg`,
+      edo: `${CDN_BASE}/neo_japonisme/edo.jpg`,
+      adult: `${CDN_BASE}/neo_japonisme/adult.jpg`,
+    }
   },
   {
     id: 'cinematic_sky',
@@ -79,6 +94,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '✨ エモーショナル・シネマティック・スカイ',
     category: 'anime',
     descriptionJp: '新海誠風の圧倒的な積乱雲・黄昏の光彩散乱・映画クオリティのエモーショナルな背景美。',
+    samples: {
+      students: `${CDN_BASE}/cinematic_sky/students.jpg`,
+      edo: `${CDN_BASE}/cinematic_sky/edo.jpg`,
+      adult: `${CDN_BASE}/cinematic_sky/adult.jpg`,
+    }
   },
   {
     id: 'dark_chiaroscuro',
@@ -86,6 +106,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '⚔️ ダークファンタジー・重厚陰影',
     category: 'cinematic',
     descriptionJp: 'キアロスクーロの劇的な明暗対比、深淵の闇と火の粉のハイライトが織りなすダークファンタジー。',
+    samples: {
+      students: `${CDN_BASE}/dark_chiaroscuro/students.jpg`,
+      edo: `${CDN_BASE}/dark_chiaroscuro/edo.jpg`,
+      adult: `${CDN_BASE}/dark_chiaroscuro/adult.jpg`,
+    }
   },
   {
     id: 'intense_manga',
@@ -93,6 +118,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🖋 白黒劇画・超絶インクマンガ',
     category: 'art',
     descriptionJp: '渇筆の墨飛沫と超精密スクリーントーンが炸裂する、圧倒的リアリズムの白黒劇画。',
+    samples: {
+      students: `${CDN_BASE}/intense_manga/students.jpg`,
+      edo: `${CDN_BASE}/intense_manga/edo.jpg`,
+      adult: `${CDN_BASE}/intense_manga/adult.jpg`,
+    }
   },
   {
     id: 'edo_humor',
@@ -100,6 +130,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🏮 ゆる浮世絵・戯画ギャグ調',
     category: 'japanese',
     descriptionJp: 'ゆるい脱力感とユーモラスな表情が癖になる江戸時代劇画ポップアート。',
+    samples: {
+      students: `${CDN_BASE}/edo_humor/students.jpg`,
+      edo: `${CDN_BASE}/edo_humor/edo.jpg`,
+      adult: `${CDN_BASE}/edo_humor/adult.jpg`,
+    }
   },
   {
     id: 'choju_giga',
@@ -107,6 +142,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🐸 鳥獣戯画・国宝絵巻モノクローム',
     category: 'japanese',
     descriptionJp: '平安・鎌倉の国宝鳥獣人物戯画を完全再現。墨絵のたらし込みと古典和紙の風格。',
+    samples: {
+      students: `${CDN_BASE}/choju_giga/students.jpg`,
+      edo: `${CDN_BASE}/choju_giga/edo.jpg`,
+      adult: `${CDN_BASE}/choju_giga/adult.jpg`,
+    }
   },
   {
     id: 'art_nouveau',
@@ -114,6 +154,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '👑 アール・ヌーヴォー・宮廷エレガンス',
     category: 'art',
     descriptionJp: 'ミュシャにインスパイアされた宮廷装飾絵画。流麗な金泥の曲線美と植物レースモチーフ。',
+    samples: {
+      students: `${CDN_BASE}/art_nouveau/students.jpg`,
+      edo: `${CDN_BASE}/art_nouveau/edo.jpg`,
+      adult: `${CDN_BASE}/art_nouveau/adult.jpg`,
+    }
   },
   {
     id: 'moe_hatching',
@@ -121,6 +166,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🌸 日常系萌えアニメ・ハッチングチーク',
     category: 'anime',
     descriptionJp: 'ほっぺの縦線ハッチングチークが愛らしい、王道の日常系きらら系TVアニメ調。',
+    samples: {
+      students: `${CDN_BASE}/moe_hatching/students.jpg`,
+      edo: `${CDN_BASE}/moe_hatching/edo.jpg`,
+      adult: `${CDN_BASE}/moe_hatching/adult.jpg`,
+    }
   },
   {
     id: 'pastel_chill',
@@ -128,6 +178,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🎨 くすみパステル・チルスケッチ',
     category: 'art',
     descriptionJp: 'くすみパステルカラーと優しいスケッチ線画。Lo-Fiミュージックビデオのようなチルな空気感。',
+    samples: {
+      students: `${CDN_BASE}/pastel_chill/students.jpg`,
+      edo: `${CDN_BASE}/pastel_chill/edo.jpg`,
+      adult: `${CDN_BASE}/pastel_chill/adult.jpg`,
+    }
   },
   {
     id: 'movie_teal',
@@ -135,6 +190,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🌃 劇場版フラットセル・夜景ティール',
     category: 'cinematic',
     descriptionJp: '劇場版アニメの夜景カットのようなティール＆オレンジの映画的カラーグレーディング。',
+    samples: {
+      students: `${CDN_BASE}/movie_teal/students.jpg`,
+      edo: `${CDN_BASE}/movie_teal/edo.jpg`,
+      adult: `${CDN_BASE}/movie_teal/adult.jpg`,
+    }
   },
   {
     id: 'retro_90s',
@@ -142,6 +202,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '📼 90s平成深夜アニメ・セル画キャプチャ',
     category: 'anime',
     descriptionJp: '90年代のVHS走査線・CRTブラウン管・手描きセル画のにじみを忠実に再現したレトロアニメ。',
+    samples: {
+      students: `${CDN_BASE}/retro_90s/students.jpg`,
+      edo: `${CDN_BASE}/retro_90s/edo.jpg`,
+      adult: `${CDN_BASE}/retro_90s/adult.jpg`,
+    }
   },
   {
     id: 'showa_horror',
@@ -149,6 +214,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🖋️ 昭和怪異ホラー・カケアミ劇画',
     category: 'art',
     descriptionJp: '昭和の怪奇漫画のような緻密なカケアミと黄ばんだザラ紙印刷のホラーテイスト。',
+    samples: {
+      students: `${CDN_BASE}/showa_horror/students.jpg`,
+      edo: `${CDN_BASE}/showa_horror/edo.jpg`,
+      adult: `${CDN_BASE}/showa_horror/adult.jpg`,
+    }
   },
   {
     id: 'cyber_blueprint',
@@ -156,6 +226,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '📐 サイバー・テクニカル・ブループリント',
     category: 'art',
     descriptionJp: '青焼き設計図の上にホログラフィックHUDが浮かぶ精密サイバーエンジニアリング。',
+    samples: {
+      students: `${CDN_BASE}/cyber_blueprint/students.jpg`,
+      edo: `${CDN_BASE}/cyber_blueprint/edo.jpg`,
+      adult: `${CDN_BASE}/cyber_blueprint/adult.jpg`,
+    }
   },
   {
     id: 'natgeo_macro',
@@ -163,6 +238,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🔬 ナショジオ・超深度マクロ自然科学',
     category: 'cinematic',
     descriptionJp: 'ナショナルジオグラフィック風の超深度マクロ結晶写真。科学ドキュメンタリーの質感。',
+    samples: {
+      students: `${CDN_BASE}/natgeo_macro/students.jpg`,
+      edo: `${CDN_BASE}/natgeo_macro/edo.jpg`,
+      adult: `${CDN_BASE}/natgeo_macro/adult.jpg`,
+    }
   },
   {
     id: 'bauhaus',
@@ -170,6 +250,11 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '🏛️ バウハウス・幾何学キネティックアート',
     category: 'art',
     descriptionJp: '洗練された幾何学立体とコンクリート・真鍮のモダンアートギャラリー空間。',
+    samples: {
+      students: `${CDN_BASE}/bauhaus/students.jpg`,
+      edo: `${CDN_BASE}/bauhaus/edo.jpg`,
+      adult: `${CDN_BASE}/bauhaus/adult.jpg`,
+    }
   },
   {
     id: 'davinci_codex',
@@ -177,5 +262,10 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     displayName: '📜 ダ・ヴィンチ古代手稿・飛行機械スケッチ',
     category: 'art',
     descriptionJp: 'レオナルド・ダ・ヴィンチの直筆手稿・解剖図・飛行機械の羊皮紙スケッチ。',
+    samples: {
+      students: `${CDN_BASE}/davinci_codex/students.jpg`,
+      edo: `${CDN_BASE}/davinci_codex/edo.jpg`,
+      adult: `${CDN_BASE}/davinci_codex/adult.jpg`,
+    }
   },
 ];
