@@ -336,10 +336,6 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
   const cardContent = (
     <div 
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
       className={`relative w-full bg-[#121216] border-2 border-purple-500/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100 ${
         isModal ? 'max-w-4xl max-h-[92vh]' : 'mb-6 shadow-purple-950/40 animate-fadeIn'
       }`}
