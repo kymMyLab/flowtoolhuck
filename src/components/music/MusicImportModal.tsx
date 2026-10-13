@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ImportedTrack, parseMusicTracksJson, convertTrackToEpisode } from '../../services/musicImporter';
-import { Episode } from '../../types';
+import { Episode, CastCharacter } from '../../types';
+import { loadMangaProject } from '../../services/castStorage';
 
 interface MusicImportModalProps {
   isOpen: boolean;
@@ -28,6 +29,22 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [failedCovers, setFailedCovers] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
+
+  const [characters, setCharacters] = useState<CastCharacter[]>([]);
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const project = loadMangaProject();
+    if (project.characters && project.characters.length > 0) {
+      setCharacters(project.characters);
+      const protag = project.characters.find(c => c.role === 'protagonist');
+      if (protag) {
+        setSelectedCharacterId(protag.id);
+      } else {
+        setSelectedCharacterId(project.characters[0].id);
+      }
+    }
+  }, []);
 
   const handleParse = useCallback((text: string) => {
     setErrorMessage(null);
@@ -236,7 +253,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
   const handleDeploySingle = (track: ImportedTrack) => {
     try {
-      const episode = convertTrackToEpisode(track, videoRatio);
+      const selectedCharacter = characters.find(c => c.id === selectedCharacterId) || undefined;
+      const episode = convertTrackToEpisode(track, videoRatio, selectedCharacter);
       onDeployEpisode(episode);
       onClose();
     } catch (err: any) {
@@ -247,7 +265,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const handleDeployAll = () => {
     if (parsedTracks.length === 0) return;
     try {
-      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio));
+      const selectedCharacter = characters.find(c => c.id === selectedCharacterId) || undefined;
+      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio, selectedCharacter));
       if (onDeployBatchEpisodes) {
         onDeployBatchEpisodes(episodes);
       } else {
@@ -315,6 +334,57 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 dark-scrollbar">
+
+          {/* Cast Selection Bar */}
+          <div className="flex flex-col gap-2 p-3 bg-black/40 border border-white/10 rounded-xl shadow-inner">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-400 text-[18px]">movie_creation</span>
+              <h3 className="text-sm font-black text-white">🎬 主演キャスト (Protagonist Cast)</h3>
+              <p className="text-[10px] text-white/50">選択したキャストのDNAと表情がMVに自動注入されます</p>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setSelectedCharacterId(null)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                  selectedCharacterId === null
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                    : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <span className="text-[14px]">🎲</span>
+                キャスト指定なし (AI完全おまかせ)
+              </button>
+              {characters.map(char => {
+                const isSelected = selectedCharacterId === char.id;
+                const isProtag = char.role === 'protagonist';
+                return (
+                  <button
+                    key={char.id}
+                    type="button"
+                    onClick={() => setSelectedCharacterId(char.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-2 ${
+                      isSelected
+                        ? 'bg-purple-600/30 text-purple-200 border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+                        : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    {char.avatarBase64 ? (
+                      <img src={char.avatarBase64} alt={char.name} className="w-5 h-5 rounded-full object-cover border border-white/20" />
+                    ) : (
+                      <span className="material-symbols-outlined text-[16px]">person</span>
+                    )}
+                    <span>{char.name}</span>
+                    {isProtag && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 leading-none">
+                        主演
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           
           {/* Drop & Input Area */}
           <div 

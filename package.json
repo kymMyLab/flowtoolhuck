@@ -12,11 +12,11 @@
     "jules": "node scripts/jules.mjs"
   },
   "dependencies": {
+    "gsap": "^3.12.7",
     "jszip": "^3.10.1",
     "mediabunny": "^1.26.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "gsap": "^3.12.7"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -27,7 +27,8 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7",
-    "vite-plugin-css-injected-by-js": "^3.5.2"
+    "vite": "^6.4.4",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vitest": "^5.0.4"
   }
 }
