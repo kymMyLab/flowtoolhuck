@@ -40,7 +40,6 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [parsedTracks, setParsedTracks] = useState<ImportedTrack[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [isBoxDragging, setIsBoxDragging] = useState(false);
   const [failedCovers, setFailedCovers] = useState<Record<string, boolean>>({});
   const [castCharacters, setCastCharacters] = useState<CastCharacter[]>([]);
@@ -66,7 +65,6 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [selectedCoverThemeId, setSelectedCoverThemeId] = useState<string>('auto');
   const [autoTheme, setAutoTheme] = useState<CoverPalette>(COVER_PALETTES.mv_violet);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragCounterRef = useRef(0);
   const boxDragCounterRef = useRef(0);
 
   // キャスト画像取得ヘルパー（アバター優先、三面図、表情のフォールバック。URLとbase64両対応）
@@ -1174,6 +1172,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               e.preventDefault();
               e.stopPropagation();
               if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+              boxDragCounterRef.current += 1;
               setIsBoxDragging(true);
             }}
             onDragOver={(e) => {
@@ -1185,11 +1184,16 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             onDragLeave={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setIsBoxDragging(false);
+              boxDragCounterRef.current -= 1;
+              if (boxDragCounterRef.current <= 0) {
+                boxDragCounterRef.current = 0;
+                setIsBoxDragging(false);
+              }
             }}
             onDrop={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              boxDragCounterRef.current = 0;
               setIsBoxDragging(false);
               const file = e.dataTransfer?.files?.[0];
               console.log('🎯 [MusicImporter Drop検知! 即時パース開始]', file?.name, file?.size);
