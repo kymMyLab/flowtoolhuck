@@ -1,4 +1,4 @@
-import { Episode, Cut, ProductionMode } from '../types';
+import { Episode, Cut, ProductionMode, CastCharacter, ExpressionType } from '../types';
 import { extractHighlights } from './directorService';
 import { resolveMasterCategory } from '../config/masterCategories';
 import { CAMERA_WORK_REGISTRY } from '../constants';
@@ -252,6 +252,7 @@ export function extractLyricVisualPlot(
       break;
     case 8:
       defaultCutAction = 'Cinematic wide climax, protagonist walking forward through the glowing hallway, seen from behind or three-quarter view, bathed in dramatic illumination, resolute forward motion';
+      break;
     case 9:
       // ★ 考察回収フック: 物語の真相に関わる小さな遺留品を発見する驚きの構図
       defaultCutAction = 'Low angle dramatic discovery shot, protagonist looking down towards a shadowed floor corner, uncovering a tiny gleaming keepsake or fateful clue object, high contrast lighting sparking curiosity';
@@ -283,7 +284,7 @@ export function extractLyricVisualPlot(
 /**
  * CT198のインポートトラックから、FlowToolの完全な 12カット MV Episode を自動錬成
  */
-export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string = '30%'): Episode {
+export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string = '30%', selectedCharacter?: CastCharacter): Episode {
   const visualMap = parseVisualHints(track.visual_hints || '');
   const preferredLyrics = track.lyrics_kanji || track.input_lyrics || '';
   const lyricsSec = parseLyricsSections(preferredLyrics);
@@ -364,7 +365,7 @@ export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string =
     const hl = extractHighlights(lyric);
     const visualPlot = extractLyricVisualPlot(lyric, hint, track.surface_theme || track.title, i, isPropCut);
 
-    const promptEn = [
+    let finalPromptEn = [
       `Masterpiece, high production music video, authentic ${masterCat.pool.visual_contract.style_preset},`,
       visualPlot,
       isPropCut 
@@ -372,9 +373,27 @@ export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string =
         : `Atmospheric cinematography, 8k resolution, cinematic lighting, photorealistic texture.`
     ].join(' ');
 
+    // ★ CAST DNA & EXPRESSION SYNC (if selected)
+    if (selectedCharacter && !isPropCut && i !== 12) {
+      // Expression modifier
+      let expMod = selectedCharacter.expressions['neutral']?.promptModifierEn || '';
+      if (i === 1) {
+        expMod = selectedCharacter.expressions['sad']?.promptModifierEn || selectedCharacter.expressions['neutral']?.promptModifierEn || '';
+      } else if (i === 4) {
+        expMod = selectedCharacter.expressions['neutral']?.promptModifierEn || '';
+      } else if (i >= 5 && i <= 8) {
+        expMod = selectedCharacter.expressions['happy']?.promptModifierEn || selectedCharacter.expressions['neutral']?.promptModifierEn || '';
+      } else if (i === 11) {
+        expMod = selectedCharacter.expressions['happy']?.promptModifierEn || selectedCharacter.expressions['neutral']?.promptModifierEn || '';
+      }
+
+      const dnaInjection = `[PROTAGONIST DNA]: ${selectedCharacter.dnaPromptEn}. ${expMod}`;
+      finalPromptEn = `${dnaInjection} ${finalPromptEn}`;
+    }
+
     cuts.push({
       id: i,
-      promptEn: promptEn,
+      promptEn: finalPromptEn,
       narrationJp: lyric,
       narrationEn: '',
       shotScale: shotScale,
@@ -382,6 +401,7 @@ export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string =
       isObjectOnly: isObjectOnly,
       panelLayout: isPropCut ? 'single' : (isChorus ? 'diagonal-slash' : 'single'),
       focalPoint: isPropCut ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'key_prop' } : undefined,
+      // @ts-ignore
       duration: isChorus ? 7.5 : 5.0,
       isSelectedForVideo: isCutSelectedForVideo(i - 1, videoRatio),
       telop: {
@@ -398,7 +418,7 @@ export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string =
   const episodeId = track.track_no || 1;
   const uniqueId = `ep_mv_${Date.now()}_${track.id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8)}`;
 
-  return {
+  const episode: Episode = {
     id: episodeId,
     internalId: uniqueId,
     titleJp: track.title,
@@ -417,4 +437,13 @@ export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string =
     coverCatchphraseJp: track.title,
     coverCatchphraseEn: track.title
   };
+
+  if (selectedCharacter) {
+    episode.characterDna = selectedCharacter.dnaPromptEn;
+    episode.characterTurnaroundBase64 = selectedCharacter.turnaroundBase64 || selectedCharacter.avatarBase64;
+    episode.characterTurnaroundMediaId = selectedCharacter.turnaroundMediaId;
+    episode.characterTurnaroundPrompt = selectedCharacter.turnaroundPromptEn;
+  }
+
+  return episode;
 }
