@@ -311,12 +311,22 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     window.addEventListener('dragover', handleWindowDragOver, true);
     window.addEventListener('drop', handleWindowDrop, true);
 
+    document.addEventListener('dragenter', handleWindowDragEnter, true);
+    document.addEventListener('dragleave', handleWindowDragLeave, true);
+    document.addEventListener('dragover', handleWindowDragOver, true);
+    document.addEventListener('drop', handleWindowDrop, true);
+
     return () => {
       window.removeEventListener('paste', handleWindowPaste);
       window.removeEventListener('dragenter', handleWindowDragEnter, true);
       window.removeEventListener('dragleave', handleWindowDragLeave, true);
       window.removeEventListener('dragover', handleWindowDragOver, true);
       window.removeEventListener('drop', handleWindowDrop, true);
+
+      document.removeEventListener('dragenter', handleWindowDragEnter, true);
+      document.removeEventListener('dragleave', handleWindowDragLeave, true);
+      document.removeEventListener('dragover', handleWindowDragOver, true);
+      document.removeEventListener('drop', handleWindowDrop, true);
     };
   }, [isOpen, handleParse, processFile]);
 
@@ -1354,15 +1364,43 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                 : 'border-white/20 bg-white/5 hover:border-amber-400/60 hover:bg-white/10 shadow-sm'
             }`}
           >
+            {/* 枠全体を完全被覆する透明なネイティブ input[type=file]（ブラウザネイティブのD&Dとクリックを100%確実に捕捉） */}
             <input 
               type="file" 
               ref={fileInputRef} 
-              onChange={handleFileSelect} 
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                console.log('🎉 [ネイティブ input onChange検知!]', f?.name);
+                if (f) processFile(f);
+                if (e.target) e.target.value = '';
+              }}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                setIsBoxDragging(true);
+                console.log('🎯 [ネイティブ input dragenter検知!]', {
+                  types: Array.from(e.dataTransfer?.types || [])
+                });
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+              }}
+              onDragLeave={() => {
+                setIsBoxDragging(false);
+                console.log('⚪ [ネイティブ input dragleave]');
+              }}
+              onDrop={(e) => {
+                setIsBoxDragging(false);
+                const f = e.dataTransfer?.files?.[0];
+                console.log('🔥 [ネイティブ input onDrop検知!]', f?.name);
+                if (f) processFile(f);
+              }}
               accept=".json,application/json" 
-              className="hidden" 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
+              title="session_songs_metadata.json をドラッグ＆ドロップ、またはクリックしてファイル選択"
             />
 
-            {/* 表示用コンテンツ（pointer-events-none で枠のクリック・D&Dを妨げない） */}
+            {/* 表示用コンテンツ（pointer-events-none で input へのD&D・クリックを一切邪魔しない） */}
             <div className="flex items-center gap-3 pointer-events-none">
               <span className={`p-3 rounded-full transition-all duration-200 ${
                 isBoxDragging || isDragging 
@@ -1374,21 +1412,30 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                 </span>
               </span>
               <div className="text-left">
-                <p className="text-sm font-bold text-white flex items-center gap-2">
-                  {isBoxDragging ? (
-                    <span className="text-amber-300 font-black animate-pulse flex items-center gap-1.5 text-base">
-                      <span>📥</span>
-                      <span>マウスを離して session_songs_metadata.json を即座に展開！</span>
-                    </span>
-                  ) : (
-                    <>
-                      <span>session_songs_metadata.json をドラッグ＆ドロップ</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
-                        枠内クリックで選択 / Ctrl + V
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-white flex items-center gap-2">
+                    {isBoxDragging ? (
+                      <span className="text-amber-300 font-black animate-pulse flex items-center gap-1.5 text-base">
+                        <span>📥</span>
+                        <span>マウスを離して session_songs_metadata.json を即座に展開！</span>
                       </span>
-                    </>
-                  )}
-                </p>
+                    ) : (
+                      <>
+                        <span>session_songs_metadata.json をドラッグ＆ドロップ</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
+                          枠内クリックで選択 / Ctrl + V
+                        </span>
+                      </>
+                    )}
+                  </p>
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold transition-all ${
+                    isBoxDragging || isDragging 
+                      ? 'bg-amber-400 text-black animate-pulse shadow-md' 
+                      : 'bg-white/10 text-white/60 border border-white/15'
+                  }`}>
+                    {isBoxDragging || isDragging ? '⚡ D&D検知中 (Active)' : '🟢 D&D待機中 (Ready)'}
+                  </span>
+                </div>
                 <p className="text-xs text-white/50 mt-0.5">
                   {isBoxDragging
                     ? '指を離すと全自動で12カットMV絵コンテへ瞬時に展開されます'
@@ -1397,8 +1444,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               </div>
             </div>
 
-            {/* アクションボタン（クリック時は e.stopPropagation() で親の click と競合させない） */}
-            <div className="flex items-center gap-2 mt-1">
+            {/* アクションボタン（z-30 で透明 input より前面にし、手動クリックを確実に受ける） */}
+            <div className="relative z-30 flex items-center gap-2 mt-1">
               <button 
                 type="button"
                 onClick={(e) => {

@@ -484,11 +484,21 @@ export default function App() {
     window.addEventListener('dragover', handleGlobalDragOver, true);
     window.addEventListener('drop', handleGlobalDrop, true);
 
+    document.addEventListener('dragenter', handleGlobalDragEnter, true);
+    document.addEventListener('dragleave', handleGlobalDragLeave, true);
+    document.addEventListener('dragover', handleGlobalDragOver, true);
+    document.addEventListener('drop', handleGlobalDrop, true);
+
     return () => {
       window.removeEventListener('dragenter', handleGlobalDragEnter, true);
       window.removeEventListener('dragleave', handleGlobalDragLeave, true);
       window.removeEventListener('dragover', handleGlobalDragOver, true);
       window.removeEventListener('drop', handleGlobalDrop, true);
+
+      document.removeEventListener('dragenter', handleGlobalDragEnter, true);
+      document.removeEventListener('dragleave', handleGlobalDragLeave, true);
+      document.removeEventListener('dragover', handleGlobalDragOver, true);
+      document.removeEventListener('drop', handleGlobalDrop, true);
     };
   }, [addLog, handleResumeSeries]);
 
