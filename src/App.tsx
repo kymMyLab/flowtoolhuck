@@ -396,6 +396,7 @@ export default function App() {
 
       const fileList = e.dataTransfer?.files;
       const file = fileList?.[0];
+      const rawDroppedText = e.dataTransfer?.getData('text') || '';
 
       console.log('🚀 [FlowTool D&D] 全画面ドロップ検知!!', {
         filesLength: fileList?.length || 0,
@@ -403,44 +404,63 @@ export default function App() {
         fileSize: file?.size,
         fileType: file?.type,
         dataTransferTypes: Array.from(e.dataTransfer?.types || []),
-        isModalOpen: isMusicImportOpenRef.current
+        isModalOpen: isMusicImportOpenRef.current,
+        hasRawText: !!rawDroppedText
       });
 
-      if (!file) {
-        console.warn('⚠️ [FlowTool D&D] ドロップイベントが発生しましたが、files が空でした。', e.dataTransfer);
+      if (!file && !rawDroppedText) {
+        console.warn('⚠️ [FlowTool D&D] ドロップイベントが発生しましたが、ファイルもテキストも空でした。', e.dataTransfer);
         return;
       }
 
       try {
-        const text = await file.text();
+        let text = '';
+        let fileName = file?.name || 'dropped_text.json';
+
+        if (file) {
+          try {
+            text = await file.text();
+          } catch (textErr) {
+            console.warn('⚠️ [FlowTool D&D] file.text() 失敗、FileReaderに切り替えます:', textErr);
+            text = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result || ''));
+              reader.onerror = () => reject(reader.error);
+              reader.readAsText(file);
+            });
+          }
+        } else if (rawDroppedText) {
+          text = rawDroppedText;
+        }
+
         console.log(`📥 [FlowTool D&D] ファイル即座読み取り成功 (${text.length}文字)`);
 
         // もしMusicImportModalが開いている場合は、直接インポーターにペイロードを渡して即時パース！
         if (isMusicImportOpenRef.current) {
-          setInjectedPayload({ text, fileName: file.name, timestamp: Date.now() });
+          setInjectedPayload({ text, fileName, timestamp: Date.now() });
           setInjectedJsonText(text);
-          addLog(`🎵 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をインポーターへ展開しました！`, 'process');
+          addLog(`🎵 楽曲メタデータ「${fileName}」(${Math.round(text.length / 1024)}KB) をインポーターへ展開しました！`, 'process');
           return;
         }
 
         // JSONの中身をパースして自動仕分け
         let parsed: any = null;
         try {
-          parsed = JSON.parse(text);
+          parsed = JSON.parse(text.replace(/^\uFEFF/, '').trim());
         } catch (jsonErr: any) {
           console.warn('⚠️ [FlowTool D&D] JSON解析警告:', jsonErr);
         }
 
         // A. 連載シリーズ設定JSON (seriesTitle または episodesPlan)
         if (parsed && (parsed.seriesTitle || parsed.episodesPlan)) {
-          addLog(`📂 連載シリーズ設定「${parsed.seriesTitle || file.name}」を復元します`, 'process');
+          addLog(`📂 連載シリーズ設定「${parsed.seriesTitle || fileName}」を復元します`, 'process');
           await handleResumeSeries(parsed);
           return;
         }
 
         // B. キャスト設定JSON (characters 配列)
         if (parsed && Array.isArray(parsed.characters) && parsed.characters.length > 0 && !parsed.tracks) {
-          addLog(`🎭 キャスト設定「${parsed.title || file.name}」を復元します`, 'process');
+          addLog(`🎭 キャスト設定「${parsed.title || fileName}」を復元します`, 'process');
           saveMangaProject(parsed);
           setMangaProject(parsed);
           alert(`✅ キャスト（${parsed.characters.length}人）を正常に復元しました！`);
@@ -449,10 +469,10 @@ export default function App() {
 
         // C. 楽曲メタデータ（またはその他JSON）
         // 音楽インポートモーダルを開き、ペイロードを直接注入！
-        setInjectedPayload({ text, fileName: file.name, timestamp: Date.now() });
+        setInjectedPayload({ text, fileName, timestamp: Date.now() });
         setInjectedJsonText(text);
         setIsMusicImportOpen(true);
-        addLog(`🎵 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をインポーターへ展開しました！`, 'process');
+        addLog(`🎵 楽曲メタデータ「${fileName}」(${Math.round(text.length / 1024)}KB) をインポーターへ展開しました！`, 'process');
 
       } catch (readErr: any) {
         console.error('❌ [FlowTool D&D] ファイル読み取り失敗:', readErr);
@@ -465,20 +485,11 @@ export default function App() {
     window.addEventListener('dragover', handleGlobalDragOver, true);
     window.addEventListener('drop', handleGlobalDrop, true);
 
-    document.addEventListener('dragenter', handleGlobalDragEnter, true);
-    document.addEventListener('dragleave', handleGlobalDragLeave, true);
-    document.addEventListener('dragover', handleGlobalDragOver, true);
-    document.addEventListener('drop', handleGlobalDrop, true);
-
     return () => {
       window.removeEventListener('dragenter', handleGlobalDragEnter, true);
       window.removeEventListener('dragleave', handleGlobalDragLeave, true);
       window.removeEventListener('dragover', handleGlobalDragOver, true);
       window.removeEventListener('drop', handleGlobalDrop, true);
-      document.removeEventListener('dragenter', handleGlobalDragEnter, true);
-      document.removeEventListener('dragleave', handleGlobalDragLeave, true);
-      document.removeEventListener('dragover', handleGlobalDragOver, true);
-      document.removeEventListener('drop', handleGlobalDrop, true);
     };
   }, [addLog, handleResumeSeries]);
 
