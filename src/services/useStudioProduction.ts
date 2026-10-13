@@ -28,6 +28,8 @@ import {
   PreviousShotInfo
 } from './directorService';
 import { useEpisodeState } from './useEpisodeState';
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 import { saveReferenceAsset } from './db';
 import { resolveCameraWork } from '../config/studioDefinitions';
 import type { LogEntry } from '../components/StudioLogs';
