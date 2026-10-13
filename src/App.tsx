@@ -22,6 +22,7 @@ const TasteEditorModal = React.lazy(() => import('./components/TasteEditorModal'
 const CastManagerModal = React.lazy(() => import('./components/CastManagerModal').then(m => ({ default: m.CastManagerModal })));
 const ComicCreationWizardModal = React.lazy(() => import('./components/ComicCreationWizardModal').then(m => ({ default: m.ComicCreationWizardModal })));
 import { MusicImportModal } from './components/music/MusicImportModal';
+import { TasteShowroomModal } from './components/TasteShowroomModal';
 import { loadMangaProject, saveMangaProject } from './services/castStorage';
 import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset, SeriesManifest } from './types';
 import { saveReferenceAsset } from './services/db';
@@ -70,6 +71,7 @@ export default function App() {
   const [customTastes, setCustomTastes] = useState(() => loadCustomTastes());
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
   const [isTasteEditorOpen, setIsTasteEditorOpen] = useState(false);
+  const [isTasteShowroomOpen, setIsTasteShowroomOpen] = useState(false);
   const [mangaProject, setMangaProject] = useState<MangaProject>(() => loadMangaProject());
   const [isCastModalOpen, setIsCastModalOpen] = useState(false);
   const [isComicWizardOpen, setIsComicWizardOpen] = useState(false);
@@ -530,6 +532,7 @@ export default function App() {
           customTastes={customTastes}
           onOpenThemeEditor={() => setIsThemeEditorOpen(true)}
           onOpenTasteEditor={() => setIsTasteEditorOpen(true)}
+          onOpenTasteShowroom={() => setIsTasteShowroomOpen(true)}
           onOpenCastModal={() => setIsCastModalOpen(true)}
           onOpenComicWizard={() => setIsComicWizardOpen(true)}
           onOpenMusicImport={() => setIsMusicImportOpen(true)}
@@ -655,6 +658,15 @@ export default function App() {
             onTastesUpdated={(updatedTastes) => {
               setCustomTastes(updatedTastes);
             }} 
+          />
+          <TasteShowroomModal
+            isOpen={isTasteShowroomOpen}
+            onClose={() => setIsTasteShowroomOpen(false)}
+            currentTaste={settings.taste}
+            onSelectTaste={(tasteKey) => {
+              setSettings(s => ({ ...s, taste: tasteKey }));
+              addLog(`🎨 画風スタイルを「${tasteKey}」に変更しました`, 'info');
+            }}
           />
           <CastManagerModal
             isOpen={isCastModalOpen}

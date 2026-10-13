@@ -18,6 +18,7 @@ interface StudioHeaderProps {
   customTastes: Record<string, any>;
   onOpenThemeEditor: () => void;
   onOpenTasteEditor: () => void;
+  onOpenTasteShowroom?: () => void;
   onOpenCastModal?: () => void;
   onOpenComicWizard?: () => void;
   onOpenMusicImport?: () => void;
@@ -29,7 +30,7 @@ interface StudioHeaderProps {
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
-  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenCastModal, onOpenComicWizard, onOpenMusicImport, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen, isWaitingForStart = false
+  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenTasteShowroom, onOpenCastModal, onOpenComicWizard, onOpenMusicImport, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen, isWaitingForStart = false
 }) => {
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -230,6 +231,16 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               />
             );
           })()}
+          <button
+            type="button"
+            onClick={onOpenTasteShowroom}
+            disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId}
+            className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all hover:scale-102 cursor-pointer shrink-0"
+            title="作例画像（学生・江戸町人・社会人）を見ながら画風を選択"
+          >
+            <span className="material-symbols-outlined text-[16px]">gallery_thumbnail</span>
+            <span>作例ギャラリー</span>
+          </button>
           <button
             type="button"
             onClick={onOpenTasteEditor}
