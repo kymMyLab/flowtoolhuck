@@ -123,6 +123,7 @@ export interface Episode {
   coverBase64?: string;
   coverMediaId?: string;
   coverPromptEn?: string;
+  coverThemeVariant?: string;
   isGeneratingCover?: boolean;
 
   // 三面図マスター ＆ Cut 1 マスターアンカー画像 ＆ 主人公DNA

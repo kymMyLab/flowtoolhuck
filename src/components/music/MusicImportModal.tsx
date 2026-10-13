@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ImportedTrack, parseMusicTracksJson, convertTrackToEpisode } from '../../services/musicImporter';
 import { Episode, CastCharacter } from '../../types';
 import { loadMangaProject } from '../../services/castStorage';
+import { COVER_PALETTES, getCoverPalettesForGenre, CoverPalette } from '../../services/export/coverRenderer';
 
 interface MusicImportModalProps {
   isOpen: boolean;
@@ -29,10 +30,13 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [failedCovers, setFailedCovers] = useState<Record<string, boolean>>({});
   const [castCharacters, setCastCharacters] = useState<CastCharacter[]>([]);
   const [selectedCastId, setSelectedCastId] = useState<string>('none');
+  const [selectedCoverThemeId, setSelectedCoverThemeId] = useState<string>('auto');
+  const [autoTheme, setAutoTheme] = useState<CoverPalette>(COVER_PALETTES.mv_violet);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
   // モーダルオープン時にキャスト一覧を読み込み、主演をデフォルト選択（初回オープン時のみ）
+  // 同時に今回のセッション用のカバー配色バリエーションを自動選定（同一セッション内全曲統一）
   useEffect(() => {
     if (isOpen) {
       const project = loadMangaProject();
@@ -44,6 +48,12 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       } else {
         setSelectedCastId('none');
       }
+
+      // セッションごとに自動で異なる配色バリエーションを1つ選定（前回の固定マンネリを防止）
+      const mvPalettes = getCoverPalettesForGenre('mv');
+      const randomIdx = Math.floor(Math.random() * mvPalettes.length);
+      setAutoTheme(mvPalettes[randomIdx] || COVER_PALETTES.mv_violet);
+      setSelectedCoverThemeId('auto');
     }
   }, [isOpen]);
 
@@ -255,7 +265,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const handleDeploySingle = (track: ImportedTrack) => {
     try {
       const selectedCharacter = selectedCastId === 'none' ? undefined : castCharacters.find(c => c.id === selectedCastId);
-      const episode = convertTrackToEpisode(track, videoRatio, selectedCharacter);
+      const effectiveTheme = selectedCoverThemeId === 'auto' ? autoTheme.id : selectedCoverThemeId;
+      const episode = convertTrackToEpisode(track, videoRatio, selectedCharacter, effectiveTheme);
       onDeployEpisode(episode);
       onClose();
     } catch (err: any) {
@@ -267,7 +278,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     if (parsedTracks.length === 0) return;
     try {
       const selectedCharacter = selectedCastId === 'none' ? undefined : castCharacters.find(c => c.id === selectedCastId);
-      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio, selectedCharacter));
+      const effectiveTheme = selectedCoverThemeId === 'auto' ? autoTheme.id : selectedCoverThemeId;
+      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio, selectedCharacter, effectiveTheme));
       if (onDeployBatchEpisodes) {
         onDeployBatchEpisodes(episodes);
       } else {
@@ -392,6 +404,71 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* 🎨 サムネイル配色テーマ (Cover Theme Variant) */}
+          <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative overflow-hidden group">
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-purple-400">palette</span>
+                <span className="text-sm font-bold text-white">🎨 サムネイル配色テーマ設定</span>
+              </div>
+              <span className="text-[10px] text-purple-300/90 font-mono bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-500/30 font-bold">
+                1セッション内全曲統一
+              </span>
+            </div>
+            <p className="text-[10px] text-white/50 relative z-10">
+              今回のインポートで生成される全12カットMVの扉絵（9:16・16:9）の看板カラー・アクセントを決定します。次回実行時は自動で上品に変奏されます。
+            </p>
+
+            <div className="relative z-10 mt-1">
+              <select
+                value={selectedCoverThemeId}
+                onChange={(e) => setSelectedCoverThemeId(e.target.value)}
+                className="w-full p-2.5 rounded-lg bg-black/60 border border-purple-500/30 text-xs font-bold text-white outline-none focus:border-purple-400 hover:border-purple-500/50 appearance-none transition-colors cursor-pointer shadow-inner"
+                style={{ paddingRight: '2rem' }}
+              >
+                <option value="auto">
+                  🎲 自動セレクト（今回の選定: {autoTheme.name}）
+                </option>
+                {getCoverPalettesForGenre('mv').map(p => (
+                  <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-purple-400 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[18px]">expand_more</span>
+              </div>
+            </div>
+
+            {/* カラープレビューストリップ */}
+            {(() => {
+              const currentP = selectedCoverThemeId === 'auto' ? autoTheme : (COVER_PALETTES[selectedCoverThemeId] || autoTheme);
+              return (
+                <div className="flex items-center gap-2.5 mt-1.5 p-2 bg-black/40 rounded-lg border border-white/5 relative z-10 shadow-sm">
+                  <div 
+                    className="w-16 h-5 rounded border border-white/20 shadow-inner shrink-0"
+                    style={{
+                      background: `linear-gradient(to right, ${currentP.borderColors[0]}, ${currentP.borderColors[1]}, ${currentP.borderColors[2]})`
+                    }}
+                  />
+                  <div className="flex-1 flex items-center justify-between text-[10px]">
+                    <span className="font-bold text-white/90">{currentP.name}</span>
+                    <span 
+                      className="px-2 py-0.5 rounded font-mono font-bold text-[9px] border"
+                      style={{ 
+                        color: currentP.badgeColor,
+                        borderColor: `${currentP.badgeColor}40`,
+                        backgroundColor: `${currentP.badgeColor}15`
+                      }}
+                    >
+                      {currentP.badgeColor}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
           
           {/* Drop & Input Area */}

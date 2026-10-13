@@ -283,7 +283,12 @@ export function extractLyricVisualPlot(
 /**
  * CT198のインポートトラックから、FlowToolの完全な 12カット MV Episode を自動錬成
  */
-export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string = '30%', selectedCharacter?: CastCharacter): Episode {
+export function convertTrackToEpisode(
+  track: ImportedTrack, 
+  videoRatio: string = '30%', 
+  selectedCharacter?: CastCharacter,
+  coverThemeVariant?: string
+): Episode {
   const visualMap = parseVisualHints(track.visual_hints || '');
   const preferredLyrics = track.lyrics_kanji || track.input_lyrics || '';
   const lyricsSec = parseLyricsSections(preferredLyrics);
@@ -444,6 +449,7 @@ export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string =
     characterDna: selectedCharacter ? selectedCharacter.dnaPromptEn : undefined,
     characterTurnaroundBase64: selectedCharacter ? (selectedCharacter.turnaroundBase64 || selectedCharacter.avatarBase64) : undefined,
     characterTurnaroundMediaId: selectedCharacter ? selectedCharacter.turnaroundMediaId : undefined,
-    characterTurnaroundPrompt: selectedCharacter ? selectedCharacter.turnaroundPromptEn : undefined
+    characterTurnaroundPrompt: selectedCharacter ? selectedCharacter.turnaroundPromptEn : undefined,
+    coverThemeVariant: coverThemeVariant
   };
 }

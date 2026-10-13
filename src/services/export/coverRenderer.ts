@@ -8,6 +8,349 @@ export const cleanTitle = (title: string) => {
   return (title || '無題').replace(/\s*\(Ep\.\s*\d+\)/gi, '').trim();
 };
 
+export interface CoverPalette {
+  id: string;
+  name: string;
+  genre: 'mv' | 'historical' | 'trivia' | 'manzai' | 'cinema';
+  // 9:16 縦型看板グラデーション
+  vPanelStart: string;
+  vPanelEnd: string;
+  // 16:9 横型看板グラデーション
+  hPanelStart: string;
+  hPanelMid: string;
+  hPanelEnd: string;
+  // アクセントボーダー [start, mid, end]
+  borderColors: [string, string, string];
+  // キャッチコピーリボン [start, end]
+  ribbonColors: [string, string];
+  // バッジ文字色
+  badgeColor: string;
+}
+
+export const COVER_PALETTES: Record<string, CoverPalette> = {
+  // --- 🎵 MVモード用（セッションごとに上品に変奏） ---
+  mv_violet: {
+    id: 'mv_violet',
+    name: 'Classic Violet (王道ネオン紫)',
+    genre: 'mv',
+    vPanelStart: '#0D0814',
+    vPanelEnd: '#1A0E2E',
+    hPanelStart: 'rgba(26, 14, 46, 0.98)',
+    hPanelMid: 'rgba(13, 8, 20, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#FF0055', '#A855F7', '#00F0FF'],
+    ribbonColors: ['#BE185D', '#6D28D9'],
+    badgeColor: '#E879F9'
+  },
+  mv_cyan: {
+    id: 'mv_cyan',
+    name: 'Cyber Cyan (電脳シアン青)',
+    genre: 'mv',
+    vPanelStart: '#05131C',
+    vPanelEnd: '#0C2236',
+    hPanelStart: 'rgba(12, 34, 54, 0.98)',
+    hPanelMid: 'rgba(6, 18, 28, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#00F0FF', '#0284C7', '#10B981'],
+    ribbonColors: ['#0284C7', '#0D9488'],
+    badgeColor: '#38BDF8'
+  },
+  mv_amber: {
+    id: 'mv_amber',
+    name: 'Sunset Twilight (夕暮れアンバー)',
+    genre: 'mv',
+    vPanelStart: '#180A0E',
+    vPanelEnd: '#2E1218',
+    hPanelStart: 'rgba(46, 18, 24, 0.98)',
+    hPanelMid: 'rgba(24, 10, 14, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#F43F5E', '#F59E0B', '#FBBF24'],
+    ribbonColors: ['#E11D48', '#D97706'],
+    badgeColor: '#F472B6'
+  },
+  mv_emerald: {
+    id: 'mv_emerald',
+    name: 'Acid Matrix (電解エメラルド緑)',
+    genre: 'mv',
+    vPanelStart: '#06140D',
+    vPanelEnd: '#0C291B',
+    hPanelStart: 'rgba(12, 41, 27, 0.98)',
+    hPanelMid: 'rgba(6, 20, 14, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#10B981', '#22C55E', '#84CC16'],
+    ribbonColors: ['#059669', '#065F46'],
+    badgeColor: '#4ADE80'
+  },
+  mv_crimson: {
+    id: 'mv_crimson',
+    name: 'Noir Ruby (真紅ノワール赤)',
+    genre: 'mv',
+    vPanelStart: '#14070A',
+    vPanelEnd: '#260B12',
+    hPanelStart: 'rgba(38, 11, 18, 0.98)',
+    hPanelMid: 'rgba(18, 6, 9, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#EF4444', '#DC2626', '#B91C1C'],
+    ribbonColors: ['#991B1B', '#450A0A'],
+    badgeColor: '#FB7185'
+  },
+
+  // --- 🏮 時代劇・歴史用 ---
+  hist_gold: {
+    id: 'hist_gold',
+    name: '元禄黄金 (蒔絵・本金箔)',
+    genre: 'historical',
+    vPanelStart: '#120A05',
+    vPanelEnd: '#24140A',
+    hPanelStart: 'rgba(36, 20, 10, 0.98)',
+    hPanelMid: 'rgba(18, 10, 5, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#785A28', '#F59E0B', '#785A28'],
+    ribbonColors: ['#B45309', '#78350F'],
+    badgeColor: '#FBBF24'
+  },
+  hist_indigo: {
+    id: 'hist_indigo',
+    name: '深川藍染 (正藍・白金)',
+    genre: 'historical',
+    vPanelStart: '#070F1A',
+    vPanelEnd: '#0E1D33',
+    hPanelStart: 'rgba(14, 29, 51, 0.98)',
+    hPanelMid: 'rgba(7, 15, 26, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#1E3A8A', '#60A5FA', '#E2E8F0'],
+    ribbonColors: ['#1E40AF', '#172554'],
+    badgeColor: '#93C5FD'
+  },
+  hist_vermilion: {
+    id: 'hist_vermilion',
+    name: '宮社朱塗 (丹紅・弁柄)',
+    genre: 'historical',
+    vPanelStart: '#180905',
+    vPanelEnd: '#2E120A',
+    hPanelStart: 'rgba(46, 18, 10, 0.98)',
+    hPanelMid: 'rgba(24, 9, 5, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#991B1B', '#EA580C', '#78350F'],
+    ribbonColors: ['#C2410C', '#7C2D12'],
+    badgeColor: '#FB923C'
+  },
+
+  // --- 💡 雑学・解説用 ---
+  trivia_blue: {
+    id: 'trivia_blue',
+    name: '知性アカデミーブルー',
+    genre: 'trivia',
+    vPanelStart: '#04101A',
+    vPanelEnd: '#082033',
+    hPanelStart: 'rgba(8, 32, 51, 0.98)',
+    hPanelMid: 'rgba(4, 16, 26, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#0EA5E9', '#38BDF8', '#0284C7'],
+    ribbonColors: ['#0369A1', '#0C4A6E'],
+    badgeColor: '#38BDF8'
+  },
+  trivia_teal: {
+    id: 'trivia_teal',
+    name: 'サイエンスティール',
+    genre: 'trivia',
+    vPanelStart: '#031414',
+    vPanelEnd: '#072626',
+    hPanelStart: 'rgba(7, 38, 38, 0.98)',
+    hPanelMid: 'rgba(3, 20, 20, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#14B8A6', '#2DD4BF', '#0F766E'],
+    ribbonColors: ['#0D9488', '#115E59'],
+    badgeColor: '#2DD4BF'
+  },
+
+  // --- 🎙️ 漫才用 ---
+  manzai_crimson: {
+    id: 'manzai_crimson',
+    name: '寄席ローズレッド',
+    genre: 'manzai',
+    vPanelStart: '#1A0808',
+    vPanelEnd: '#2E1010',
+    hPanelStart: 'rgba(46, 16, 16, 0.98)',
+    hPanelMid: 'rgba(26, 8, 8, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#DC2626', '#E11D48', '#991B1B'],
+    ribbonColors: ['#B91C1C', '#881337'],
+    badgeColor: '#FB7185'
+  },
+
+  // --- 🎬 通常シネマ用 ---
+  cinema_indigo: {
+    id: 'cinema_indigo',
+    name: 'ロイヤルインディゴ',
+    genre: 'cinema',
+    vPanelStart: '#0D0D12',
+    vPanelEnd: '#181822',
+    hPanelStart: 'rgba(24, 24, 34, 0.98)',
+    hPanelMid: 'rgba(13, 13, 18, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#E5E7EB', '#6366F1', '#E5E7EB'],
+    ribbonColors: ['#4338CA', '#1E1B4B'],
+    badgeColor: '#A5B4FC'
+  },
+  cinema_purple: {
+    id: 'cinema_purple',
+    name: 'ギャラクシーパープル',
+    genre: 'cinema',
+    vPanelStart: '#100A18',
+    vPanelEnd: '#1E122E',
+    hPanelStart: 'rgba(30, 18, 46, 0.98)',
+    hPanelMid: 'rgba(16, 10, 24, 0.95)',
+    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
+    borderColors: ['#6366F1', '#8B5CF6', '#EC4899'],
+    ribbonColors: ['#6D28D9', '#4C1D95'],
+    badgeColor: '#C084FC'
+  }
+};
+
+export function getCoverPalettesForGenre(genre: string = 'mv'): CoverPalette[] {
+  return Object.values(COVER_PALETTES).filter(p => p.genre === genre);
+}
+
+function simpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+export function resolveCoverPalette(ep: Episode): CoverPalette {
+  if (ep.coverThemeVariant && COVER_PALETTES[ep.coverThemeVariant]) {
+    return COVER_PALETTES[ep.coverThemeVariant];
+  }
+
+  const isMv = !!ep.isMvMode || (ep.titleJp || '').startsWith('🎵') || ep.productionMode === 'mv';
+  const isHist = checkIsHistorical(ep.era, ep.theme);
+  const mode = ep.productionMode || (isMv ? 'mv' : 'episodes');
+  const combinedContext = `${ep.era || ''} ${ep.theme || ''} ${mode}`.toLowerCase();
+  const isTrivia = mode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('トリビア') || combinedContext.includes('科学') || combinedContext.includes('解説');
+  const isManzai = mode === 'manzai' || combinedContext.includes('漫才') || combinedContext.includes('お笑い') || combinedContext.includes('寄席');
+
+  let candidates: CoverPalette[];
+  if (isMv) {
+    candidates = [
+      COVER_PALETTES.mv_violet,
+      COVER_PALETTES.mv_cyan,
+      COVER_PALETTES.mv_amber,
+      COVER_PALETTES.mv_emerald,
+      COVER_PALETTES.mv_crimson
+    ];
+  } else if (isHist) {
+    candidates = [
+      COVER_PALETTES.hist_gold,
+      COVER_PALETTES.hist_indigo,
+      COVER_PALETTES.hist_vermilion
+    ];
+  } else if (isTrivia) {
+    candidates = [
+      COVER_PALETTES.trivia_blue,
+      COVER_PALETTES.trivia_teal
+    ];
+  } else if (isManzai) {
+    candidates = [
+      COVER_PALETTES.manzai_crimson
+    ];
+  } else {
+    candidates = [
+      COVER_PALETTES.cinema_indigo,
+      COVER_PALETTES.cinema_purple
+    ];
+  }
+
+  const seed = `${ep.theme || ''}_${ep.taste || ''}_${ep.era || ''}`;
+  const idx = simpleHash(seed) % candidates.length;
+  return candidates[idx];
+}
+
+/**
+ * カバー用の自然なタイトル改行分割ロジック（9:16縦型・16:9横型共通）
+ * 括弧、コロン、スペース、単語境界を優先し、英単語の途中でぶつ切りになるのを防ぐ
+ */
+export function splitTitleForCover(
+  rawTitle: string, 
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, 
+  maxW: number
+): string[] {
+  if (ctx.measureText(rawTitle).width <= maxW) {
+    return [rawTitle];
+  }
+
+  // 1. 括弧（丸括弧、角括弧、全角半角）の前で自然に分割できるか？
+  const parenRegex = /[\s　]*([(\[（【].+)$/;
+  const parenMatch = rawTitle.match(parenRegex);
+  if (parenMatch && parenMatch.index && parenMatch.index > 0) {
+    const mainPart = rawTitle.slice(0, parenMatch.index).trim();
+    const subPart = parenMatch[0].trim();
+    if (ctx.measureText(mainPart).width <= maxW && ctx.measureText(subPart).width <= maxW) {
+      return [mainPart, subPart];
+    }
+  }
+
+  // 2. コロン、ハイフン、スラッシュなどの区切り文字で分割
+  const delims = [' - ', ' — ', ' : ', ': ', ' / ', '〜', '～'];
+  for (const d of delims) {
+    const idx = rawTitle.indexOf(d);
+    if (idx > 0 && idx < rawTitle.length - 1) {
+      const p1 = rawTitle.slice(0, idx).trim();
+      const p2 = rawTitle.slice(idx).trim();
+      if (ctx.measureText(p1).width <= maxW && ctx.measureText(p2).width <= maxW) {
+        return [p1, p2];
+      }
+    }
+  }
+
+  // 3. 半角スペースなどの単語区切りで、1行目に収まる限界を探す（英単語途中で切れないように）
+  const words = rawTitle.split(/(\s+)/);
+  if (words.length > 2) {
+    let currentLine = '';
+    let breakIdx = -1;
+    for (let i = 0; i < words.length; i++) {
+      const candidate = currentLine + words[i];
+      if (ctx.measureText(candidate.trim()).width <= maxW) {
+        currentLine = candidate;
+      } else {
+        breakIdx = i;
+        break;
+      }
+    }
+    if (breakIdx > 0) {
+      const l1 = words.slice(0, breakIdx).join('').trim();
+      const l2 = words.slice(breakIdx).join('').trim();
+      if (l1 && l2 && ctx.measureText(l2).width <= maxW) {
+        return [l1, l2];
+      }
+    }
+  }
+
+  // 4. 日本語文字列など単語区切りがない場合：maxWに収まる最大文字数で分割（ただし末尾が半角英字なら単語境界まで巻き戻す）
+  let bestCut = 1;
+  for (let i = 1; i <= rawTitle.length; i++) {
+    const sub = rawTitle.slice(0, i);
+    if (ctx.measureText(sub).width <= maxW) {
+      bestCut = i;
+    } else {
+      break;
+    }
+  }
+  if (bestCut < rawTitle.length && /[a-zA-Z0-9]/.test(rawTitle[bestCut]) && /[a-zA-Z0-9]/.test(rawTitle[bestCut - 1])) {
+    const lastSpace = rawTitle.lastIndexOf(' ', bestCut);
+    if (lastSpace > 0) {
+      bestCut = lastSpace;
+    }
+  }
+
+  const l1 = rawTitle.slice(0, bestCut).trim();
+  const l2 = rawTitle.slice(bestCut).trim();
+  return [l1, l2];
+}
+
 /**
  * 世界観適応型 レイヤー合成インフォグラフィック扉絵（9:16特大ポスター）
  * Cut 1のキメ絵を下部に下げて配置し、上部に世界観（MV・江戸・雑学・漫才等）に応じた
@@ -90,47 +433,20 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
 
   // 2. 最上部ヘッダー（特大インフォグラフィック看板プレート）
   ctx.save();
+  const palette = resolveCoverPalette(ep);
   
   // 看板ベースプレート（グラスモーフィズム高級パネル）
   const panelGrad = ctx.createLinearGradient(0, 0, 0, headerHeight);
-  if (isMv) {
-    panelGrad.addColorStop(0, '#0D0814');
-    panelGrad.addColorStop(1, '#1A0E2E');
-  } else if (isHist) {
-    panelGrad.addColorStop(0, '#120A05');
-    panelGrad.addColorStop(1, '#24140A');
-  } else if (isTrivia) {
-    panelGrad.addColorStop(0, '#04101A');
-    panelGrad.addColorStop(1, '#082033');
-  } else if (isManzai) {
-    panelGrad.addColorStop(0, '#1A0808');
-    panelGrad.addColorStop(1, '#2E1010');
-  } else {
-    panelGrad.addColorStop(0, '#0D0D12');
-    panelGrad.addColorStop(1, '#181822');
-  }
+  panelGrad.addColorStop(0, palette.vPanelStart);
+  panelGrad.addColorStop(1, palette.vPanelEnd);
   ctx.fillStyle = panelGrad;
   ctx.fillRect(0, 0, width, headerHeight);
 
   // 金・銀・ネオンの装飾アクセントボーダー（下部境界ライン）
   const borderGrad = ctx.createLinearGradient(0, 0, width, 0);
-  if (isMv) {
-    borderGrad.addColorStop(0, '#FF0055');
-    borderGrad.addColorStop(0.5, '#A855F7');
-    borderGrad.addColorStop(1, '#00F0FF');
-  } else if (isHist) {
-    borderGrad.addColorStop(0, '#785A28');
-    borderGrad.addColorStop(0.5, '#F59E0B');
-    borderGrad.addColorStop(1, '#785A28');
-  } else if (isTrivia) {
-    borderGrad.addColorStop(0, '#0EA5E9');
-    borderGrad.addColorStop(0.5, '#38BDF8');
-    borderGrad.addColorStop(1, '#0284C7');
-  } else {
-    borderGrad.addColorStop(0, '#E5E7EB');
-    borderGrad.addColorStop(0.5, '#6366F1');
-    borderGrad.addColorStop(1, '#E5E7EB');
-  }
+  borderGrad.addColorStop(0, palette.borderColors[0]);
+  borderGrad.addColorStop(0.5, palette.borderColors[1]);
+  borderGrad.addColorStop(1, palette.borderColors[2]);
   ctx.fillStyle = borderGrad;
   ctx.fillRect(0, headerHeight - 4, width, 4);
 
@@ -150,7 +466,7 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
 
   ctx.font = 'bold 26px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillStyle = isMv ? '#E879F9' : isHist ? '#FBBF24' : isTrivia ? '#38BDF8' : '#A5B4FC';
+  ctx.fillStyle = palette.badgeColor;
   ctx.fillText(epLabel, width / 2, badgeY);
 
   // B. メインタイトル（超極太・大迫力2行折り返し対応）
@@ -167,17 +483,14 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
   if (cleanEpTitle.length > 26) titleFontSize = 46;
   ctx.font = `900 ${titleFontSize}px "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif`;
 
-  // タイトルが長い場合はスマート2行分割
+  // タイトルが長い場合はスマート2行分割（括弧・単語境界・区切り記号を優先）
   const maxTitleWidth = width - 120;
-  if (ctx.measureText(cleanEpTitle).width > maxTitleWidth && cleanEpTitle.length > 8) {
-    const mid = Math.ceil(cleanEpTitle.length / 2);
-    // 助詞や句読点付近で切る配慮（簡易）
-    const line1 = cleanEpTitle.slice(0, mid);
-    const line2 = cleanEpTitle.slice(mid);
-    ctx.fillText(line1, width / 2, 175);
-    ctx.fillText(line2, width / 2, 175 + titleFontSize + 12);
+  const titleLines = splitTitleForCover(cleanEpTitle, ctx, maxTitleWidth);
+  if (titleLines.length === 1) {
+    ctx.fillText(titleLines[0], width / 2, 200);
   } else {
-    ctx.fillText(cleanEpTitle, width / 2, 200);
+    ctx.fillText(titleLines[0], width / 2, 175);
+    ctx.fillText(titleLines[1], width / 2, 175 + titleFontSize + 12);
   }
 
   // C. 英語サブタイトル
@@ -202,19 +515,8 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
   ctx.shadowOffsetY = 8;
   
   const ribbonGrad = ctx.createLinearGradient(ribbonX, ribbonY, ribbonX + ribbonW, ribbonY);
-  if (isMv) {
-    ribbonGrad.addColorStop(0, '#BE185D');
-    ribbonGrad.addColorStop(1, '#6D28D9');
-  } else if (isHist) {
-    ribbonGrad.addColorStop(0, '#B45309');
-    ribbonGrad.addColorStop(1, '#78350F');
-  } else if (isTrivia) {
-    ribbonGrad.addColorStop(0, '#0369A1');
-    ribbonGrad.addColorStop(1, '#0C4A6E');
-  } else {
-    ribbonGrad.addColorStop(0, '#4338CA');
-    ribbonGrad.addColorStop(1, '#1E1B4B');
-  }
+  ribbonGrad.addColorStop(0, palette.ribbonColors[0]);
+  ribbonGrad.addColorStop(1, palette.ribbonColors[1]);
   ctx.fillStyle = ribbonGrad;
   
   // 角丸四角形
@@ -271,91 +573,6 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
   ctx.restore();
 
   return canvas;
-}
-
-/**
- * 16:9マスターカバー用の自然なタイトル改行分割ロジック
- * 括弧、コロン、スペース、単語境界を優先し、英単語の途中でぶつ切りになるのを防ぐ
- */
-function splitTitleForCover(
-  rawTitle: string, 
-  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, 
-  maxW: number
-): string[] {
-  // すでに1行に収まるならそのまま
-  if (ctx.measureText(rawTitle).width <= maxW) {
-    return [rawTitle];
-  }
-
-  // 1. 括弧（丸括弧、角括弧、全角半角）の前で自然に分割できるか？
-  // 例: "まわす銀色の鍵 (Silver L-Key Spin)" -> ["まわす銀色の鍵", "(Silver L-Key Spin)"]
-  const parenRegex = /[\s　]*([(\[（【].+)$/;
-  const parenMatch = rawTitle.match(parenRegex);
-  if (parenMatch && parenMatch.index && parenMatch.index > 0) {
-    const mainPart = rawTitle.slice(0, parenMatch.index).trim();
-    const subPart = parenMatch[0].trim();
-    if (ctx.measureText(mainPart).width <= maxW && ctx.measureText(subPart).width <= maxW) {
-      return [mainPart, subPart];
-    }
-  }
-
-  // 2. コロン、ハイフン、スラッシュなどの区切り文字で分割
-  const delims = [' - ', ' — ', ' : ', ': ', ' / ', '〜', '～'];
-  for (const d of delims) {
-    const idx = rawTitle.indexOf(d);
-    if (idx > 0 && idx < rawTitle.length - 1) {
-      const p1 = rawTitle.slice(0, idx).trim();
-      const p2 = rawTitle.slice(idx).trim();
-      if (ctx.measureText(p1).width <= maxW && ctx.measureText(p2).width <= maxW) {
-        return [p1, p2];
-      }
-    }
-  }
-
-  // 3. 半角スペースなどの単語区切りで、1行目に収まる限界を探す（英単語途中で切れないように）
-  const words = rawTitle.split(/(\s+)/);
-  if (words.length > 2) {
-    let currentLine = '';
-    let breakIdx = -1;
-    for (let i = 0; i < words.length; i++) {
-      const candidate = currentLine + words[i];
-      if (ctx.measureText(candidate.trim()).width <= maxW) {
-        currentLine = candidate;
-      } else {
-        breakIdx = i;
-        break;
-      }
-    }
-    if (breakIdx > 0) {
-      const l1 = words.slice(0, breakIdx).join('').trim();
-      const l2 = words.slice(breakIdx).join('').trim();
-      if (l1 && l2 && ctx.measureText(l2).width <= maxW) {
-        return [l1, l2];
-      }
-    }
-  }
-
-  // 4. 日本語文字列など単語区切りがない場合：maxWに収まる最大文字数で分割（ただし末尾が半角英字なら単語境界まで巻き戻す）
-  let bestCut = 1;
-  for (let i = 1; i <= rawTitle.length; i++) {
-    const sub = rawTitle.slice(0, i);
-    if (ctx.measureText(sub).width <= maxW) {
-      bestCut = i;
-    } else {
-      break;
-    }
-  }
-  // もしbestCutの直前・直後が半角英字なら、英単語の途中なので直前のスペースまで巻き戻す
-  if (bestCut < rawTitle.length && /[a-zA-Z0-9]/.test(rawTitle[bestCut]) && /[a-zA-Z0-9]/.test(rawTitle[bestCut - 1])) {
-    const lastSpace = rawTitle.lastIndexOf(' ', bestCut);
-    if (lastSpace > 0) {
-      bestCut = lastSpace;
-    }
-  }
-
-  const l1 = rawTitle.slice(0, bestCut).trim();
-  const l2 = rawTitle.slice(bestCut).trim();
-  return [l1, l2];
 }
 
 /**
@@ -443,42 +660,19 @@ export async function renderCoverCanvasHorizontal(ep: Episode): Promise<Offscree
 
   // 2. 左側：高級看板プレート（背景グラデーション）
   ctx.save();
+  const palette = resolveCoverPalette(ep);
   const panelGrad = ctx.createLinearGradient(0, 0, textPanelWidth, 0);
-  if (isMv) {
-    panelGrad.addColorStop(0, 'rgba(26, 14, 46, 0.98)');
-    panelGrad.addColorStop(0.8, 'rgba(13, 8, 20, 0.95)');
-    panelGrad.addColorStop(1, 'rgba(8, 8, 10, 0.9)');
-  } else if (isHist) {
-    panelGrad.addColorStop(0, 'rgba(36, 20, 10, 0.98)');
-    panelGrad.addColorStop(0.8, 'rgba(18, 10, 5, 0.95)');
-    panelGrad.addColorStop(1, 'rgba(8, 8, 10, 0.9)');
-  } else if (isTrivia) {
-    panelGrad.addColorStop(0, 'rgba(8, 32, 51, 0.98)');
-    panelGrad.addColorStop(0.8, 'rgba(4, 16, 26, 0.95)');
-    panelGrad.addColorStop(1, 'rgba(8, 8, 10, 0.9)');
-  } else {
-    panelGrad.addColorStop(0, 'rgba(24, 24, 34, 0.98)');
-    panelGrad.addColorStop(0.8, 'rgba(13, 13, 18, 0.95)');
-    panelGrad.addColorStop(1, 'rgba(8, 8, 10, 0.9)');
-  }
+  panelGrad.addColorStop(0, palette.hPanelStart);
+  panelGrad.addColorStop(0.8, palette.hPanelMid);
+  panelGrad.addColorStop(1, palette.hPanelEnd);
   ctx.fillStyle = panelGrad;
   ctx.fillRect(0, 0, textPanelWidth, height);
 
   // 境界アクセントライン
   const lineGrad = ctx.createLinearGradient(0, 0, 0, height);
-  if (isMv) {
-    lineGrad.addColorStop(0, '#FF0055');
-    lineGrad.addColorStop(0.5, '#A855F7');
-    lineGrad.addColorStop(1, '#00F0FF');
-  } else if (isHist) {
-    lineGrad.addColorStop(0, '#F59E0B');
-    lineGrad.addColorStop(0.5, '#B45309');
-    lineGrad.addColorStop(1, '#D97706');
-  } else {
-    lineGrad.addColorStop(0, '#6366F1');
-    lineGrad.addColorStop(0.5, '#8B5CF6');
-    lineGrad.addColorStop(1, '#EC4899');
-  }
+  lineGrad.addColorStop(0, palette.borderColors[0]);
+  lineGrad.addColorStop(0.5, palette.borderColors[1]);
+  lineGrad.addColorStop(1, palette.borderColors[2]);
   ctx.fillStyle = lineGrad;
   ctx.fillRect(textPanelWidth - 4, 0, 4, height);
 
@@ -490,7 +684,7 @@ export async function renderCoverCanvasHorizontal(ep: Episode): Promise<Offscree
   const badgeY = 110;
   const badgeText = isMv ? '🎵 CINEMATIC MUSIC VIDEO' : isHist ? '📜 HISTORICAL DRAMA' : isTrivia ? '💡 KNOWLEDGE SHORTS' : isManzai ? '🎙️ COMEDY MANZAI' : '🎬 EPISODIC CINEMA';
   ctx.font = '900 18px "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif';
-  ctx.fillStyle = isMv ? '#F43F5E' : isHist ? '#F59E0B' : '#818CF8';
+  ctx.fillStyle = palette.badgeColor;
   ctx.textAlign = 'left';
   ctx.shadowColor = 'rgba(0,0,0,0.8)';
   ctx.shadowBlur = 8;
@@ -539,16 +733,8 @@ export async function renderCoverCanvasHorizontal(ep: Episode): Promise<Offscree
     const ribbonW = textPanelWidth - leftMargin - 60;
 
     const rGrad = ctx.createLinearGradient(leftMargin, ribbonY, leftMargin + ribbonW, ribbonY);
-    if (isMv) {
-      rGrad.addColorStop(0, '#BE185D');
-      rGrad.addColorStop(1, '#6D28D9');
-    } else if (isHist) {
-      rGrad.addColorStop(0, '#B45309');
-      rGrad.addColorStop(1, '#78350F');
-    } else {
-      rGrad.addColorStop(0, '#4338CA');
-      rGrad.addColorStop(1, '#1E1B4B');
-    }
+    rGrad.addColorStop(0, palette.ribbonColors[0]);
+    rGrad.addColorStop(1, palette.ribbonColors[1]);
     ctx.fillStyle = rGrad;
     ctx.beginPath();
     ctx.roundRect(leftMargin, ribbonY, ribbonW, ribbonH, 14);
