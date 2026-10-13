@@ -359,14 +359,15 @@ export default function App() {
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
+      console.log('📥 [FlowTool App dragenter検知]', {
+        isModalOpen: isMusicImportOpenRef.current,
+        types: Array.from(e.dataTransfer?.types || []),
+        target: (e.target as HTMLElement)?.tagName,
+        className: (e.target as HTMLElement)?.className
+      });
       if (isMusicImportOpenRef.current) return;
       globalDragCounterRef.current += 1;
       setIsGlobalDragging(true);
-      console.log('📥 [FlowTool D&D] dragenter検知', {
-        types: Array.from(e.dataTransfer?.types || []),
-        counter: globalDragCounterRef.current,
-        target: (e.target as HTMLElement)?.tagName
-      });
     };
 
     const handleGlobalDragLeave = (e: DragEvent) => {
@@ -377,7 +378,6 @@ export default function App() {
         globalDragCounterRef.current = 0;
         setIsGlobalDragging(false);
       }
-      console.log('📤 [FlowTool D&D] dragleave', { counter: globalDragCounterRef.current });
     };
 
     const handleGlobalDragOver = (e: DragEvent) => {
@@ -386,7 +386,6 @@ export default function App() {
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
-      if (isMusicImportOpenRef.current) return;
     };
 
     const handleGlobalDrop = async (e: DragEvent) => {

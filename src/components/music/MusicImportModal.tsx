@@ -39,6 +39,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isBoxDragging, setIsBoxDragging] = useState(false);
   const [failedCovers, setFailedCovers] = useState<Record<string, boolean>>({});
   const [castCharacters, setCastCharacters] = useState<CastCharacter[]>([]);
   const [selectedCastId, setSelectedCastId] = useState<string>('arch_kemomimi_jk');
@@ -64,6 +65,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [autoTheme, setAutoTheme] = useState<CoverPalette>(COVER_PALETTES.mv_violet);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
+  const boxDragCounterRef = useRef(0);
 
   // キャスト画像取得ヘルパー（アバター優先、三面図、表情のフォールバック。URLとbase64両対応）
   const getCharacterThumbnail = (char: CastCharacter): string | undefined => {
@@ -259,6 +261,12 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       }
       dragCounterRef.current += 1;
       setIsDragging(true);
+      console.log('🌐 [D&D Window dragenter検知]', {
+        dragCounter: dragCounterRef.current,
+        types: Array.from(e.dataTransfer?.types || []),
+        itemsLength: e.dataTransfer?.items?.length,
+        targetTag: (e.target as HTMLElement)?.tagName
+      });
     };
 
     const handleWindowDragLeave = (e: DragEvent) => {
@@ -267,6 +275,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       if (dragCounterRef.current <= 0) {
         dragCounterRef.current = 0;
         setIsDragging(false);
+        console.log('🌐 [D&D Window dragleave] ドラッグ終了判定 (counter=0)');
       }
     };
 
@@ -280,26 +289,34 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     const handleWindowDrop = (e: DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
+      setIsBoxDragging(false);
       dragCounterRef.current = 0;
+      boxDragCounterRef.current = 0;
       const file = e.dataTransfer?.files?.[0];
-      console.log('🎯 [MusicImportModal Window Drop検知]:', file?.name);
+      console.log('🚀 [D&D Window drop検知!]', {
+        hasFile: !!file,
+        fileName: file?.name,
+        fileSize: file?.size ? `${Math.round(file.size / 1024)} KB` : '0 KB',
+        fileType: file?.type,
+        types: Array.from(e.dataTransfer?.types || [])
+      });
       if (file) {
         processFile(file);
       }
     };
 
     window.addEventListener('paste', handleWindowPaste);
-    window.addEventListener('dragenter', handleWindowDragEnter);
-    window.addEventListener('dragleave', handleWindowDragLeave);
-    window.addEventListener('dragover', handleWindowDragOver);
-    window.addEventListener('drop', handleWindowDrop);
+    window.addEventListener('dragenter', handleWindowDragEnter, true);
+    window.addEventListener('dragleave', handleWindowDragLeave, true);
+    window.addEventListener('dragover', handleWindowDragOver, true);
+    window.addEventListener('drop', handleWindowDrop, true);
 
     return () => {
       window.removeEventListener('paste', handleWindowPaste);
-      window.removeEventListener('dragenter', handleWindowDragEnter);
-      window.removeEventListener('dragleave', handleWindowDragLeave);
-      window.removeEventListener('dragover', handleWindowDragOver);
-      window.removeEventListener('drop', handleWindowDrop);
+      window.removeEventListener('dragenter', handleWindowDragEnter, true);
+      window.removeEventListener('dragleave', handleWindowDragLeave, true);
+      window.removeEventListener('dragover', handleWindowDragOver, true);
+      window.removeEventListener('drop', handleWindowDrop, true);
     };
   }, [isOpen, handleParse, processFile]);
 
@@ -311,9 +328,12 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       e.dataTransfer.dropEffect = 'copy';
     }
     dragCounterRef.current += 1;
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      setIsDragging(true);
-    }
+    setIsDragging(true);
+    console.log('🛡️ [D&D Modal dragenter検知]', {
+      counter: dragCounterRef.current,
+      types: Array.from(e.dataTransfer?.types || []),
+      targetTag: (e.target as HTMLElement)?.tagName
+    });
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -323,6 +343,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     if (dragCounterRef.current <= 0) {
       dragCounterRef.current = 0;
       setIsDragging(false);
+      console.log('🛡️ [D&D Modal dragleave] モーダル枠外へ離脱');
     }
   };
 
@@ -338,11 +359,14 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    setIsBoxDragging(false);
     dragCounterRef.current = 0;
+    boxDragCounterRef.current = 0;
     const file = e.dataTransfer.files?.[0];
-    console.log('🎯 [MusicImportModal React onDrop検知]', {
+    console.log('🎯 [D&D Modal onDrop検知!]', {
       filesCount: e.dataTransfer.files?.length,
-      fileName: file?.name
+      fileName: file?.name,
+      fileSize: file?.size
     });
     if (file) {
       processFile(file);
@@ -437,44 +461,19 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         </div>
       )}
 
-      {/* 全画面ドロップキャッチャー（ドラッグ中は最前面で確実にドロップを捕捉） */}
-      {isDragging && (
+      {/* 全画面ドラッグ中インジケーター（pointer-events-none でマウス判定を遮らずチラつきを完全防止） */}
+      {isDragging && !isBoxDragging && (
         <div 
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-          }}
-          onDragLeave={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dragCounterRef.current -= 1;
-            if (dragCounterRef.current <= 0) {
-              dragCounterRef.current = 0;
-              setIsDragging(false);
-            }
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dragCounterRef.current = 0;
-            setIsDragging(false);
-            const file = e.dataTransfer?.files?.[0];
-            console.log('🎯 [全画面ドロップキャッチャー] ドロップ検知:', file?.name);
-            if (file) {
-              processFile(file);
-            }
-          }}
-          className="fixed inset-0 z-[200] bg-purple-950/90 backdrop-blur-md border-8 border-dashed border-amber-400 flex flex-col items-center justify-center cursor-copy select-none animate-fadeIn"
+          className="fixed inset-0 z-[150] bg-purple-950/75 backdrop-blur-sm border-4 border-dashed border-amber-400/80 flex flex-col items-center justify-center select-none pointer-events-none animate-fadeIn transition-opacity"
         >
-          <div className="w-24 h-24 rounded-full bg-amber-500/20 border-4 border-amber-400 flex items-center justify-center mb-6 ring-8 ring-amber-400/30 animate-bounce pointer-events-none">
+          <div className="w-24 h-24 rounded-full bg-amber-500/20 border-4 border-amber-400 flex items-center justify-center mb-6 ring-8 ring-amber-400/30 animate-bounce">
             <span className="material-symbols-outlined text-amber-300 text-[64px]">upload_file</span>
           </div>
-          <p className="text-3xl font-black text-white tracking-wide drop-shadow pointer-events-none">
+          <p className="text-3xl font-black text-white tracking-wide drop-shadow">
             ここに session_songs_metadata.json をドロップ！
           </p>
-          <p className="text-base font-bold text-amber-200 mt-3 bg-purple-900/90 px-6 py-2 rounded-full border border-amber-400/40 pointer-events-none shadow-xl">
-            画面のどこに離しても瞬時に12カットMV絵コンテへ自動展開します
+          <p className="text-base font-bold text-amber-200 mt-3 bg-purple-900/90 px-6 py-2 rounded-full border border-amber-400/40 shadow-xl">
+            下の点線枠、または画面のどこに離しても瞬時に12カットMV絵コンテへ自動展開します
           </p>
         </div>
       )}
@@ -1299,34 +1298,59 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             })()}
           </div>
           
-          {/* Drop & Input Area */}
+          {/* Drop & Input Area (点線ドロップ枠) */}
           <div 
             onDragEnter={(e) => {
               e.preventDefault();
               e.stopPropagation();
               if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-              setIsDragging(true);
+              boxDragCounterRef.current += 1;
+              setIsBoxDragging(true);
+              console.log('🎯 [D&D 点線枠 dragenter検知!]', {
+                boxCounter: boxDragCounterRef.current,
+                types: Array.from(e.dataTransfer?.types || []),
+                itemsCount: e.dataTransfer?.items?.length
+              });
             }}
             onDragOver={(e) => {
               e.preventDefault();
               e.stopPropagation();
               if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
             }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              boxDragCounterRef.current -= 1;
+              if (boxDragCounterRef.current <= 0) {
+                boxDragCounterRef.current = 0;
+                setIsBoxDragging(false);
+                console.log('⚪ [D&D 点線枠 dragleave]');
+              }
+            }}
             onDrop={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              setIsBoxDragging(false);
+              boxDragCounterRef.current = 0;
               setIsDragging(false);
               dragCounterRef.current = 0;
               const file = e.dataTransfer?.files?.[0];
-              console.log('🎯 [点線枠 onDrop] ファイル検知:', file?.name);
+              console.log('🔥 [D&D 点線枠 onDrop検知! 即時パース開始]', {
+                fileName: file?.name,
+                fileSize: file?.size ? `${Math.round(file.size / 1024)} KB` : '0 KB',
+                fileType: file?.type || 'application/json',
+                allFiles: Array.from(e.dataTransfer?.files || []).map(f => f.name)
+              });
               if (file) {
                 processFile(file);
+              } else {
+                console.warn('⚠️ [D&D 点線枠 onDrop] ファイルが検出されませんでした');
               }
             }}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 shrink-0 select-none cursor-pointer group/dropzone ${
-              isDragging 
-                ? 'border-amber-400 bg-amber-500/25 ring-4 ring-amber-400/40 scale-[0.99] shadow-2xl' 
+            className={`border-2 border-dashed rounded-xl p-5 transition-all duration-200 text-center flex flex-col items-center justify-center gap-3 shrink-0 select-none cursor-pointer group/dropzone relative ${
+              isBoxDragging || isDragging 
+                ? 'border-amber-400 bg-amber-500/25 ring-4 ring-amber-400/50 scale-[1.01] shadow-[0_0_35px_rgba(245,158,11,0.5)]' 
                 : 'border-white/20 bg-white/5 hover:border-amber-400/60 hover:bg-white/10 shadow-sm'
             }`}
           >
@@ -1340,18 +1364,35 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
             {/* 表示用コンテンツ（pointer-events-none で枠のクリック・D&Dを妨げない） */}
             <div className="flex items-center gap-3 pointer-events-none">
-              <span className={`p-3 rounded-full transition-colors ${isDragging ? 'bg-amber-400 text-black' : 'bg-purple-500/20 text-purple-300 group-hover/dropzone:bg-amber-500/20 group-hover/dropzone:text-amber-300'}`}>
-                <span className="material-symbols-outlined text-[32px]">upload_file</span>
+              <span className={`p-3 rounded-full transition-all duration-200 ${
+                isBoxDragging || isDragging 
+                  ? 'bg-amber-400 text-black scale-110 shadow-lg shadow-amber-400/50 animate-bounce' 
+                  : 'bg-purple-500/20 text-purple-300 group-hover/dropzone:bg-amber-500/20 group-hover/dropzone:text-amber-300'
+              }`}>
+                <span className="material-symbols-outlined text-[32px]">
+                  {isBoxDragging || isDragging ? 'download' : 'upload_file'}
+                </span>
               </span>
               <div className="text-left">
                 <p className="text-sm font-bold text-white flex items-center gap-2">
-                  <span>session_songs_metadata.json をドラッグ＆ドロップ</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
-                    枠内クリックで選択 / Ctrl + V
-                  </span>
+                  {isBoxDragging ? (
+                    <span className="text-amber-300 font-black animate-pulse flex items-center gap-1.5 text-base">
+                      <span>📥</span>
+                      <span>マウスを離して session_songs_metadata.json を即座に展開！</span>
+                    </span>
+                  ) : (
+                    <>
+                      <span>session_songs_metadata.json をドラッグ＆ドロップ</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
+                        枠内クリックで選択 / Ctrl + V
+                      </span>
+                    </>
+                  )}
                 </p>
                 <p className="text-xs text-white/50 mt-0.5">
-                  この枠内へドラッグ＆ドロップ、または枠内クリックで即座に読み込まれます
+                  {isBoxDragging
+                    ? '指を離すと全自動で12カットMV絵コンテへ瞬時に展開されます'
+                    : 'この枠内へドラッグ＆ドロップ、または枠内クリックで即座に読み込まれます'}
                 </p>
               </div>
             </div>
