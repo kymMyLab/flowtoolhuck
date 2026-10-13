@@ -287,7 +287,8 @@ export function convertTrackToEpisode(
   track: ImportedTrack, 
   videoRatio: string = '30%', 
   selectedCharacter?: CastCharacter,
-  coverThemeVariant?: string
+  coverThemeVariant?: string,
+  selectedTaste?: string
 ): Episode {
   const visualMap = parseVisualHints(track.visual_hints || '');
   const preferredLyrics = track.lyrics_kanji || track.input_lyrics || '';
@@ -435,7 +436,7 @@ export function convertTrackToEpisode(
     titleEn: track.title,
     summary: track.hidden_drama || track.surface_theme || '',
     theme: track.surface_theme || track.title,
-    taste: track.taste || 'youth_pop',
+    taste: selectedTaste || track.taste || 'youth_pop',
     isMvMode: true,
     productionMode: 'mv',
     cuts: cuts,
