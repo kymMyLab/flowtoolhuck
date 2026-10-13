@@ -219,13 +219,17 @@ export const TasteShowroomModal: React.FC<TasteShowroomModalProps> = ({
                 )}
 
                 {/* プレビュー画像枠 (4:3) */}
-                <div className="relative w-full aspect-[4/3] bg-slate-900 overflow-hidden flex items-center justify-center">
+                <div 
+                  className="relative w-full aspect-[4/3] min-h-[140px] bg-slate-900 overflow-hidden flex items-center justify-center shrink-0"
+                  style={{ aspectRatio: '4/3', minHeight: '140px' }}
+                >
                   {sampleUrl ? (
                     <>
                       <img
                         src={sampleUrl}
                         alt={`${item.displayName} - ${currentCat}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 block"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         loading="lazy"
                       />
                       {/* ズーム拡大ボタン */}

@@ -807,23 +807,31 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                     }}
                     className={`flex flex-col rounded-xl overflow-hidden text-left transition-all border p-2 relative group cursor-pointer ${
                       isSelected
-                        ? 'bg-teal-950/60 border-amber-400 ring-2 ring-amber-400/40 shadow-lg'
+                        ? 'bg-teal-950/70 border-amber-400 ring-2 ring-amber-400/50 shadow-lg shadow-amber-400/10'
                         : isExpanded
-                        ? 'bg-teal-950/30 border-teal-500/70 shadow'
-                        : 'bg-black/40 hover:bg-black/60 border-white/10 hover:border-white/25'
+                        ? 'bg-teal-950/40 border-teal-500/80 shadow'
+                        : 'bg-black/50 hover:bg-black/70 border-white/10 hover:border-white/30'
                     }`}
+                    style={{ minHeight: '150px' }}
                   >
                     {/* サムネイル画像（1枚表示） */}
-                    <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-slate-900 mb-1.5 border border-white/5">
+                    <div 
+                      className="relative w-full aspect-[4/3] min-h-[96px] sm:min-h-[105px] rounded-lg overflow-hidden bg-slate-900 mb-2 border border-white/10 shrink-0 shadow-inner group-hover:border-teal-400/50 transition-all"
+                      style={{ aspectRatio: '4/3', minHeight: '96px' }}
+                    >
                       {thumbUrl ? (
                         <img
                           src={thumbUrl}
                           alt={item.displayName}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 block"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-indigo-950/60 p-2 text-center">
+                        <div 
+                          className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-indigo-950/60 p-2 text-center"
+                          style={{ minHeight: '96px' }}
+                        >
                           <span className="material-symbols-outlined text-white/30 text-[24px]">palette</span>
                           <span className="text-[9px] text-white/40 mt-1 font-mono">{item.category}</span>
                         </div>
@@ -831,21 +839,21 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
                       {/* バッジ: 3作例あり */}
                       {hasSamples && (
-                        <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[8px] font-black bg-teal-500/90 text-black shadow backdrop-blur-xs flex items-center gap-0.5">
+                        <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[8px] font-black bg-teal-500/90 text-black shadow backdrop-blur-xs flex items-center gap-0.5 z-10">
                           <span>✨ 3作例</span>
                         </span>
                       )}
 
                       {/* 選択チェックマーク */}
                       {isSelected && (
-                        <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-400 text-black flex items-center justify-center shadow font-black">
+                        <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-400 text-black flex items-center justify-center shadow font-black z-10">
                           <span className="material-symbols-outlined text-[10px] font-black">check</span>
                         </div>
                       )}
 
                       {/* ホバーヒント */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full bg-black/60 border border-white/20">
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
+                        <span className="text-[9px] font-bold text-white px-2 py-0.5 rounded-full bg-black/70 border border-white/20">
                           クリックで3作例展開
                         </span>
                       </div>
