@@ -233,7 +233,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     }
   }, [isOpen, injectedPayload, initialJsonText, initialFile, handleParse, processFile]);
 
-  // グローバルなCtrl+V（ペースト）の自動捕捉
+  // グローバルなCtrl+V（ペースト）＆全画面ドラッグ監視の自動捕捉
   useEffect(() => {
     if (!isOpen) return;
 
@@ -252,11 +252,56 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       }
     };
 
+    const handleWindowDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
+      dragCounterRef.current += 1;
+      setIsDragging(true);
+    };
+
+    const handleWindowDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current -= 1;
+      if (dragCounterRef.current <= 0) {
+        dragCounterRef.current = 0;
+        setIsDragging(false);
+      }
+    };
+
+    const handleWindowDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    };
+
+    const handleWindowDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      dragCounterRef.current = 0;
+      const file = e.dataTransfer?.files?.[0];
+      console.log('🎯 [MusicImportModal Window Drop検知]:', file?.name);
+      if (file) {
+        processFile(file);
+      }
+    };
+
     window.addEventListener('paste', handleWindowPaste);
+    window.addEventListener('dragenter', handleWindowDragEnter);
+    window.addEventListener('dragleave', handleWindowDragLeave);
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('drop', handleWindowDrop);
+
     return () => {
       window.removeEventListener('paste', handleWindowPaste);
+      window.removeEventListener('dragenter', handleWindowDragEnter);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('drop', handleWindowDrop);
     };
-  }, [isOpen, handleParse]);
+  }, [isOpen, handleParse, processFile]);
 
   // モーダル全体でのドラッグ＆ドロップ監視（チラつき防止のカウント管理）
   const handleDragEnter = (e: React.DragEvent) => {
@@ -392,15 +437,44 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         </div>
       )}
 
-      {/* 全画面ドラッグ中オーバーレイ */}
+      {/* 全画面ドロップキャッチャー（ドラッグ中は最前面で確実にドロップを捕捉） */}
       {isDragging && (
-        <div className="absolute inset-0 z-[125] bg-purple-950/85 backdrop-blur-sm border-4 border-dashed border-amber-400 flex flex-col items-center justify-center pointer-events-none animate-fadeIn select-none">
-          <div className="w-20 h-20 rounded-full bg-amber-500/20 border-2 border-amber-400/50 flex items-center justify-center mb-4 ring-8 ring-amber-400/20 animate-bounce">
-            <span className="material-symbols-outlined text-amber-300 text-[48px]">upload_file</span>
+        <div 
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current -= 1;
+            if (dragCounterRef.current <= 0) {
+              dragCounterRef.current = 0;
+              setIsDragging(false);
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current = 0;
+            setIsDragging(false);
+            const file = e.dataTransfer?.files?.[0];
+            console.log('🎯 [全画面ドロップキャッチャー] ドロップ検知:', file?.name);
+            if (file) {
+              processFile(file);
+            }
+          }}
+          className="fixed inset-0 z-[200] bg-purple-950/90 backdrop-blur-md border-8 border-dashed border-amber-400 flex flex-col items-center justify-center cursor-copy select-none animate-fadeIn"
+        >
+          <div className="w-24 h-24 rounded-full bg-amber-500/20 border-4 border-amber-400 flex items-center justify-center mb-6 ring-8 ring-amber-400/30 animate-bounce pointer-events-none">
+            <span className="material-symbols-outlined text-amber-300 text-[64px]">upload_file</span>
           </div>
-          <p className="text-2xl font-black text-white tracking-wide drop-shadow">ここに session_songs_metadata.json をドロップ！</p>
-          <p className="text-sm font-bold text-amber-200/90 mt-2 bg-purple-900/80 px-5 py-1.5 rounded-full border border-amber-400/30">
-            瞬時に12カットMV絵コンテへ自動パースします
+          <p className="text-3xl font-black text-white tracking-wide drop-shadow pointer-events-none">
+            ここに session_songs_metadata.json をドロップ！
+          </p>
+          <p className="text-base font-bold text-amber-200 mt-3 bg-purple-900/90 px-6 py-2 rounded-full border border-amber-400/40 pointer-events-none shadow-xl">
+            画面のどこに離しても瞬時に12カットMV絵コンテへ自動展開します
           </p>
         </div>
       )}
@@ -1225,25 +1299,46 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             })()}
           </div>
           
-          {/* Drop & Input Area: 枠全体をネイティブ input[type=file] で完全被覆 */}
+          {/* Drop & Input Area */}
           <div 
-            className={`relative border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 shrink-0 select-none group/dropzone ${
+            onDragEnter={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+              setIsDragging(true);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragging(false);
+              dragCounterRef.current = 0;
+              const file = e.dataTransfer?.files?.[0];
+              console.log('🎯 [点線枠 onDrop] ファイル検知:', file?.name);
+              if (file) {
+                processFile(file);
+              }
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 shrink-0 select-none cursor-pointer group/dropzone ${
               isDragging 
                 ? 'border-amber-400 bg-amber-500/25 ring-4 ring-amber-400/40 scale-[0.99] shadow-2xl' 
                 : 'border-white/20 bg-white/5 hover:border-amber-400/60 hover:bg-white/10 shadow-sm'
             }`}
           >
-            {/* 枠全体を覆う透明なネイティブ input 要素（100%確実にD&D＆クリックを受け取る） */}
             <input 
               type="file" 
               ref={fileInputRef} 
               onChange={handleFileSelect} 
               accept=".json,application/json" 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
-              title="session_songs_metadata.json をドラッグ＆ドロップ、またはクリックしてファイル選択"
+              className="hidden" 
             />
 
-            {/* 表示用コンテンツ（pointer-events-none で input の操作を妨げない） */}
+            {/* 表示用コンテンツ（pointer-events-none で枠のクリック・D&Dを妨げない） */}
             <div className="flex items-center gap-3 pointer-events-none">
               <span className={`p-3 rounded-full transition-colors ${isDragging ? 'bg-amber-400 text-black' : 'bg-purple-500/20 text-purple-300 group-hover/dropzone:bg-amber-500/20 group-hover/dropzone:text-amber-300'}`}>
                 <span className="material-symbols-outlined text-[32px]">upload_file</span>
@@ -1261,20 +1356,19 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               </div>
             </div>
 
-            {/* アクションボタン（z-30 で input より前面にして確実にクリック可能にする） */}
-            <div className="relative z-30 flex items-center gap-2 mt-1">
-              <label 
+            {/* アクションボタン（クリック時は e.stopPropagation() で親の click と競合させない） */}
+            <div className="flex items-center gap-2 mt-1">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
                 className="px-4 py-2 text-xs font-bold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/15 flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">folder_open</span>
                 JSONファイルを選択
-                <input 
-                  type="file" 
-                  onChange={handleFileSelect} 
-                  accept=".json,application/json" 
-                  className="hidden" 
-                />
-              </label>
+              </button>
               <button
                 type="button"
                 onClick={(e) => {
