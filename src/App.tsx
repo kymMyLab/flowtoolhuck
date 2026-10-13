@@ -573,8 +573,10 @@ export default function App() {
           onOpenTasteEditor={() => setIsTasteEditorOpen(true)}
           onOpenTasteShowroom={() => setIsTasteShowroomOpen(true)}
           onOpenCastModal={() => setIsCastModalOpen(true)}
-          onOpenComicWizard={() => setIsComicWizardOpen(true)}
-          onOpenMusicImport={() => setIsMusicImportOpen(true)}
+          onOpenComicWizard={() => setIsComicWizardOpen(prev => !prev)}
+          onOpenMusicImport={() => setIsMusicImportOpen(prev => !prev)}
+          isMusicImportOpen={isMusicImportOpen}
+          isComicWizardOpen={isComicWizardOpen}
           castCount={mangaProject.characters.length}
           activeSeriesManifest={activeSeriesManifest}
           onResumeClick={() => resumeFileRef.current?.click()}
@@ -584,11 +586,45 @@ export default function App() {
         <div className="flex flex-1 overflow-hidden relative">
           <StudioSidebar settings={settings} setSettings={setSettings} isProducing={isProducing} onAddLog={addLog} />
           
-          <div className="flex-1 overflow-y-auto p-8 bg-slate-100 dark-scrollbar relative">
-        <div className="max-w-[1300px] mx-auto flex flex-col gap-12">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark-scrollbar relative">
+            <div className="max-w-[1300px] mx-auto flex flex-col gap-6">
 
+              {/* 🎵 音楽インポート アコーディオン展開パネル (モーダル完全撤廃・DOM直配置でD&D 100%安定) */}
+              {isMusicImportOpen && (
+                <MusicImportModal
+                  isOpen={isMusicImportOpen}
+                  isModal={false}
+                  initialJsonText={injectedJsonText}
+                  injectedPayload={injectedPayload}
+                  videoRatio={settings.videoRatio}
+                  onClose={() => {
+                    setIsMusicImportOpen(false);
+                    setInjectedJsonText('');
+                    setInjectedPayload(null);
+                  }}
+                  onOpenCastModal={() => setIsCastModalOpen(true)}
+                  onDeployEpisode={handleDeployMusicEpisode}
+                  onDeployBatchEpisodes={handleDeployBatchMusicEpisodes}
+                />
+              )}
 
-          {episodes.map(ep => (
+              {/* 📖 ① プロデュース アコーディオン展開パネル (モーダル完全撤廃) */}
+              {isComicWizardOpen && (
+                <React.Suspense fallback={<div className="p-8 text-center text-slate-500 font-bold bg-white rounded-2xl border border-slate-200 animate-pulse">📖 プロデュースパネル展開中...</div>}>
+                  <ComicCreationWizardModal
+                    isOpen={isComicWizardOpen}
+                    isModal={false}
+                    currentMode={settings.productionMode}
+                    currentTheme={settings.theme}
+                    currentTaste={settings.taste}
+                    onLaunchComicSeries={handleLaunchComicSeries}
+                    onClose={() => setIsComicWizardOpen(false)}
+                    onAddLog={addLog}
+                  />
+                </React.Suspense>
+              )}
+
+              {episodes.map(ep => (
             <EpisodeSection 
               key={ep.id} ep={ep} aspectRatio={settings.aspectRatio || '1:1'} onGenerateRemaining={handleGenerateRemaining} onBulkVideo={handleBulkVideo} onBulkBrowserVideo={handleBulkBrowserVideo} onExportFullMovie={handleExportFullMovie} onDownloadZip={handleDownloadZip} onAnimateRequest={generateVideo} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onUpdateCut={updateCutWrapped} onBulkRerollTelop={handleBulkRerollTelop} onGenerateCover={generateInfographicCover} onRetry={(type, eId, cId) => {
                 const epFound = episodes.find(e => e.id === eId);
@@ -721,30 +757,7 @@ export default function App() {
               setIsComicWizardOpen(true);
             }}
           />
-          <ComicCreationWizardModal
-            isOpen={isComicWizardOpen}
-            onClose={() => setIsComicWizardOpen(false)}
-            currentMode={settings.productionMode}
-            currentTheme={settings.theme}
-            currentTaste={settings.taste}
-            onLaunchComicSeries={handleLaunchComicSeries}
-            onAddLog={addLog}
-          />
         </React.Suspense>
-        <MusicImportModal
-          isOpen={isMusicImportOpen}
-          initialJsonText={injectedJsonText}
-          injectedPayload={injectedPayload}
-          videoRatio={settings.videoRatio}
-          onClose={() => {
-            setIsMusicImportOpen(false);
-            setInjectedJsonText('');
-            setInjectedPayload(null);
-          }}
-          onOpenCastModal={() => setIsCastModalOpen(true)}
-          onDeployEpisode={handleDeployMusicEpisode}
-          onDeployBatchEpisodes={handleDeployBatchMusicEpisodes}
-        />
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
       </div>
     </ErrorBoundary>

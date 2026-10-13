@@ -45,6 +45,7 @@ interface ComicCreationWizardModalProps {
     cutsPerEpisode: number;
   }) => void;
   onAddLog: (msg: string, type?: any) => void;
+  isModal?: boolean; // false の場合はアコーディオン（インラインパネル）として展開
 }
 
 export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> = ({
@@ -55,6 +56,7 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
   currentTaste,
   onLaunchComicSeries,
   onAddLog,
+  isModal = false,
 }) => {
   // ステップ管理: 1: 大枠＆三面図 ➔ 2: サブキャラ ➔ 3: プロット＆連載スタート
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -482,63 +484,79 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-5xl h-[92vh] bg-white rounded-2xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden text-slate-800">
-        
-        {/* Modal Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white flex items-center justify-between shrink-0 shadow-md">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-inner">
-              <span className="material-symbols-outlined text-2xl">auto_stories</span>
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold">作品プロデュース (大前提設定)</h3>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-extrabold shadow-sm">
-                  DIRECTION MASTER
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-300">
-                世界観・主人公三面図・配役・全話プロットを事前に決定し、一貫した作品の方向性を確立します
-              </p>
-            </div>
-          </div>
+  if (!isOpen) return null;
 
-          <div className="flex items-center gap-2">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleImportSnapshot} 
-              accept=".json" 
-              className="hidden" 
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-all border border-white/20 cursor-pointer shadow-2xs"
-              title="以前ダウンロードしたプロデュース設定(JSON)を読み込んで復元"
-            >
-              <span className="material-symbols-outlined text-[16px]">file_upload</span>
-              <span>JSON読込</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleExportSnapshot}
-              className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all border border-indigo-400/50 cursor-pointer shadow-2xs"
-              title="現在のプロデュース設定（三面図・配役・プロット等）をJSONとしてダウンロード保存"
-            >
-              <span className="material-symbols-outlined text-[16px]">download</span>
-              <span>JSON保存</span>
-            </button>
+  const cardContent = (
+    <div className={`relative w-full bg-white rounded-2xl border-2 border-indigo-500/50 shadow-2xl flex flex-col overflow-hidden text-slate-800 ${
+      isModal ? 'max-w-5xl h-[92vh]' : 'mb-6 shadow-indigo-950/20 animate-fadeIn'
+    }`}>
+      
+      {/* Header */}
+      <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white flex items-center justify-between shrink-0 shadow-md">
+        <div className="flex items-center gap-3">
+          <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-inner">
+            <span className="material-symbols-outlined text-2xl">auto_stories</span>
+          </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold">作品プロデュース (大前提設定)</h3>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-extrabold shadow-sm">
+                {isModal ? 'DIRECTION MASTER' : '📖 アコーディオン展開中'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-300">
+              世界観・主人公三面図・配役・全話プロットを事前に決定し、一貫した作品の方向性を確立します
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImportSnapshot} 
+            accept=".json" 
+            className="hidden" 
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-all border border-white/20 cursor-pointer shadow-2xs"
+            title="以前ダウンロードしたプロデュース設定(JSON)を読み込んで復元"
+          >
+            <span className="material-symbols-outlined text-[16px]">file_upload</span>
+            <span>JSON読込</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleExportSnapshot}
+            className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all border border-indigo-400/50 cursor-pointer shadow-2xs"
+            title="現在のプロデュース設定（三面図・配役・プロット等）をJSONとしてダウンロード保存"
+          >
+            <span className="material-symbols-outlined text-[16px]">download</span>
+            <span>JSON保存</span>
+          </button>
+          {!isModal ? (
             <button 
+              type="button"
+              onClick={onClose}
+              className="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1 transition-all cursor-pointer border border-white/20 ml-1 active:scale-95 shadow-sm"
+              title="プロデュースを閉じる"
+            >
+              <span className="material-symbols-outlined text-[16px]">expand_less</span>
+              <span>プロデュースを畳む ▲</span>
+            </button>
+          ) : (
+            <button 
+              type="button"
               onClick={onClose}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
-          </div>
+          )}
         </div>
+      </div>
 
         {/* Step Progress Bar */}
         <div className="px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold shrink-0">
@@ -644,13 +662,23 @@ export const ComicCreationWizardModal: React.FC<ComicCreationWizardModalProps> =
         />
 
       </div>
+  );
+
+  return (
+    <>
+      {isModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          {cardContent}
+        </div>
+      ) : (
+        cardContent
+      )}
 
       {/* 画像拡大Modal */}
       <CastImageZoomModal
         zoomImage={zoomImage}
         onClose={() => setZoomImage(null)}
       />
-
-    </div>
+    </>
   );
 };

@@ -21,6 +21,7 @@ interface MusicImportModalProps {
   injectedPayload?: { text: string; fileName: string; timestamp: number } | null;
   videoRatio?: string;
   onOpenCastModal?: () => void;
+  isModal?: boolean; // false の場合はアコーディオン（インラインパネル）として展開
 }
 
 export const MusicImportModal: React.FC<MusicImportModalProps> = ({
@@ -33,6 +34,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   injectedPayload,
   videoRatio = '30%',
   onOpenCastModal,
+  isModal = false,
 }) => {
   const [jsonText, setJsonText] = useState('');
   const [parsedTracks, setParsedTracks] = useState<ImportedTrack[]>([]);
@@ -445,84 +447,59 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const cardContent = (
     <div 
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in select-none"
+      className={`relative w-full bg-[#121216] border-2 border-purple-500/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100 ${
+        isModal ? 'max-w-4xl max-h-[92vh]' : 'mb-6 shadow-purple-950/40 animate-fadeIn'
+      }`}
     >
-      {/* 画風作例 ズームライトボックス */}
-      {tasteZoomImage && (
-        <div 
-          onClick={() => setTasteZoomImage(null)}
-          className="fixed inset-0 z-[130] bg-black/90 flex flex-col items-center justify-center p-4 cursor-pointer animate-fade-in"
-        >
-          <img 
-            src={tasteZoomImage.url} 
-            alt={tasteZoomImage.title} 
-            className="max-w-[90vw] max-h-[85vh] rounded-xl shadow-2xl border-2 border-white/20 object-contain"
-          />
-          <div className="mt-3 px-4 py-1.5 rounded-full bg-white/10 text-white text-xs font-bold backdrop-blur-md flex items-center gap-2">
-            <span>{tasteZoomImage.title}</span>
-            <span className="text-[10px] text-white/50">(クリックで閉じる)</span>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-purple-950/40 shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="p-2 text-purple-300 rounded-xl bg-purple-500/20 border border-purple-500/30 shadow-inner">
+            <span className="material-symbols-outlined text-[24px]">library_music</span>
+          </span>
+          <div>
+            <h2 className="text-base font-black text-white flex items-center gap-2">
+              CT198 楽曲JSONインポーター
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-500/30 text-purple-300 border border-purple-400/40">
+                {isModal ? 'Proxmox CT198 ⇄ FlowTool' : '🎵 アコーディオン展開中'}
+              </span>
+            </h2>
+            <p className="text-xs text-white/50">
+              CT198から書き出した session_songs_metadata.json を放り込むだけで、12カットMV絵コンテを自動錬成します
+            </p>
           </div>
         </div>
-      )}
-
-      {/* 全画面ドラッグ中インジケーター（pointer-events-none でマウス判定を遮らずチラつきを完全防止） */}
-      {isDragging && !isBoxDragging && (
-        <div 
-          className="fixed inset-0 z-[150] bg-purple-950/75 backdrop-blur-sm border-4 border-dashed border-amber-400/80 flex flex-col items-center justify-center select-none pointer-events-none animate-fadeIn transition-opacity"
-        >
-          <div className="w-24 h-24 rounded-full bg-amber-500/20 border-4 border-amber-400 flex items-center justify-center mb-6 ring-8 ring-amber-400/30 animate-bounce">
-            <span className="material-symbols-outlined text-amber-300 text-[64px]">upload_file</span>
-          </div>
-          <p className="text-3xl font-black text-white tracking-wide drop-shadow">
-            ここに session_songs_metadata.json をドロップ！
-          </p>
-          <p className="text-base font-bold text-amber-200 mt-3 bg-purple-900/90 px-6 py-2 rounded-full border border-amber-400/40 shadow-xl">
-            下の点線枠、または画面のどこに離しても瞬時に12カットMV絵コンテへ自動展開します
-          </p>
+        <div className="flex items-center gap-2">
+          {!isModal ? (
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="px-3.5 py-1.5 text-xs font-black text-amber-300 hover:text-black bg-amber-500/20 hover:bg-amber-400 border border-amber-400/40 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+              title="アコーディオンを閉じる"
+            >
+              <span className="material-symbols-outlined text-[16px]">expand_less</span>
+              <span>インポーターを畳む ▲</span>
+            </button>
+          ) : (
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="p-1.5 text-white/60 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
-      <div 
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        className="relative w-full max-w-4xl max-h-[92vh] bg-[#121216] border border-purple-500/40 rounded-2xl shadow-2xl shadow-purple-950/60 flex flex-col overflow-hidden"
-      >
-        
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-purple-950/30">
-          <div className="flex items-center gap-3">
-            <span className="p-2 text-purple-300 rounded-xl bg-purple-500/20 border border-purple-500/30 shadow-inner">
-              <span className="material-symbols-outlined text-[24px]">library_music</span>
-            </span>
-            <div>
-              <h2 className="text-base font-black text-white flex items-center gap-2">
-                CT198 楽曲JSONインポーター
-                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-500/30 text-purple-300 border border-purple-400/40">
-                  Proxmox CT198 ⇄ FlowTool
-                </span>
-              </h2>
-              <p className="text-xs text-white/50">
-                CT198から書き出した session_songs_metadata.json を放り込むだけで、12カットMV絵コンテを自動錬成します
-              </p>
-            </div>
-          </div>
-          <button 
-            type="button" 
-            onClick={onClose} 
-            className="p-1.5 text-white/60 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
-        </div>
-
-        {/* Content Body */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 dark-scrollbar scroll-pt-4">
+      {/* Content Body */}
+      <div className={`p-4 sm:p-6 flex flex-col gap-4 dark-scrollbar scroll-pt-4 ${isModal ? 'flex-1 min-h-0 overflow-y-auto' : 'overflow-visible'}`}>
           
           {/* 🎭 主演キャスト様態設定 (Protagonist Cast Archetypes & Cast Selection) */}
           <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative shrink-0 group">
@@ -1629,8 +1606,20 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         </div>
 
       </div>
+    );
 
-      {/* ズームライトボックス (画風サンプル) */}
+    return (
+      <>
+        {/* モーダル表示の場合のみ全画面オーバーレイでラップ、アコーディオン時はそのまま直描画 */}
+        {isModal ? (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in select-none">
+            {cardContent}
+          </div>
+        ) : (
+          cardContent
+        )}
+
+        {/* ズームライトボックス (画風サンプル) */}
       {tasteZoomImage && (
         <div 
           onClick={() => setTasteZoomImage(null)}
@@ -1774,6 +1763,6 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
