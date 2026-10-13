@@ -71,6 +71,12 @@ export const DEFAULT_MANGA_PROJECT: MangaProject = {
   updatedAt: new Date().toISOString(),
   characters: [
     createDefaultCastCharacter(
+      'char_kemomimi_jk',
+      '🦊 狐耳ケモミミ女子高生 (コハル)',
+      'protagonist',
+      'A cute Japanese high school anime girl with fluffy fox ears and a bushy fox tail, wearing a stylish navy-blue sailor school uniform with pleated skirt and red ribbon necktie, knee-high socks, long silky dark brown hair with subtle golden highlights, radiant golden-amber eyes, youthful charming face, consistent character design, masterpiece'
+    ),
+    createDefaultCastCharacter(
       'char_1',
       '主人公 (沖田)',
       'protagonist',

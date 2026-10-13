@@ -13,6 +13,7 @@ interface MusicImportModalProps {
   initialFile?: File | null;
   initialJsonText?: string;
   videoRatio?: string;
+  onOpenCastModal?: () => void;
 }
 
 export const MusicImportModal: React.FC<MusicImportModalProps> = ({
@@ -22,7 +23,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   onDeployBatchEpisodes,
   initialFile,
   initialJsonText,
-  videoRatio = '30%'
+  videoRatio = '30%',
+  onOpenCastModal,
 }) => {
   const [jsonText, setJsonText] = useState('');
   const [parsedTracks, setParsedTracks] = useState<ImportedTrack[]>([]);
@@ -423,6 +425,17 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                     </span>
                   </span>
                 </div>
+                {onOpenCastModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenCastModal}
+                    className="ml-2 px-2.5 py-1 text-[11px] font-bold text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 rounded-lg transition-colors border border-amber-500/40 flex items-center gap-1 cursor-pointer shadow-sm"
+                    title="登場人物キャスト台帳を開いて新キャラクターを作成・編集"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">theater_comedy</span>
+                    <span>キャスト台帳・編集</span>
+                  </button>
+                )}
               </div>
 
               {/* 検索 ＆ ロール絞り込みフィルター */}

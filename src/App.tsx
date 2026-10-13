@@ -699,6 +699,7 @@ export default function App() {
             setIsMusicImportOpen(false);
             setInjectedJsonText('');
           }}
+          onOpenCastModal={() => setIsCastModalOpen(true)}
           onDeployEpisode={handleDeployMusicEpisode}
           onDeployBatchEpisodes={handleDeployBatchMusicEpisodes}
         />
