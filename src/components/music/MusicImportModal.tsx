@@ -431,9 +431,11 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 dark-scrollbar scroll-pt-4">
           
           {/* 🎬 主演キャスト (Protagonist Cast) Visual Picker */}
-          <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative overflow-hidden group">
+          <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative shrink-0 group">
             {/* Background glowing effect */}
-            <div className="absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-purple-500/0 via-amber-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none blur-xl"></div>
+            <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+              <div className="absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-purple-500/0 via-amber-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity blur-xl"></div>
+            </div>
 
             {/* Header + Search/Filter Controls */}
             <div className="flex flex-wrap items-center justify-between gap-2.5 relative z-10 shrink-0">
@@ -670,7 +672,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
           </div>
 
           {/* 🎨 MV画風スタイル設定 (Taste Style Showroom) */}
-          <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative">
+          <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative shrink-0">
             {/* タイトル ＆ 現在選択中のスタイル表示 */}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -914,7 +916,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
           </div>
 
           {/* 🎨 サムネイル配色テーマ (Cover Theme Variant) */}
-          <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative overflow-hidden group">
+          <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative shrink-0 group">
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-purple-400">palette</span>
@@ -984,7 +986,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 ${
+            className={`border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 shrink-0 ${
               isDragging ? 'border-purple-400 bg-purple-500/20 scale-[0.99]' : 'border-white/15 bg-white/5 hover:border-purple-500/30'
             }`}
           >
@@ -1034,7 +1036,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
           {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs flex items-center gap-2">
+            <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs flex items-center gap-2 shrink-0">
               <span className="material-symbols-outlined text-[18px]">error</span>
               <span>{errorMessage}</span>
             </div>
@@ -1042,7 +1044,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
           {/* Parsed Tracks List */}
           {parsedTracks.length > 0 && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-black text-amber-300 flex items-center gap-1">
