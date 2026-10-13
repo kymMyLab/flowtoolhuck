@@ -51,7 +51,11 @@ export const CastTabsBar: React.FC<CastTabsBarProps> = ({
               {/* Mini Avatar */}
               <div className="w-6 h-6 rounded-lg bg-slate-200 overflow-hidden shrink-0 flex items-center justify-center border border-slate-300/50">
                 {char.avatarBase64 ? (
-                  <img src={`data:image/png;base64,${char.avatarBase64}`} alt={char.name} className="w-full h-full object-cover" />
+                  <img 
+                    src={char.avatarBase64.startsWith('http') || char.avatarBase64.startsWith('data:') || char.avatarBase64.startsWith('/') ? char.avatarBase64 : `data:image/png;base64,${char.avatarBase64}`} 
+                    alt={char.name} 
+                    className="w-full h-full object-cover" 
+                  />
                 ) : (
                   <span className="material-symbols-outlined text-xs text-slate-400">person</span>
                 )}

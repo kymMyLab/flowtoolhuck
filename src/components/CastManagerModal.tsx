@@ -20,6 +20,14 @@ interface CastManagerModalProps {
   onOpenComicWizard?: () => void;
 }
 
+const toImageSrc = (img?: string): string => {
+  if (!img) return '';
+  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:') || img.startsWith('/')) {
+    return img;
+  }
+  return `data:image/png;base64,${img}`;
+};
+
 export const CastManagerModal: React.FC<CastManagerModalProps> = ({
   isOpen,
   onClose,
@@ -31,7 +39,7 @@ export const CastManagerModal: React.FC<CastManagerModalProps> = ({
   onOpenComicWizard,
 }) => {
   const [selectedCharId, setSelectedCharId] = useState<string>(
-    project.activeCharacterId || project.characters[0]?.id || 'char_1'
+    project.activeCharacterId || project.characters[0]?.id || 'char_kemomimi_jk'
   );
   const [generatingExp, setGeneratingExp] = useState<string | null>(null);
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
@@ -378,11 +386,11 @@ ${tasteInstruction}
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-5xl h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-5xl h-[92vh] max-h-[860px] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Top Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
+        <div className="px-5 py-3 sm:px-6 sm:py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
           <div className="flex items-center gap-3">
             <span className="p-2 rounded-xl bg-amber-500/10 text-amber-600 material-symbols-outlined text-2xl">
               theater_comedy
@@ -479,10 +487,10 @@ ${tasteInstruction}
 
         {/* Main Body (Split into Left: Info & Right: Expression Matrix) */}
         {currentChar && (
-          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4 dark-scrollbar">
             
             {/* Top: Character Profile & DNA & Turnaround */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 bg-slate-50/70 p-4 rounded-xl border border-slate-200/80">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 bg-slate-50/70 p-3.5 sm:p-4 rounded-xl border border-slate-200/80 shrink-0">
               
               {/* Left Column: Name, Role, Vault button (7 cols) */}
               <div className="lg:col-span-7 flex flex-col gap-3">
@@ -561,16 +569,16 @@ ${tasteInstruction}
                   </span>
                 </div>
 
-                {/* 16:9 Image Preview Box */}
+                {/* 16:9 Image Preview Box - height bounded to prevent button cutoff */}
                 <div 
-                  className="relative aspect-video w-full rounded-lg bg-slate-100 overflow-hidden border border-slate-200/80 group flex items-center justify-center"
+                  className="relative aspect-video w-full max-h-[185px] rounded-lg bg-slate-100 overflow-hidden border border-slate-200/80 group flex items-center justify-center shrink-0"
                 >
                   {currentChar.turnaroundBase64 ? (
                     <>
                       <img 
-                        src={`data:image/png;base64,${currentChar.turnaroundBase64}`} 
+                        src={toImageSrc(currentChar.turnaroundBase64)} 
                         alt="Turnaround" 
-                        className="w-full h-full object-cover cursor-pointer"
+                        className="w-full h-full object-contain cursor-pointer bg-slate-900/10"
                         onClick={() => setZoomImage({
                           base64: currentChar.turnaroundBase64!,
                           title: `📐 ${currentChar.name} - キャラクター三面図 (正面・側面・背面)`,
@@ -596,7 +604,7 @@ ${tasteInstruction}
                           e.stopPropagation();
                           updateCurrentChar({ turnaroundBase64: undefined, turnaroundMediaId: undefined });
                         }}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-md bg-slate-900/70 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-md bg-slate-900/70 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                         title="三面図を削除"
                       >
                         <span className="material-symbols-outlined text-xs">delete</span>
@@ -626,11 +634,11 @@ ${tasteInstruction}
                 </div>
 
                 {/* Action Buttons for Turnaround */}
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-2 mt-0.5 shrink-0">
                   <button
                     onClick={handleGenerateTurnaround}
                     disabled={isGeneratingTurnaround}
-                    className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 shadow-2xs transition-all"
+                    className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 shadow-2xs transition-all cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-xs">
                       {isGeneratingTurnaround ? 'progress_activity' : 'palette'}
@@ -643,7 +651,7 @@ ${tasteInstruction}
                       uploadTargetExpRef.current = 'turnaround';
                       fileInputRef.current?.click();
                     }}
-                    className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                    className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                     title="手動で三面図画像をアップロード"
                   >
                     <span className="material-symbols-outlined text-xs">upload</span>
@@ -652,6 +660,12 @@ ${tasteInstruction}
                 </div>
               </div>
 
+            </div>
+
+            {/* Scroll Indicator */}
+            <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400 py-0.5 select-none">
+              <span className="material-symbols-outlined text-xs animate-bounce">expand_more</span>
+              <span>下にスクロールして喜怒哀楽・表情マトリクス（全6表情）を確認</span>
             </div>
 
             {/* Bottom: 6 Expression Slots (喜怒哀楽マトリクス) */}
@@ -746,7 +760,7 @@ ${tasteInstruction}
                         {exp.imageBase64 ? (
                           <>
                             <img 
-                              src={`data:image/png;base64,${exp.imageBase64}`} 
+                              src={toImageSrc(exp.imageBase64)} 
                               alt={meta.label} 
                               className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105"
                             />

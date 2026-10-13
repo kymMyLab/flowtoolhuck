@@ -63,19 +63,26 @@ export function createDefaultCastCharacter(
   };
 }
 
+const CAST_CDN_BASE = 'https://raw.githubusercontent.com/kymMyLab/flowtoolhuck/main/assets/casts';
+
 export const DEFAULT_MANGA_PROJECT: MangaProject = {
   id: 'project_default',
-  title: '新選組・壬生浪士の挽歌（オリジナル連載）',
-  description: '幕末京都を舞台に繰り広げられる3人の剣士と女密偵の歴史ドラマ',
-  activeCharacterId: 'char_1',
+  title: '新選組・壬生浪士の挽歌 ＆ ケモミミ連載（オリジナル連載）',
+  description: '幕末京都を舞台に繰り広げられる3人の剣士と女密偵の歴史ドラマ、および新世代ケモミミヒロイン',
+  activeCharacterId: 'char_kemomimi_jk',
   updatedAt: new Date().toISOString(),
   characters: [
-    createDefaultCastCharacter(
-      'char_kemomimi_jk',
-      '🦊 狐耳ケモミミ女子高生 (コハル)',
-      'protagonist',
-      'A cute Japanese high school anime girl with fluffy fox ears and a bushy fox tail, wearing a stylish navy-blue sailor school uniform with pleated skirt and red ribbon necktie, knee-high socks, long silky dark brown hair with subtle golden highlights, radiant golden-amber eyes, youthful charming face, consistent character design, masterpiece'
-    ),
+    {
+      ...createDefaultCastCharacter(
+        'char_kemomimi_jk',
+        '🦊 狐耳ケモミミ女子高生 (コハル)',
+        'protagonist',
+        'A cute Japanese high school anime girl with fluffy fox ears and a bushy fox tail, wearing a stylish navy-blue sailor school uniform with pleated skirt and red ribbon necktie, knee-high socks, long silky dark brown hair with subtle golden highlights, radiant golden-amber eyes, youthful charming face, consistent character design, masterpiece'
+      ),
+      avatarBase64: `${CAST_CDN_BASE}/kemomimi_jk/avatar.jpg`,
+      turnaroundBase64: `${CAST_CDN_BASE}/kemomimi_jk/turnaround.jpg`,
+      turnaroundPromptEn: 'Masterpiece, anime character reference sheet, turnaround sheet, three views showing front view, side view, and back view of the same character: a cute Japanese high school anime girl with fluffy fox ears and a bushy fox tail, wearing a stylish navy-blue sailor school uniform with pleated skirt and red ribbon necktie, knee-high socks, long silky dark brown hair with subtle golden highlights, radiant golden-amber eyes, youthful charming face, clean pure white background, studio character design sheet',
+    },
     createDefaultCastCharacter(
       'char_1',
       '主人公 (沖田)',
@@ -149,15 +156,39 @@ export function loadMangaProject(): MangaProject {
       return { ...DEFAULT_MANGA_PROJECT };
     }
 
-    // デフォルトキャラ（新追加キャラ含む）が既存プロジェクトに無ければ安全に追記
+    // デフォルトキャラ（新追加キャラ含む）が既存プロジェクトに無ければ安全に追記、
+    // また既存キャラに新アセット（三面図・アバター等）が追加されている場合は自動同期
     const existingIds = new Set(parsed.characters.map((c: CastCharacter) => c.id));
     let hasNew = false;
     for (const defChar of DEFAULT_MANGA_PROJECT.characters) {
       if (!existingIds.has(defChar.id)) {
-        parsed.characters.push(defChar);
+        parsed.characters.unshift(defChar); // 主役プリセットを先頭に追加
         hasNew = true;
+      } else {
+        const existingChar = parsed.characters.find((c: CastCharacter) => c.id === defChar.id);
+        if (existingChar) {
+          if (!existingChar.turnaroundBase64 && defChar.turnaroundBase64) {
+            existingChar.turnaroundBase64 = defChar.turnaroundBase64;
+            hasNew = true;
+          }
+          if (!existingChar.avatarBase64 && defChar.avatarBase64) {
+            existingChar.avatarBase64 = defChar.avatarBase64;
+            hasNew = true;
+          }
+          if (!existingChar.turnaroundPromptEn && defChar.turnaroundPromptEn) {
+            existingChar.turnaroundPromptEn = defChar.turnaroundPromptEn;
+            hasNew = true;
+          }
+        }
       }
     }
+
+    // activeCharacterId が未設定の場合はコハルを優先
+    if (!parsed.activeCharacterId) {
+      parsed.activeCharacterId = 'char_kemomimi_jk';
+      hasNew = true;
+    }
+
     if (hasNew) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
     }

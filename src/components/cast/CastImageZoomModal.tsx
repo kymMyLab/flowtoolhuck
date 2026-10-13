@@ -42,8 +42,11 @@ export const CastImageZoomModal: React.FC<CastImageZoomModalProps> = ({
 
             <button
               onClick={() => {
+                const src = zoomImage.base64.startsWith('http') || zoomImage.base64.startsWith('data:') || zoomImage.base64.startsWith('/')
+                  ? zoomImage.base64
+                  : `data:image/png;base64,${zoomImage.base64}`;
                 const link = document.createElement('a');
-                link.href = `data:image/png;base64,${zoomImage.base64}`;
+                link.href = src;
                 link.download = `${zoomImage.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
                 link.click();
               }}
@@ -67,7 +70,7 @@ export const CastImageZoomModal: React.FC<CastImageZoomModalProps> = ({
         {/* High-Resolution Image Display Area */}
         <div className="p-4 flex items-center justify-center overflow-auto max-h-[75vh]">
           <img 
-            src={`data:image/png;base64,${zoomImage.base64}`} 
+            src={zoomImage.base64.startsWith('http') || zoomImage.base64.startsWith('data:') || zoomImage.base64.startsWith('/') ? zoomImage.base64 : `data:image/png;base64,${zoomImage.base64}`} 
             alt={zoomImage.title} 
             className="max-h-[72vh] max-w-full object-contain rounded-lg shadow-lg border border-slate-800"
           />

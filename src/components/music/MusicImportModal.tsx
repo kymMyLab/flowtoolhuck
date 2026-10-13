@@ -38,7 +38,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   
   // 🎨 画風モデル設定State (代表サムネ1枚 ➜ クリックで3パターン展開)
   const [selectedTasteKey, setSelectedTasteKey] = useState<string>('🌙 ノスタルジック魔女ファンタジー・極細線画 (Retro Fantasy Whisper-Line)');
-  const [expandedTasteId, setExpandedTasteId] = useState<string | null>('retro_witch');
+  const [expandedTasteId, setExpandedTasteId] = useState<string | null>(null);
   const [tasteSearchQuery, setTasteSearchQuery] = useState<string>('');
   const [tasteCategoryFilter, setTasteCategoryFilter] = useState<'all' | 'anime' | 'japanese' | 'cinematic' | 'art'>('all');
   const [tasteZoomImage, setTasteZoomImage] = useState<{ url: string; title: string } | null>(null);
@@ -48,9 +48,14 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
-  // キャスト画像取得ヘルパー（アバター優先、三面図、表情のフォールバック）
+  // キャスト画像取得ヘルパー（アバター優先、三面図、表情のフォールバック。URLとbase64両対応）
   const getCharacterThumbnail = (char: CastCharacter): string | undefined => {
-    return char.avatarBase64 || char.turnaroundBase64 || char.expressions?.neutral?.imageBase64;
+    const raw = char.avatarBase64 || char.turnaroundBase64 || char.expressions?.neutral?.imageBase64;
+    if (!raw) return undefined;
+    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:') || raw.startsWith('/')) {
+      return raw;
+    }
+    return `data:image/png;base64,${raw}`;
   };
 
   // フィルタリング済みキャスト一覧
@@ -77,7 +82,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const selectedTasteItem = TASTE_GALLERY_DATA.find(t => t.tasteKey === selectedTasteKey);
   const expandedTasteItem = expandedTasteId ? TASTE_GALLERY_DATA.find(t => t.id === expandedTasteId) : null;
 
-  // モーダルオープン時にキャスト一覧を読み込み、主演をデフォルト選択（初回オープン時のみ）
+  // モーダルオープン時にキャスト一覧を読み込み、コハル（または最初の主演）をデフォルト選択
   // 同時に今回のセッション用のカバー配色バリエーションを自動選定（同一セッション内全曲統一）
   useEffect(() => {
     if (isOpen) {
@@ -85,7 +90,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       const chars = project.characters || [];
       setCastCharacters(chars);
       if (chars.length > 0) {
-        const protagonist = chars.find(c => c.role === 'protagonist');
+        const koharu = chars.find(c => c.id === 'char_kemomimi_jk');
+        const protagonist = koharu || chars.find(c => c.role === 'protagonist');
         setSelectedCastId(protagonist ? protagonist.id : chars[0].id);
       } else {
         setSelectedCastId('none');
@@ -422,7 +428,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 dark-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 dark-scrollbar scroll-pt-4">
           
           {/* 🎬 主演キャスト (Protagonist Cast) Visual Picker */}
           <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative overflow-hidden group">
@@ -430,25 +436,23 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             <div className="absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-purple-500/0 via-amber-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none blur-xl"></div>
 
             {/* Header + Search/Filter Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-2 relative z-10">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 relative z-10 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 <span className="material-symbols-outlined text-[20px] text-amber-400">movie_creation</span>
-                <div>
-                  <span className="text-sm font-bold text-white flex items-center gap-2">
-                    🎬 主演キャスト設定
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
-                      {filteredCharacters.length} / {castCharacters.length} 体
-                    </span>
+                <span className="text-sm font-bold text-white flex items-center gap-2">
+                  🎬 主演キャスト設定
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                    {filteredCharacters.length} / {castCharacters.length} 体
                   </span>
-                </div>
+                </span>
                 {onOpenCastModal && (
                   <button
                     type="button"
                     onClick={onOpenCastModal}
-                    className="ml-2 px-2.5 py-1 text-[11px] font-bold text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 rounded-lg transition-colors border border-amber-500/40 flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="ml-1 sm:ml-2 px-3 py-1.5 text-xs font-bold text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 rounded-lg transition-colors border border-amber-500/40 flex items-center gap-1.5 cursor-pointer shadow-sm shrink-0"
                     title="登場人物キャスト台帳を開いて新キャラクターを作成・編集"
                   >
-                    <span className="material-symbols-outlined text-[15px]">theater_comedy</span>
+                    <span className="material-symbols-outlined text-[16px]">theater_comedy</span>
                     <span>キャスト台帳・編集</span>
                   </button>
                 )}
@@ -576,7 +580,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             </div>
 
             {/* 📸 ビジュアルカードグリッド一覧 */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-2 max-h-48 overflow-y-auto p-2 bg-black/40 rounded-xl border border-white/10 dark-scrollbar relative z-10">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-2 max-h-36 sm:max-h-40 overflow-y-auto p-2 bg-black/40 rounded-xl border border-white/10 dark-scrollbar relative z-10">
               
               {/* カード0: キャスト指定なし (AIおまかせ) */}
               <button
