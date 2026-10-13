@@ -99,6 +99,22 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     }
   }, [isOpen]);
 
+  // キャスト台帳が別モーダルで更新された場合にも即時同期
+  useEffect(() => {
+    const handleSync = () => {
+      if (isOpen) {
+        const p = loadMangaProject();
+        setCastCharacters(p.characters || []);
+      }
+    };
+    window.addEventListener('focus', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('focus', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, [isOpen]);
+
   const handleParse = useCallback((text: string) => {
     setErrorMessage(null);
     try {
