@@ -9,6 +9,7 @@ import { normalizeKenBurnsPreset } from '../../services/renderers/kenBurns';
 
 export interface PreviewPlayerProps {
   cut: Cut;
+  aspectRatio?: '9:16' | '1:1' | '16:9';
   hasPrev?: boolean;
   hasNext?: boolean;
   onPrev?: () => void;
@@ -40,6 +41,7 @@ function getLineMotion(lineIdx: number, totalLines: number, baseMotion: string, 
 
 export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
   cut,
+  aspectRatio = '9:16',
   hasPrev,
   hasNext,
   onPrev,
@@ -67,12 +69,17 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
     };
   }, [cut.id]);
 
+  const toMediaSrc = (raw?: string, mime: 'image' | 'video' = 'image') => {
+    if (!raw) return null;
+    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:') || raw.startsWith('/')) {
+      return raw;
+    }
+    return mime === 'video' ? `data:video/mp4;base64,${raw}` : `data:image/png;base64,${raw}`;
+  };
 
-  const videoSrc = cut.videoBase64
-    ? (cut.videoBase64.startsWith('data:') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`)
-    : null;
-  const startImageSrc = cut.imageBase64 ? `data:image/png;base64,${cut.imageBase64}` : null;
-  const endImageSrc = cut.endFrameImageBase64 ? `data:image/png;base64,${cut.endFrameImageBase64}` : null;
+  const videoSrc = toMediaSrc(cut.videoBase64, 'video');
+  const startImageSrc = toMediaSrc(cut.imageBase64, 'image');
+  const endImageSrc = toMediaSrc(cut.endFrameImageBase64, 'image');
 
   // カット切り替え時に適切なタブへ初期化
   useEffect(() => {
@@ -423,7 +430,7 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
           )}
         </div>
 
-        <div className="relative h-full max-h-full aspect-[9/16] shadow-2xl rounded-2xl overflow-hidden border border-white/10 group bg-[#111] flex items-center justify-center">
+        <div className={`relative h-full max-h-full ${aspectRatio === '1:1' ? 'aspect-square' : (aspectRatio === '16:9' ? 'aspect-video' : 'aspect-[9/16]')} shadow-2xl rounded-2xl overflow-hidden border border-white/10 group bg-[#111] flex items-center justify-center`}>
           {activeView === 'video' && videoSrc ? (
             <video ref={videoRef} src={videoSrc} className="w-full h-full object-contain block" autoPlay loop playsInline muted />
           ) : activeView === 'end' ? (

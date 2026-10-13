@@ -201,6 +201,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDragOver = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
@@ -208,6 +209,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDragEnter = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
@@ -217,6 +219,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDragLeave = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       dragCounterRef.current -= 1;
       if (dragCounterRef.current <= 0) {
         dragCounterRef.current = 0;
@@ -226,6 +229,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
     const handleWindowDrop = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       setIsDragging(false);
       dragCounterRef.current = 0;
       const file = e.dataTransfer?.files?.[0];
@@ -369,13 +373,13 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in select-none"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in select-none"
     >
       {/* 画風作例 ズームライトボックス */}
       {tasteZoomImage && (
         <div 
           onClick={() => setTasteZoomImage(null)}
-          className="fixed inset-0 z-60 bg-black/90 flex flex-col items-center justify-center p-4 cursor-pointer animate-fade-in"
+          className="fixed inset-0 z-[130] bg-black/90 flex flex-col items-center justify-center p-4 cursor-pointer animate-fade-in"
         >
           <img 
             src={tasteZoomImage.url} 
@@ -391,14 +395,18 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
       {/* 全画面ドラッグ中オーバーレイ */}
       {isDragging && (
-        <div className="absolute inset-0 z-50 bg-purple-950/80 border-4 border-dashed border-purple-400 flex flex-col items-center justify-center pointer-events-none animate-pulse">
+        <div className="absolute inset-0 z-[125] bg-purple-950/80 border-4 border-dashed border-purple-400 flex flex-col items-center justify-center pointer-events-none animate-pulse">
           <span className="material-symbols-outlined text-purple-200 text-[64px] mb-2">file_download</span>
           <p className="text-xl font-black text-white">ここに session_songs_metadata.json をドロップしてください！</p>
           <p className="text-sm text-purple-300 mt-1">瞬時に12カットMV絵コンテへパースします</p>
         </div>
       )}
 
-      <div className="relative w-full max-w-4xl max-h-[92vh] bg-[#121216] border border-purple-500/40 rounded-2xl shadow-2xl shadow-purple-950/60 flex flex-col overflow-hidden">
+      <div 
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className="relative w-full max-w-4xl max-h-[92vh] bg-[#121216] border border-purple-500/40 rounded-2xl shadow-2xl shadow-purple-950/60 flex flex-col overflow-hidden"
+      >
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-purple-950/30">

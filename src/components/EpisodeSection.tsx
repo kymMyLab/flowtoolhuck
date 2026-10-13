@@ -7,9 +7,12 @@ import { getProductionModeConfig } from '../config/studioDefinitions';
 import { cleanEpisodeTitle, cleanEpisodeTitleEn } from '../services/directorService';
 import { renderCoverBase64Horizontal } from '../services/export/coverRenderer';
 
-function formatDataUri(b64?: string): string {
-  if (!b64) return '';
-  return b64.startsWith('data:') ? b64 : `data:image/png;base64,${b64}`;
+function formatDataUri(raw?: string): string {
+  if (!raw) return '';
+  if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:') || raw.startsWith('/')) {
+    return raw;
+  }
+  return `data:image/png;base64,${raw}`;
 }
 
 /**

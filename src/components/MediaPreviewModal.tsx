@@ -17,6 +17,7 @@ export interface MediaPreviewModalProps {
   onNext?: () => void;
   currentIndex?: number;
   totalCuts?: number;
+  aspectRatio?: '9:16' | '1:1' | '16:9';
   onClose: () => void;
   onAnimate: (m: VideoModelType) => void;
   onBrowserAnimate: () => void;
@@ -30,6 +31,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
   isOpen,
   cut,
   episodeId,
+  aspectRatio = '1:1',
   currentImageModel,
   isMvMode,
   hasPrev,
@@ -103,6 +105,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
         {/* Left: Preview Player */}
         <PreviewPlayer
           cut={cut}
+          aspectRatio={aspectRatio}
           hasPrev={hasPrev}
           hasNext={hasNext}
           onPrev={onPrev}

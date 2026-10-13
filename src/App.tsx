@@ -76,6 +76,10 @@ export default function App() {
   const [isCastModalOpen, setIsCastModalOpen] = useState(false);
   const [isComicWizardOpen, setIsComicWizardOpen] = useState(false);
   const [isMusicImportOpen, setIsMusicImportOpen] = useState(false);
+  const isMusicImportOpenRef = useRef(false);
+  useEffect(() => {
+    isMusicImportOpenRef.current = isMusicImportOpen;
+  }, [isMusicImportOpen]);
   const [injectedJsonText, setInjectedJsonText] = useState<string>('');
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const globalDragCounterRef = useRef(0);
@@ -350,6 +354,7 @@ export default function App() {
   // アプリ全体の全画面ドラッグ＆ドロップ監視（JSONファイルならいつでも即座に音楽インポーターまたはシリーズ/キャスト復元を自動起動）
   useEffect(() => {
     const handleGlobalDragEnter = (e: DragEvent) => {
+      if (isMusicImportOpenRef.current) return;
       e.preventDefault();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
@@ -364,6 +369,7 @@ export default function App() {
     };
 
     const handleGlobalDragLeave = (e: DragEvent) => {
+      if (isMusicImportOpenRef.current) return;
       e.preventDefault();
       globalDragCounterRef.current -= 1;
       if (globalDragCounterRef.current <= 0) {
@@ -374,6 +380,7 @@ export default function App() {
     };
 
     const handleGlobalDragOver = (e: DragEvent) => {
+      if (isMusicImportOpenRef.current) return;
       e.preventDefault();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
@@ -381,6 +388,7 @@ export default function App() {
     };
 
     const handleGlobalDrop = async (e: DragEvent) => {
+      if (isMusicImportOpenRef.current) return;
       e.preventDefault();
       setIsGlobalDragging(false);
       globalDragCounterRef.current = 0;
@@ -596,6 +604,7 @@ export default function App() {
             isOpen={true} 
             cut={activeCut} 
             episodeId={previewingCutData.epId} 
+            aspectRatio={settings.aspectRatio || '1:1'}
             currentImageModel={settings.imageModel} 
             isMvMode={ep?.isMvMode ?? settings.isMvMode} 
             hasPrev={hasPrev}
