@@ -1268,8 +1268,11 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 shrink-0 ${
-              isDragging ? 'border-purple-400 bg-purple-500/20 scale-[0.99]' : 'border-white/15 bg-white/5 hover:border-purple-500/30'
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 shrink-0 cursor-pointer select-none group/dropzone ${
+              isDragging 
+                ? 'border-amber-400 bg-amber-500/25 ring-4 ring-amber-400/40 scale-[0.99] shadow-2xl' 
+                : 'border-white/20 bg-white/5 hover:border-amber-400/60 hover:bg-white/10 shadow-sm'
             }`}
           >
             <input 
@@ -1279,19 +1282,19 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               accept=".json" 
               className="hidden" 
             />
-            <div className="flex items-center gap-2">
-              <span className="p-2.5 text-purple-400 rounded-full bg-purple-500/10">
-                <span className="material-symbols-outlined text-[28px]">upload_file</span>
+            <div className="flex items-center gap-3 pointer-events-none">
+              <span className={`p-3 rounded-full transition-colors ${isDragging ? 'bg-amber-400 text-black' : 'bg-purple-500/20 text-purple-300 group-hover/dropzone:bg-amber-500/20 group-hover/dropzone:text-amber-300'}`}>
+                <span className="material-symbols-outlined text-[32px]">upload_file</span>
               </span>
               <div className="text-left">
                 <p className="text-sm font-bold text-white flex items-center gap-2">
                   <span>session_songs_metadata.json をドラッグ＆ドロップ</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
-                    または画面上で Ctrl + V
+                    またはクリックして選択 / Ctrl + V
                   </span>
                 </p>
-                <p className="text-xs text-white/40 mt-0.5">
-                  全画面どこにドロップしても即座に読み込まれます（Ctrl+Vでの貼り付けにも完全対応）
+                <p className="text-xs text-white/50 mt-0.5">
+                  全画面どこにドロップしても即座に読み込まれます（枠内のどこをクリックしてもファイル選択可能）
                 </p>
               </div>
             </div>
@@ -1299,7 +1302,10 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             <div className="flex items-center gap-2 mt-1">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
                 className="px-4 py-2 text-xs font-bold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/15 flex items-center gap-1.5 cursor-pointer shadow-sm"
               >
                 <span className="material-symbols-outlined text-[16px]">folder_open</span>
@@ -1307,7 +1313,10 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={handlePasteClipboard}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePasteClipboard();
+                }}
                 className="px-4 py-2 text-xs font-bold bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 rounded-lg transition-colors border border-purple-500/40 flex items-center gap-1.5 cursor-pointer shadow-sm"
               >
                 <span className="material-symbols-outlined text-[16px]">content_paste</span>

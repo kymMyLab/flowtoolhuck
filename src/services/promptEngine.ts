@@ -375,6 +375,12 @@ export function buildFinalCinematicPromptAndNegative(
   const isObjectCut = !!task.isObjectOnly;
   const effectiveDna = !isObjectCut ? (task.characterDna || activeReference?.characterDna) : '';
 
+  // 重要: もし prompt 内にすでに [PROTAGONIST DNA]: が含まれている場合、二重注入・長大化を防ぐためにアクションプロンプトから分離
+  let cleanActionPrompt = effectivePrompt || '';
+  if (cleanActionPrompt.includes('[PROTAGONIST DNA]:')) {
+    cleanActionPrompt = cleanActionPrompt.replace(/,?\s*\[PROTAGONIST DNA\]:[^,\]]*/gi, '').trim();
+  }
+
   let characterPromptLayer = '';
   if (isObjectCut) {
     characterPromptLayer = '[STRICT STILL-LIFE INSERT: completely deserted scene, strictly NO humans, NO person, pure macro shot of object and atmospheric environment]. ';
@@ -406,8 +412,8 @@ export function buildFinalCinematicPromptAndNegative(
 
     const finalNegative = negativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${effectivePrompt}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${effectivePrompt}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${cleanActionPrompt}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${cleanActionPrompt}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
@@ -417,8 +423,8 @@ export function buildFinalCinematicPromptAndNegative(
   } else {
     const finalNegative = negativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${effectivePrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${effectivePrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cleanActionPrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${cleanActionPrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
@@ -435,7 +441,7 @@ export function buildFinalCinematicPromptAndNegative(
 export function sanitizePromptForGoogleSafety(prompt: string): string {
   if (!prompt) return prompt;
 
-  return prompt
+  let cleaned = prompt
     // undefinedやnullの混入を除去
     .replace(/\b(undefined|null)\b/gi, '')
     // 性的・誘惑的・成人向け誤認ワードの無害化
@@ -460,4 +466,11 @@ export function sanitizePromptForGoogleSafety(prompt: string): string {
     .replace(/\s{2,}/g, ' ')
     .replace(/^[,.\s]+|[,.\s]+$/g, '')
     .trim();
+
+  // Google Imagen の安全長制限 (1300文字以内に抑制)
+  if (cleaned.length > 1300) {
+    cleaned = cleaned.slice(0, 1290).replace(/,[^,]*$/, '').trim() + ', masterpiece';
+  }
+
+  return cleaned;
 }

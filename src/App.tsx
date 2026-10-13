@@ -380,15 +380,15 @@ export default function App() {
     };
 
     const handleGlobalDragOver = (e: DragEvent) => {
-      if (isMusicImportOpenRef.current) return;
+      // 常にブラウザデフォルトのファイルオープン/ドロップ拒否を防止！
       e.preventDefault();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
+      if (isMusicImportOpenRef.current) return;
     };
 
     const handleGlobalDrop = async (e: DragEvent) => {
-      if (isMusicImportOpenRef.current) return;
       e.preventDefault();
       setIsGlobalDragging(false);
       globalDragCounterRef.current = 0;
@@ -412,6 +412,13 @@ export default function App() {
       try {
         const text = await file.text();
         console.log(`📥 [FlowTool D&D] ファイル即座読み取り成功 (${text.length}文字)`);
+
+        // もしMusicImportModalが開いている場合は、直接インポーターにテキストを渡して即時パース！
+        if (isMusicImportOpenRef.current) {
+          setInjectedJsonText(text);
+          addLog(`🎵 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をインポーターへ展開しました！`, 'process');
+          return;
+        }
 
         // JSONの中身をパースして自動仕分け
         let parsed: any = null;

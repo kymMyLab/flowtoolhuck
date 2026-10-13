@@ -317,13 +317,21 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
     // ── Phase 2: 画像生成フェーズ（確定したプロンプト＆直前構図ネガティブで並列実行） ──
     queueRef.current = [...preparedTasks];
-    const concurrency = Math.max(1, settings.parallelCount || 2);
-    const workers = Array(concurrency).fill(null).map(async () => {
+    const concurrency = Math.min(2, Math.max(1, settings.parallelCount || 2));
+    const workers = Array(concurrency).fill(null).map(async (_, workerIdx) => {
+      // ワーカー間で開始時間をスタッガー（時間差）させ、同時リクエスト集中による503拒絶を防止
+      if (workerIdx > 0) {
+        await sleep(workerIdx * 800);
+      }
       while (queueRef.current.length > 0) {
         if (isAbortedRef.current) break;
         const task = queueRef.current.shift();
         if (!task) break;
         await generateImage(task);
+        // タスク完了後も短いクールダウンを挟んでAPIレートリミットを平滑化
+        if (queueRef.current.length > 0 && !isAbortedRef.current) {
+          await sleep(500);
+        }
       }
     });
     await Promise.all(workers);
@@ -380,23 +388,53 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       if (safeAspectRatio === '1:1') {
         safePrompt += ', balanced centered composition, ample negative space around subject, safe for 16:9 and 9:16 cropping';
       }
-      const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
+      const primaryModelName = modelDef?.name || '🍌 Nano Banana 2';
 
       let res: any;
+      let attemptCount = 0;
+
       try {
         res = await callWithRetry<any>(
-          () => Flow.generate.image({ 
-            prompt: safePrompt,
-            negativePrompt: finalNegative, 
-            modelDisplayName: safeModelName,
-            aspectRatio: safeAspectRatio as any,
-            referenceImageMediaIds 
-          }),
+          async () => {
+            attemptCount++;
+            let currentModelName = primaryModelName;
+            let currentPrompt = safePrompt;
+            let currentNegative = finalNegative;
+            let currentRefIds = referenceImageMediaIds;
+
+            // ⚡ スマートフェイルオーバー（リトライ回数に応じて段階的に安全化）
+            if (attemptCount === 2) {
+              // 第2試行: プロンプトをスリム化し、参照メディアの誤検知を回避
+              currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
+                .slice(0, 1000)
+                .replace(/,[^,]*$/, '')
+                .trim();
+            } else if (attemptCount >= 3) {
+              // 第3試行〜: メインモデルが過負荷/一時停止の可能性に備え、超爆速・高可用性モデルへ自動フェイルオーバー！
+              currentModelName = '🍌 Nano Banana 2 Lite';
+              currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
+                .slice(0, 800)
+                .replace(/,[^,]*$/, '')
+                .trim();
+              currentNegative = ''; // ネガティブ競合を完全排除
+              currentRefIds = undefined;
+            }
+
+            return await Flow.generate.image({ 
+              prompt: currentPrompt,
+              negativePrompt: currentNegative, 
+              modelDisplayName: currentModelName,
+              aspectRatio: safeAspectRatio as any,
+              referenceImageMediaIds: currentRefIds 
+            });
+          },
           (attempt, max, delay, err, isSuper) => {
             const waitStr = formatDurationMs(delay);
             const errMsg = formatErrorMessage(err);
             if (isSuper) {
               addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/4] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
+            } else if (attempt >= 2) {
+              addLog(`⚡ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [スマートフェイルオーバー] プロンプト軽量化＆高可用性モードで再試行 (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
             } else {
               addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
             }
@@ -413,33 +451,37 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         const errMsg = formatErrorMessage(firstErr);
         const isPolicyError = errMsg.includes('ポリシー') || errMsg.includes('POLICY') || errMsg.includes('SAFETY') || errMsg.includes('BLOCKED');
         
-        if (isPolicyError && !isAbortedRef.current) {
-          addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: Googleセーフティ保護を検知。プロンプトを自動クレンジング＆安全版で即時再生成します...`, 'warning');
+        if (!isAbortedRef.current) {
+          addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: サーバー過負荷・セーフティ保護をバイパスするため、極小救済プロンプト＆超軽量モデルで最終生成を実行します...`, 'warning');
           
-          // 装飾や過激な単語を削ぎ落とし、純粋な構図・画風・シーン描写のみのプロンプトを構築
-          const ultraSafePrompt = sanitizePromptForGoogleSafety(safePrompt)
+          // 骨子のみの最小安全プロンプトで最終救済
+          const rescuePrompt = sanitizePromptForGoogleSafety(safePrompt)
             .replace(/\b(seductive|seductively|adult|intimate|childlike|sensual|erotic|provocative|naked|nude)\b/gi, 'artistic')
-            .replace(/,\s*,/g, ',')
-            .trim();
+            .slice(0, 500)
+            .replace(/,[^,]*$/, '')
+            .trim() + ', cinematic masterpiece, aesthetic';
 
-          res = await callWithRetry<any>(
-            () => Flow.generate.image({ 
-              prompt: ultraSafePrompt,
-              negativePrompt: '', // ネガティブの誤衝突を防ぐためクリア
-              modelDisplayName: safeModelName,
-              aspectRatio: safeAspectRatio as any,
-              referenceImageMediaIds 
-            }),
-            (attempt, max, delay, err) => {
-              addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: セーフモード再試行中 (${attempt}/${max})...`, 'warning');
-            },
-            {
-              maxRetries: 2,
-              timeoutMs: 90000,
-              timeoutLabel: '安全プロンプト画像生成',
-              abortCheck: () => isAbortedRef.current
-            }
-          );
+          try {
+            res = await callWithRetry<any>(
+              () => Flow.generate.image({ 
+                prompt: rescuePrompt,
+                negativePrompt: '',
+                modelDisplayName: '🍌 Nano Banana 2 Lite',
+                aspectRatio: safeAspectRatio as any
+              }),
+              (attempt, max, delay, err) => {
+                addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 救済モード再試行中 (${attempt}/${max})...`, 'warning');
+              },
+              {
+                maxRetries: 2,
+                timeoutMs: 90000,
+                timeoutLabel: '救済プロンプト画像生成',
+                abortCheck: () => isAbortedRef.current
+              }
+            );
+          } catch (rescueErr) {
+            throw firstErr;
+          }
         } else {
           throw firstErr;
         }
