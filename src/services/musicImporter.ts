@@ -37,14 +37,33 @@ export interface ImportedTrack {
  */
 export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
   try {
-    const parsed = JSON.parse(rawText.trim());
+    const cleanText = rawText.replace(/^\uFEFF/, '').trim();
+    if (!cleanText) return [];
+    const parsed = JSON.parse(cleanText);
     let list: any[] = [];
     if (Array.isArray(parsed)) {
       list = parsed;
-    } else if (parsed && Array.isArray(parsed.tracks)) {
-      list = parsed.tracks;
     } else if (parsed && typeof parsed === 'object') {
-      list = [parsed];
+      if (Array.isArray(parsed.tracks)) {
+        list = parsed.tracks;
+      } else if (Array.isArray(parsed.songs)) {
+        list = parsed.songs;
+      } else if (Array.isArray(parsed.session_songs)) {
+        list = parsed.session_songs;
+      } else if (Array.isArray(parsed.items)) {
+        list = parsed.items;
+      } else if (Array.isArray(parsed.data)) {
+        list = parsed.data;
+      } else if (parsed.title || parsed.track_id || parsed.id) {
+        list = [parsed];
+      } else {
+        const values = Object.values(parsed);
+        if (values.length > 0 && typeof values[0] === 'object') {
+          list = values;
+        } else {
+          list = [parsed];
+        }
+      }
     }
 
     return list.map((item, idx) => {

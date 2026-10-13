@@ -81,6 +81,7 @@ export default function App() {
     isMusicImportOpenRef.current = isMusicImportOpen;
   }, [isMusicImportOpen]);
   const [injectedJsonText, setInjectedJsonText] = useState<string>('');
+  const [injectedPayload, setInjectedPayload] = useState<{ text: string; fileName: string; timestamp: number } | null>(null);
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const globalDragCounterRef = useRef(0);
   const resumeFileRef = useRef<HTMLInputElement>(null);
@@ -354,11 +355,11 @@ export default function App() {
   // アプリ全体の全画面ドラッグ＆ドロップ監視（JSONファイルならいつでも即座に音楽インポーターまたはシリーズ/キャスト復元を自動起動）
   useEffect(() => {
     const handleGlobalDragEnter = (e: DragEvent) => {
-      if (isMusicImportOpenRef.current) return;
       e.preventDefault();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
       }
+      if (isMusicImportOpenRef.current) return;
       globalDragCounterRef.current += 1;
       setIsGlobalDragging(true);
       console.log('📥 [FlowTool D&D] dragenter検知', {
@@ -369,8 +370,8 @@ export default function App() {
     };
 
     const handleGlobalDragLeave = (e: DragEvent) => {
-      if (isMusicImportOpenRef.current) return;
       e.preventDefault();
+      if (isMusicImportOpenRef.current) return;
       globalDragCounterRef.current -= 1;
       if (globalDragCounterRef.current <= 0) {
         globalDragCounterRef.current = 0;
@@ -401,7 +402,8 @@ export default function App() {
         fileName: file?.name,
         fileSize: file?.size,
         fileType: file?.type,
-        dataTransferTypes: Array.from(e.dataTransfer?.types || [])
+        dataTransferTypes: Array.from(e.dataTransfer?.types || []),
+        isModalOpen: isMusicImportOpenRef.current
       });
 
       if (!file) {
@@ -413,8 +415,9 @@ export default function App() {
         const text = await file.text();
         console.log(`📥 [FlowTool D&D] ファイル即座読み取り成功 (${text.length}文字)`);
 
-        // もしMusicImportModalが開いている場合は、直接インポーターにテキストを渡して即時パース！
+        // もしMusicImportModalが開いている場合は、直接インポーターにペイロードを渡して即時パース！
         if (isMusicImportOpenRef.current) {
+          setInjectedPayload({ text, fileName: file.name, timestamp: Date.now() });
           setInjectedJsonText(text);
           addLog(`🎵 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をインポーターへ展開しました！`, 'process');
           return;
@@ -445,7 +448,8 @@ export default function App() {
         }
 
         // C. 楽曲メタデータ（またはその他JSON）
-        // 音楽インポートモーダルを開き、テキストを直接注入！
+        // 音楽インポートモーダルを開き、ペイロードを直接注入！
+        setInjectedPayload({ text, fileName: file.name, timestamp: Date.now() });
         setInjectedJsonText(text);
         setIsMusicImportOpen(true);
         addLog(`🎵 楽曲メタデータ「${file.name}」(${Math.round(file.size / 1024)}KB) をインポーターへ展開しました！`, 'process');
@@ -710,10 +714,12 @@ export default function App() {
         <MusicImportModal
           isOpen={isMusicImportOpen}
           initialJsonText={injectedJsonText}
+          injectedPayload={injectedPayload}
           videoRatio={settings.videoRatio}
           onClose={() => {
             setIsMusicImportOpen(false);
             setInjectedJsonText('');
+            setInjectedPayload(null);
           }}
           onOpenCastModal={() => setIsCastModalOpen(true)}
           onDeployEpisode={handleDeployMusicEpisode}

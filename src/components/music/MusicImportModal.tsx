@@ -18,6 +18,7 @@ interface MusicImportModalProps {
   onDeployBatchEpisodes?: (episodes: Episode[]) => void;
   initialFile?: File | null;
   initialJsonText?: string;
+  injectedPayload?: { text: string; fileName: string; timestamp: number } | null;
   videoRatio?: string;
   onOpenCastModal?: () => void;
 }
@@ -29,12 +30,14 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   onDeployBatchEpisodes,
   initialFile,
   initialJsonText,
+  injectedPayload,
   videoRatio = '30%',
   onOpenCastModal,
 }) => {
   const [jsonText, setJsonText] = useState('');
   const [parsedTracks, setParsedTracks] = useState<ImportedTrack[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [failedCovers, setFailedCovers] = useState<Record<string, boolean>>({});
   const [castCharacters, setCastCharacters] = useState<CastCharacter[]>([]);
@@ -161,7 +164,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     };
   }, [isOpen]);
 
-  const handleParse = useCallback((text: string) => {
+  const handleParse = useCallback((text: string, sourceName?: string) => {
     setErrorMessage(null);
     try {
       if (!text.trim()) {
@@ -172,8 +175,14 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       setParsedTracks(tracks);
       if (tracks.length === 0) {
         setErrorMessage('楽曲データが見つかりませんでした。有効なJSONを指定してください。');
+      } else {
+        const label = sourceName ? `「${sourceName}」から ` : '';
+        setSuccessMessage(`✅ ${label}${tracks.length}曲の楽曲メタデータを正常に読み込みました！`);
+        console.log(`✅ [MusicImporter] ${tracks.length}曲の展開完了:`, tracks.map(t => t.title));
+        setTimeout(() => setSuccessMessage(null), 6000);
       }
     } catch (err: any) {
+      console.error('❌ [MusicImporter] JSON解析エラー:', err);
       setErrorMessage(err.message || 'JSON解析エラー');
       setParsedTracks([]);
     }
@@ -190,14 +199,14 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       const content = await file.text();
       console.log(`✅ [MusicImporter] ファイル読み込み完了 (${content.length}文字)`);
       setJsonText(content);
-      handleParse(content);
+      handleParse(content, file.name);
     } catch (err: any) {
       console.error('❌ [MusicImporter] file.text() エラー、FileReaderフォールバック:', err);
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = String(event.target?.result || '');
         setJsonText(content);
-        handleParse(content);
+        handleParse(content, file.name);
       };
       reader.onerror = () => {
         setErrorMessage('ファイルの読み込みに失敗しました。');
@@ -206,10 +215,14 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     }
   }, [handleParse]);
 
-  // initialJsonText または initialFile が外部（全画面D&D等）から渡された場合に即時パース
+  // injectedPayload, initialJsonText または initialFile が外部（全画面D&D等）から渡された場合に即時パース
   useEffect(() => {
     if (isOpen) {
-      if (initialJsonText) {
+      if (injectedPayload && injectedPayload.text) {
+        console.log('📦 [MusicImportModal] injectedPayload 受信:', injectedPayload.fileName, injectedPayload.text.length, '文字');
+        setJsonText(injectedPayload.text);
+        handleParse(injectedPayload.text, injectedPayload.fileName);
+      } else if (initialJsonText) {
         console.log('📦 [MusicImportModal] initialJsonText 受信:', initialJsonText.length, '文字');
         setJsonText(initialJsonText);
         handleParse(initialJsonText);
@@ -218,9 +231,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         processFile(initialFile);
       }
     }
-  }, [isOpen, initialJsonText, initialFile, handleParse, processFile]);
+  }, [isOpen, injectedPayload, initialJsonText, initialFile, handleParse, processFile]);
 
-  // グローバルなCtrl+V（ペースト）の自動捕捉＆全画面D&D完全対応
+  // グローバルなCtrl+V（ペースト）の自動捕捉
   useEffect(() => {
     if (!isOpen) return;
 
@@ -235,69 +248,15 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         e.preventDefault();
         console.log('📋 [MusicImportModal] クリップボードテキスト検知＆パース実行');
         setJsonText(text);
-        handleParse(text);
-      }
-    };
-
-    const handleWindowDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    };
-
-    const handleWindowDragEnter = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-      dragCounterRef.current += 1;
-      setIsDragging(true);
-    };
-
-    const handleWindowDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dragCounterRef.current -= 1;
-      if (dragCounterRef.current <= 0) {
-        dragCounterRef.current = 0;
-        setIsDragging(false);
-      }
-    };
-
-    const handleWindowDrop = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-      dragCounterRef.current = 0;
-      const file = e.dataTransfer?.files?.[0];
-      console.log('🎯 [MusicImportModal] Window Drop検知:', file?.name);
-      if (file) {
-        processFile(file);
+        handleParse(text, 'クリップボード');
       }
     };
 
     window.addEventListener('paste', handleWindowPaste);
-    window.addEventListener('dragover', handleWindowDragOver, true);
-    window.addEventListener('dragenter', handleWindowDragEnter, true);
-    window.addEventListener('dragleave', handleWindowDragLeave, true);
-    window.addEventListener('drop', handleWindowDrop, true);
-
-    document.addEventListener('dragover', handleWindowDragOver, true);
-    document.addEventListener('drop', handleWindowDrop, true);
-
     return () => {
       window.removeEventListener('paste', handleWindowPaste);
-      window.removeEventListener('dragover', handleWindowDragOver, true);
-      window.removeEventListener('dragenter', handleWindowDragEnter, true);
-      window.removeEventListener('dragleave', handleWindowDragLeave, true);
-      window.removeEventListener('drop', handleWindowDrop, true);
-      document.removeEventListener('dragover', handleWindowDragOver, true);
-      document.removeEventListener('drop', handleWindowDrop, true);
     };
-  }, [isOpen, handleParse, processFile]);
+  }, [isOpen, handleParse]);
 
   // モーダル全体でのドラッグ＆ドロップ監視（チラつき防止のカウント管理）
   const handleDragEnter = (e: React.DragEvent) => {
@@ -435,10 +394,14 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
       {/* 全画面ドラッグ中オーバーレイ */}
       {isDragging && (
-        <div className="absolute inset-0 z-[125] bg-purple-950/80 border-4 border-dashed border-purple-400 flex flex-col items-center justify-center pointer-events-none animate-pulse">
-          <span className="material-symbols-outlined text-purple-200 text-[64px] mb-2">file_download</span>
-          <p className="text-xl font-black text-white">ここに session_songs_metadata.json をドロップしてください！</p>
-          <p className="text-sm text-purple-300 mt-1">瞬時に12カットMV絵コンテへパースします</p>
+        <div className="absolute inset-0 z-[125] bg-purple-950/85 backdrop-blur-sm border-4 border-dashed border-amber-400 flex flex-col items-center justify-center pointer-events-none animate-fadeIn select-none">
+          <div className="w-20 h-20 rounded-full bg-amber-500/20 border-2 border-amber-400/50 flex items-center justify-center mb-4 ring-8 ring-amber-400/20 animate-bounce">
+            <span className="material-symbols-outlined text-amber-300 text-[48px]">upload_file</span>
+          </div>
+          <p className="text-2xl font-black text-white tracking-wide drop-shadow">ここに session_songs_metadata.json をドロップ！</p>
+          <p className="text-sm font-bold text-amber-200/90 mt-2 bg-purple-900/80 px-5 py-1.5 rounded-full border border-amber-400/30">
+            瞬時に12カットMV絵コンテへ自動パースします
+          </p>
         </div>
       )}
 
@@ -1262,26 +1225,25 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             })()}
           </div>
           
-          {/* Drop & Input Area */}
+          {/* Drop & Input Area: 枠全体をネイティブ input[type=file] で完全被覆 */}
           <div 
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 shrink-0 cursor-pointer select-none group/dropzone ${
+            className={`relative border-2 border-dashed rounded-xl p-5 transition-all text-center flex flex-col items-center justify-center gap-3 shrink-0 select-none group/dropzone ${
               isDragging 
                 ? 'border-amber-400 bg-amber-500/25 ring-4 ring-amber-400/40 scale-[0.99] shadow-2xl' 
                 : 'border-white/20 bg-white/5 hover:border-amber-400/60 hover:bg-white/10 shadow-sm'
             }`}
           >
+            {/* 枠全体を覆う透明なネイティブ input 要素（100%確実にD&D＆クリックを受け取る） */}
             <input 
               type="file" 
               ref={fileInputRef} 
               onChange={handleFileSelect} 
-              accept=".json" 
-              className="hidden" 
+              accept=".json,application/json" 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
+              title="session_songs_metadata.json をドラッグ＆ドロップ、またはクリックしてファイル選択"
             />
+
+            {/* 表示用コンテンツ（pointer-events-none で input の操作を妨げない） */}
             <div className="flex items-center gap-3 pointer-events-none">
               <span className={`p-3 rounded-full transition-colors ${isDragging ? 'bg-amber-400 text-black' : 'bg-purple-500/20 text-purple-300 group-hover/dropzone:bg-amber-500/20 group-hover/dropzone:text-amber-300'}`}>
                 <span className="material-symbols-outlined text-[32px]">upload_file</span>
@@ -1290,34 +1252,36 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                 <p className="text-sm font-bold text-white flex items-center gap-2">
                   <span>session_songs_metadata.json をドラッグ＆ドロップ</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
-                    またはクリックして選択 / Ctrl + V
+                    枠内クリックで選択 / Ctrl + V
                   </span>
                 </p>
                 <p className="text-xs text-white/50 mt-0.5">
-                  全画面どこにドロップしても即座に読み込まれます（枠内のどこをクリックしてもファイル選択可能）
+                  この枠内へドラッグ＆ドロップ、または枠内クリックで即座に読み込まれます
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mt-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-                className="px-4 py-2 text-xs font-bold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/15 flex items-center gap-1.5 cursor-pointer shadow-sm"
+            {/* アクションボタン（z-30 で input より前面にして確実にクリック可能にする） */}
+            <div className="relative z-30 flex items-center gap-2 mt-1">
+              <label 
+                className="px-4 py-2 text-xs font-bold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/15 flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">folder_open</span>
                 JSONファイルを選択
-              </button>
+                <input 
+                  type="file" 
+                  onChange={handleFileSelect} 
+                  accept=".json,application/json" 
+                  className="hidden" 
+                />
+              </label>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePasteClipboard();
                 }}
-                className="px-4 py-2 text-xs font-bold bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 rounded-lg transition-colors border border-purple-500/40 flex items-center gap-1.5 cursor-pointer shadow-sm"
+                className="px-4 py-2 text-xs font-bold bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 rounded-lg transition-colors border border-purple-500/40 flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">content_paste</span>
                 クリップボードから貼り付け
@@ -1325,9 +1289,17 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             </div>
           </div>
 
+          {/* Success Banner */}
+          {successMessage && (
+            <div className="p-3 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2 shrink-0 animate-fade-in">
+              <span className="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
+              <span className="font-bold">{successMessage}</span>
+            </div>
+          )}
+
           {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs flex items-center gap-2 shrink-0">
+            <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs flex items-center gap-2 shrink-0 animate-fade-in">
               <span className="material-symbols-outlined text-[18px]">error</span>
               <span>{errorMessage}</span>
             </div>
