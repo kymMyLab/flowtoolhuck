@@ -30,10 +30,28 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [failedCovers, setFailedCovers] = useState<Record<string, boolean>>({});
   const [castCharacters, setCastCharacters] = useState<CastCharacter[]>([]);
   const [selectedCastId, setSelectedCastId] = useState<string>('none');
+  const [castSearchQuery, setCastSearchQuery] = useState<string>('');
+  const [castRoleFilter, setCastRoleFilter] = useState<'all' | 'protagonist' | 'partner' | 'antagonist' | 'supporting'>('all');
   const [selectedCoverThemeId, setSelectedCoverThemeId] = useState<string>('auto');
   const [autoTheme, setAutoTheme] = useState<CoverPalette>(COVER_PALETTES.mv_violet);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
+
+  // キャスト画像取得ヘルパー（アバター優先、三面図、表情のフォールバック）
+  const getCharacterThumbnail = (char: CastCharacter): string | undefined => {
+    return char.avatarBase64 || char.turnaroundBase64 || char.expressions?.neutral?.imageBase64;
+  };
+
+  // フィルタリング済みキャスト一覧
+  const filteredCharacters = castCharacters.filter((char) => {
+    const matchesRole = castRoleFilter === 'all' || char.role === castRoleFilter;
+    const matchesSearch = !castSearchQuery.trim() || 
+      char.name.toLowerCase().includes(castSearchQuery.toLowerCase()) ||
+      (char.dnaPromptEn && char.dnaPromptEn.toLowerCase().includes(castSearchQuery.toLowerCase()));
+    return matchesRole && matchesSearch;
+  });
+
+  const selectedCharacter = castCharacters.find(c => c.id === selectedCastId);
 
   // モーダルオープン時にキャスト一覧を読み込み、主演をデフォルト選択（初回オープン時のみ）
   // 同時に今回のセッション用のカバー配色バリエーションを自動選定（同一セッション内全曲統一）
@@ -348,60 +366,232 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 dark-scrollbar">
           
-          {/* 🎬 主演キャスト (Protagonist Cast) Selection Bar */}
-          <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative overflow-hidden group">
+          {/* 🎬 主演キャスト (Protagonist Cast) Visual Picker */}
+          <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative overflow-hidden group">
             {/* Background glowing effect */}
             <div className="absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-purple-500/0 via-amber-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none blur-xl"></div>
 
-            <div className="flex items-center gap-2 relative z-10">
-              <span className="material-symbols-outlined text-[18px] text-amber-400">movie_creation</span>
-              <span className="text-sm font-bold text-white">🎬 主演キャスト設定</span>
-            </div>
-            <p className="text-[10px] text-white/50 relative z-10">
-              MVの主人公として展開するキャストを選択します。指定したキャストのDNA（三面図・プロンプト・表情）が自動的に全カットに適用されます。
-            </p>
-            <div className="relative z-10 mt-1">
-              <select
-                value={selectedCastId}
-                onChange={(e) => setSelectedCastId(e.target.value)}
-                className="w-full p-2.5 rounded-lg bg-black/60 border border-purple-500/30 text-xs font-bold text-white outline-none focus:border-purple-400 hover:border-purple-500/50 appearance-none transition-colors cursor-pointer shadow-inner"
-                style={{ paddingRight: '2rem' }}
-              >
-                <option value="none">🎲 キャスト指定なし (AI完全おまかせ)</option>
-                {castCharacters.map(char => (
-                  <option key={char.id} value={char.id} className="bg-slate-900 text-white">
-                    {char.role === 'protagonist' ? '👑 ' : ''}{char.name} ({char.role})
-                  </option>
-                ))}
-              </select>
-              {/* Custom dropdown arrow */}
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-purple-400 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[18px]">expand_more</span>
+            {/* Header + Search/Filter Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-2 relative z-10">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[20px] text-amber-400">movie_creation</span>
+                <div>
+                  <span className="text-sm font-bold text-white flex items-center gap-2">
+                    🎬 主演キャスト設定
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                      {filteredCharacters.length} / {castCharacters.length} 体
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* 検索 ＆ ロール絞り込みフィルター */}
+              <div className="flex items-center gap-2">
+                {/* ロールタブ */}
+                <div className="flex items-center bg-black/50 p-0.5 rounded-lg border border-white/10 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setCastRoleFilter('all')}
+                    className={`px-2 py-1 rounded transition-colors cursor-pointer ${castRoleFilter === 'all' ? 'bg-purple-600 text-white font-bold' : 'text-white/60 hover:text-white'}`}
+                  >
+                    全員
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCastRoleFilter('protagonist')}
+                    className={`px-2 py-1 rounded transition-colors cursor-pointer ${castRoleFilter === 'protagonist' ? 'bg-amber-600 text-white font-bold' : 'text-white/60 hover:text-white'}`}
+                  >
+                    👑 主人公
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCastRoleFilter('partner')}
+                    className={`px-2 py-1 rounded transition-colors cursor-pointer ${castRoleFilter === 'partner' ? 'bg-blue-600 text-white font-bold' : 'text-white/60 hover:text-white'}`}
+                  >
+                    相棒
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCastRoleFilter('antagonist')}
+                    className={`px-2 py-1 rounded transition-colors cursor-pointer ${castRoleFilter === 'antagonist' ? 'bg-red-600 text-white font-bold' : 'text-white/60 hover:text-white'}`}
+                  >
+                    宿敵
+                  </button>
+                </div>
+
+                {/* 検索窓 */}
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[14px] text-white/40">search</span>
+                  <input
+                    type="text"
+                    value={castSearchQuery}
+                    onChange={(e) => setCastSearchQuery(e.target.value)}
+                    placeholder="名前で検索..."
+                    className="w-28 sm:w-36 pl-6 pr-6 py-1 rounded-lg bg-black/60 border border-white/15 text-[11px] text-white outline-none focus:border-purple-400 placeholder-white/30"
+                  />
+                  {castSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setCastSearchQuery('')}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Selected Cast Preview */}
-            {selectedCastId !== 'none' && (
-              <div className="flex items-center gap-2 mt-2 p-2 bg-black/40 rounded-lg border border-purple-500/20 relative z-10 shadow-sm">
-                {castCharacters.find(c => c.id === selectedCastId)?.avatarBase64 ? (
-                  <img
-                    src={castCharacters.find(c => c.id === selectedCastId)?.avatarBase64}
-                    alt="avatar"
-                    className="w-8 h-8 rounded-full border-2 border-purple-500/50 object-cover shadow-[0_0_8px_rgba(168,85,247,0.4)] shrink-0"
-                  />
+            <p className="text-[10px] text-white/50 relative z-10 -mt-1">
+              MVの主人公として展開するキャストを画像から選択してください。指定したキャストのDNA（三面図・プロンプト・表情）が全12カットに自動注入されます。
+            </p>
+
+            {/* 選択中キャストのハイライトカード */}
+            <div className="p-2.5 bg-black/50 rounded-xl border border-purple-500/30 flex items-center justify-between gap-3 relative z-10 shadow-inner">
+              <div className="flex items-center gap-3 min-w-0">
+                {selectedCharacter ? (
+                  <>
+                    <div className="relative shrink-0">
+                      {getCharacterThumbnail(selectedCharacter) ? (
+                        <img
+                          src={getCharacterThumbnail(selectedCharacter)}
+                          alt={selectedCharacter.name}
+                          className="w-12 h-12 rounded-lg border-2 border-amber-400/80 object-cover shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-800 to-indigo-950 flex items-center justify-center border-2 border-purple-400/50 shadow-inner">
+                          <span className="text-sm font-black text-white">{selectedCharacter.name.slice(0, 2)}</span>
+                        </div>
+                      )}
+                      <span className="absolute -bottom-1 -right-1 text-[8px] px-1 py-0.2 rounded bg-amber-500 text-black font-black uppercase shadow">
+                        {selectedCharacter.role === 'protagonist' ? '主演' : selectedCharacter.role}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex flex-col">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-white truncate">{selectedCharacter.name}</span>
+                        {selectedCharacter.turnaroundBase64 && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold shrink-0">
+                            三面図DNA完備
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-white/60 font-mono truncate max-w-md mt-0.5">
+                        {selectedCharacter.dnaPromptEn || 'No DNA prompt'}
+                      </p>
+                    </div>
+                  </>
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-900/60 to-slate-900 flex items-center justify-center border-2 border-purple-500/30 shrink-0 shadow-inner">
-                    <span className="material-symbols-outlined text-[16px] text-purple-300">person</span>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 border border-white/20 flex items-center justify-center text-white/50">
+                      <span className="material-symbols-outlined text-[24px]">casino</span>
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white/90">🎲 キャスト指定なし (AI完全おまかせ)</div>
+                      <div className="text-[10px] text-white/50">楽曲タイトル・歌詞からAIがキャラクターを独自に自動生成します</div>
+                    </div>
                   </div>
                 )}
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <span className="text-[10px] text-purple-200 font-bold truncate leading-tight">
-                    {castCharacters.find(c => c.id === selectedCastId)?.name}
-                  </span>
-                  <span className="text-[9px] text-purple-300/70 font-mono truncate leading-tight">
-                    {castCharacters.find(c => c.id === selectedCastId)?.dnaPromptEn}
-                  </span>
+              </div>
+
+              {selectedCastId !== 'none' && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCastId('none')}
+                  className="px-2.5 py-1 text-[10px] font-bold text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors border border-white/15 shrink-0 flex items-center gap-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[12px]">restart_alt</span>
+                  おまかせに戻す
+                </button>
+              )}
+            </div>
+
+            {/* 📸 ビジュアルカードグリッド一覧 */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-2 max-h-48 overflow-y-auto p-2 bg-black/40 rounded-xl border border-white/10 dark-scrollbar relative z-10">
+              
+              {/* カード0: キャスト指定なし (AIおまかせ) */}
+              <button
+                type="button"
+                onClick={() => setSelectedCastId('none')}
+                className={`p-2 rounded-xl flex flex-col items-center justify-center text-center transition-all cursor-pointer relative group/card border ${
+                  selectedCastId === 'none'
+                    ? 'border-purple-400 bg-purple-600/30 shadow-[0_0_12px_rgba(168,85,247,0.4)] ring-2 ring-purple-400'
+                    : 'border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10'
+                }`}
+                style={{ minHeight: '92px' }}
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center text-purple-300 mb-1 group-hover/card:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-[20px]">casino</span>
                 </div>
+                <span className="text-[10px] font-bold text-white leading-tight">AIおまかせ</span>
+                <span className="text-[8px] text-white/40 mt-0.5">指定なし</span>
+                {selectedCastId === 'none' && (
+                  <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center shadow">
+                    <span className="material-symbols-outlined text-[10px] font-black">check</span>
+                  </div>
+                )}
+              </button>
+
+              {/* キャラクターカード一覧 */}
+              {filteredCharacters.map((char) => {
+                const isSelected = selectedCastId === char.id;
+                const thumb = getCharacterThumbnail(char);
+                return (
+                  <button
+                    key={char.id}
+                    type="button"
+                    onClick={() => setSelectedCastId(char.id)}
+                    className={`p-1.5 rounded-xl flex flex-col items-center text-center transition-all cursor-pointer relative group/card border ${
+                      isSelected
+                        ? 'border-amber-400 bg-amber-500/20 shadow-[0_0_14px_rgba(245,158,11,0.5)] ring-2 ring-amber-400'
+                        : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
+                    }`}
+                    style={{ minHeight: '92px' }}
+                  >
+                    {/* サムネイル画像 */}
+                    <div className="w-11 h-11 rounded-lg overflow-hidden border border-white/20 mb-1 relative shrink-0 group-hover/card:scale-105 transition-transform">
+                      {thumb ? (
+                        <img
+                          src={thumb}
+                          alt={char.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-indigo-900 to-purple-900 flex items-center justify-center text-xs font-bold text-white">
+                          {char.name.slice(0, 2)}
+                        </div>
+                      )}
+                      {char.role === 'protagonist' && (
+                        <div className="absolute top-0.5 left-0.5 bg-black/80 rounded px-1 text-[8px] text-amber-400 font-bold flex items-center shadow">
+                          👑
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 名前 */}
+                    <span className="text-[10px] font-bold text-white truncate w-full px-1 leading-tight">
+                      {char.name}
+                    </span>
+
+                    {/* ロールバッジ */}
+                    <span className="text-[8px] text-white/50 capitalize truncate mt-0.5">
+                      {char.role}
+                    </span>
+
+                    {/* チェックマーク */}
+                    {isSelected && (
+                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-400 text-black flex items-center justify-center shadow font-black">
+                        <span className="material-symbols-outlined text-[10px] font-black">check</span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {filteredCharacters.length === 0 && (
+              <div className="text-center py-3 text-xs text-white/40">
+                該当するキャストが見つかりません（検索・ロール条件を変えてみてください）
               </div>
             )}
           </div>

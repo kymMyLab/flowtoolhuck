@@ -1,1 +1,2 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@v2.4.7-cover-variants-sync/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[v2.4.7: セッション単位カバー配色統一＆変奏・縦型折り返し完全版]'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@v2.4.8-visual-cast-gallery/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版マウント完了！[v2.4.8: 主演キャスト画像ビジュアルギャラリー＆ロール・名前検索対応版]'); });
+
