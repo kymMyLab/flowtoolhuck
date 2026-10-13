@@ -1,4 +1,4 @@
-import { Episode, Cut, ProductionMode } from '../types';
+import { Episode, Cut, ProductionMode, CastCharacter } from '../types';
 import { extractHighlights } from './directorService';
 import { resolveMasterCategory } from '../config/masterCategories';
 import { CAMERA_WORK_REGISTRY } from '../constants';
@@ -283,7 +283,7 @@ export function extractLyricVisualPlot(
 /**
  * CT198のインポートトラックから、FlowToolの完全な 12カット MV Episode を自動錬成
  */
-export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string = '30%'): Episode {
+export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string = '30%', selectedCharacter?: CastCharacter): Episode {
   const visualMap = parseVisualHints(track.visual_hints || '');
   const preferredLyrics = track.lyrics_kanji || track.input_lyrics || '';
   const lyricsSec = parseLyricsSections(preferredLyrics);
@@ -364,13 +364,38 @@ export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string =
     const hl = extractHighlights(lyric);
     const visualPlot = extractLyricVisualPlot(lyric, hint, track.surface_theme || track.title, i, isPropCut);
 
-    const promptEn = [
+    const promptEnComponents = [
       `Masterpiece, high production music video, authentic ${masterCat.pool.visual_contract.style_preset},`,
-      visualPlot,
+    ];
+
+    // キャストDNAおよび表情のインポート（カット10の小道具・カット12の余韻を除く人物カット）
+    if (selectedCharacter && !isPropCut && i !== 12) {
+      let expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+      if (i === 1) {
+        expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+      } else if (i === 4) {
+        expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+      } else if (isChorus) {
+        expressionPrompt = selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+      } else if (i === 11) {
+        expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || '';
+      }
+
+      const cleanDna = selectedCharacter.dnaPromptEn ? selectedCharacter.dnaPromptEn.trim().replace(/\.+$/, '') : '';
+      const expressionPart = expressionPrompt ? ` [EXPRESSION]: ${expressionPrompt.replace(/\.+$/, '')}.` : '';
+      if (cleanDna) {
+        promptEnComponents.push(`[PROTAGONIST DNA]: ${cleanDna}.${expressionPart}`);
+      }
+    }
+
+    promptEnComponents.push(visualPlot);
+    promptEnComponents.push(
       isPropCut 
         ? `Shallow depth of field, dramatic dust motes in sunbeam, crisp macro reflections.` 
         : `Atmospheric cinematography, 8k resolution, cinematic lighting, photorealistic texture.`
-    ].join(' ');
+    );
+
+    const promptEn = promptEnComponents.join(' ');
 
     cuts.push({
       id: i,
@@ -415,6 +440,10 @@ export function convertTrackToEpisode(track: ImportedTrack, videoRatio: string =
     isPreviewDone: false,
     isDone: false,
     coverCatchphraseJp: track.title,
-    coverCatchphraseEn: track.title
+    coverCatchphraseEn: track.title,
+    characterDna: selectedCharacter ? selectedCharacter.dnaPromptEn : undefined,
+    characterTurnaroundBase64: selectedCharacter ? (selectedCharacter.turnaroundBase64 || selectedCharacter.avatarBase64) : undefined,
+    characterTurnaroundMediaId: selectedCharacter ? selectedCharacter.turnaroundMediaId : undefined,
+    characterTurnaroundPrompt: selectedCharacter ? selectedCharacter.turnaroundPromptEn : undefined
   };
 }
