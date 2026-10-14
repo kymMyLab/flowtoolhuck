@@ -71,45 +71,57 @@ async function runBuild() {
   }
 
   // 2. Vite Build 実行
+  const localDistDir = path.join(localBuildDir, 'dist');
+  if (fs.existsSync(localDistDir)) {
+    fs.rmSync(localDistDir, { recursive: true, force: true });
+  }
   log('Executing Vite build...');
   execSync('npx vite build', { cwd: localBuildDir, stdio: 'inherit' });
 
-  // 3. dist/ ディレクトリ全体（bundle.js, chunks, assets）を元のワークスペースへ書き戻す
-  const localDistDir = path.join(localBuildDir, 'dist');
+  // 3. dist/ ディレクトリ全体（bundle.js）を元のワークスペースへ書き戻す
   const targetDistDir = path.join(sourceDir, 'dist');
 
   if (!fs.existsSync(localDistDir)) {
     throw new Error('dist directory was not generated in local build dir.');
   }
 
+  log('Copying built artifacts back to workspace...');
   try {
     if (!fs.existsSync(targetDistDir)) {
       fs.mkdirSync(targetDistDir, { recursive: true });
     }
-    // 古いチャンクファイルの整理（ローカルビルド側にない過去のハッシュファイルを削除）
     const targetChunksDir = path.join(targetDistDir, 'chunks');
-    const localChunksDir = path.join(localDistDir, 'chunks');
-    if (fs.existsSync(targetChunksDir) && fs.existsSync(localChunksDir)) {
-      const activeChunkNames = new Set(fs.readdirSync(localChunksDir));
-      for (const oldFile of fs.readdirSync(targetChunksDir)) {
-        if (!activeChunkNames.has(oldFile)) {
-          try {
-            fs.unlinkSync(path.join(targetChunksDir, oldFile));
-          } catch {}
-        }
+    if (fs.existsSync(targetChunksDir)) {
+      try {
+        fs.rmSync(targetChunksDir, { recursive: true, force: true });
+        log('Removed old chunks directory.');
+      } catch (e) {
+        console.warn('Could not remove chunks dir:', e && e.message ? e.message : e);
       }
     }
-    // コピー実行
-    copySync(localDistDir, targetDistDir);
+    // 単一バンドル等のファイルを直接コピー
+    const distFiles = fs.readdirSync(localDistDir);
+    for (const file of distFiles) {
+      const srcFile = path.join(localDistDir, file);
+      const destFile = path.join(targetDistDir, file);
+      const stat = fs.statSync(srcFile);
+      if (stat.isFile()) {
+        fs.copyFileSync(srcFile, destFile);
+        log(`Copied ${file} (${(stat.size / 1024).toFixed(1)} KB)`);
+      }
+    }
     const bundleStat = fs.statSync(path.join(targetDistDir, 'bundle.js'));
-    log(`Successfully copied dist/ (including split chunks) to workspace. Router bundle.js: ${(bundleStat.size / 1024).toFixed(1)} KB`);
+    log(`Successfully finalized dist/bundle.js: ${(bundleStat.size / 1024).toFixed(1)} KB`);
   } catch (copyErr) {
-    console.error('Copy to workspace failed:', copyErr);
+    console.error('❌ Copy to workspace failed:', copyErr);
     throw copyErr;
   }
 }
 
-runBuild().catch(err => {
+runBuild().then(() => {
+  log('Build script finished successfully.');
+  process.exit(0);
+}).catch(err => {
   console.error('❌ Build failed with error:', err && err.stack ? err.stack : err);
   process.exit(1);
 });

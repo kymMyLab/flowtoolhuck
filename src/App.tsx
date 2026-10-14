@@ -17,10 +17,10 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { loadCustomThemes } from './services/themeStorage';
 import { loadCustomTastes } from './services/tasteStorage';
 
-const ThemeEditorModal = React.lazy(() => import('./components/ThemeEditorModal').then(m => ({ default: m.ThemeEditorModal })));
-const TasteEditorModal = React.lazy(() => import('./components/TasteEditorModal').then(m => ({ default: m.TasteEditorModal })));
-const CastManagerModal = React.lazy(() => import('./components/CastManagerModal').then(m => ({ default: m.CastManagerModal })));
-const ComicCreationWizardModal = React.lazy(() => import('./components/ComicCreationWizardModal').then(m => ({ default: m.ComicCreationWizardModal })));
+import { ThemeEditorModal } from './components/ThemeEditorModal';
+import { TasteEditorModal } from './components/TasteEditorModal';
+import { CastManagerModal } from './components/CastManagerModal';
+import { ComicCreationWizardModal } from './components/ComicCreationWizardModal';
 import { MusicImportModal } from './components/music/MusicImportModal';
 import { TasteShowroomModal } from './components/TasteShowroomModal';
 import { loadMangaProject, saveMangaProject } from './services/castStorage';

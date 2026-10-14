@@ -23,31 +23,14 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2020',
     sourcemap: false,
+    chunkSizeWarningLimit: 4000,
     rollupOptions: {
       preserveEntrySignatures: 'strict',
       input: path.resolve(__dirname, 'src/index.tsx'),
       output: {
         entryFileNames: 'bundle.js',
-        chunkFileNames: 'chunks/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash][extname]',
         format: 'es',
-        manualChunks(id) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-            return 'vendor-react';
-          }
-          if (id.includes('ComicCreationWizardModal')) {
-            return 'comic-wizard';
-          }
-          if (id.includes('CastManagerModal')) {
-            return 'cast-manager';
-          }
-          if (id.includes('directorService') || id.includes('productionPipelines') || id.includes('src/services/pipelines/')) {
-            return 'production-engine';
-          }
-          if (id.includes('constants') || id.includes('studioDefinitions')) {
-            return 'studio-constants';
-          }
-        },
+        inlineDynamicImports: true,
       },
       external: [],
     },
