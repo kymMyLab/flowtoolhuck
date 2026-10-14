@@ -45,7 +45,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [isBoxDragging, setIsBoxDragging] = useState(false);
   const [failedCovers, setFailedCovers] = useState<Record<string, boolean>>({});
   const [castCharacters, setCastCharacters] = useState<CastCharacter[]>([]);
-  const [selectedCastId, setSelectedCastId] = useState<string>('arch_kemomimi_jk');
+  // 🎭 キャスト固定モード（デフォルトOFF: JSONの世界観・情景・登場人物を100%最優先描画）
+  const [isCastLockEnabled, setIsCastLockEnabled] = useState<boolean>(false);
+  const [selectedCastId, setSelectedCastId] = useState<string>('none');
   
   // 🎭 人物様態 (Archetypes 100選) & キャスト管理State
   const [castSourceTab, setCastSourceTab] = useState<'archetypes' | 'registered'>('archetypes');
@@ -57,8 +59,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [castSearchQuery, setCastSearchQuery] = useState<string>('');
   const [castRoleFilter, setCastRoleFilter] = useState<'all' | 'protagonist' | 'partner' | 'antagonist' | 'supporting'>('all');
   
-  // 🎨 画風モデル設定State (代表サムネ1枚 ➜ クリックで3パターン展開)
-  const [selectedTasteKey, setSelectedTasteKey] = useState<string>('🌙 ノスタルジック魔女ファンタジー・極細線画 (Retro Fantasy Whisper-Line)');
+  // 🎨 画風モデル設定State (デフォルト: 'auto' = JSON指定・トラック個別画風を最優先)
+  const [selectedTasteKey, setSelectedTasteKey] = useState<string>('auto');
   const [expandedTasteId, setExpandedTasteId] = useState<string | null>(null);
   const [tasteSearchQuery, setTasteSearchQuery] = useState<string>('');
   const [tasteCategoryFilter, setTasteCategoryFilter] = useState<'all' | 'anime' | 'japanese' | 'cinematic' | 'art'>('all');
@@ -103,7 +105,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const selectedRegisteredChar = castCharacters.find(c => c.id === selectedCastId);
 
   const resolveSelectedCharacter = useCallback((): CastCharacter | undefined => {
-    if (selectedCastId === 'none') return undefined;
+    // キャスト固定が無効(デフォルト)またはnoneの場合は未指定(JSON最優先)
+    if (!isCastLockEnabled || selectedCastId === 'none') return undefined;
     if (selectedArchetype) {
       return {
         id: selectedArchetype.id,
@@ -113,7 +116,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       };
     }
     return selectedRegisteredChar;
-  }, [selectedCastId, selectedArchetype, selectedRegisteredChar]);
+  }, [isCastLockEnabled, selectedCastId, selectedArchetype, selectedRegisteredChar]);
 
   const selectedCharacter = resolveSelectedCharacter();
 
@@ -130,17 +133,13 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const selectedTasteItem = TASTE_GALLERY_DATA.find(t => t.tasteKey === selectedTasteKey);
   const expandedTasteItem = expandedTasteId ? TASTE_GALLERY_DATA.find(t => t.id === expandedTasteId) : null;
 
-  // モーダルオープン時にキャスト一覧を読み込み、狐耳ケモミミ女子高生（またはコハル）をデフォルト選択
+  // モーダルオープン時にキャスト一覧を読み込み
   // 同時に今回のセッション用のカバー配色バリエーションを自動選定（同一セッション内全曲統一）
   useEffect(() => {
     if (isOpen) {
       const project = loadMangaProject();
       const chars = project.characters || [];
       setCastCharacters(chars);
-      // デフォルトは様態マスターの「狐耳ケモミミ女子高生」
-      if (!selectedCastId || selectedCastId === 'none') {
-        setSelectedCastId('arch_kemomimi_jk');
-      }
 
       // セッションごとに自動で異なる配色バリエーションを1つ選定（前回の固定マンネリを防止）
       const mvPalettes = getCoverPalettesForGenre('mv');
@@ -299,7 +298,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     try {
       const charToInject = resolveSelectedCharacter();
       const effectiveTheme = selectedCoverThemeId === 'auto' ? autoTheme.id : selectedCoverThemeId;
-      const episode = convertTrackToEpisode(track, videoRatio, charToInject, effectiveTheme, selectedTasteKey);
+      const effectiveTaste = selectedTasteKey === 'auto' ? undefined : selectedTasteKey;
+      const episode = convertTrackToEpisode(track, videoRatio, charToInject, effectiveTheme, effectiveTaste);
       onDeployEpisode(episode);
       onClose();
     } catch (err: any) {
@@ -312,7 +312,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     try {
       const charToInject = resolveSelectedCharacter();
       const effectiveTheme = selectedCoverThemeId === 'auto' ? autoTheme.id : selectedCoverThemeId;
-      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio, charToInject, effectiveTheme, selectedTasteKey));
+      const effectiveTaste = selectedTasteKey === 'auto' ? undefined : selectedTasteKey;
+      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio, charToInject, effectiveTheme, effectiveTaste));
       if (onDeployBatchEpisodes) {
         onDeployBatchEpisodes(episodes);
       } else {
@@ -394,42 +395,66 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               <div className="flex items-center gap-2 shrink-0 flex-wrap">
                 <span className="material-symbols-outlined text-[20px] text-amber-400">theater_comedy</span>
                 <span className="text-sm font-bold text-white flex items-center gap-1.5">
-                  🎭 主演キャスト様態設定
+                  🎭 主演キャスト設定
                 </span>
 
-                {/* タブ切り替え: 様態マスター 100選 vs 登録キャスト */}
-                <div className="flex items-center bg-black/60 p-0.5 rounded-lg border border-white/15 text-[11px] ml-1 sm:ml-2">
-                  <button
-                    type="button"
-                    onClick={() => setCastSourceTab('archetypes')}
-                    className={`px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
-                      castSourceTab === 'archetypes'
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black shadow-md'
-                        : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    <span>🎭 様態マスター (100選)</span>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-black/30 text-amber-100 font-bold">
-                      100
-                    </span>
-                  </button>
+                {/* ★ キャスト固定 ON / OFF スイッチトグル */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isCastLockEnabled;
+                    setIsCastLockEnabled(next);
+                    if (next && selectedCastId === 'none') {
+                      setSelectedCastId('arch_kemomimi_jk');
+                    }
+                  }}
+                  className={`px-3 py-1 rounded-full text-xs font-black transition-all border flex items-center gap-1.5 cursor-pointer shadow-md ${
+                    isCastLockEnabled 
+                      ? 'bg-amber-500 text-black border-amber-300 ring-2 ring-amber-400/50' 
+                      : 'bg-emerald-600/30 text-emerald-300 border-emerald-400/60 hover:bg-emerald-600/50'
+                  }`}
+                  title="クリックでキャスト固定のON/OFFを切り替えます"
+                >
+                  <span className="material-symbols-outlined text-[15px]">
+                    {isCastLockEnabled ? 'lock' : 'lock_open'}
+                  </span>
+                  <span>{isCastLockEnabled ? 'キャスト固定: ON (指定DNAで統一)' : 'キャスト固定: OFF (JSONの情景・世界観最優先)'}</span>
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setCastSourceTab('registered')}
-                    className={`px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
-                      castSourceTab === 'registered'
-                        ? 'bg-purple-600 text-white font-black shadow-md'
-                        : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    <span>👤 登録キャスト</span>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-bold">
-                      {castCharacters.length}
-                    </span>
-                  </button>
-                </div>
+                {/* タブ切り替え: 様態マスター 100選 vs 登録キャスト (ON時のみ操作可能) */}
+                {isCastLockEnabled && (
+                  <div className="flex items-center bg-black/60 p-0.5 rounded-lg border border-white/15 text-[11px] ml-1 sm:ml-2">
+                    <button
+                      type="button"
+                      onClick={() => setCastSourceTab('archetypes')}
+                      className={`px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                        castSourceTab === 'archetypes'
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black shadow-md'
+                          : 'text-white/70 hover:text-white'
+                      }`}
+                    >
+                      <span>🎭 様態マスター (100選)</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-black/30 text-amber-100 font-bold">
+                        100
+                      </span>
+                    </button>
 
+                    <button
+                      type="button"
+                      onClick={() => setCastSourceTab('registered')}
+                      className={`px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                        castSourceTab === 'registered'
+                          ? 'bg-purple-600 text-white font-black shadow-md'
+                          : 'text-white/70 hover:text-white'
+                      }`}
+                    >
+                      <span>👤 登録キャスト</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-bold">
+                        {castCharacters.length}
+                      </span>
+                    </button>
+                  </div>
+                )}
                 {onOpenCastModal && (
                   <button
                     type="button"
@@ -526,7 +551,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             </div>
 
             {/* カテゴリ別ピルフィルター (様態マスター選択時のみ表示) */}
-            {castSourceTab === 'archetypes' && (
+            {isCastLockEnabled && castSourceTab === 'archetypes' && (
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar relative z-10 text-[11px]">
                 <button
                   type="button"
@@ -565,13 +590,42 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               </div>
             )}
 
-            <p className="text-[10px] text-white/50 relative z-10 -mt-1">
-              {castSourceTab === 'archetypes'
-                ? '普遍的な人物様態（100選）から選定します。各様態の右上の「🔍」をクリックするとペルソナ詳細・DNAプロンプトを大きく拡大表示できます。'
-                : 'MVの主人公として展開するキャストを選択してください。指定したキャストのDNA（三面図・プロンプト・表情）が全12カットに自動注入されます。'}
-            </p>
+            {!isCastLockEnabled ? (
+              /* ★ キャスト固定OFFバナー（JSON世界観・情景最優先） */
+              <div className="p-3 bg-emerald-950/25 border border-emerald-500/40 rounded-xl flex items-center justify-between gap-3 relative z-10 shadow-sm">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">auto_fix_high</span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-black text-emerald-200 flex items-center gap-1.5">
+                      <span>✨ キャスト固定: OFF (JSONの情景・世界観最優先モード)</span>
+                    </div>
+                    <div className="text-[10px] text-white/65 mt-0.5 leading-relaxed">
+                      JSONに記述された登場人物・情景（自転車二人乗り、制服、キャップ、夕暮れの土手など）に合わせて、AIがカットごとに生き生きとした構図・ポーズを完全自由に描画します。
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCastLockEnabled(true);
+                    if (selectedCastId === 'none') setSelectedCastId('arch_kemomimi_jk');
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 hover:text-white text-[11px] font-bold shrink-0 transition-all cursor-pointer shadow-sm"
+                >
+                  特定のキャラで固定 ➜
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-[10px] text-white/50 relative z-10 -mt-1">
+                  {castSourceTab === 'archetypes'
+                    ? '普遍的な人物様態（100選）から選定します。各様態の右上の「🔍」をクリックするとペルソナ詳細・DNAプロンプトを大きく拡大表示できます。'
+                    : 'MVの主人公として展開するキャストを選択してください。指定したキャストのDNA（三面図・プロンプト・表情）が全12カットに自動注入されます。'}
+                </p>
 
-            {/* 選択中キャストのハイライトカード */}
+                {/* 選択中キャストのハイライトカード */}
             <div className="p-2.5 bg-black/60 rounded-xl border border-amber-500/30 flex items-center justify-between gap-3 relative z-10 shadow-inner">
               <div className="flex items-center gap-3 min-w-0">
                 {selectedArchetype ? (
@@ -855,6 +909,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                 該当するキャストが見つかりません（検索・ロール条件を変えてみてください）
               </div>
             )}
+              </>
+            )}
           </div>
 
           {/* 🎨 MV画風スタイル設定 (Taste Style Showroom) */}
@@ -863,11 +919,26 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-teal-400">brush</span>
-                <span className="text-sm font-bold text-white">🎨 MV画風スタイル（全12カット適用）</span>
+                <span className="text-sm font-bold text-white">🎨 MV画風スタイル設定</span>
+
+                {/* ★ JSON最優先（自動）クイックボタン */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedTasteKey('auto')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-black transition-all border flex items-center gap-1 cursor-pointer ${
+                    selectedTasteKey === 'auto'
+                      ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-black border-teal-300 shadow-md ring-2 ring-teal-400/40'
+                      : 'bg-white/10 hover:bg-white/20 text-white/80 border-white/20'
+                  }`}
+                  title="クリックでJSON本来の指定画風（または曲の世界観）を最優先にするモードに戻します"
+                >
+                  <span className="material-symbols-outlined text-[13px]">auto_awesome</span>
+                  <span>✨ JSON最優先 (トラック個別画風)</span>
+                </button>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-teal-300 font-mono bg-teal-500/20 px-2.5 py-0.5 rounded-full border border-teal-500/30 font-bold truncate max-w-xs">
-                  選択中: {selectedTasteItem?.displayName || selectedTasteKey}
+                  {selectedTasteKey === 'auto' ? '✨ JSONの画風を最優先適用' : `強制適用: ${selectedTasteItem?.displayName || selectedTasteKey}`}
                 </span>
               </div>
             </div>

@@ -298,122 +298,66 @@ export function extractLyricVisualPlot(
   cutIndex: number,
   isPropCut: boolean
 ): string {
-  // 1. 小道具カット（Cut 10: 伏線アイテム）の神域マクロ処理
-  if (isPropCut) {
-    let propName = hint ? hint.replace(/★\s*/g, '').trim() : '';
-    if (!propName) {
-      if (/鍵|かぎ|合鍵|key/i.test(lyric)) propName = 'an old weathered brass key with tarnished metallic patina and rustic scratches';
-      else if (/ネジ|ねじ|ボルト|銀の粒|粒|screw/i.test(lyric)) propName = 'a tiny shiny silver screw lying on the wooden floor, catching sharp light reflections';
-      else if (/爪|銀の爪|指輪|リング|アクセサリー/i.test(lyric)) propName = 'a delicate silver ring or accessory with subtle metallic gleam';
-      else if (/ダンボール|段ボール|箱|荷造り|box/i.test(lyric)) propName = 'a small open cardboard box containing nostalgic forgotten memories';
-      else if (/時計|針|秒針/i.test(lyric)) propName = 'a vintage ticking wristwatch with worn leather strap resting quietly';
-      else if (/手紙|写真|ノート|便箋/i.test(lyric)) propName = 'a faded handwritten letter and a vintage polaroid snapshot';
-      else propName = 'a solitary symbolic metallic keepsake object';
-    }
-    return `[STRICT STILL-LIFE INSERT]: Extreme close-up macro product still-life photography of the key symbolic prop (${propName}), resting on a weathered wooden surface, completely deserted scene with strictly NO humans, shallow depth of field, dramatic dust motes floating in sunbeam, crisp metallic textures and reflections.`;
-  }
-
-  // 2. 歌詞（セリフ）の解析
+  const cleanHint = (hint || '').replace(/★\s*/g, '').trim();
   const cleanLyric = (lyric || '').trim();
-  const isInstrumental = !cleanLyric || cleanLyric.startsWith('♪') || /^\(.*\)$/.test(cleanLyric);
 
-  const detectedMotifs: string[] = [];
-
-  // (A) 小道具・キーオブジェクト
-  if (/鍵|かぎ|合鍵/i.test(cleanLyric)) detectedMotifs.push("holding an old weathered brass key with rusted metallic sheen");
-  if (/ネジ|ねじ|銀の粒|粒/i.test(cleanLyric)) detectedMotifs.push("a tiny shiny silver screw lying on the floor in the corner of the room catching the light");
-  if (/ダンボール|段ボール|箱|荷造り|荷物/i.test(cleanLyric)) detectedMotifs.push("tall stacks of brown cardboard moving boxes sealed with packing tape");
-  if (/爪|銀の爪|指輪|リング/i.test(cleanLyric)) detectedMotifs.push("delicate silver accessory with subtle metallic glimmer");
-  if (/傘|ビニール傘|雨傘/i.test(cleanLyric)) detectedMotifs.push("a clear transparent umbrella glistening with water droplets");
-  if (/窓|カーテン/i.test(cleanLyric)) detectedMotifs.push("a large window with sheer white curtains fluttering gently in the breeze");
-  if (/扉|ドア|開かない/i.test(cleanLyric)) detectedMotifs.push("a closed vintage wooden door with antique brass doorknob");
-  if (/手紙|便箋|写真|ノート|日記/i.test(cleanLyric)) detectedMotifs.push("an open handwritten notebook and nostalgic polaroid photo");
-  if (/靴|スニーカー|足元|足音/i.test(cleanLyric)) detectedMotifs.push("close-up of worn shoes on the bare wooden floorboards");
-
-  // (B) 身体部位・仕草・身体感覚
-  if (/右手|左手|手元|手のひら|指先|指/i.test(cleanLyric)) {
-    if (/錆び|艶/i.test(cleanLyric)) {
-      detectedMotifs.push("extreme intimate focus on character's hand with rusted metallic patina residue on fingertips, subtle emotional trembling");
-    } else {
-      detectedMotifs.push("intimate close-up on character's hand and fingers, delicate emotional gesture");
-    }
+  // 1. 小道具カット（Cut 10: 伏線アイテム）のマクロ静物処理
+  if (isPropCut) {
+    const propName = cleanHint || (cleanLyric ? `symbolic item representing "${cleanLyric}"` : 'a solitary meaningful keepsake object');
+    return `[STRICT STILL-LIFE INSERT]: Extreme close-up macro product still-life photography of (${propName}), in natural environmental setting (${theme}), completely deserted scene with strictly NO humans, NO person, shallow depth of field, atmospheric cinematic lighting, crisp tactile reflections and dust motes.`;
   }
-  if (/影|伸びる影/i.test(cleanLyric)) detectedMotifs.push("dramatic elongated shadows stretching across the bare wooden floor");
-  if (/床|冷たい床|座る|しゃがむ/i.test(cleanLyric)) {
-    if (cutIndex === 2 || cutIndex === 9) {
-      detectedMotifs.push("character sitting or crouching quietly on the cold hardwood floor");
-    } else {
-      detectedMotifs.push("character standing tall on the hardwood floor, looking across the spacious room");
-    }
+
+  // 2. もしCT198等の演出ヒント(visual_hints)が存在する場合、最優先でその情景・アクションを主役に据える！
+  if (cleanHint) {
+    const lyricRef = cleanLyric ? `embodying lyric "${cleanLyric}", ` : '';
+    return `[CINEMATIC DIRECTIVE]: Scene ${lyricRef}${cleanHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
   }
-  if (/振り返る|後ろ姿|背中/i.test(cleanLyric)) detectedMotifs.push("character seen from behind or three-quarter profile, pausing in contemplation");
-  if (/歩く|歩き出|進む/i.test(cleanLyric)) detectedMotifs.push("character taking a resolute forward step towards the light");
-  if (/瞳|目|見つめ|見上げる/i.test(cleanLyric)) detectedMotifs.push("contemplative introspective gaze, looking down quietly in deep thought");
-  if (/冷たい|冷たさ/i.test(cleanLyric)) detectedMotifs.push("cold atmospheric lighting, subtle melancholic chill in the room");
-  if (/べたつ|音/i.test(cleanLyric)) detectedMotifs.push("quiet solitary indoor setting with rich tactile ambiance");
 
-  // (C) 天候・光・時間帯・環境
-  if (/風|そよ風|駆け抜け/i.test(cleanLyric)) detectedMotifs.push("gentle wind drifting into the room, swaying hair and fabrics");
-  if (/夕|日暮れ|日が落ちる|茜色|黄昏|夕暮れ/i.test(cleanLyric)) detectedMotifs.push("intense golden hour sunset light streaming horizontally across the room, warm amber tones");
-  if (/朝|朝日|夜明け|日差し|光/i.test(cleanLyric)) detectedMotifs.push("brilliant morning sunbeams piercing through the haze, radiant dust motes");
-  if (/夜|星|月|暗/i.test(cleanLyric)) detectedMotifs.push("deep twilight dusk, cool indigo ambient tones with distant city night lights");
-  if (/雨|濡れ|水たまり/i.test(cleanLyric)) detectedMotifs.push("rain streaks washing down the glass window, moody reflective surfaces");
-  if (/空間|部屋|何もない|広くなった/i.test(cleanLyric)) detectedMotifs.push("vast spacious empty room with clean hardwood floors and bare walls");
-
-  // (D) カット別の映画的ストーリーテリング構成（YouTube Shortsアルゴリズム攻略・神域設計）
-  let defaultCutAction = '';
+  // 3. 演出ヒントがない場合：普遍的・映画的な12カット・ストーリーテリング構図
+  let universalAction = '';
   switch (cutIndex) {
     case 1:
-      // ★ 批評家絶賛フック: 冒頭0.5秒スワイプキラー（引きの風景を排除し、息を呑む極限の感情接写）
-      defaultCutAction = 'Arresting cinematic extreme close-up visual hook on character\'s intense emotional eyes and face, dramatic directional lighting highlighting sparkling iris reflections, subtle whispering gesture with finger touching parted lip, arresting gaze directly captivating the viewer, shallow depth of field, instant swipe-stopping impact';
+      universalAction = 'Arresting cinematic extreme close-up visual hook on character\'s intense emotional eyes and expressive face, dramatic directional lighting highlighting sparkling iris reflections, candid gaze, shallow depth of field, instant swipe-stopping impact';
       break;
     case 2:
-      defaultCutAction = 'Downward medium angle, protagonist crouching down or seated on the wooden floor beside stacked brown cardboard moving boxes, long cast shadows, packing belongings';
+      universalAction = 'Atmospheric medium shot, character natural posture within the ambient environment, long cast shadows, contemplating surroundings';
       break;
     case 3:
-      defaultCutAction = 'Extreme close-up macro framing purely on character\'s hands applying packing tape to a cardboard box or touching personal belongings, tactile texture, intimate focus';
+      universalAction = 'Intimate close-up macro framing on character\'s hand, delicate fingers touching fabric or surrounding textures, subtle emotional gesture, shallow depth of field';
       break;
     case 4:
-      // ★ 一時停止トラップ（考察フック）: 画面の隅に謎めいた走り書きメモや未送信画面の微細な違和感を仕込む
-      defaultCutAction = 'Dutch-tilt medium shot, protagonist pausing amidst the spacious room with an enigmatic contemplative gaze; in the foreground on a surface lies a mysterious handwritten memo or subtle smartphone screen clue inviting the viewer to pause and scrutinize';
+      universalAction = 'Dutch-tilt medium angle, character pausing amidst the space with an enigmatic contemplative gaze, subtle environmental clue in foreground';
       break;
     case 5:
-      defaultCutAction = 'Dynamic wide chorus opening shot, emotional wind billowing curtains and hair, radiant sunlight streaming through, stepping forward into the open space';
+      universalAction = 'Dynamic wide chorus opening shot, emotional wind billowing hair and clothes, radiant sunlight streaming through, energetic forward movement into the open space';
       break;
     case 6:
-      defaultCutAction = 'Emotional medium close-up bust portrait, character bathed in warm golden sunset illumination from the side, contemplative atmosphere and quiet catharsis';
+      universalAction = 'Emotional medium close-up bust portrait, character bathed in warm golden sunset illumination from the side, contemplative atmosphere and quiet catharsis';
       break;
     case 7:
-      defaultCutAction = "Intense close-up focusing purely on the character's hands and fingertips holding an old key or touching a surface, intimate emotional gesture, shallow depth of field";
+      universalAction = 'Intense intimate close-up focusing on subtle tactile interaction, gentle hand gesture or subtle shift in posture, emotional resonance';
       break;
     case 8:
-      defaultCutAction = 'Cinematic wide climax, protagonist walking forward through the glowing hallway, seen from behind or three-quarter view, bathed in dramatic illumination, resolute forward motion';
+      universalAction = 'Cinematic wide climax, character seen from behind or three-quarter profile moving forward into the glowing horizon, bathed in dramatic illumination';
     case 9:
-      // ★ 考察回収フック: 物語の真相に関わる小さな遺留品を発見する驚きの構図
-      defaultCutAction = 'Low angle dramatic discovery shot, protagonist looking down towards a shadowed floor corner, uncovering a tiny gleaming keepsake or fateful clue object, high contrast lighting sparking curiosity';
+      universalAction = 'Low angle dynamic discovery shot, character looking towards the changing scenery, high contrast lighting sparking curiosity';
       break;
     case 11:
-      defaultCutAction = 'Heroic medium close-up, protagonist with hand resting on the antique door handle, looking towards the open exit with calm resolve and hope, ready to depart';
+      universalAction = 'Heroic medium close-up, character looking towards the open horizon with calm resolve and gentle smile, bathed in twilight warmth';
       break;
     case 12:
-      // ★ 不在の余韻 ＆ 無限ループ構造: 主人公が消え去り、静寂の空間とキーアイテムだけが残り、Cut 1へと滑らかにループ回帰する
-      defaultCutAction = 'Cinematic crane-up pull-out wide shot of the deserted quiet room, protagonist has completely disappeared leaving a poignant emotional void, only the fateful key keepsake resting quietly on the surface in a single sunbeam, seamless circular composition naturally looping back into Cut 1';
+      universalAction = 'Cinematic crane-up pull-out wide shot of the expansive scenery, elongated shadows stretching into the distance, character silhouette blending into the atmospheric horizon, seamless circular loop back into beginning';
       break;
     default:
-      defaultCutAction = 'Cinematic framing matching the music video narrative';
+      universalAction = 'Cinematic framing matching the music video narrative';
       break;
   }
 
-  const baseTheme = hint ? hint.replace(/★\s*/g, '').trim() : theme;
-  const visualMotifsText = detectedMotifs.length > 0 ? detectedMotifs.join(', ') : '';
-
-  if (isInstrumental || !visualMotifsText) {
-    // 歌詞がない、または抽象的な場合：「なければ生成」でカットごとのドラマアクションとテーマを結合
-    return `${defaultCutAction}, set in ${baseTheme}. Atmospheric cinematic depth, natural lighting.`;
+  if (!cleanLyric || cleanLyric.startsWith('♪') || /^\(.*\)$/.test(cleanLyric)) {
+    return `${universalAction}, set in "${theme}". Atmospheric cinematic depth, natural lighting.`;
   }
 
-  // 歌詞がある場合：「あればそれを意識する」で歌詞モチーフを主役に据えた構図を構築
-  return `Scene visually embodying lyric "${cleanLyric}": ${visualMotifsText}. ${defaultCutAction}, set in ${baseTheme}.`;
+  return `Scene visually embodying lyric "${cleanLyric}": ${universalAction}, set in "${theme}".`;
 }
 
 /**
@@ -507,10 +451,11 @@ export function convertTrackToEpisode(
     const visualPlot = extractLyricVisualPlot(lyric, hint, track.surface_theme || track.title, i, isPropCut);
 
     const promptEnComponents = [
-      `Masterpiece, high production music video, authentic ${masterCat.pool.visual_contract.style_preset},`,
+      `Masterpiece, high production music video, authentic ${masterCat.pool.visual_contract.style_preset}.`,
+      visualPlot,
     ];
 
-    // キャストDNAおよび表情のインポート（カット10の小道具・カット12の余韻を除く人物カット）
+    // キャストDNAおよび表情のインポート（キャスト固定が明示的にONのときのみ注入）
     if (selectedCharacter && !isPropCut && i !== 12) {
       let expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
       if (i === 1) {
@@ -532,12 +477,12 @@ export function convertTrackToEpisode(
 
     // 情景コンテキスト（scene_context）の注入
     if (track.scene_context) {
-      promptEnComponents.push(`[SCENE]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
+      promptEnComponents.push(`[SCENE CONTEXT]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
     }
 
     // 登場人物詳細（character_setting）の注入（小道具特写Cut10および余韻Cut12を除く人物カット）
     if (track.character_setting && !isPropCut && i !== 12) {
-      promptEnComponents.push(`[CHARACTER]: ${track.character_setting.trim().replace(/\.+$/, '')}.`);
+      promptEnComponents.push(`[CHARACTER SETTING]: ${track.character_setting.trim().replace(/\.+$/, '')}.`);
     }
 
     // 五感・小道具ディテール（sensory_details）の注入（小道具Cut10や手元接写Cut）
@@ -545,7 +490,6 @@ export function convertTrackToEpisode(
       promptEnComponents.push(`[TACTILE DETAILS]: ${track.sensory_details.trim().replace(/\.+$/, '')}.`);
     }
 
-    promptEnComponents.push(visualPlot);
     promptEnComponents.push(
       isPropCut 
         ? `Shallow depth of field, dramatic dust motes in sunbeam, crisp macro reflections.` 
