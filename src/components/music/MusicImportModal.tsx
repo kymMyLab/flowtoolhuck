@@ -1236,20 +1236,25 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
           >
             {/* ドラッグ中に子要素によるイベント遮断を完全にシャットアウトする最前面シールド */}
             {isBoxDragging && (
-              <div className="absolute inset-0 z-30 bg-amber-500/10 pointer-events-none" />
+              <div className="absolute inset-0 z-20 bg-amber-500/10 pointer-events-none" />
             )}
 
+            {/* ネイティブ透明ファイルドロップ層: OSからのD&Dをブラウザ標準機能で100%確実に捕捉 */}
             <input 
               type="file" 
               ref={fileInputRef} 
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                console.log('📁 [MusicImporter ファイル選択]', f?.name);
+                console.log('%c📁 [D&D ネイティブinput検知] ファイル選択/ドロップ受領！', 'background: #10b981; color: #fff; font-weight: bold; font-size: 13px; padding: 2px 6px;', f?.name);
                 if (f) processFile(f);
                 if (e.target) e.target.value = '';
               }}
+              onDragEnter={() => setIsBoxDragging(true)}
+              onDragLeave={() => setIsBoxDragging(false)}
+              onDrop={() => setIsBoxDragging(false)}
               accept=".json,application/json" 
-              className="hidden" 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" 
+              title="ここへJSONファイルをドラッグ＆ドロップ、またはクリックして選択"
             />
 
             {/* 表示用コンテンツ */}
@@ -1297,7 +1302,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             </div>
 
             {/* アクションボタン（ドラッグ中は pointer-events-none でイベントを透過し、通常時はクリック・直撃ドロップも受領） */}
-            <div className={`flex items-center gap-2 mt-1 relative z-20 ${isBoxDragging ? 'pointer-events-none' : ''}`}>
+            <div className={`flex items-center gap-2 mt-1 relative z-40 ${isBoxDragging ? 'pointer-events-none' : ''}`}>
               <button 
                 type="button"
                 onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsBoxDragging(true); }}

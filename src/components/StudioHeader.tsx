@@ -181,7 +181,59 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
       <div className="w-px h-7 bg-slate-200 shrink-0"></div>
 
-      {/* ② 次にざっくり設定エリア (モード・テーマ・画風を今まで通り自由に選べる) */}
+      {/* ③ 最重要メインアクション: 作成開始ボタン（左側の一等地に配置・待機中はピカピカ光って強力誘導） */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {isProducing ? (
+          <button 
+            type="button"
+            className="h-10 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+            onClick={onAbort}
+          >
+            <span className="material-symbols-outlined text-[18px]">stop_circle</span>
+            <span>中止</span>
+          </button>
+        ) : (
+          <button 
+            type="button"
+            disabled={isProducing}
+            onClick={onStart}
+            className={`h-10 px-4.5 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shrink-0 whitespace-nowrap relative ${
+              isWaitingForStart
+                ? 'ring-4 ring-pink-400 ring-offset-2 animate-pulse shadow-[0_0_25px_rgba(236,72,153,0.8)] brightness-110 !bg-gradient-to-r !from-indigo-600 !via-purple-600 !to-pink-600 text-white hover:brightness-125 hover:scale-105 active:scale-95'
+                : `shadow-md hover:shadow-lg active:scale-95 ${startBtn.className}`
+            }`}
+            title={isWaitingForStart ? "スタンバイ完了！クリックして本編の作成を開始します" : "設定された内容で作成を開始します"}
+          >
+            {isWaitingForStart && (
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-80"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-pink-500 border border-white"></span>
+              </span>
+            )}
+            <span className="material-symbols-outlined text-[18px]">
+              {isWaitingForStart ? 'play_arrow' : startBtn.icon}
+            </span>
+            <span>③ 作成開始</span>
+          </button>
+        )}
+
+        {activeSeriesManifest && (
+          <button 
+            type="button" 
+            disabled={isProducing}
+            onClick={onResumeClick}
+            className="h-10 px-3 text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-2xs"
+            title="中断した連載制作を再開"
+          >
+            <span className="material-symbols-outlined text-[16px]">file_open</span>
+            <span>再開</span>
+          </button>
+        )}
+      </div>
+
+      <div className="w-px h-7 bg-slate-200 shrink-0"></div>
+
+      {/* ② ざっくり設定エリア (モード・テーマ・画風を自由に選べる) */}
       <div className="flex items-center gap-2 p-1 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 rounded-xl border border-emerald-300/90 shadow-2xs shrink-0">
         <div className="flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-100/90 px-2 py-1 rounded-lg border border-emerald-300/80 whitespace-nowrap shadow-2xs">
           <span className="material-symbols-outlined text-sm text-emerald-600">tune</span>
@@ -268,58 +320,6 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             <span className="material-symbols-outlined text-[16px]">data_object</span>
           </button>
         </div>
-      </div>
-
-      <div className="w-px h-7 bg-slate-200 shrink-0"></div>
-
-      {/* ③ 最重要メインアクション: 作成開始ボタン (待機中はピカピカ光って誘導) */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        {isProducing ? (
-          <button 
-            type="button"
-            className="h-10 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
-            onClick={onAbort}
-          >
-            <span className="material-symbols-outlined text-[18px]">stop_circle</span>
-            <span>中止</span>
-          </button>
-        ) : (
-          <button 
-            type="button"
-            disabled={isProducing}
-            onClick={onStart}
-            className={`h-10 px-4.5 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shrink-0 whitespace-nowrap relative ${
-              isWaitingForStart
-                ? 'ring-4 ring-pink-400 ring-offset-2 animate-pulse shadow-[0_0_25px_rgba(236,72,153,0.8)] brightness-110 !bg-gradient-to-r !from-indigo-600 !via-purple-600 !to-pink-600 text-white hover:brightness-125 hover:scale-105 active:scale-95'
-                : `shadow-md hover:shadow-lg active:scale-95 ${startBtn.className}`
-            }`}
-            title={isWaitingForStart ? "スタンバイ完了！クリックして本編の作成を開始します" : "設定された内容で作成を開始します"}
-          >
-            {isWaitingForStart && (
-              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-80"></span>
-                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-pink-500 border border-white"></span>
-              </span>
-            )}
-            <span className="material-symbols-outlined text-[18px]">
-              {isWaitingForStart ? 'play_arrow' : startBtn.icon}
-            </span>
-            <span>③ 作成開始</span>
-          </button>
-        )}
-
-        {activeSeriesManifest && (
-          <button 
-            type="button" 
-            disabled={isProducing}
-            onClick={onResumeClick}
-            className="h-10 px-3 text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-2xs"
-            title="中断した連載制作を再開"
-          >
-            <span className="material-symbols-outlined text-[16px]">file_open</span>
-            <span>再開</span>
-          </button>
-        )}
       </div>
 
       <div className="w-px h-7 bg-slate-200 shrink-0"></div>

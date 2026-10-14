@@ -55,7 +55,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       .filter(Boolean);
 
     // ★ 最重要: すでにインポートされた絵コンテ（CT198楽曲等）が既に存在するか判定！
-    const existingEp = episodesRef.current.find(e => e.id === epIndex);
+    const existingEp = episodesRef.current.find(e => Number(e.id) === Number(epIndex));
     const hasPreloadedStory = existingEp && existingEp.cuts.length > 0 && existingEp.cuts.some(c => c.narrationJp || c.telop?.fullText);
 
     if (hasPreloadedStory) {
@@ -92,10 +92,10 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       addLog(`✅ 第${epIndex}${modeInfo.unit}『${existingEp.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！`, 'success');
 
       // インフォグラフィック扉絵
-      await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epIndex) || existingEp);
+      await ensureInfographicCover(ctx, episodesRef.current.find(e => Number(e.id) === Number(epIndex)) || existingEp);
 
       if (settings.autoVideo && !isAbortedRef.current) {
-        const currentEpForVideo = episodesRef.current.find(e => e.id === epIndex);
+        const currentEpForVideo = episodesRef.current.find(e => Number(e.id) === Number(epIndex));
         let selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
 
         // ★ セーフティネット: autoVideoがONなのに全カット未選択の場合、videoRatioに基づき自動救済選定
@@ -106,7 +106,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
               c.isSelectedForVideo = true;
             }
           });
-          setEpisodes(prev => prev.map(e => e.id === epIndex ? { ...e, cuts: currentEpForVideo.cuts } : e));
+          setEpisodes(prev => prev.map(e => Number(e.id) === Number(epIndex) ? { ...e, cuts: currentEpForVideo.cuts } : e));
           selectedCuts = currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo);
         }
 

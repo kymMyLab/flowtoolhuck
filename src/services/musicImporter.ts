@@ -76,7 +76,7 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
       return {
         id: item.id || `trk_${Date.now()}_${idx}`,
         track_id: item.track_id || item.id || `trk_${Date.now()}_${idx}`,
-        track_no: item.track_no || idx + 1,
+        track_no: Number(item.track_no) || idx + 1,
         title: item.title || '無題のトラック',
         format: item.format || '🎵 音楽MV (12カット)',
         track_type: item.track_type || 'Vocal',
@@ -445,7 +445,7 @@ export function convertTrackToEpisode(
     });
   }
 
-  const episodeId = track.track_no || 1;
+  const episodeId = Number(track.track_no) || 1;
   const uniqueId = `ep_mv_${Date.now()}_${track.id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8)}`;
 
   return {

@@ -15,22 +15,28 @@ interface CutCardProps {
   onRetry?: (type: 'image' | 'video', epId: number, cutId: number) => void;
 }
 
+function resolveImageUri(raw?: any): string | null {
+  if (!raw) return null;
+  let str = '';
+  if (typeof raw === 'string') {
+    str = raw.trim();
+  } else if (typeof raw === 'object') {
+    str = (raw.base64 || raw.image?.base64 || raw.url || raw.image?.url || '').trim();
+  }
+  if (!str || str === '[object Object]') return null;
+  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('/') || str.startsWith('blob:')) {
+    return str;
+  }
+  if (str.startsWith('/9j/')) return `data:image/jpeg;base64,${str}`;
+  if (str.startsWith('UklG')) return `data:image/webp;base64,${str}`;
+  if (str.startsWith('PHN2') || str.startsWith('PD94')) return `data:image/svg+xml;base64,${str}`;
+  return `data:image/png;base64,${str}`;
+}
+
 export const CutCard: React.FC<CutCardProps> = React.memo(({ 
   cut, episodeId, isMvMode, aspectRatio = '1:1', onAnimateRequest, onPreviewCut, onUpdateSelection, onUpdateModel, onRetry 
 }) => {
-  const imageSrc = React.useMemo(() => {
-    let raw = cut.imageBase64 || (cut as any)?.image;
-    if (!raw) return null;
-    let str = '';
-    if (typeof raw === 'string') str = raw.trim();
-    else if (typeof raw === 'object') str = (raw.base64 || raw.image?.base64 || raw.url || raw.image?.url || '').trim();
-    if (!str || str === '[object Object]') return null;
-    if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('/')) {
-      return str;
-    }
-    return `data:image/png;base64,${str}`;
-  }, [cut.imageBase64, (cut as any)?.image]);
-
+  const imageSrc = resolveImageUri(cut.imageBase64 || (cut as any)?.image);
   const videoSrc = cut.videoBase64 ? (cut.videoBase64.startsWith('http://') || cut.videoBase64.startsWith('https://') || cut.videoBase64.startsWith('data:') || cut.videoBase64.startsWith('/') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`) : null;
 
   const handleRetry = (e: React.MouseEvent) => {
@@ -87,7 +93,16 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
             <img 
               src={imageSrc} 
               alt={`Cut ${cut.id}`} 
-              className={`w-full h-full object-cover animate-in fade-in duration-700 ${getKenBurnsClass()}`} 
+              loading="eager"
+              className={`w-full h-full object-cover transition-opacity duration-300 ${getKenBurnsClass()}`} 
+              style={{ opacity: 1 }}
+              onError={(e) => {
+                console.error(`❌ [CutCard img エラー] Cut ${cut.id} 画像の表示に失敗しました`, {
+                  cutId: cut.id,
+                  preview: imageSrc.slice(0, 80),
+                  length: imageSrc.length
+                });
+              }}
             />
           </div>
         ) : (cut.isGeneratingImage || cut.isDirecting) ? (
