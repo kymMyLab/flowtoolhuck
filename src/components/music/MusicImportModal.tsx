@@ -1303,26 +1303,57 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             }`}
           >
             {/* ドラッグ中に子要素によるイベント遮断を完全にシャットアウトする最前面シールド */}
+            {/* Shield & Counter Pattern: this absolute div captures drag events and prevents children from receiving them, stopping the dragenter/dragleave flicker. It handles the drop itself to ensure the file is processed. */}
             {isBoxDragging && (
-              <div className="absolute inset-0 z-20 bg-amber-500/10 pointer-events-none" />
+              <div
+                className="absolute inset-0 z-20 bg-amber-500/10"
+                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  boxDragCounterRef.current = 0;
+                  setIsBoxDragging(false);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  boxDragCounterRef.current = 0;
+                  setIsBoxDragging(false);
+
+                  const file = e.dataTransfer?.files?.[0];
+                  const rawText = e.dataTransfer?.getData('text') || e.dataTransfer?.getData('text/plain') || '';
+
+                  console.log('%c🔥 [D&D 点線枠シールド] ドロップ検知! 即座に解析開始!', 'background: #10b981; color: #fff; font-weight: bold; font-size: 14px; padding: 3px 8px; border-radius: 4px;', {
+                    hasFile: !!file,
+                    fileName: file?.name,
+                    fileSize: file?.size ? `${Math.round(file.size / 1024)} KB` : '0 KB',
+                    hasRawText: !!rawText,
+                    rawTextLength: rawText.length,
+                    dataTransferTypes: Array.from(e.dataTransfer?.types || [])
+                  });
+
+                  if (file) {
+                    processFile(file);
+                  } else if (rawText && (rawText.includes('{') || rawText.includes('['))) {
+                    setJsonText(rawText);
+                    handleParse(rawText, 'dropped_editor_text.json');
+                  }
+                }}
+              />
             )}
 
-            {/* ネイティブ透明ファイルドロップ層: OSからのD&Dをブラウザ標準機能で100%確実に捕捉 */}
             <input 
               type="file" 
               ref={fileInputRef} 
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                console.log('%c📁 [D&D ネイティブinput検知] ファイル選択/ドロップ受領！', 'background: #10b981; color: #fff; font-weight: bold; font-size: 13px; padding: 2px 6px;', f?.name);
+                console.log('%c📁 [D&D ネイティブinput検知] ファイル選択受領！', 'background: #10b981; color: #fff; font-weight: bold; font-size: 13px; padding: 2px 6px;', f?.name);
                 if (f) processFile(f);
                 if (e.target) e.target.value = '';
               }}
-              onDragEnter={() => setIsBoxDragging(true)}
-              onDragLeave={() => setIsBoxDragging(false)}
-              onDrop={() => setIsBoxDragging(false)}
               accept=".json,application/json" 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" 
-              title="ここへJSONファイルをドラッグ＆ドロップ、またはクリックして選択"
+              className="hidden"
             />
 
             {/* 表示用コンテンツ */}
@@ -1369,21 +1400,10 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               </div>
             </div>
 
-            {/* アクションボタン（ドラッグ中は pointer-events-none でイベントを透過し、通常時はクリック・直撃ドロップも受領） */}
+            {/* アクションボタン */}
             <div className={`flex items-center gap-2 mt-1 relative z-40 ${isBoxDragging ? 'pointer-events-none' : ''}`}>
               <button 
                 type="button"
-                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsBoxDragging(true); }}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; if (!isBoxDragging) setIsBoxDragging(true); }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsBoxDragging(false);
-                  const f = e.dataTransfer?.files?.[0];
-                  const t = e.dataTransfer?.getData('text') || '';
-                  if (f) processFile(f);
-                  else if (t) handleParse(t, 'dropped_button_text.json');
-                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   fileInputRef.current?.click();
@@ -1395,17 +1415,6 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               </button>
               <button 
                 type="button"
-                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsBoxDragging(true); }}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; if (!isBoxDragging) setIsBoxDragging(true); }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsBoxDragging(false);
-                  const f = e.dataTransfer?.files?.[0];
-                  const t = e.dataTransfer?.getData('text') || '';
-                  if (f) processFile(f);
-                  else if (t) handleParse(t, 'dropped_button_text.json');
-                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePasteClipboard();
