@@ -86,6 +86,14 @@ export async function mount(targetElement?: HTMLElement | null): Promise<{ unmou
     reactRoot = null;
   }
 
+  // グローバルな二重マウント防止＆古いバージョンの強制アンマウント
+  if (typeof window !== 'undefined' && (window as any).__FLOWTOOL_GLOBAL_UNMOUNT__) {
+    try {
+      console.log('🧹 [FlowTool] 古いバージョンのインスタンスを完全クリーンアップ中...');
+      (window as any).__FLOWTOOL_GLOBAL_UNMOUNT__();
+    } catch (_) {}
+  }
+
   currentContainer = container;
   reactRoot = ReactDOM.createRoot(container);
   reactRoot.render(
@@ -93,6 +101,16 @@ export async function mount(targetElement?: HTMLElement | null): Promise<{ unmou
       <App />
     </React.StrictMode>
   );
+
+  if (typeof window !== 'undefined') {
+    (window as any).__FLOWTOOL_GLOBAL_UNMOUNT__ = () => {
+      try {
+        if (reactRoot) reactRoot.unmount();
+      } catch (_) {}
+      reactRoot = null;
+      currentContainer = null;
+    };
+  }
 
   console.log('🚀 [FlowTool] Mounted successfully into target container:', container);
   console.log('💡 FlowTool Studio Pro がスタンバイしました。左サイドバーの「全自動プロデュース開始」をクリックして制作を開始してください。');
