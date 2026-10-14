@@ -14,10 +14,15 @@ export interface ImportedTrack {
   pool_code?: number;
   style_code?: number;
   taste?: string;
+  taste_name?: string;
+  taste_reason?: string;
   bpm?: number;
   surface_theme?: string;
   hidden_drama?: string;
   visual_hints?: string;
+  scene_context?: string;
+  character_setting?: string;
+  sensory_details?: string;
   chorus_start_sec?: number;
   chorus_end_sec?: number;
   chorus_duration_sec?: number;
@@ -33,12 +38,110 @@ export interface ImportedTrack {
 }
 
 /**
+ * CT198のプレーンテキスト形式（Title: ... / Surface-Theme: ...）をパースするフォールバックパーサー
+ */
+export function parseTextTracksFormat(rawText: string): ImportedTrack[] {
+  const lines = rawText.split(/\r?\n/);
+  const trackData: Record<string, string> = {};
+  const lyricsLines: string[] = [];
+  let isLyricsSection = false;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    // 歌詞セクション開始の判定（[Intro] や [Verse] など）
+    if (/^\[([a-zA-Z0-9\s\-]+)(?:\([^\)]+\))?\]/i.test(line)) {
+      isLyricsSection = true;
+    }
+
+    if (isLyricsSection) {
+      lyricsLines.push(rawLine);
+      continue;
+    }
+
+    const colonIdx = line.indexOf(':');
+    if (colonIdx > 0 && !line.startsWith('[') && !line.startsWith('(')) {
+      const rawKey = line.slice(0, colonIdx).trim().toLowerCase().replace(/[-_]/g, '');
+      const val = line.slice(colonIdx + 1).trim();
+
+      if (rawKey === 'title') trackData['title'] = val;
+      else if (rawKey === 'tracknumber' || rawKey === 'trackno') trackData['track_no'] = val.replace(/[^0-9]/g, '');
+      else if (rawKey === 'format') trackData['format'] = val;
+      else if (rawKey === 'tracktype') trackData['track_type'] = val;
+      else if (rawKey === 'surfacetheme') trackData['surface_theme'] = val;
+      else if (rawKey === 'hiddendrama') trackData['hidden_drama'] = val;
+      else if (rawKey === 'visualhints') trackData['visual_hints'] = val;
+      else if (rawKey === 'scenecontext') trackData['scene_context'] = val;
+      else if (rawKey === 'charactersetting') trackData['character_setting'] = val;
+      else if (rawKey === 'sensorydetails') trackData['sensory_details'] = val;
+      else if (rawKey === 'poolcode') trackData['pool_code'] = val;
+      else if (rawKey === 'stylecode') trackData['style_code'] = val;
+      else if (rawKey === 'taste') trackData['taste'] = val;
+      else if (rawKey === 'tastename') trackData['taste_name'] = val;
+      else if (rawKey === 'tastereason') trackData['taste_reason'] = val;
+      else if (rawKey === 'bpm') trackData['bpm'] = val.replace(/[^0-9]/g, '');
+      else if (rawKey === 'chorustime') {
+        const timeMatch = val.match(/(\d+):(\d+)\s*[-〜~]\s*(\d+):(\d+)/);
+        if (timeMatch) {
+          const startSec = parseInt(timeMatch[1], 10) * 60 + parseInt(timeMatch[2], 10);
+          const endSec = parseInt(timeMatch[3], 10) * 60 + parseInt(timeMatch[4], 10);
+          trackData['chorus_start_sec'] = String(startSec);
+          trackData['chorus_end_sec'] = String(endSec);
+        }
+      }
+    }
+  }
+
+  if (!trackData['title']) {
+    return [];
+  }
+
+  const poolCode = Number(trackData['pool_code']) || 20;
+  const styleCode = Number(trackData['style_code']) || (poolCode + 1);
+  const cStart = Number(trackData['chorus_start_sec']) || 65;
+  const cEnd = Number(trackData['chorus_end_sec']) || (cStart + 30);
+  const allLyrics = lyricsLines.join('\n');
+
+  return [{
+    id: `trk_${Date.now()}_1`,
+    track_id: `trk_${Date.now()}_1`,
+    track_no: Number(trackData['track_no']) || 1,
+    title: trackData['title'] || '無題のトラック',
+    format: trackData['format'] || '🎵 音楽MV (12カット)',
+    track_type: trackData['track_type'] || 'Vocal',
+    pool_code: poolCode,
+    style_code: styleCode,
+    taste: trackData['taste'] || 'youth_pop',
+    taste_name: trackData['taste_name'] || '',
+    taste_reason: trackData['taste_reason'] || '',
+    bpm: Number(trackData['bpm']) || 125,
+    surface_theme: trackData['surface_theme'] || '',
+    hidden_drama: trackData['hidden_drama'] || '',
+    visual_hints: trackData['visual_hints'] || '',
+    scene_context: trackData['scene_context'] || '',
+    character_setting: trackData['character_setting'] || '',
+    sensory_details: trackData['sensory_details'] || '',
+    chorus_start_sec: cStart,
+    chorus_end_sec: cEnd,
+    chorus_duration_sec: Math.max(1, cEnd - cStart),
+    chorus_start_ms: cStart * 1000,
+    chorus_end_ms: cEnd * 1000,
+    chorus_lyrics: '',
+    input_lyrics: allLyrics,
+    lyrics_kanji: allLyrics
+  }];
+}
+
+/**
  * CT198からエクスポートされたJSONテキスト（単体または配列）をパースして正規化
+ * （プレーンテキスト形式の場合もフォールバック解析）
  */
 export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
+  const cleanText = rawText.replace(/^\uFEFF/, '').trim();
+  if (!cleanText) return [];
+
   try {
-    const cleanText = rawText.replace(/^\uFEFF/, '').trim();
-    if (!cleanText) return [];
     const parsed = JSON.parse(cleanText);
     let list: any[] = [];
     if (Array.isArray(parsed)) {
@@ -83,10 +186,15 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
         pool_code: poolCode,
         style_code: styleCode,
         taste: item.taste || 'youth_pop',
+        taste_name: item.taste_name || '',
+        taste_reason: item.taste_reason || '',
         bpm: Number(item.bpm) || 125,
         surface_theme: item.surface_theme || '',
         hidden_drama: item.hidden_drama || '',
         visual_hints: item.visual_hints || '',
+        scene_context: item.scene_context || '',
+        character_setting: item.character_setting || '',
+        sensory_details: item.sensory_details || '',
         chorus_start_sec: cStart,
         chorus_end_sec: cEnd,
         chorus_duration_sec: cDur,
@@ -101,25 +209,34 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
       };
     });
   } catch (err: any) {
-    console.error('Failed to parse music tracks JSON:', err);
-    throw new Error(`JSONの解析に失敗しました: ${err.message}`);
+    // JSON解析に失敗した場合、テキスト形式（Key: Value）のフォールバック解析を試行
+    console.warn('JSON parse failed, attempting plain text parsing fallback...', err.message);
+    const fallbackTracks = parseTextTracksFormat(cleanText);
+    if (fallbackTracks.length > 0) {
+      console.log('✅ Successfully parsed track from plain text format!');
+      return fallbackTracks;
+    }
+    console.error('Failed to parse music tracks JSON or plain text:', err);
+    throw new Error(`JSONまたは楽曲テキストの解析に失敗しました: ${err.message}`);
   }
 }
 
 /**
- * visual_hints 文字列（例: "Cut 1-3: [...], Cut 4-9: [...], Cut 10: [★...], Cut 11-12: [...]"）をカット番号（1〜12）へマッピング
+ * visual_hints 文字列（例: "Cut 1-3: [...], Cut 4-9: [...], Cut 10: [★...], Cut 11-12: [...]" またはカッコなし）をカット番号（1〜12）へマッピング
  */
 export function parseVisualHints(visualHintsText: string): Record<number, string> {
   const map: Record<number, string> = {};
   if (!visualHintsText) return map;
 
-  // 正規表現: Cut\s*(\d+)(?:-(\d+))?:\s*\[([^\]]+)\]
-  const regex = /Cut\s*(\d+)(?:\s*[-〜~]\s*(\d+))?:\s*\[([^\]]+)\]/gi;
+  // 1. カッコあり形式: Cut 1-3: [説明]
+  // 2. カッコなし形式: Cut 1-3: 説明, Cut 4-9: 説明
+  const regex = /Cut\s*(\d+)(?:\s*[-〜~]\s*(\d+))?:\s*(?:\[([^\]]+)\]|([^,;\n]+(?=[,\n]|Cut\s*\d+:|$)))/gi;
   let match;
   while ((match = regex.exec(visualHintsText)) !== null) {
     const startCut = parseInt(match[1], 10);
     const endCut = match[2] ? parseInt(match[2], 10) : startCut;
-    const content = match[3].trim();
+    const content = (match[3] || match[4] || '').trim();
+    if (!content) continue;
 
     for (let c = startCut; c <= endCut && c <= 12; c++) {
       map[c] = content;
@@ -411,6 +528,21 @@ export function convertTrackToEpisode(
       if (cleanDna) {
         promptEnComponents.push(`[PROTAGONIST DNA]: ${cleanDna}.${expressionPart}`);
       }
+    }
+
+    // 情景コンテキスト（scene_context）の注入
+    if (track.scene_context) {
+      promptEnComponents.push(`[SCENE]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
+    }
+
+    // 登場人物詳細（character_setting）の注入（小道具特写Cut10および余韻Cut12を除く人物カット）
+    if (track.character_setting && !isPropCut && i !== 12) {
+      promptEnComponents.push(`[CHARACTER]: ${track.character_setting.trim().replace(/\.+$/, '')}.`);
+    }
+
+    // 五感・小道具ディテール（sensory_details）の注入（小道具Cut10や手元接写Cut）
+    if (track.sensory_details && (isPropCut || i === 1 || i === 3 || i === 7 || i === 10)) {
+      promptEnComponents.push(`[TACTILE DETAILS]: ${track.sensory_details.trim().replace(/\.+$/, '')}.`);
     }
 
     promptEnComponents.push(visualPlot);
