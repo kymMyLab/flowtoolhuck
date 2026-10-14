@@ -6,6 +6,7 @@ import {
 } from '../../constants';
 import { extractHighlights, buildLyricLines } from '../../services/directorService';
 import { normalizeKenBurnsPreset } from '../../services/renderers/kenBurns';
+import { formatDataUri } from '../../services/utils';
 
 export interface PreviewPlayerProps {
   cut: Cut;
@@ -71,10 +72,11 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
 
   const toMediaSrc = (raw?: string, mime: 'image' | 'video' = 'image') => {
     if (!raw) return null;
-    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:') || raw.startsWith('/')) {
+    if (mime === 'image') return formatDataUri(raw);
+    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:') || raw.startsWith('blob:')) {
       return raw;
     }
-    return mime === 'video' ? `data:video/mp4;base64,${raw}` : `data:image/png;base64,${raw}`;
+    return `data:video/mp4;base64,${raw}`;
   };
 
   const videoSrc = toMediaSrc(cut.videoBase64, 'video');

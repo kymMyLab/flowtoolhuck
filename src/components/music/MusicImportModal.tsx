@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ImportedTrack, parseMusicTracksJson, convertTrackToEpisode } from '../../services/musicImporter';
 import { Episode, CastCharacter } from '../../types';
 import { loadMangaProject } from '../../services/castStorage';
+import { formatDataUri } from '../../services/utils';
 import { COVER_PALETTES, getCoverPalettesForGenre, CoverPalette } from '../../services/export/coverRenderer';
 import { TASTE_GALLERY_DATA, TasteGalleryItem } from '../../config/tasteGalleryData';
 import { 
@@ -73,11 +74,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   // キャスト画像取得ヘルパー（アバター優先、三面図、表情のフォールバック。URLとbase64両対応）
   const getCharacterThumbnail = (char: CastCharacter): string | undefined => {
     const raw = char.avatarBase64 || char.turnaroundBase64 || char.expressions?.neutral?.imageBase64;
-    if (!raw) return undefined;
-    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:') || raw.startsWith('/')) {
-      return raw;
-    }
-    return `data:image/png;base64,${raw}`;
+    return raw ? (formatDataUri(raw) || undefined) : undefined;
   };
 
   // フィルタリング済みキャスト一覧（登録キャラクター）

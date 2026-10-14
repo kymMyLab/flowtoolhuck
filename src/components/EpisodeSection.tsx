@@ -6,21 +6,7 @@ import { CutCard } from './CutCard';
 import { getProductionModeConfig } from '../config/studioDefinitions';
 import { cleanEpisodeTitle, cleanEpisodeTitleEn } from '../services/directorService';
 import { renderCoverBase64Horizontal } from '../services/export/coverRenderer';
-
-function formatDataUri(raw?: any): string {
-  if (!raw) return '';
-  let str = '';
-  if (typeof raw === 'string') {
-    str = raw.trim();
-  } else if (typeof raw === 'object') {
-    str = (raw.base64 || raw.image?.base64 || raw.url || raw.image?.url || '').trim();
-  }
-  if (!str || str === '[object Object]') return '';
-  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('/')) {
-    return str;
-  }
-  return `data:image/png;base64,${str}`;
-}
+import { formatDataUri } from '../services/utils';
 
 /**
  * 時代考証・世界観インテリジェンスカード（作品の時代設定と禁止要素を表示）

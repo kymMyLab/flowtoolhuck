@@ -4,7 +4,7 @@ import { EXPRESSION_METAS, createDefaultCastCharacter, exportProjectJson, import
 import { PrimaryButton, SecondaryButton, SectionLabel } from './Primitives';
 import { Flow } from 'flow-sdk';
 import { resolveImageModel } from '../constants';
-import { safeJsonParse, callWithRetry, formatErrorMessage } from '../services/utils';
+import { safeJsonParse, callWithRetry, formatErrorMessage, formatDataUri } from '../services/utils';
 import { CastTabsBar } from './cast/CastTabsBar';
 import { CastBrainstormModal } from './cast/CastBrainstormModal';
 import { CastImageZoomModal } from './cast/CastImageZoomModal';
@@ -21,11 +21,7 @@ interface CastManagerModalProps {
 }
 
 const toImageSrc = (img?: string): string => {
-  if (!img) return '';
-  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:') || img.startsWith('/')) {
-    return img;
-  }
-  return `data:image/png;base64,${img}`;
+  return formatDataUri(img);
 };
 
 export const CastManagerModal: React.FC<CastManagerModalProps> = ({

@@ -2,6 +2,7 @@ import React from 'react';
 import { Cut, VideoModelType, RecommendationModel } from '../types';
 import { normalizeKenBurnsPreset } from '../services/browserVideoService';
 import { VIDEO_MODELS_REGISTRY, resolveVideoModel } from '../config/studioDefinitions';
+import { formatDataUri } from '../services/utils';
 
 interface CutCardProps {
   cut: Cut;
@@ -15,29 +16,11 @@ interface CutCardProps {
   onRetry?: (type: 'image' | 'video', epId: number, cutId: number) => void;
 }
 
-function resolveImageUri(raw?: any): string | null {
-  if (!raw) return null;
-  let str = '';
-  if (typeof raw === 'string') {
-    str = raw.trim();
-  } else if (typeof raw === 'object') {
-    str = (raw.base64 || raw.image?.base64 || raw.url || raw.image?.url || '').trim();
-  }
-  if (!str || str === '[object Object]') return null;
-  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('/') || str.startsWith('blob:')) {
-    return str;
-  }
-  if (str.startsWith('/9j/')) return `data:image/jpeg;base64,${str}`;
-  if (str.startsWith('UklG')) return `data:image/webp;base64,${str}`;
-  if (str.startsWith('PHN2') || str.startsWith('PD94')) return `data:image/svg+xml;base64,${str}`;
-  return `data:image/png;base64,${str}`;
-}
-
 export const CutCard: React.FC<CutCardProps> = React.memo(({ 
   cut, episodeId, isMvMode, aspectRatio = '1:1', onAnimateRequest, onPreviewCut, onUpdateSelection, onUpdateModel, onRetry 
 }) => {
-  const imageSrc = resolveImageUri(cut.imageBase64 || (cut as any)?.image);
-  const videoSrc = cut.videoBase64 ? (cut.videoBase64.startsWith('http://') || cut.videoBase64.startsWith('https://') || cut.videoBase64.startsWith('data:') || cut.videoBase64.startsWith('/') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`) : null;
+  const imageSrc = formatDataUri(cut.imageBase64 || (cut as any)?.image);
+  const videoSrc = cut.videoBase64 ? (cut.videoBase64.startsWith('http://') || cut.videoBase64.startsWith('https://') || cut.videoBase64.startsWith('data:') || cut.videoBase64.startsWith('blob:') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`) : null;
 
   const handleRetry = (e: React.MouseEvent) => {
     e.stopPropagation();

@@ -1,5 +1,6 @@
 import React from 'react';
 import { CastCharacter } from '../../types';
+import { formatDataUri } from '../../services/utils';
 
 interface CastTabsBarProps {
   characters: CastCharacter[];
@@ -52,7 +53,7 @@ export const CastTabsBar: React.FC<CastTabsBarProps> = ({
               <div className="w-6 h-6 rounded-lg bg-slate-200 overflow-hidden shrink-0 flex items-center justify-center border border-slate-300/50">
                 {char.avatarBase64 ? (
                   <img 
-                    src={char.avatarBase64.startsWith('http') || char.avatarBase64.startsWith('data:') || char.avatarBase64.startsWith('/') ? char.avatarBase64 : `data:image/png;base64,${char.avatarBase64}`} 
+                    src={formatDataUri(char.avatarBase64)} 
                     alt={char.name} 
                     className="w-full h-full object-cover" 
                   />

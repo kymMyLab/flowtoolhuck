@@ -353,4 +353,44 @@ export function extractMediaId(res: any): string | undefined {
   if (res.image && typeof res.image.mediaId === 'string' && res.image.mediaId.trim()) return res.image.mediaId.trim();
   if (typeof res.id === 'string' && res.id.trim()) return res.id.trim();
   return undefined;
+}
+
+/**
+ * 画像データ（base64、データURI、HTTP URL、相対パス）を安全にブラウザ表示可能なURLに変換
+ * ★最重要: JPEGのbase64（先頭が '/9j/' で始まる）を誤って相対パスとみなさないよう厳密判定
+ */
+export function formatDataUri(raw?: any): string {
+  if (!raw) return '';
+  let str = '';
+  if (typeof raw === 'string') {
+    str = raw.trim();
+  } else if (typeof raw === 'object') {
+    str = (raw.base64 || raw.image?.base64 || raw.url || raw.image?.url || '').trim();
+  }
+  if (!str || str === '[object Object]') return '';
+  
+  // すでに有効なURIプロトコルを持っている場合
+  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('blob:')) {
+    return str;
+  }
+
+  // ★超重要: JPEG base64は \xFF\xD8\xFF のbase64エンコードにより必ず '/9j/' で始まる！
+  // スラッシュで始まるからといって相対パスと誤認しては絶対にダメ！
+  if (str.startsWith('/9j/') || str.startsWith('/9j')) {
+    return `data:image/jpeg;base64,${str}`;
+  }
+  if (str.startsWith('UklG')) {
+    return `data:image/webp;base64,${str}`;
+  }
+  if (str.startsWith('PHN2') || str.startsWith('PD94') || str.startsWith('<svg')) {
+    return `data:image/svg+xml;base64,${str}`;
+  }
+
+  // 本物のWeb相対パス（例: /images/logo.png）のみを許可（短く、かつ拡張子を持つ）
+  if (str.startsWith('/') && str.length < 500 && (str.includes('.png') || str.includes('.jpg') || str.includes('.jpeg') || str.includes('.webp') || str.includes('.svg') || str.includes('?'))) {
+    return str;
+  }
+
+  // デフォルトは PNG または raw base64
+  return `data:image/png;base64,${str}`;
 }
