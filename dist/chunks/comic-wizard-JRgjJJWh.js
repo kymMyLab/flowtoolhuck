@@ -1,4 +1,4 @@
-import{j as e,r as w}from"./vendor-react-Boa1DHsq.js";import{d as Je,f as we,g as X,h as Y}from"./studio-constants-DEpwfjij.js";import{c as ee,C as Oe}from"./cast-manager-CskhE_-r.js";import{c as te,F as se,f as A,s as oe,b as Re,a as ze,d as Be,l as We}from"./production-engine-Cdx6-sNy.js";async function Fe(d){const{productionMode:n,selectedTheme:l,tasteMode:s,selectedCustomTastes:a,availableTastes:p,currentModeConfig:t,onAddLog:g}=d,m=a.length,i=s==="custom_pick"&&m>0;let c="";i?c=`
+import{j as e,r as w}from"./vendor-react-Boa1DHsq.js";import{d as Je,f as we,g as X,h as Y}from"./studio-constants-DEpwfjij.js";import{c as ee,C as Oe}from"./cast-manager-Cztpqo4M.js";import{c as te,F as se,f as A,s as oe,b as Re,a as ze,d as Be,l as We}from"./production-engine-D7qoZ4x6.js";async function Fe(d){const{productionMode:n,selectedTheme:l,tasteMode:s,selectedCustomTastes:a,availableTastes:p,currentModeConfig:t,onAddLog:g}=d,m=a.length,i=s==="custom_pick"&&m>0;let c="";i?c=`
 【最重要: ユーザーが自ら指定した画風 (${m}個)】:
 ${a.map((f,k)=>`候補 ${k+1} 枠: 「${f}」 (英語画風プロンプト: ${p[f]||"masterpiece anime style"})`).join(`
 `)}

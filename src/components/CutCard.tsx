@@ -18,7 +18,19 @@ interface CutCardProps {
 export const CutCard: React.FC<CutCardProps> = React.memo(({ 
   cut, episodeId, isMvMode, aspectRatio = '1:1', onAnimateRequest, onPreviewCut, onUpdateSelection, onUpdateModel, onRetry 
 }) => {
-  const imageSrc = cut.imageBase64 ? (cut.imageBase64.startsWith('http://') || cut.imageBase64.startsWith('https://') || cut.imageBase64.startsWith('data:') || cut.imageBase64.startsWith('/') ? cut.imageBase64 : `data:image/png;base64,${cut.imageBase64}`) : null;
+  const imageSrc = React.useMemo(() => {
+    let raw = cut.imageBase64 || (cut as any)?.image;
+    if (!raw) return null;
+    let str = '';
+    if (typeof raw === 'string') str = raw.trim();
+    else if (typeof raw === 'object') str = (raw.base64 || raw.image?.base64 || raw.url || raw.image?.url || '').trim();
+    if (!str || str === '[object Object]') return null;
+    if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('/')) {
+      return str;
+    }
+    return `data:image/png;base64,${str}`;
+  }, [cut.imageBase64, (cut as any)?.image]);
+
   const videoSrc = cut.videoBase64 ? (cut.videoBase64.startsWith('http://') || cut.videoBase64.startsWith('https://') || cut.videoBase64.startsWith('data:') || cut.videoBase64.startsWith('/') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`) : null;
 
   const handleRetry = (e: React.MouseEvent) => {

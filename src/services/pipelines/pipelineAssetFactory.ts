@@ -1,7 +1,7 @@
 import { Flow } from 'flow-sdk';
 import { Episode } from '../../types';
 import { resolveImageModel } from '../../constants';
-import { callWithRetry, formatErrorMessage } from '../utils';
+import { callWithRetry, formatErrorMessage, extractImageBase64, extractMediaId } from '../utils';
 import { ProductionPipelineContext } from './pipelineTypes';
 import { 
   buildCharacterTurnaroundPrompt, 
@@ -56,9 +56,12 @@ export async function ensureCharacterTurnaround(
       4
     );
 
-    if (res && res.mediaId) {
+    const base64 = extractImageBase64(res);
+    const mediaId = extractMediaId(res);
+
+    if (mediaId || base64) {
       addLog(`✨ 【三面図マスター確定】主人公の三面図シートが完成！全カットの基準アセットとして登録しました。`, 'success');
-      return { mediaId: res.mediaId, base64: res.base64 };
+      return { mediaId, base64 };
     }
   } catch (err: any) {
     addLog(`⚠️ 三面図の自動生成をスキップし通常描画を継続します: ${formatErrorMessage(err)}`, 'warning');
@@ -131,24 +134,27 @@ export async function ensureInfographicCover(
       4
     );
 
-    if (res && (res.mediaId || res.base64)) {
+    const coverBase64 = extractImageBase64(res);
+    const coverMediaId = extractMediaId(res);
+
+    if (coverMediaId || coverBase64) {
       updateEpisode(freshEp.id, {
-        coverMediaId: res.mediaId,
-        coverBase64: res.base64,
+        coverMediaId: coverMediaId,
+        coverBase64: coverBase64,
         coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       });
       episodesRef.current = episodesRef.current.map(e => e.id === freshEp.id ? {
         ...e,
-        coverMediaId: res.mediaId,
-        coverBase64: res.base64,
+        coverMediaId: coverMediaId,
+        coverBase64: coverBase64,
         coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       } : e);
       setEpisodes(prev => prev.map(e => e.id === freshEp.id ? {
         ...e,
-        coverMediaId: res.mediaId,
-        coverBase64: res.base64,
+        coverMediaId: coverMediaId,
+        coverBase64: coverBase64,
         coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       } : e));

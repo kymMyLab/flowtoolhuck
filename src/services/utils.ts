@@ -315,3 +315,42 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
   return false;
 }
+
+/**
+ * Flow.generate.image 等の各種 Flow SDK / Gemini 返却オブジェクトから
+ * base64 文字列（または画像URL）を確実に抽出する堅牢なパーサー
+ */
+export function extractImageBase64(res: any): string | undefined {
+  if (!res) return undefined;
+  if (typeof res === 'string') {
+    const s = res.trim();
+    return s.length > 0 ? s : undefined;
+  }
+  if (typeof res.base64 === 'string' && res.base64.trim()) {
+    return res.base64.trim();
+  }
+  if (res.image) {
+    if (typeof res.image === 'string' && res.image.trim()) return res.image.trim();
+    if (typeof res.image.base64 === 'string' && res.image.base64.trim()) return res.image.base64.trim();
+    if (typeof res.image.imageBytes === 'string' && res.image.imageBytes.trim()) return res.image.imageBytes.trim();
+    if (typeof res.image.url === 'string' && res.image.url.trim()) return res.image.url.trim();
+  }
+  if (typeof res.imageBytes === 'string' && res.imageBytes.trim()) {
+    return res.imageBytes.trim();
+  }
+  if (typeof res.data === 'string' && res.data.trim()) {
+    return res.data.trim();
+  }
+  if (typeof res.url === 'string' && res.url.trim()) {
+    return res.url.trim();
+  }
+  return undefined;
+}
+
+export function extractMediaId(res: any): string | undefined {
+  if (!res) return undefined;
+  if (typeof res.mediaId === 'string' && res.mediaId.trim()) return res.mediaId.trim();
+  if (res.image && typeof res.image.mediaId === 'string' && res.image.mediaId.trim()) return res.image.mediaId.trim();
+  if (typeof res.id === 'string' && res.id.trim()) return res.id.trim();
+  return undefined;
+}

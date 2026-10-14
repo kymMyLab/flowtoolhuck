@@ -10,7 +10,7 @@ import {
   resolveVideoModel,
   resolveRecommendedTelopStaging
 } from '../constants';
-import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs } from './utils';
+import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId } from './utils';
 import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative } from './promptEngine';
 import { getAllReferenceAssets } from './db';
 import { renderFullEpisodeMovie, renderKenBurnsVideo } from './browserVideoService';
@@ -488,9 +488,17 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           throw firstErr;
         }
       }
+      const finalBase64 = extractImageBase64(res);
+      const finalMediaId = extractMediaId(res);
+      console.log(`🖼️ [Ep.${epId} C${cutId} 画像抽出結果]`, {
+        hasBase64: !!finalBase64,
+        base64Length: finalBase64?.length,
+        mediaId: finalMediaId,
+        rawKeys: Object.keys(res || {})
+      });
       updateCut(epId, cutId, { 
-        imageMediaId: res.mediaId, 
-        imageBase64: res.base64, 
+        imageMediaId: finalMediaId, 
+        imageBase64: finalBase64, 
         isGeneratingImage: false,
         error: undefined
       });
@@ -498,8 +506,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       // Cut 1 の画像が完成したら、以降のカットのキャラ崩れを完全防止するためマスターアンカーとして固定！
       if (cutId === 1) {
         updateEpisode(epId, {
-          masterAnchorMediaId: res.mediaId,
-          masterAnchorBase64: res.base64
+          masterAnchorMediaId: finalMediaId,
+          masterAnchorBase64: finalBase64
         });
         addLog(`👑 Ep.${epId}: Cut 1 の決定版ポートレートを【全カット共通マスターアンカー】としてロックしました！`, 'success');
       }
@@ -611,9 +619,11 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         4
       );
 
+      const endMediaId = extractMediaId(res);
+      const endBase64 = extractImageBase64(res);
       updateCut(epId, cutId, {
-        endFrameImageMediaId: res.mediaId,
-        endFrameImageBase64: res.base64,
+        endFrameImageMediaId: endMediaId,
+        endFrameImageBase64: endBase64,
         isGeneratingEndFrame: false
       });
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: After絵（到達点フレーム）の描画が完了しました！`, 'success');
@@ -769,9 +779,9 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       }
 
       // ★ 最重要: ①大前提プロデュース設計図（seriesManifestRef.current）が存在する場合
-      // どのモード（mv、manga、episodes等）であっても、ユーザーが①で決定したプロット・配役・話数に沿って
-      // 画面上に展開されているエピソード（第1話/第1曲から順に）を確実に作画する！
-      if (seriesManifestRef.current && (seriesManifestRef.current.episodesPlan?.length || 0) > 0) {
+      // ただし、MVモードまたは音楽インポートによるエピソードがある場合は、
+      // 音楽MVバッチパイプライン（runShortsBatchProduction）を優先して画面上のインポート曲を作画する！
+      if (!settings.isMvMode && settings.productionMode !== 'mv' && seriesManifestRef.current && (seriesManifestRef.current.episodesPlan?.length || 0) > 0) {
         await runSeriesProduction(pipelineContext);
         return;
       }
@@ -815,5 +825,5 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎲 第 ${epId} 話: 全12カットのテロップ演出（動き・配置）を一括再抽選しました！（画像は保持）`, 'success');
   }, [addLog]);
 
-  return { episodes, setEpisodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes };
+  return { episodes, setEpisodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes };
 }

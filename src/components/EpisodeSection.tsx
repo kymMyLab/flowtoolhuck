@@ -7,12 +7,19 @@ import { getProductionModeConfig } from '../config/studioDefinitions';
 import { cleanEpisodeTitle, cleanEpisodeTitleEn } from '../services/directorService';
 import { renderCoverBase64Horizontal } from '../services/export/coverRenderer';
 
-function formatDataUri(raw?: string): string {
+function formatDataUri(raw?: any): string {
   if (!raw) return '';
-  if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:') || raw.startsWith('/')) {
-    return raw;
+  let str = '';
+  if (typeof raw === 'string') {
+    str = raw.trim();
+  } else if (typeof raw === 'object') {
+    str = (raw.base64 || raw.image?.base64 || raw.url || raw.image?.url || '').trim();
   }
-  return `data:image/png;base64,${raw}`;
+  if (!str || str === '[object Object]') return '';
+  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('/')) {
+    return str;
+  }
+  return `data:image/png;base64,${str}`;
 }
 
 /**

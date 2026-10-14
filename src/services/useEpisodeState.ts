@@ -10,6 +10,10 @@ export function useEpisodeState(addLog: (msg: string, type?: any) => void) {
   const seriesManifestRef = useRef<SeriesManifest | null>(null);
 
   useEffect(() => {
+    seriesManifestRef.current = activeSeriesManifest;
+  }, [activeSeriesManifest]);
+
+  useEffect(() => {
     episodesRef.current = episodes;
   }, [episodes]);
 

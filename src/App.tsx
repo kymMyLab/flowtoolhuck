@@ -160,7 +160,7 @@ export default function App() {
     setStories(all);
   }, []);
 
-  const { episodes, setEpisodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
+  const { episodes, setEpisodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
     settings, 
     addLog, 
     refreshStories,
@@ -172,6 +172,7 @@ export default function App() {
 
   const handleDeployMusicEpisode = useCallback((ep: Episode) => {
     setEpisodes([ep]);
+    setActiveSeriesManifest(null);
     setSettings(prev => ({
       ...prev,
       productionMode: 'mv',
@@ -182,10 +183,11 @@ export default function App() {
       totalEpisodes: 1
     }));
     addLog(`🎵 CT198楽曲「${ep.titleJp}」の12カット絵コンテを展開しました！（サビ30秒テロップ＆伏線小道具自動バインド済）`, 'success');
-  }, [setEpisodes, setSettings, addLog]);
+  }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog]);
 
   const handleDeployBatchMusicEpisodes = useCallback((eps: Episode[]) => {
     setEpisodes(eps);
+    setActiveSeriesManifest(null);
     setSettings(prev => ({
       ...prev,
       productionMode: 'mv',
@@ -196,7 +198,7 @@ export default function App() {
       totalEpisodes: eps.length
     }));
     addLog(`🎵 CT198楽曲 全${eps.length}曲の12カット絵コンテを一括展開しました！`, 'success');
-  }, [setEpisodes, setSettings, addLog]);
+  }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog]);
 
   // ヘッダー等で画風（taste）が変更された際、画像未生成のエピソード群のtasteも即座に同期
   useEffect(() => {
