@@ -394,7 +394,7 @@ export default function App() {
       globalDragCounterRef.current = 0;
 
       // もし既にMusicImportModalが開いており、ドロップがその点線枠上で行われた場合は、コンポーネント自身の onDrop に任せる
-      if (isMusicImportOpenRef.current && (e.target as HTMLElement)?.closest('.group\\/dropzone')) {
+      if (isMusicImportOpenRef.current && (e.target as HTMLElement)?.closest?.('.group\\/dropzone')) {
         console.log('🎯 [FlowTool D&D] 点線枠への直接ドロップのため、インポーターコンポーネントへ処理を委譲します');
         return;
       }
