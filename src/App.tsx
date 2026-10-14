@@ -397,12 +397,11 @@ export default function App() {
       const file = fileList?.[0];
       const rawDroppedText = e.dataTransfer?.getData('text') || '';
 
-      console.log('%c🚀 [FlowTool App 全画面ドロップ検知!]', 'background: #8b5cf6; color: #fff; font-weight: bold; font-size: 13px; padding: 2px 6px; border-radius: 4px;', {
+      console.log('%c🚀 [FlowTool App] 全画面ドロップ検知！即座に自動パースします！', 'background: #8b5cf6; color: #fff; font-weight: bold; font-size: 14px; padding: 3px 8px;', {
         filesCount: fileList?.length || 0,
         fileName: file?.name,
-        fileSize: file?.size,
+        fileSize: file?.size ? `${Math.round(file.size / 1024)} KB` : '0 KB',
         hasRawText: !!rawDroppedText,
-        types: Array.from(e.dataTransfer?.types || []),
         isModalOpen: isMusicImportOpenRef.current
       });
 
@@ -478,29 +477,43 @@ export default function App() {
       }
     };
 
-    window.addEventListener('dragenter', handleGlobalDragEnter);
-    window.addEventListener('dragleave', handleGlobalDragLeave);
-    window.addEventListener('dragover', handleGlobalDragOver);
-    window.addEventListener('drop', handleGlobalDrop);
-
-    // 親フレーム（Google Flowホスト等）が存在する場合のドラッグ許可フォールバック
+    const eventTargets: (Window | Document)[] = [window, document];
     try {
       if (window.parent && window.parent !== window) {
-        window.parent.addEventListener('dragover', handleGlobalDragOver);
+        eventTargets.push(window.parent);
+        if (window.parent.document) eventTargets.push(window.parent.document);
+      }
+    } catch (_) {}
+    try {
+      if (window.top && window.top !== window && !eventTargets.includes(window.top)) {
+        eventTargets.push(window.top);
+        if (window.top.document) eventTargets.push(window.top.document);
       }
     } catch (_) {}
 
-    return () => {
-      window.removeEventListener('dragenter', handleGlobalDragEnter);
-      window.removeEventListener('dragleave', handleGlobalDragLeave);
-      window.removeEventListener('dragover', handleGlobalDragOver);
-      window.removeEventListener('drop', handleGlobalDrop);
-
+    const addListeners = (target: any) => {
       try {
-        if (window.parent && window.parent !== window) {
-          window.parent.removeEventListener('dragover', handleGlobalDragOver);
-        }
+        target.addEventListener('dragenter', handleGlobalDragEnter, true);
+        target.addEventListener('dragleave', handleGlobalDragLeave, true);
+        target.addEventListener('dragover', handleGlobalDragOver, true);
+        target.addEventListener('drop', handleGlobalDrop, true);
       } catch (_) {}
+    };
+
+    const removeListeners = (target: any) => {
+      try {
+        target.removeEventListener('dragenter', handleGlobalDragEnter, true);
+        target.removeEventListener('dragleave', handleGlobalDragLeave, true);
+        target.removeEventListener('dragover', handleGlobalDragOver, true);
+        target.removeEventListener('drop', handleGlobalDrop, true);
+      } catch (_) {}
+    };
+
+    eventTargets.forEach(addListeners);
+    console.log('🛡️ [FlowTool] 全階層フレーム（${eventTargets.length}箇所）へキャプチャリングD&Dリスナーを配備完了');
+
+    return () => {
+      eventTargets.forEach(removeListeners);
     };
   }, [addLog, handleResumeSeries]);
 
