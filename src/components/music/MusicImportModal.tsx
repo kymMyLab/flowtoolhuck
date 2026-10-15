@@ -67,7 +67,30 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [tasteZoomImage, setTasteZoomImage] = useState<{ url: string; title: string } | null>(null);
 
   const [selectedCoverThemeId, setSelectedCoverThemeId] = useState<string>('auto');
-  const [autoTheme, setAutoTheme] = useState<CoverPalette>(COVER_PALETTES.mv_violet);
+  const [autoTheme, setAutoTheme] = useState<CoverPalette>(() => {
+    const list = getCoverPalettesForGenre('mv');
+    return list[Math.floor(Math.random() * list.length)] || COVER_PALETTES.mv_violet;
+  });
+
+  // モーダルオープン時またはリロール時にランダム選定
+  useEffect(() => {
+    if (isOpen) {
+      const list = getCoverPalettesForGenre('mv');
+      if (list.length > 0) {
+        setAutoTheme(list[Math.floor(Math.random() * list.length)]);
+      }
+    }
+  }, [isOpen]);
+
+  const handleRerollTheme = () => {
+    const list = getCoverPalettesForGenre('mv');
+    if (list.length > 0) {
+      const pool = list.filter(p => p.id !== autoTheme.id);
+      const next = (pool.length > 0 ? pool : list)[Math.floor(Math.random() * (pool.length > 0 ? pool.length : list.length))];
+      setAutoTheme(next);
+    }
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
   const boxDragCounterRef = useRef(0);
@@ -1027,9 +1050,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                   {expandedTasteItem.descriptionJp}
                 </p>
 
-                {/* 3パターン画像グリッド */}
+                {/* 3パターン画像グリッド (大迫力プレビュー) */}
                 {expandedTasteItem.samples ? (
-                  <div className="grid grid-cols-3 gap-2.5 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                     {[
                       { key: 'students', label: '🎓 学生ペア', sub: '女子高生 ＆ 男子高生', url: expandedTasteItem.samples.students },
                       { key: 'edo', label: '🏮 江戸町人', sub: '町人男女（和装・浮世）', url: expandedTasteItem.samples.edo },
@@ -1038,9 +1061,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                       <div 
                         key={pattern.key}
                         onClick={() => pattern.url && setTasteZoomImage({ url: pattern.url, title: `${expandedTasteItem.displayName} - ${pattern.label}` })}
-                        className="flex flex-col gap-1 group/img cursor-zoom-in relative bg-black/60 rounded-lg p-1.5 border border-white/10 hover:border-teal-400 transition-all shadow-inner"
+                        className="flex flex-col gap-1.5 group/img cursor-zoom-in relative bg-black/75 hover:bg-teal-950/40 rounded-xl p-2 border-2 border-white/10 hover:border-teal-400 transition-all shadow-xl hover:shadow-teal-500/20"
                       >
-                        <div className="relative w-full aspect-[4/3] rounded overflow-hidden bg-black/80">
+                        <div className="relative w-full h-44 sm:h-52 md:h-60 rounded-lg overflow-hidden bg-black/90">
                           {pattern.url ? (
                             <img 
                               src={pattern.url} 
@@ -1053,17 +1076,18 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                               準備中
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
-                            <span className="p-1 rounded-full bg-black/70 text-white material-symbols-outlined text-[16px]">
-                              zoom_in
+                          <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/30 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                            <span className="px-3 py-1.5 rounded-full bg-black/85 border border-teal-400/60 text-teal-300 text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
+                              <span className="material-symbols-outlined text-[16px]">zoom_in</span>
+                              特大拡大表示
                             </span>
                           </div>
                         </div>
-                        <div className="flex flex-col px-0.5">
-                          <span className="text-[10px] font-bold text-white group-hover/img:text-teal-300 transition-colors">
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-xs font-black text-white group-hover/img:text-teal-300 transition-colors">
                             {pattern.label}
                           </span>
-                          <span className="text-[9px] text-white/40 truncate">
+                          <span className="text-[10px] text-white/50 truncate max-w-[120px]">
                             {pattern.sub}
                           </span>
                         </div>
@@ -1187,25 +1211,36 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               今回のインポートで生成される全12カットMVの扉絵（9:16・16:9）の看板カラー・アクセントを決定します。次回実行時は自動で上品に変奏されます。
             </p>
 
-            <div className="relative z-10 mt-1">
-              <select
-                value={selectedCoverThemeId}
-                onChange={(e) => setSelectedCoverThemeId(e.target.value)}
-                className="w-full p-2.5 rounded-lg bg-black/60 border border-purple-500/30 text-xs font-bold text-white outline-none focus:border-purple-400 hover:border-purple-500/50 appearance-none transition-colors cursor-pointer shadow-inner"
-                style={{ paddingRight: '2rem' }}
-              >
-                <option value="auto">
-                  🎲 自動セレクト（今回の選定: {autoTheme.name}）
-                </option>
-                {getCoverPalettesForGenre('mv').map(p => (
-                  <option key={p.id} value={p.id} className="bg-slate-900 text-white">
-                    {p.name}
+            <div className="relative z-10 mt-1 flex items-center gap-2">
+              <div className="relative flex-1">
+                <select
+                  value={selectedCoverThemeId}
+                  onChange={(e) => setSelectedCoverThemeId(e.target.value)}
+                  className="w-full p-2.5 rounded-lg bg-black/60 border border-purple-500/30 text-xs font-bold text-white outline-none focus:border-purple-400 hover:border-purple-500/50 appearance-none transition-colors cursor-pointer shadow-inner"
+                  style={{ paddingRight: '2rem' }}
+                >
+                  <option value="auto">
+                    🎲 ランダム自動セレクト（今回の選定: {autoTheme.name}）
                   </option>
-                ))}
-              </select>
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-purple-400 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[18px]">expand_more</span>
+                  {getCoverPalettesForGenre('mv').map(p => (
+                    <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-purple-400 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[18px]">expand_more</span>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={handleRerollTheme}
+                title="別の配色テーマをランダム再抽選"
+                className="px-3 py-2.5 rounded-lg bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/40 hover:border-purple-400 text-purple-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:scale-[1.02] shrink-0 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[16px] text-purple-300">casino</span>
+                <span>再抽選</span>
+              </button>
             </div>
 
             {/* カラープレビューストリップ */}
