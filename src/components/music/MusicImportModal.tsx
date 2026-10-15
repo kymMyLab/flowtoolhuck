@@ -1237,7 +1237,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             })()}
           </div>
           
-          {/* Drop & Input Area (点線ドロップ枠: 鉄壁D&Dシールド＆コンソールフルロギング) */}
+          {/* Drop & Input Area (点線ドロップ枠: 鉄壁D&D・完全ゼロフリッカー＆確実なドロップ受領) */}
           <div 
             onDragEnter={(e) => {
               e.preventDefault();
@@ -1260,6 +1260,10 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             onDragLeave={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              // 要素内部の子要素へ移動しただけ（枠の外に出ていない）なら離脱とみなさない
+              if (e.currentTarget.contains(e.relatedTarget as Node)) {
+                return;
+              }
               boxDragCounterRef.current -= 1;
               if (boxDragCounterRef.current <= 0) {
                 boxDragCounterRef.current = 0;
@@ -1302,45 +1306,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                 : 'border-white/20 bg-white/5 hover:border-amber-400/60 hover:bg-white/10 shadow-sm'
             }`}
           >
-            {/* ドラッグ中に子要素によるイベント遮断を完全にシャットアウトする最前面シールド */}
-            {/* Shield & Counter Pattern: this absolute div captures drag events and prevents children from receiving them, stopping the dragenter/dragleave flicker. It handles the drop itself to ensure the file is processed. */}
+            {/* ドラッグ中の視覚的シールド演出（pointer-events-none でイベントを一切妨害しない） */}
             {isBoxDragging && (
-              <div
-                className="absolute inset-0 z-20 bg-amber-500/10"
-                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; }}
-                onDragLeave={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  boxDragCounterRef.current = 0;
-                  setIsBoxDragging(false);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  boxDragCounterRef.current = 0;
-                  setIsBoxDragging(false);
-
-                  const file = e.dataTransfer?.files?.[0];
-                  const rawText = e.dataTransfer?.getData('text') || e.dataTransfer?.getData('text/plain') || '';
-
-                  console.log('%c🔥 [D&D 点線枠シールド] ドロップ検知! 即座に解析開始!', 'background: #10b981; color: #fff; font-weight: bold; font-size: 14px; padding: 3px 8px; border-radius: 4px;', {
-                    hasFile: !!file,
-                    fileName: file?.name,
-                    fileSize: file?.size ? `${Math.round(file.size / 1024)} KB` : '0 KB',
-                    hasRawText: !!rawText,
-                    rawTextLength: rawText.length,
-                    dataTransferTypes: Array.from(e.dataTransfer?.types || [])
-                  });
-
-                  if (file) {
-                    processFile(file);
-                  } else if (rawText && (rawText.includes('{') || rawText.includes('['))) {
-                    setJsonText(rawText);
-                    handleParse(rawText, 'dropped_editor_text.json');
-                  }
-                }}
-              />
+              <div className="absolute inset-0 z-20 bg-amber-500/10 pointer-events-none" />
             )}
 
             <input 
