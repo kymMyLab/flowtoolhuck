@@ -260,26 +260,26 @@ export const TASTES: Record<string, string> = {
 
   // ── 🏮 ユーザーリクエスト追加: YouTube「ガチ江戸」歴史劇画系 ──
   "🏮 YouTube歴史解説・ガチ江戸劇画 (Authentic Edo Documentary Gekiga)":
-    "Authentic Edo period documentary gekiga manga illustration, gritty historical realism, deep textured washi paper, rough sumi ink brush lines with dynamic dry-brush friction, heavy authentic chiaroscuro shadows, historically accurate Edo merchant and samurai attire, candlelit dusky atmosphere, muted earthy mineral pigments (charcoal black, tea brown, dull indigo), high-impact serious historical narrative art",
+    "Authentic Edo period documentary gekiga manga illustration, gritty historical realism, deep textured washi paper, rough sumi ink brush lines with dynamic dry-brush friction, heavy authentic chiaroscuro shadows, historically accurate Edo merchant and samurai attire, candlelit dusky atmosphere, muted earthy mineral pigments (charcoal black, tea brown, dull indigo), high-impact serious historical narrative art, clean edge-to-edge artwork, absolutely NO subtitles, NO caption banner, NO outer black letterbox border",
 
   "👘 吉原裏路地・陰影浮世絵ノワール (Edo Alley Ukiyo-e Noir)":
-    "Cinematic Edo noir ukiyo-e aesthetic, dark misty alley of Yoshiwara pleasure quarters at night, red paper lanterns casting rich warm crimson glow onto dark wooden lattice windows, deep impenetrable indigo shadows, elegant stylized silhouette, fine dip-pen linework with subtle woodblock texture, atmospheric cinematic mystery, dramatic side lighting",
+    "Cinematic Edo noir ukiyo-e aesthetic, dark misty alley of Yoshiwara pleasure quarters at night, red paper lanterns casting rich warm crimson glow onto dark wooden lattice windows, deep impenetrable indigo shadows, elegant stylized silhouette, fine dip-pen linework with subtle woodblock texture, atmospheric cinematic mystery, dramatic side lighting, clean edge-to-edge composition, NO text, NO speech bubbles",
 
   "⚔️ 幕末古写真風・木版クロニクル (Bakumatsu Tintype & Woodblock)":
-    "Authentic late Edo and Bakumatsu period vintage tintype photograph merged with woodblock chronicle art, antique sepia and silver-halide photographic grain, subtle hand-tinted soft colors, weathered paper edges, dignified samurai and townsfolk portraiture, historically authentic swords and haori coats, solemn atmospheric historic archive quality",
+    "Authentic late Edo and Bakumatsu period vintage tintype photograph merged with woodblock chronicle art, antique sepia and silver-halide photographic grain, subtle hand-tinted soft colors, weathered paper edges, dignified samurai and townsfolk portraiture, historically authentic swords and haori coats, solemn atmospheric historic archive quality, clean artwork, NO subtitles, NO watermark",
 
   // ── 🎸 ユーザーリクエスト追加: サブカル・不良・ギャグ・特定ジャンル ──
   "🎸 ガレージパンク・地下ライブハウス (Garage Punk & Underground Live)":
-    "Raw explosive underground garage punk anime illustration, gritty livehouse stage aesthetic, high-contrast monochrome and neon purple lighting, harsh strobe light flares, flying sweat and electric sparks, battered vintage electric guitars, screaming amplifiers with cable clutter, dynamic fish-eye lens perspective, raw xerox zine texture and aggressive ink splatters",
+    "Raw explosive underground garage punk anime illustration, gritty livehouse stage aesthetic, high-contrast monochrome and neon purple lighting, harsh strobe light flares, flying sweat and electric sparks, battered vintage electric guitars, screaming amplifiers with cable clutter, dynamic fish-eye lens perspective, raw xerox zine texture and aggressive ink splatters, clean artwork, NO subtitles, NO speech bubbles",
 
   "👊 昭和ツッパリ・熱血暴走劇画 (Retro Showa Yankee Action Manga)":
-    "Classic 1980s Showa yankee delinquent action manga style, ultra-bold black ink brushwork, intense speed lines and dramatic impact screech marks, sharp fierce eyes with heavy screentone hatching, retro modified gakuran uniforms and pompadour hairstyles, gritty industrial backdrop under neon sodium streetlights, hot-blooded nostalgic retro comic finish",
+    "Classic 1980s Showa yankee delinquent action manga style, ultra-bold black ink brushwork, intense speed lines and dramatic impact screech marks, sharp fierce eyes with heavy screentone hatching, retro modified gakuran uniforms and pompadour hairstyles, gritty industrial backdrop under neon sodium streetlights, hot-blooded nostalgic retro comic finish, dynamic manga splash page",
 
   "🤪 爆笑カートゥーン・スラップスティック (Slapstick Comedy & Hyper-Deform)":
     "Dynamic slapstick comedy anime cartoon art, extreme funny exaggerated facial expressions (jaw-dropping shock, flying sweat droplets, popped-out cartoon eyes), chaotic kinetic motion blur lines, bright punchy candy colors, humorous anime gag comic styling, energetic comedic timing captured in single splash frame",
 
   "☕ 下北沢オルタナ・チルホップ (Shimokitazawa Indie Lo-Fi Chill)":
-    "Chill aesthetic anime illustration, indie music video Lo-Fi vibe, muted earth tones and washed-out warm sunlight, cluttered cozy vintage record shop and thrift store backdrop in Shimokitazawa, oversized knit sweaters and headphones, soft analog film grain, gentle relaxed slice-of-life mood, poetic artistic daily snapshot"
+    "Authentic 2D indie anime illustration, lo-fi chillhop music video aesthetic, delicate clean ink lineart, muted warm pastel tones and vintage earth colors, flat cel shading, soft ambient daylight, cozy relaxed slice-of-life mood, authentic 2D Japanese anime art, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO text, NO speech bubbles, clean edge-to-edge illustration"
 };
 
 import {
