@@ -1,60 +1,55 @@
-# 🚀 Jules Mission: FlowTool Studio Pro Comprehensive Refactoring, Anti-Spaghetti Audit & Deep Optimization
+# 🚀 Jules Mission: FlowTool Studio Pro Deep Performance, Memory Leak & Type Safety Audit
 
-## 📌 Mission Background & Objective
-You are assigned a critical autonomous optimization and refactoring mission for **FlowTool Studio Pro** (`kymMyLab/flowtoolhuck`).
-The user is resting and has requested a thorough, overnight autonomous audit to inspect the entire codebase for:
-1. **Spaghetti Code & Structural Inefficiencies (スパゲッティ化コードの解消・構造的リファクタリング)**
-2. **Performance Bottlenecks & Redundant Execution (非効率な処理・不要な再計算の最適化)**
-3. **Robustness, Unhandled Promise Rejections & Memory Leak Prevention (堅牢化とメモリリーク防止)**
+## 📌 Mission Objective
+You are assigned an autonomous optimization and hardening mission for **FlowTool Studio Pro** (`kymMyLab/flowtoolhuck`).
+The modular splitting of `MusicImportModal.tsx` has already been completed by Antigravity IDE.
+Your primary objective is a **deep technical audit** focusing on:
+1. **Memory Leak Prevention & Resource Cleanup (メモリリーク防止・リソース解放)**
+2. **Performance Bottlenecks & Hook Optimization (不要な再レンダリング・非効率計算の解消)**
+3. **Type Safety Hardening & Edge Case Robustness (型安全性の強化・any撲滅・エッジケース堅牢化)**
 
 ---
 
 ### 🎯 Primary Directives for Jules:
 
-#### 1. Anti-Spaghetti & Modularity Refactoring (スパゲッティコードの解体・モジュール化)
-- **Target Large Files**:
-  - `src/components/music/MusicImportModal.tsx` (~1700+ lines): Extract reusable subcomponents (e.g. `TasteShowcaseGrid`, `CharacterSelectorAccordion`, `CoverThemeSelector`) or hook logic to streamline the file and enhance readability.
-  - `src/services/musicImporter.ts` & `src/services/directorService.ts`: Check for duplicated visual-hint parsing, prompt-string builders, and helper utilities. Unify them cleanly into modular helper functions.
-  - `src/services/export/coverRenderer.ts`: Ensure canvas context operations, palette resolution, and text splitting run cleanly with zero canvas context leak.
-- **Rules of Engagement**:
-  - Keep each refactored file maintainable and focused.
-  - NEVER break any existing public exports, function signatures, or modal interfaces.
-  - Ensure `100% Single Bundle` architecture builds cleanly (`inlineDynamicImports: true`).
+#### 1. Memory Leak & Lifecycle Audit (メモリリーク・イベントリスナーの徹底点検)
+- **Object URL Revocation**:
+  - Scan all files (`src/services/`, `src/components/`) for `URL.createObjectURL()`.
+  - Ensure every generated Blob URL has a corresponding `URL.revokeObjectURL()` inside `useEffect` cleanup or promise `.finally()` blocks.
+- **Event Listeners & Timers**:
+  - Check all `addEventListener` calls (`paste`, `dragover`, `drop`, `focus`, `storage`, `resize`).
+  - Verify that matching `removeEventListener` calls are correctly executed in cleanup functions.
+  - Ensure any `setTimeout` or `setInterval` handles are properly cleared on unmount.
+- **Canvas / Media Resources**:
+  - Verify that canvas context operations (`coverRenderer.ts`, `browserVideoService.ts`) release image/canvas buffers properly to prevent GPU/DOM memory inflation.
 
-#### 2. Deep Performance & Efficiency Audit (非効率な箇所の徹底改善)
-- **State Management & Unnecessary Re-renders**:
-  - Check React hooks (`useEffect`, `useCallback`, `useMemo`) across `App.tsx`, `EpisodeSection.tsx`, `MusicImportModal.tsx`, and `useStudioProduction.ts`.
-  - Fix any missing dependency arrays or dependencies that cause infinite loops or excessive re-renders.
-  - Optimize array searches (`.find()`, `.filter()`) inside render loops with Memoization or Map/Set lookups where appropriate.
-- **Canvas & Media Object URL Leaks**:
-  - Ensure all temporary `URL.createObjectURL()` calls have corresponding `URL.revokeObjectURL()` cleanup.
-  - Verify `OffscreenCanvas` fallback and garbage collection.
+#### 2. Performance & Re-render Optimization (React Hooks & 計算の最適化)
+- **Hooks Dependency Arrays**:
+  - Inspect `src/services/useStudioProduction.ts`, `src/components/EpisodeSection.tsx`, `src/components/music/MusicImportModal.tsx`, and `src/App.tsx`.
+  - Fix any missing or unstable hook dependencies in `useEffect`, `useCallback`, `useMemo` that could lead to infinite loops, stale closures, or excessive re-renders.
+- **Hot-Loop Lookups**:
+  - Replace frequent `.find()` / `.filter()` calls inside render passes with `useMemo` or `Map`/`Set` caching, especially for archetypes, character lookups, and taste gallery queries.
 
-#### 3. Edge Case Handling & Bug Elimination (潜在バグの根絶)
-- **Strict Verification of Recent Fixes**:
-  - Verify `resolveTasteKey` in `tasteStorage.ts` correctly handles all short IDs and partial queries without breaking.
-  - Verify `buildDynamicAntiPreviousNegative` in `promptEngine.ts` correctly blocks repeated props (umbrella, bicycle), poses (standing, front-facing), and angles.
-  - Verify that `MusicImportModal` parses JSON and plain text formats cleanly without throws.
-- **Type Safety & Lint**:
-  - Eliminate any `any` casts where strong types (`Episode`, `Cut`, `CoverPalette`, etc.) can be applied.
+#### 3. Type Safety & Robustness (型安全性の向上)
+- **Eliminate `any` Casts**:
+  - Replace loose `any` types in `musicImporter.ts`, `promptEngine.ts`, `directorService.ts`, and `MusicImportModal.tsx` with strict interfaces (`Episode`, `Cut`, `ImportedTrack`, `CastCharacter`, `CoverPalette`, etc.).
+- **Robust Exception Handling**:
+  - Ensure JSON parsing in `musicImporter.ts` gracefully handles malformed payloads, truncated strings, or unexpected keys with informative fallback messages rather than crashing.
 
 ---
 
 ### 🧪 Automated Verification & Deliverables
 1. **Build Validation**:
-   - Run `npm run build` and ensure `dist/bundle.js` is generated with 0 errors and 0 warnings.
+   - Run `npm run build` and ensure `dist/bundle.js` builds with 0 errors and 0 warnings.
+   - Maintain the single-bundle architecture (`inlineDynamicImports: true`).
 2. **Automated Pull Request**:
-   - Once all improvements, refactorings, and validations are complete, create a clean GitHub Pull Request against `main`.
-   - Provide a clear, detailed PR description outlining:
-     - Files refactored
-     - Inefficiencies resolved
-     - Memory/lifecycle optimizations implemented
-     - Verification test steps taken
+   - Automatically open a GitHub Pull Request against `main`.
+   - Provide a clear PR summary detailing the fixes, memory cleanups, and optimizations.
 
 ---
 
-### 🛡️ Strict Operational Constraints
+### 🛡️ Operational Constraints
 - `requirePlanApproval: false` (Full Autonomy - do not block waiting for plan approval)
 - `automationMode: "AUTO_CREATE_PR"` (Automatically submit PR upon completion)
 - Do NOT delete existing features (100+ character archetypes, taste showroom, series resume, cover renderer, etc.).
-- Maintain zero backend dependencies (client-side only single bundle).
+- Client-side single bundle execution only.
