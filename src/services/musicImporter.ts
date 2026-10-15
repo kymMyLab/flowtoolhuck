@@ -4,6 +4,7 @@ import { resolveMasterCategory } from '../config/masterCategories';
 import { CAMERA_WORK_REGISTRY } from '../constants';
 import { isCutSelectedForVideo } from './utils';
 import { resolveTasteKey } from './tasteStorage';
+import { buildDynamicAntiPreviousNegative } from './promptEngine';
 
 export interface ImportedTrack {
   id: string;
@@ -318,33 +319,34 @@ export function extractLyricVisualPlot(
   let universalAction = '';
   switch (cutIndex) {
     case 1:
-      universalAction = 'Arresting cinematic extreme close-up visual hook on character\'s intense emotional eyes and expressive face, dramatic directional lighting highlighting sparkling iris reflections, candid gaze, shallow depth of field, instant swipe-stopping impact';
+      universalAction = 'Arresting cinematic extreme close-up visual hook on character\'s intense emotional eyes and expressive face, dramatic directional lighting highlighting sparkling iris reflections, candid gaze, shallow depth of field, face and eyes only, strictly no full-body standing';
       break;
     case 2:
-      universalAction = 'Atmospheric medium shot, character natural posture within the ambient environment, long cast shadows, contemplating surroundings';
+      universalAction = 'Atmospheric medium shot in dynamic walking motion, character taking brisk strides forward along the pavement, long cast shadows, natural kinetic movement rather than standing still';
       break;
     case 3:
-      universalAction = 'Intimate close-up macro framing on character\'s hand, delicate fingers touching fabric or surrounding textures, subtle emotional gesture, shallow depth of field';
+      universalAction = 'Intimate close-up macro framing purely on character\'s hand and delicate fingers touching texture or adjusting accessory, subtle emotional gesture, shallow depth of field, strictly hand-focused composition';
       break;
     case 4:
-      universalAction = 'Dutch-tilt medium angle, character pausing amidst the space with an enigmatic contemplative gaze, subtle environmental clue in foreground';
+      universalAction = 'Dutch-tilt medium angle, character in three-quarter profile gazing upwards into the ambient night sky, dramatic diagonal perspective with distinct leading lines';
       break;
     case 5:
-      universalAction = 'Dynamic wide chorus opening shot, emotional wind billowing hair and clothes, radiant sunlight streaming through, energetic forward movement into the open space';
+      universalAction = 'Dynamic wide chorus opening shot with active forward momentum, energetic motion with wind billowing hair and clothes, stepping dynamically into the open illuminated space';
       break;
     case 6:
-      universalAction = 'Emotional medium close-up bust portrait, character bathed in warm golden sunset illumination from the side, contemplative atmosphere and quiet catharsis';
+      universalAction = 'Cinematic medium-wide shot seen from behind, character walking away into the glowing distance, expressive silhouette and rich environmental atmospheric depth';
       break;
     case 7:
-      universalAction = 'Intense intimate close-up focusing on subtle tactile interaction, gentle hand gesture or subtle shift in posture, emotional resonance';
+      universalAction = 'Overhead high-angle perspective looking down from above, capturing character from bird\'s-eye view against the textured ground reflections, distinct top-down geometry';
       break;
     case 8:
-      universalAction = 'Cinematic wide climax, character seen from behind or three-quarter profile moving forward into the glowing horizon, bathed in dramatic illumination';
+      universalAction = 'Intense emotional medium close-up, powerful three-quarter expressive framing capturing subtle facial nuance and emotional catharsis under dramatic rim lighting';
+      break;
     case 9:
-      universalAction = 'Low angle dynamic discovery shot, character looking towards the changing scenery, high contrast lighting sparking curiosity';
+      universalAction = 'Dynamic low-angle upward shot, character pausing and looking toward the horizon from a heroic low perspective against towering backdrop';
       break;
     case 11:
-      universalAction = 'Heroic medium close-up, character looking towards the open horizon with calm resolve and gentle smile, bathed in twilight warmth';
+      universalAction = 'Heroic medium close-up bust shot, character turning slightly with calm resolve and serene expression, bathed in twilight warmth';
       break;
     case 12:
       universalAction = 'Cinematic crane-up pull-out wide shot of the expansive scenery, elongated shadows stretching into the distance, character silhouette blending into the atmospheric horizon, seamless circular loop back into beginning';
@@ -481,9 +483,16 @@ export function convertTrackToEpisode(
       promptEnComponents.push(`[SCENE CONTEXT]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
     }
 
-    // 登場人物詳細（character_setting）の注入（小道具特写Cut10および余韻Cut12を除く人物カット）
+    // 登場人物詳細（character_setting）の注入（一過性の立ちポーズ・傘持ちポーズを削ぎ落とし、純粋な容姿DNAのみ注入）
     if (track.character_setting && !isPropCut && i !== 12) {
-      promptEnComponents.push(`[CHARACTER SETTING]: ${track.character_setting.trim().replace(/\.+$/, '')}.`);
+      const cleanSettingDna = track.character_setting
+        .replace(/\b(standing|seated|sitting|holding an? umbrella|holding umbrellas?|with an? umbrella|holding hands?|walking straight|facing camera)\b/gi, '')
+        .replace(/(傘を差して|傘を持ち|傘を持った|傘を差す|立っている|佇んでいる|佇む|直立して|正面を向いて)/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+      if (cleanSettingDna) {
+        promptEnComponents.push(`[CHARACTER SETTING]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
+      }
     }
 
     // 五感・小道具ディテール（sensory_details）の注入（小道具Cut10や手元接写Cut）
@@ -499,9 +508,18 @@ export function convertTrackToEpisode(
 
     const promptEn = promptEnComponents.join(' ');
 
+    // ★ ユーザー設計規範: 手前カット（Cut N-1）のポーズ・小道具・構図を次カットのネガティブプロンプトへ完全自動初期バインド
+    const prevCut = i > 1 ? cuts[i - 2] : undefined;
+    const dynamicAntiPrev = prevCut ? buildDynamicAntiPreviousNegative({
+      scale: prevCut.shotScale,
+      angle: prevCut.cameraWork,
+      prompt: prevCut.promptEn
+    }) : '';
+
     cuts.push({
       id: i,
       promptEn: promptEn,
+      negativePrompt: dynamicAntiPrev,
       narrationJp: lyric,
       narrationEn: '',
       shotScale: shotScale,

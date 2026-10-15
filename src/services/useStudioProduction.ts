@@ -364,6 +364,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           });
           if (antiPrev) {
             effectiveNegative = effectiveNegative ? `${effectiveNegative}, ${antiPrev}` : antiPrev;
+            addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 直前カット対比ネガティブ注入 [C${(cutId - 1).toString().padStart(2, '0')}の構図・ポーズ・小道具を除外]`, 'info');
           }
         }
       }

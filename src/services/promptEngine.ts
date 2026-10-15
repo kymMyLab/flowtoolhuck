@@ -70,21 +70,38 @@ export function buildDynamicAntiPreviousNegative(previous?: PreviousShotContext)
   if (previous.prompt) {
     const lowerPrompt = previous.prompt.toLowerCase();
 
-    // (A) 姿勢・ポーズの除外
+    // (A) 姿勢・ポーズ・向きの除外
     if (lowerPrompt.includes('sit') || lowerPrompt.includes('crouch') || lowerPrompt.includes('seated') || lowerPrompt.includes('floor') || lowerPrompt.includes('ground')) {
       antiTokens.push('sitting on floor', 'sitting down', 'seated posture', 'crouching pose', 'squatting on ground', 'sitting pose', 'hugging knees on floor');
     }
-    if (lowerPrompt.includes('stand') || lowerPrompt.includes('standing')) {
-      antiTokens.push('identical standing pose', 'repeating standing posture', 'static upright standing');
+    if (lowerPrompt.includes('stand') || lowerPrompt.includes('standing') || lowerPrompt.includes('upright')) {
+      antiTokens.push('identical standing pose', 'repeating standing posture', 'static upright standing', 'straight standing pose', 'stiff standing posture');
     }
-    if (lowerPrompt.includes('walk') || lowerPrompt.includes('walking')) {
-      antiTokens.push('walking in same direction', 'repeating walking pose');
+    if (lowerPrompt.includes('walk') || lowerPrompt.includes('walking') || lowerPrompt.includes('stride')) {
+      antiTokens.push('walking in same direction', 'repeating walking pose', 'identical walking stride');
     }
     if (lowerPrompt.includes('turn') || lowerPrompt.includes('behind') || lowerPrompt.includes('back view')) {
       antiTokens.push('seen from behind', 'looking back over shoulder', 'back turned');
     }
+    if (lowerPrompt.includes('front') || lowerPrompt.includes('facing camera') || lowerPrompt.includes('centered') || lowerPrompt.includes('look at')) {
+      antiTokens.push('facing front camera', 'identical front view', 'centered head-on angle', 'looking straight into camera', 'monotonous eye contact');
+    }
 
-    // (B) 特徴的な背景・小道具シチュエーションの重複防止
+    // (B) 傘・手持ち小道具・アクセサリの重複防止（前カットと同一ポーズ・小道具の完全排除）
+    if (lowerPrompt.includes('umbrella') || lowerPrompt.includes('parasol') || lowerPrompt.includes('傘')) {
+      antiTokens.push('holding umbrella', 'open umbrella', 'umbrella in hand', 'repeating umbrella pose', 'holding clear vinyl umbrella', 'carrying umbrella');
+    }
+    if (lowerPrompt.includes('phone') || lowerPrompt.includes('smartphone')) {
+      antiTokens.push('holding smartphone', 'looking at phone screen', 'repeating phone gesture');
+    }
+    if (lowerPrompt.includes('cup') || lowerPrompt.includes('mug') || lowerPrompt.includes('glass') || lowerPrompt.includes('drink')) {
+      antiTokens.push('holding cup', 'holding mug', 'drinking pose');
+    }
+    if (lowerPrompt.includes('bike') || lowerPrompt.includes('bicycle')) {
+      antiTokens.push('riding bicycle', 'identical bicycle pose', 'repeating bicycle framing');
+    }
+
+    // (C) 特徴的な背景・小道具シチュエーションの重複防止
     if (lowerPrompt.includes('window') || lowerPrompt.includes('balcony')) {
       antiTokens.push('identical window background', 'same window frame backdrop', 'repeating window perspective');
     }
@@ -93,6 +110,9 @@ export function buildDynamicAntiPreviousNegative(previous?: PreviousShotContext)
     }
     if (lowerPrompt.includes('door') || lowerPrompt.includes('doorway')) {
       antiTokens.push('identical doorway framing', 'same door backdrop');
+    }
+    if (lowerPrompt.includes('street') || lowerPrompt.includes('sidewalk') || lowerPrompt.includes('crossing')) {
+      antiTokens.push('identical street perspective', 'repeating sidewalk angle', 'same street corner');
     }
 
     for (const rule of POSE_CONTRAST_RULES) {
