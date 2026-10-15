@@ -1150,6 +1150,144 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     summaryJa: '黒塗りの重い薬箱を背負い、妖しげな微笑みと万病を治す霊薬を携えて諸国を巡る美青年。',
     dnaPromptEn: 'A mysterious handsome itinerant medicine seller with delicate porcelain facial features, captivating knowing eyes, wearing wide woven sedge sunhat and layered traveling kimono, carrying tall lacquered wooden cabinet medicine trunk on back, foggy misty rural mountain pass',
     recommendedTastes: ['昭和怪異ホラー・カケアミ劇画', 'ノスタルジック魔女ファンタジー']
+  },
+
+  // ── 🐾 ユーザーリクエスト追加: 動物系擬人化 ──
+  {
+    id: 'arch_kemo_shiba_samurai',
+    name: '忠義の柴犬剣士・浪人',
+    category: 'fantasy',
+    icon: '🐕',
+    color: 'amber',
+    tags: ['#柴犬擬人化', '#柴耳＆巻き尾', '#着流し浪人', '#一本気'],
+    summaryJa: 'ピンと立ったもふもふの柴犬耳と愛らしい巻き尾、質素な着流しに木刀を差した素朴で義理堅い擬人化柴犬浪人。',
+    dnaPromptEn: 'A stoic handsome anthropomorphic Japanese Shiba Inu samurai swordsman with expressive fluffy pointed dog ears and a curly tail, noble warm amber eyes, wearing a simple textured linen kimono with rolled-up sleeves, holding a worn wooden bokken sword, rustic countryside backdrop, highly consistent character design',
+    recommendedTastes: ['ゆる浮世絵・戯画ポップ', '葛飾北斎・超写実肉筆浮世絵', '白黒劇画・超絶インク']
+  },
+  {
+    id: 'arch_kemo_cat_barista',
+    name: '黒猫カフェ店主・バリスタ',
+    category: 'fantasy',
+    icon: '🐈',
+    color: 'purple',
+    tags: ['#黒猫擬人化', '#猫耳＆しっぽ', '#クラシックエプロン', '#珈琲マスター'],
+    summaryJa: '艶やかな黒猫耳としなやかな細い尻尾を持つ物静かな美青年バリスタ。アンティークなカフェエプロンと真鍮のドリップポット。',
+    dnaPromptEn: 'A graceful stylish anthropomorphic black cat barista youth with sleek pointed cat ears and a long slender tail, piercing feline emerald eyes, wearing a dark canvas apron over rolled-sleeve white dress shirt and bowtie, skillfully pouring coffee from a brass drip kettle, cozy retro jazz cafe ambience',
+    recommendedTastes: ['ネオ・シティポップ・ナイトウォーク', 'ノスタルジック魔女ファンタジー・極細線画', 'ヴィンテージLo-Fi']
+  },
+  {
+    id: 'arch_kemo_snow_rabbit_miko',
+    name: '白兎の雪神楽巫女',
+    category: 'fantasy',
+    icon: '🐇',
+    color: 'rose',
+    tags: ['#白兎擬人化', '#うさ耳', '#純白巫女装束', '#雪神楽'],
+    summaryJa: '長く白いもふもふの兎耳に透き通るような紅玉色の瞳。純白と緋色の巫女装束をまとい、神楽鈴を掲げて舞う神秘的な雪兎の巫女。',
+    dnaPromptEn: 'A divine delicate anthropomorphic snow rabbit shrine maiden with long fluffy white bunny ears, glowing ruby-red eyes, pure fair skin, wearing traditional red-and-white Shinto miko robes with flowing sleeves, holding golden kagura bells with silk streamers, gently falling snow in sacred cedar shrine',
+    recommendedTastes: ['レトロモダン・ネオ・ジャポニスム', 'エモーショナル・シネマティック・スカイ', '鳥獣戯画・国宝絵巻']
+  },
+  {
+    id: 'arch_kemo_wolf_biker',
+    name: '孤高の灰狼ライダー',
+    category: 'fantasy',
+    icon: '🐺',
+    color: 'slate',
+    tags: ['#狼擬人化', '#銀狼耳', '#ダメージ革ジャン', '#夜の疾走'],
+    summaryJa: '銀灰色の鋭い狼耳とふさふさの尾を持つアウトローなバイク乗り。擦り切れたライダースジャケットと夜霧のヘッドライト。',
+    dnaPromptEn: 'A rugged cool anthropomorphic silver wolf biker with sharp wolf ears and a thick bushy tail, intense silver-blue eyes, wearing a distressed black leather motorcycle jacket with silver studs and chains, leaning against a custom dark motorcycle on wet neon-lit city street at midnight',
+    recommendedTastes: ['ネオ・シティポップ・ナイトウォーク', '青年誌カバー・艶麗アイライン＆ソリッドセル', '白黒劇画・超絶インク']
+  },
+
+  // ── 🏮 ユーザーリクエスト追加: YouTube「ガチ江戸」歴史劇画系 ──
+  {
+    id: 'arch_edo_ronin_master',
+    name: '凄腕の無頼浪人・居合抜刀',
+    category: 'historical',
+    icon: '⚔️',
+    color: 'amber',
+    tags: ['#ガチ江戸', '#無精髭浪人', '#居合斬り', '#凄腕剣客'],
+    summaryJa: '剃り残した無精髭に歴戦の刃傷。擦り切れた麻の黒着流しに大刀小刀を佩き、一切の油断のない鋭い眼光を放つ孤高の居合の達人。',
+    dnaPromptEn: 'An authentic rugged masterless Edo ronin samurai in his 30s with rough stubble, weathered intense gaze, scarred cheek, loose unkempt topknot, wearing a faded frayed dark hemp kimono tucked at the waist, two authentic katana swords thrust through obi, gritty rainy Edo street at nightfall, realistic authentic historical ukiyo-e aesthetic',
+    recommendedTastes: ['葛飾北斎・超写実肉筆浮世絵', '白黒劇画・超絶インク', '昭和怪異ホラー・カケアミ劇画']
+  },
+  {
+    id: 'arch_edo_okappiki_boss',
+    name: '江戸町奉行所筆頭・凄腕岡っ引き',
+    category: 'historical',
+    icon: '🏮',
+    color: 'orange',
+    tags: ['#ガチ江戸', '#岡っ引き親分', '#真鍮十手', '#八百八町の眼'],
+    summaryJa: '藍染めの半纏に粋な吉原つなぎの帯。懐には年季の入った真鍮十手、夜の八百八町の悪事を見逃さない老練な捜査の鬼。',
+    dnaPromptEn: 'A seasoned veteran Edo period okappiki chief investigator with a sharp piercing squint, wearing an authentic indigo dyed artisan hanten coat, white headband, holding a brass jutte truncheon half-concealed in sleeve, glowing faceted paper lantern, mist rising from Sumida riverbank at night',
+    recommendedTastes: ['葛飾北斎・超写実肉筆浮世絵', '白黒劇画・超絶インク']
+  },
+  {
+    id: 'arch_edo_oiran_tayuu',
+    name: '吉原最高峰・孤高の花魁太夫',
+    category: 'historical',
+    icon: '👘',
+    color: 'rose',
+    tags: ['#ガチ江戸', '#吉原花魁', '#豪華簪', '#絢爛重厚打掛'],
+    summaryJa: '無数の鼈甲簪を挿した立兵庫髷に、金糸銀糸で刺繍された極彩色の重厚な打掛。冷徹なまでの美貌と品格で君臨する吉原の最高峰太夫。',
+    dnaPromptEn: 'An exquisite high-ranking Edo Yoshiwara oiran tayu court lady with extravagant tatehyogo hair adorned with dozens of tortoiseshell kanzashi hairpins, immaculate porcelain makeup with crimson lip tint, wearing heavy multi-layered silk uchikake kimono embroidered with gold dragons and chrysanthemums, dignified cold beauty, candlelit tatami chamber',
+    recommendedTastes: ['葛飾北斎・超写実肉筆浮世絵', 'レトロモダン・ネオ・ジャポニスム', 'ラグジュアリー・ソシャゲ美麗キービジュアル']
+  },
+  {
+    id: 'arch_edo_kawaraban_reporter',
+    name: '江戸事件簿・瓦版屋の健脚青年',
+    category: 'historical',
+    icon: '📜',
+    color: 'teal',
+    tags: ['#ガチ江戸', '#瓦版屋', '#情報通', '#すばしっこい'],
+    summaryJa: '深編笠を目深に被り、摺り上がったばかりの瓦版を小脇に抱えて「大事件だよ！」と町中を駆け抜ける江戸一番の早耳青年。',
+    dnaPromptEn: 'An energetic agile young Edo news crier kawaraban seller wearing a deep woven wicker sedge hat, short active happi coat with tied sleeves, straw waraji sandals, holding reams of freshly woodblock-printed news broadsheets, running dynamically through crowded Edo Nihonbashi market',
+    recommendedTastes: ['葛飾北斎・超写実肉筆浮世絵', 'ゆる浮世絵・戯画ポップ']
+  },
+
+  // ── 🎸 ユーザーリクエスト追加: バンド・不良・ギャグ・特定キャラ ──
+  {
+    id: 'arch_subculture_punk_bassist',
+    name: '暴動パンク・女性ベーシスト',
+    category: 'subculture',
+    icon: '🎸',
+    color: 'purple',
+    tags: ['#ガールズバンド', '#パンクロック', '#ベース女子', '#ウルフカット'],
+    summaryJa: 'ネオンピンクのインナーカラーが入った黒髪ウルフカットに安全ピンピアス。傷だらけのヴィンテージベースを膝下まで低く構えてかき鳴らす激情ガール。',
+    dnaPromptEn: 'A rebellious fierce punk-rock girl bassist with choppy black wolf-cut hair and neon-pink underlayer streaks, smudged eyeliner, choker with safety pins, wearing an oversized torn band t-shirt, fishnet tights, combat boots, low-slung worn electric bass guitar, screaming amplifier smoke on underground live stage',
+    recommendedTastes: ['ネオ・シティポップ・ナイトウォーク', '青年誌カバー・艶麗アイライン＆ソリッドセル', '白黒劇画・超絶インク']
+  },
+  {
+    id: 'arch_showa_tsuppari_delinquent',
+    name: '昭和気骨・リーゼント特攻不良',
+    category: 'suspense',
+    icon: '🔥',
+    color: 'rose',
+    tags: ['#昭和不良', '#気骨番長', '#リーゼント', '#長ラン'],
+    summaryJa: '鋭く反り上がった黒髪ポンパドール（リーゼント）に白いサラシ、引きずるほど長い特注長ランを羽織る、情に厚い昭和ツッパリ番長。',
+    dnaPromptEn: 'A retro Showa era fierce high school yankee delinquent leader with a sharp pompadour hairstyle, intense fiery gaze, white bandage wraps around torso, wearing an ankle-length black modified long gakuran coat unbuttoned, leaning defiantly against a corrugated tin wall under a flickering streetlamp',
+    recommendedTastes: ['白黒劇画・超絶インク', '青年誌カバー・艶麗アイライン＆ソリッドセル', '昭和怪異ホラー・カケアミ劇画']
+  },
+  {
+    id: 'arch_gag_overreacting_salaryman',
+    name: '全身全霊ツッコミ・社畜漫才師',
+    category: 'daily',
+    icon: '🤣',
+    color: 'amber',
+    tags: ['#全力ツッコミ', '#ギャグ顔芸', '#漫才社畜', '#メガネ吹っ飛び'],
+    summaryJa: 'めくれたネクタイと飛び散る汗、衝撃でメガネが斜めにズレるほどの全身全霊ツッコミ顔芸を披露する愛されサラリーマン。',
+    dnaPromptEn: 'A hyper-expressive comedic Japanese businessman comically overreacting with mouth wide open in shocked disbelief, round glasses hilariously askew, tie flying wildly over shoulder, sweat drops flying, expressive anime slapstick humor face, energetic stage comedic lighting',
+    recommendedTastes: ['ゆる浮世絵・戯画ポップ', '鳥獣戯画・国宝絵巻', '日常・アオハルポップ']
+  },
+  {
+    id: 'arch_cyberpunk_underground_hacker',
+    name: '電脳裏路地・天才サイバーハッカー',
+    category: 'subculture',
+    icon: '💻',
+    color: 'cyan',
+    tags: ['#サイバーパンク', '#天才ハッカー', '#ホログラムHUD', '#電脳義肢'],
+    summaryJa: 'オーバーサイズフードにホログラム発光バイザー、指先に電脳端子を備えたサイバー義肢で幾何学コードを空中入力する謎の天才ネットランナー。',
+    dnaPromptEn: 'A mysterious androgynous cyberpunk netrunner hacker huddled in an oversized high-collar techwear jacket, wearing glowing cyan augmented-reality holographic visor spectacles, cybernetic metallic fingers typing rapidly into floating luminescent holographic code displays, dark rain-slicked server alley',
+    recommendedTastes: ['ネオ・シティポップ・ナイトウォーク', 'サイバー設計図・インダストリアル青図', 'エモーショナル・シネマティック・スカイ']
   }
 ];
 
