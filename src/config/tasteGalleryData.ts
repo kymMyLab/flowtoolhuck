@@ -268,4 +268,130 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
       adult: `${CDN_BASE}/davinci_codex/adult.jpg`,
     }
   },
+
+  // ── 🐾 ユーザーリクエスト追加: 動物系擬人化 ──
+  {
+    id: 'kemomimi_fantasy',
+    tasteKey: '🦊 もふもふケモミミ・獣人ファンタジー (Fluffy Kemomimi & Beastfolk Fantasy)',
+    displayName: '🦊 もふもふケモミミ・獣人ファンタジー',
+    category: 'anime',
+    descriptionJp: 'ふさふさの動物耳と尻尾を持つ愛らしいケモミミキャラクター。温かみのある柔らかな光とファンタジーアニメ調。',
+    samples: {
+      students: `${CDN_BASE}/kemomimi_fantasy/students.jpg`,
+      edo: `${CDN_BASE}/kemomimi_fantasy/edo.jpg`,
+      adult: `${CDN_BASE}/kemomimi_fantasy/adult.jpg`,
+    }
+  },
+  {
+    id: 'cyber_beast',
+    tasteKey: '🐺 サイバー・ビーストパンク (Cyber Beastpunk & Anthropomorphic)',
+    displayName: '🐺 サイバー・ビーストパンク',
+    category: 'anime',
+    descriptionJp: 'ネオン光彩が走るサイバー義肢と鋭い獣耳。近未来の電脳裏通りを駆けるスタイリッシュな獣人ストリート調。',
+    samples: {
+      students: `${CDN_BASE}/cyber_beast/students.jpg`,
+      edo: `${CDN_BASE}/cyber_beast/edo.jpg`,
+      adult: `${CDN_BASE}/cyber_beast/adult.jpg`,
+    }
+  },
+  {
+    id: 'retro_animaloid',
+    tasteKey: '🐾 平成レトロ・戯画アニマロイド (Retro Pop Animaloid Cartoon)',
+    displayName: '🐾 平成レトロ・戯画アニマロイド',
+    category: 'art',
+    descriptionJp: 'アメリカンカートゥーンと日本のマスコットが融合した、ポップで愛嬌たっぷりの擬人化アニマルアート。',
+    samples: {
+      students: `${CDN_BASE}/retro_animaloid/students.jpg`,
+      edo: `${CDN_BASE}/retro_animaloid/edo.jpg`,
+      adult: `${CDN_BASE}/retro_animaloid/adult.jpg`,
+    }
+  },
+
+  // ── 🏮 ユーザーリクエスト追加: YouTube「ガチ江戸」歴史劇画系 ──
+  {
+    id: 'gachi_edo_geki',
+    tasteKey: '🏮 YouTube歴史解説・ガチ江戸劇画 (Authentic Edo Documentary Gekiga)',
+    displayName: '🏮 YouTube歴史解説・ガチ江戸劇画',
+    category: 'japanese',
+    descriptionJp: 'YouTubeの歴史深掘り動画のような重厚な墨線、和紙の繊維感、リアルな江戸庶民の陰影と本格時代考証劇画。',
+    samples: {
+      students: `${CDN_BASE}/gachi_edo_geki/students.jpg`,
+      edo: `${CDN_BASE}/gachi_edo_geki/edo.jpg`,
+      adult: `${CDN_BASE}/gachi_edo_geki/adult.jpg`,
+    }
+  },
+  {
+    id: 'edo_noir_alley',
+    tasteKey: '👘 吉原裏路地・陰影浮世絵ノワール (Edo Alley Ukiyo-e Noir)',
+    displayName: '👘 吉原裏路地・陰影浮世絵ノワール',
+    category: 'japanese',
+    descriptionJp: '行灯の茜色と漆黒の闇が織りなすシネマティックな江戸情景。格子戸の影と艶やかな着物の陰影美。',
+    samples: {
+      students: `${CDN_BASE}/edo_noir_alley/students.jpg`,
+      edo: `${CDN_BASE}/edo_noir_alley/edo.jpg`,
+      adult: `${CDN_BASE}/edo_noir_alley/adult.jpg`,
+    }
+  },
+  {
+    id: 'bakumatsu_photo_hanga',
+    tasteKey: '⚔️ 幕末古写真風・木版クロニクル (Bakumatsu Tintype & Woodblock)',
+    displayName: '⚔️ 幕末古写真風・木版クロニクル',
+    category: 'japanese',
+    descriptionJp: '幕末の湿板写真（セピア・銀塩写真）の粒子感と木版画の擦れが融合した、圧倒的リアリズムの歴史ロマン。',
+    samples: {
+      students: `${CDN_BASE}/bakumatsu_photo_hanga/students.jpg`,
+      edo: `${CDN_BASE}/bakumatsu_photo_hanga/edo.jpg`,
+      adult: `${CDN_BASE}/bakumatsu_photo_hanga/adult.jpg`,
+    }
+  },
+
+  // ── 🎸 ユーザーリクエスト追加: サブカル・不良・ギャグ・特定ジャンル ──
+  {
+    id: 'garage_punk_live',
+    tasteKey: '🎸 ガレージパンク・地下ライブハウス (Garage Punk & Underground Live)',
+    displayName: '🎸 ガレージパンク・地下ライブハウス',
+    category: 'art',
+    descriptionJp: '地下ライブハウスの熱気、飛び散るスプレー、ハイコントラストなストロボ光とアンプの煙が渦巻くロックスタイル。',
+    samples: {
+      students: `${CDN_BASE}/garage_punk_live/students.jpg`,
+      edo: `${CDN_BASE}/garage_punk_live/edo.jpg`,
+      adult: `${CDN_BASE}/garage_punk_live/adult.jpg`,
+    }
+  },
+  {
+    id: 'showa_yankee_action',
+    tasteKey: '👊 昭和ツッパリ・熱血暴走劇画 (Retro Showa Yankee Action Manga)',
+    displayName: '👊 昭和ツッパリ・熱血暴走劇画',
+    category: 'anime',
+    descriptionJp: '80年代ヤンキー漫画のような太い黒ベタ、激しい集中線、ギラつく眼光と熱血スクリーントーン。',
+    samples: {
+      students: `${CDN_BASE}/showa_yankee_action/students.jpg`,
+      edo: `${CDN_BASE}/showa_yankee_action/edo.jpg`,
+      adult: `${CDN_BASE}/showa_yankee_action/adult.jpg`,
+    }
+  },
+  {
+    id: 'pop_slapstick_gag',
+    tasteKey: '🤪 爆笑カートゥーン・スラップスティック (Slapstick Comedy & Hyper-Deform)',
+    displayName: '🤪 爆笑カートゥーン・スラップスティック',
+    category: 'art',
+    descriptionJp: '目が飛び出る・アゴが外れる！コミカルな漫符と全身全霊のオーバーアクションが炸裂する全力ギャグ調。',
+    samples: {
+      students: `${CDN_BASE}/pop_slapstick_gag/students.jpg`,
+      edo: `${CDN_BASE}/pop_slapstick_gag/edo.jpg`,
+      adult: `${CDN_BASE}/pop_slapstick_gag/adult.jpg`,
+    }
+  },
+  {
+    id: 'shimokita_chillhop',
+    tasteKey: '☕ 下北沢オルタナ・チルホップ (Shimokitazawa Indie Lo-Fi Chill)',
+    displayName: '☕ 下北沢オルタナ・チルホップ',
+    category: 'anime',
+    descriptionJp: '下北沢の古着屋やレコードショップのような、くすみカラーとレコードノイズ、エモい日常スナップ調。',
+    samples: {
+      students: `${CDN_BASE}/shimokita_chillhop/students.jpg`,
+      edo: `${CDN_BASE}/shimokita_chillhop/edo.jpg`,
+      adult: `${CDN_BASE}/shimokita_chillhop/adult.jpg`,
+    }
+  }
 ];
