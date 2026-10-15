@@ -18,6 +18,13 @@ export const CutVideoControls: React.FC<CutVideoControlsProps> = ({
   onBrowserAnimate
 }) => {
   const [downloadState, setDownloadState] = useState<'idle' | 'saving' | 'done'>('idle');
+  const timerRef = React.useRef<any>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const videoSrc = cut.videoBase64
     ? (cut.videoBase64.startsWith('data:') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`)
@@ -34,7 +41,8 @@ export const CutVideoControls: React.FC<CutVideoControlsProps> = ({
       
       await Flow.download({ base64: b64Data, mimeType: 'video/mp4', filename });
       setDownloadState('done');
-      setTimeout(() => setDownloadState('idle'), 3000);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setDownloadState('idle'), 3000);
     } catch (err) {
       console.error('Download failed', err);
       setDownloadState('idle');

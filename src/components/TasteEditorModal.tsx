@@ -24,6 +24,15 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [copiedStatus, setCopiedStatus] = useState<'idle' | 'copied' | 'selected'>('idle');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const saveTimerRef = useRef<any>(null);
+  const copyTimerRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -68,9 +77,10 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
 
   const handleCopy = async () => {
     const success = await copyToClipboard(jsonText);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     if (success) {
       setCopiedStatus('copied');
-      setTimeout(() => setCopiedStatus('idle'), 2500);
+      copyTimerRef.current = setTimeout(() => setCopiedStatus('idle'), 2500);
     } else {
       // サンドボックスで execCommand もブロックされた場合の最終安全策: テキスト全選択
       if (textareaRef.current) {
@@ -78,7 +88,7 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
         textareaRef.current.select();
       }
       setCopiedStatus('selected');
-      setTimeout(() => setCopiedStatus('idle'), 3500);
+      copyTimerRef.current = setTimeout(() => setCopiedStatus('idle'), 3500);
     }
   };
 
@@ -98,7 +108,8 @@ export const TasteEditorModal: React.FC<TasteEditorModalProps> = ({
       saveCustomTastes(cleaned);
       onTastesUpdated(cleaned);
       setSaveSuccess(true);
-      setTimeout(() => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
         setSaveSuccess(false);
         onClose();
       }, 500);

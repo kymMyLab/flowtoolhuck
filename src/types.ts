@@ -1,5 +1,5 @@
 export type VideoModelType = 'veo-lite' | 'omni-flash' | 'veo-fast' | 'browser-0pt';
-export type ProductionMode = 'episodes' | 'manga' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix';
+export type ProductionMode = 'episodes' | 'manga' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix' | 'manzai';
 export type RecommendationModel = VideoModelType | 'none';
 export type VideoRatio = 'none' | '30%' | '50%' | '100%';
 
@@ -55,6 +55,7 @@ export interface Cut {
   narrationJp: string;
   narrationEn?: string;
   negativePrompt?: string; 
+  duration?: number;
   
   shotScale?: string;
   cinematicAngle?: string;
@@ -174,6 +175,7 @@ export interface GeneratorSettings {
   videoModel?: string;
   videoRatio: VideoRatio;
   episodeCount: number;
+  totalEpisodes?: number;
   previewCutCount: number; 
   parallelCount: number;
   autoVideo: boolean;
@@ -191,6 +193,7 @@ export interface GeneratorSettings {
 }
 
 export interface GenerationTask {
+  id?: string | number;
   epId: number;
   cutId: number;
   prompt: string;
@@ -240,6 +243,8 @@ export interface SeriesManifest {
     styleDna?: string;
     antiPoseNegative?: string;
     eraNegative?: string;
+    characterTurnaroundMediaId?: string;
+    characterTurnaroundBase64?: string;
   };
   settings?: Partial<GeneratorSettings>;
 }

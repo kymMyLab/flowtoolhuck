@@ -374,7 +374,7 @@ export interface SafeScriptResult {
   highlightWords: string[];
   cuts: Array<{
     id: number;
-    panelLayout?: 'single' | 'split-2' | 'split-3' | 'dynamic-multi';
+    panelLayout?: Cut['panelLayout'];
     basicPlot: string;
     narrationJp: string;
     highlights?: string[];

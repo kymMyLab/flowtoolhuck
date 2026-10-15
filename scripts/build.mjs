@@ -70,7 +70,10 @@ async function runBuild() {
     execSync('npm install', { cwd: localBuildDir, stdio: 'inherit' });
   }
 
-  // 2. Vite Build 実行
+  // 2. TypeScript 型チェック ＆ Vite Build 実行
+  log('Executing TypeScript type check (tsc --noEmit)...');
+  execSync('npx tsc --noEmit', { cwd: localBuildDir, stdio: 'inherit' });
+
   const localDistDir = path.join(localBuildDir, 'dist');
   if (fs.existsSync(localDistDir)) {
     fs.rmSync(localDistDir, { recursive: true, force: true });

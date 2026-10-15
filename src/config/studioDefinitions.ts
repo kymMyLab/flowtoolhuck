@@ -286,29 +286,120 @@ export const SHOT_SCALE_REGISTRY: Record<string, ShotScaleDefinition> = {
   }
 };
 
-// ── 5. アクション・姿勢の対比ルール（Pose Contrast Rule） ─────────────
+// ── 5. アクション・姿勢・小道具の対比ルール（Pose & Props Contrast Rule） ─────────────
 export const POSE_CONTRAST_RULES: Array<{
   triggerKeywords: string[];
   antiRepeatNegatives: string[];
 }> = [
+  // 1. 座り・しゃがみ・床姿勢
   {
-    triggerKeywords: ['sit', 'sitting', 'floor', 'ground', 'tatami', 'cross-legged', 'seated'],
+    triggerKeywords: ['sit', 'sitting', 'floor', 'ground', 'tatami', 'cross-legged', 'seated', 'crouch', 'crouching', 'squat', 'bench', 'chair'],
     antiRepeatNegatives: [
-      'sitting on floor', 'sitting down', 'seated', 'crossed legs', 
+      'sitting on floor', 'sitting down', 'seated posture', 'crossed legs', 
       'kneeling', 'squatting', 'floor sitting pose', 'looking up from floor', 
-      'sitting on tatami', 'floor seating posture'
+      'sitting on tatami', 'floor seating posture', 'sitting on bench', 'sitting on chair'
     ]
   },
+  // 2. 直立・棒立ち
   {
     triggerKeywords: ['stand', 'standing', 'stiff', 'upright'],
     antiRepeatNegatives: [
-      'stiff standing pose', 'static upright standing', 'motionless standing'
+      'stiff standing pose', 'static upright standing', 'motionless standing',
+      'identical standing pose', 'repeating standing posture', 'straight standing posture'
     ]
   },
+  // 3. 移動（歩き・走り・疾走）
   {
-    triggerKeywords: ['walk', 'walking', 'run', 'running'],
+    triggerKeywords: ['walk', 'walking', 'stride', 'run', 'running', 'dash', 'dashing'],
     antiRepeatNegatives: [
-      'walking away repetition', 'running pose repetition'
+      'walking away repetition', 'running pose repetition', 'identical walking stride',
+      'walking in same direction', 'dashing pose repetition'
+    ]
+  },
+  // 4. 傘・日傘・雨天小道具（手前カットからの連続出現を絶対阻止）
+  {
+    triggerKeywords: ['umbrella', 'parasol', 'rain', '傘', '日傘', '雨傘'],
+    antiRepeatNegatives: [
+      'holding umbrella', 'open umbrella', 'umbrella in hand', 'repeating umbrella pose',
+      'holding clear vinyl umbrella', 'carrying umbrella', 'parasol', 'umbrella canopy'
+    ]
+  },
+  // 5. スマホ・携帯デバイス
+  {
+    triggerKeywords: ['phone', 'smartphone', 'mobile', 'cellphone', 'スマホ', '携帯'],
+    antiRepeatNegatives: [
+      'holding smartphone', 'looking at phone screen', 'repeating phone gesture',
+      'operating mobile device', 'texting on smartphone'
+    ]
+  },
+  // 6. カップ・グラス・飲み物・カフェ小道具
+  {
+    triggerKeywords: ['cup', 'mug', 'glass', 'drink', 'drinking', 'coffee', 'tea', 'beverage', 'tumbler', 'カップ', 'コップ'],
+    antiRepeatNegatives: [
+      'holding cup', 'holding mug', 'drinking pose', 'holding beverage', 'sipping drink', 'holding glass'
+    ]
+  },
+  // 7. 自転車・乗り物
+  {
+    triggerKeywords: ['bike', 'bicycle', 'cycling', 'pedal', '自転車'],
+    antiRepeatNegatives: [
+      'riding bicycle', 'sitting on bike', 'holding bicycle handlebars', 'repeating bicycle framing'
+    ]
+  },
+  // 8. 本・ノート・ペン・読書・執筆
+  {
+    triggerKeywords: ['book', 'notebook', 'pen', 'reading', 'writing', 'pencil', '本', '読書'],
+    antiRepeatNegatives: [
+      'holding book', 'reading book pose', 'holding notebook', 'writing with pen', 'open book'
+    ]
+  },
+  // 9. 刀・剣・武器
+  {
+    triggerKeywords: ['sword', 'katana', 'blade', 'weapon', 'sheath', '刀', '抜刀'],
+    antiRepeatNegatives: [
+      'holding katana', 'drawing sword pose', 'brandishing weapon', 'holding blade'
+    ]
+  },
+  // 10. 扇子・うちわ
+  {
+    triggerKeywords: ['fan', 'folding fan', 'sensu', 'uchiwa', '扇子', '団扇'],
+    antiRepeatNegatives: [
+      'holding folding fan', 'waving fan', 'fan covering mouth', 'holding sensu'
+    ]
+  },
+  // 11. ヘッドフォン・音楽機器
+  {
+    triggerKeywords: ['headphone', 'headphones', 'earphone', 'earphones', 'headset', 'ヘッドホン'],
+    antiRepeatNegatives: [
+      'wearing headphones around neck', 'adjusting headphones', 'listening with earphones'
+    ]
+  },
+  // 12. 寄りかかり・手すり・壁
+  {
+    triggerKeywords: ['lean', 'leaning', 'railing', 'fence', 'against wall'],
+    antiRepeatNegatives: [
+      'leaning against wall', 'leaning on railing', 'slouching posture', 'leaning pose'
+    ]
+  },
+  // 13. 頬杖・顔に手を当てる思索ポーズ
+  {
+    triggerKeywords: ['hand on chin', 'hand on cheek', 'thinking pose', 'chin in hand', 'resting chin', '頬杖'],
+    antiRepeatNegatives: [
+      'hand on chin pose', 'hand on cheek', 'touching face pose', 'resting chin on palm'
+    ]
+  },
+  // 14. 振り返り・背後構図
+  {
+    triggerKeywords: ['turn', 'turning', 'behind', 'back view', 'looking back', 'shoulder'],
+    antiRepeatNegatives: [
+      'seen from behind', 'looking back over shoulder', 'back turned', 'rear view repetition'
+    ]
+  },
+  // 15. 正面凝視・カメラ目線
+  {
+    triggerKeywords: ['front', 'facing camera', 'centered', 'eye contact', 'looking at viewer', 'looking at camera'],
+    antiRepeatNegatives: [
+      'facing front camera', 'identical front view', 'centered head-on angle', 'looking straight into camera', 'monotonous eye contact', 'mugshot stare'
     ]
   }
 ];
@@ -519,6 +610,26 @@ For EACH cut, select 1 to 2 key emotional words (which MUST be EXACTLY present i
     getContextTitle: () => 'Style Matrix Comparison',
     promptInstructions: `STYLE MATRIX COMPARISON DIRECTING:
 Direct standardized prompt scenes for evaluating identical visual compositions across different art styles.`
+  },
+  manzai: {
+    value: 'manzai',
+    label: '🎙️ 漫才・掛け合い',
+    icon: 'record_voice_over',
+    badge: '演芸掛け合い',
+    desc: 'テンポ良いボケ＆ツッコミの掛け合い劇',
+    telopNote: 'ポップスライド・掛け合い吹き出し',
+    colorClass: 'border-orange-500/30 bg-orange-950/40 text-orange-200',
+    cardTitle: 'Manzai Dialogue Card',
+    cardIcon: 'record_voice_over',
+    themeLabel: 'テーマ・お題',
+    unit: '本',
+    themes: [],
+    getDirectorRole: () => 'world-class comedic writer and dynamic dialogue director',
+    getContextTitle: () => 'Manzai Dialogue Routine',
+    promptInstructions: `MANZAI & COMEDIC DIALOGUE DIRECTING:
+1. Pacing & Timing: Rapid-fire banter between two contrasting characters (Boke & Tsukkomi). Dynamic reaction shots and exaggerated expressions.
+2. Dialogue: narrationJp MUST be crisp, rhythmic Japanese comedic dialogue with snappy punchlines.
+3. Highlights: Highlight the punchline keywords, witty remarks, and sound effects.`
   }
 };
 
@@ -632,7 +743,7 @@ export const BASELINE_NEGATIVE_TOKENS = {
   antiReferenceStiffness: 'identical pose as reference image, repeating reference image pose, static mugshot pose, repeating reference angle',
   antiAnachronisms: 'modern clothing, wristwatch, eyeglasses, sneakers, smartphone, headphones, electricity pole, asphalt road',
   antiFrameAndBorder: 'frame, border, picture frame, ornate frame, arch frame, decorative border, white border, white margin, white gutter, paper margin, comic panel outline, panel border, outer frame, blank edge, cropped border, boxed layout, empty spacing',
-  renderingQuality: 'lowres, worst quality, text, watermark, signature, blurry, artifact, jpeg artifacts, poorly rendered'
+  renderingQuality: 'lowres, worst quality, text, subtitles, closed captions, caption bar, caption banner, speech bubbles, dialog box, Japanese characters, kanji subtitles, news ticker, text overlay, title text, watermark, signature, blurry, artifact, jpeg artifacts, poorly rendered'
 };
 
 // ── 8. Vook風テロップ演出スタイル＆トランジション定義 ──────────────────────

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { CastCharacter } from '../../../types';
 import { formatDataUri } from '../../../services/utils';
 import {
@@ -17,7 +17,7 @@ export interface CharacterSelectorAccordionProps {
   onOpenCastModal?: () => void;
 }
 
-export const CharacterSelectorAccordion: React.FC<CharacterSelectorAccordionProps> = ({
+const CharacterSelectorAccordionComponent: React.FC<CharacterSelectorAccordionProps> = ({
   isCastLockEnabled,
   onToggleCastLock,
   selectedCastId,
@@ -36,35 +36,40 @@ export const CharacterSelectorAccordion: React.FC<CharacterSelectorAccordionProp
   const [castRoleFilter, setCastRoleFilter] = useState<'all' | 'protagonist' | 'partner' | 'antagonist' | 'supporting'>('all');
 
   // キャスト画像取得ヘルパー（アバター優先、三面図、表情のフォールバック。URLとbase64両対応）
-  const getCharacterThumbnail = (char: CastCharacter): string | undefined => {
+  const getCharacterThumbnail = useCallback((char: CastCharacter): string | undefined => {
     const raw = char.avatarBase64 || char.turnaroundBase64 || char.expressions?.neutral?.imageBase64;
     return raw ? (formatDataUri(raw) || undefined) : undefined;
-  };
+  }, []);
 
-  // フィルタリング済みキャスト一覧（登録キャラクター）
-  const filteredCharacters = castCharacters.filter((char) => {
-    const matchesRole = castRoleFilter === 'all' || char.role === castRoleFilter;
-    const matchesSearch = !castSearchQuery.trim() || 
-      char.name.toLowerCase().includes(castSearchQuery.toLowerCase()) ||
-      (char.dnaPromptEn && char.dnaPromptEn.toLowerCase().includes(castSearchQuery.toLowerCase()));
-    return matchesRole && matchesSearch;
-  });
+  // フィルタリング済みキャスト一覧（登録キャラクター）を高速メモ化
+  const filteredCharacters = useMemo(() => {
+    const q = castSearchQuery.trim().toLowerCase();
+    return castCharacters.filter((char) => {
+      const matchesRole = castRoleFilter === 'all' || char.role === castRoleFilter;
+      const matchesSearch = !q || 
+        char.name.toLowerCase().includes(q) ||
+        (char.dnaPromptEn && char.dnaPromptEn.toLowerCase().includes(q));
+      return matchesRole && matchesSearch;
+    });
+  }, [castCharacters, castRoleFilter, castSearchQuery]);
 
-  // フィルタリング済み様態マスター一覧（Archetypes 100選）
-  const filteredArchetypes = CHARACTER_ARCHETYPES.filter((arch) => {
-    const matchesCategory = archetypeCategory === 'all' || arch.category === archetypeCategory;
+  // フィルタリング済み様態マスター一覧（Archetypes 100選）を高速メモ化
+  const filteredArchetypes = useMemo(() => {
     const q = archetypeSearchQuery.trim().toLowerCase();
-    const matchesSearch = !q ||
-      arch.name.toLowerCase().includes(q) ||
-      arch.summaryJa.toLowerCase().includes(q) ||
-      arch.dnaPromptEn.toLowerCase().includes(q) ||
-      arch.tags.some(t => t.toLowerCase().includes(q));
-    return matchesCategory && matchesSearch;
-  });
+    return CHARACTER_ARCHETYPES.filter((arch) => {
+      const matchesCategory = archetypeCategory === 'all' || arch.category === archetypeCategory;
+      const matchesSearch = !q ||
+        arch.name.toLowerCase().includes(q) ||
+        arch.summaryJa.toLowerCase().includes(q) ||
+        arch.dnaPromptEn.toLowerCase().includes(q) ||
+        arch.tags.some(t => t.toLowerCase().includes(q));
+      return matchesCategory && matchesSearch;
+    });
+  }, [archetypeCategory, archetypeSearchQuery]);
 
   // 選択中の様態 or 登録キャラクターの解決
-  const selectedArchetype = CHARACTER_ARCHETYPES.find(a => a.id === selectedCastId);
-  const selectedRegisteredChar = castCharacters.find(c => c.id === selectedCastId);
+  const selectedArchetype = useMemo(() => CHARACTER_ARCHETYPES.find(a => a.id === selectedCastId), [selectedCastId]);
+  const selectedRegisteredChar = useMemo(() => castCharacters.find(c => c.id === selectedCastId), [castCharacters, selectedCastId]);
 
   return (
     <>
@@ -723,3 +728,5 @@ export const CharacterSelectorAccordion: React.FC<CharacterSelectorAccordionProp
     </>
   );
 };
+
+export const CharacterSelectorAccordion = React.memo(CharacterSelectorAccordionComponent);

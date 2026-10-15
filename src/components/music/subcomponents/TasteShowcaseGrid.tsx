@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { TASTE_GALLERY_DATA, TasteGalleryItem } from '../../../config/tasteGalleryData';
 
 export interface TasteShowcaseGridProps {
@@ -6,7 +6,7 @@ export interface TasteShowcaseGridProps {
   onSelectTasteKey: (tasteKey: string) => void;
 }
 
-export const TasteShowcaseGrid: React.FC<TasteShowcaseGridProps> = ({
+const TasteShowcaseGridComponent: React.FC<TasteShowcaseGridProps> = ({
   selectedTasteKey,
   onSelectTasteKey,
 }) => {
@@ -15,18 +15,21 @@ export const TasteShowcaseGrid: React.FC<TasteShowcaseGridProps> = ({
   const [tasteCategoryFilter, setTasteCategoryFilter] = useState<'all' | 'anime' | 'japanese' | 'cinematic' | 'art'>('all');
   const [tasteZoomImage, setTasteZoomImage] = useState<{ url: string; title: string } | null>(null);
 
-  // フィルタリング済み画風モデル一覧
-  const filteredTastes = TASTE_GALLERY_DATA.filter((item: TasteGalleryItem) => {
-    const matchesCategory = tasteCategoryFilter === 'all' || item.category === tasteCategoryFilter;
-    const matchesSearch = !tasteSearchQuery.trim() || 
-      item.displayName.toLowerCase().includes(tasteSearchQuery.toLowerCase()) ||
-      item.tasteKey.toLowerCase().includes(tasteSearchQuery.toLowerCase()) ||
-      item.descriptionJp.toLowerCase().includes(tasteSearchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // フィルタリング済み画風モデル一覧（高速メモ化）
+  const filteredTastes = useMemo(() => {
+    const q = tasteSearchQuery.trim().toLowerCase();
+    return TASTE_GALLERY_DATA.filter((item: TasteGalleryItem) => {
+      const matchesCategory = tasteCategoryFilter === 'all' || item.category === tasteCategoryFilter;
+      const matchesSearch = !q || 
+        item.displayName.toLowerCase().includes(q) ||
+        item.tasteKey.toLowerCase().includes(q) ||
+        item.descriptionJp.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [tasteCategoryFilter, tasteSearchQuery]);
 
-  const selectedTasteItem = TASTE_GALLERY_DATA.find((t: TasteGalleryItem) => t.tasteKey === selectedTasteKey);
-  const expandedTasteItem = expandedTasteId ? TASTE_GALLERY_DATA.find((t: TasteGalleryItem) => t.id === expandedTasteId) : null;
+  const selectedTasteItem = useMemo(() => TASTE_GALLERY_DATA.find((t: TasteGalleryItem) => t.tasteKey === selectedTasteKey), [selectedTasteKey]);
+  const expandedTasteItem = useMemo(() => expandedTasteId ? TASTE_GALLERY_DATA.find((t: TasteGalleryItem) => t.id === expandedTasteId) : null, [expandedTasteId]);
 
   return (
     <>
@@ -309,3 +312,5 @@ export const TasteShowcaseGrid: React.FC<TasteShowcaseGridProps> = ({
     </>
   );
 };
+
+export const TasteShowcaseGrid = React.memo(TasteShowcaseGridComponent);

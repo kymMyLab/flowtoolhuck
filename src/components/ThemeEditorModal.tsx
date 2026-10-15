@@ -20,6 +20,13 @@ export const ThemeEditorModal: React.FC<ThemeEditorModalProps> = ({
 }) => {
   const [text, setText] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const timerRef = React.useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -40,7 +47,8 @@ export const ThemeEditorModal: React.FC<ThemeEditorModalProps> = ({
     const updatedList = updatedMap[currentMode] || [];
     onThemesUpdated(updatedList);
     setSaveSuccess(true);
-    setTimeout(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
       setSaveSuccess(false);
       onClose();
     }, 600);

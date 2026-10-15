@@ -126,6 +126,7 @@ export const CutTelopEditor: React.FC<CutTelopEditorProps> = ({
                 onUpdateCut({ 
                   telop: { 
                     ...(cut.telop || {}), 
+                    fullText: cut.telop?.fullText || cut.narrationJp || '',
                     style: found.id,
                     transition: found.defaultTransition
                   } 

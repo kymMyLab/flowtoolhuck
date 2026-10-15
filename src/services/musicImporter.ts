@@ -1,4 +1,4 @@
-import { Episode, Cut, ProductionMode, CastCharacter } from '../types';
+import { Episode, Cut, ProductionMode, CastCharacter, TelopStyle, TelopTransition, TelopPosition } from '../types';
 import { extractHighlights } from './directorService';
 import { resolveMasterCategory } from '../config/masterCategories';
 import { CAMERA_WORK_REGISTRY } from '../constants';
@@ -36,7 +36,7 @@ export interface ImportedTrack {
   audio_filename?: string;
   wav_url?: string;
   cover_url?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -136,90 +136,184 @@ export function parseTextTracksFormat(rawText: string): ImportedTrack[] {
 }
 
 /**
+ * 破損したJSON文字列から正規表現で可能な限りトラックメタデータをサルベージする救出パーサー
+ */
+function salvageTracksFromCorruptedText(text: string): ImportedTrack[] {
+  const tracks: ImportedTrack[] = [];
+
+  // "title": "..." パターンを走査
+  const titleMatches = Array.from(text.matchAll(/"title"\s*:\s*"([^"]+)"/gi));
+  if (titleMatches.length > 0) {
+    for (let i = 0; i < titleMatches.length; i++) {
+      const title = titleMatches[i][1].trim();
+      const trackId = `trk_${Date.now()}_${i + 1}`;
+      tracks.push({
+        id: trackId,
+        track_id: trackId,
+        track_no: i + 1,
+        title: title || `救出トラック ${i + 1}`,
+        format: '🎵 音楽MV (12カット)',
+        track_type: 'Vocal',
+        pool_code: 20,
+        style_code: 21,
+        taste: 'youth_pop',
+        bpm: 125,
+        chorus_start_sec: 65,
+        chorus_end_sec: 95,
+        chorus_duration_sec: 30,
+        chorus_start_ms: 65000,
+        chorus_end_ms: 95000,
+        input_lyrics: text.slice(0, 1000)
+      });
+    }
+  }
+
+  return tracks;
+}
+
+/**
  * CT198からエクスポートされたJSONテキスト（単体または配列）をパースして正規化
- * （プレーンテキスト形式の場合もフォールバック解析）
+ * （破損JSONや特殊データ構造にも絶対にクラッシュしない多層フォールバック機構）
  */
 export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
+  if (!rawText || typeof rawText !== 'string') return [];
   const cleanText = rawText.replace(/^\uFEFF/, '').trim();
   if (!cleanText) return [];
 
   try {
-    const parsed = JSON.parse(cleanText);
-    let list: any[] = [];
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(cleanText);
+    } catch {
+      // 軽微な構文エラー（末尾カンマなど）を自動修正して再試行
+      const relaxedText = cleanText.replace(/,\s*([\]}])/g, '$1');
+      parsed = JSON.parse(relaxedText);
+    }
+
+    let list: unknown[] = [];
     if (Array.isArray(parsed)) {
       list = parsed;
     } else if (parsed && typeof parsed === 'object') {
-      if (Array.isArray(parsed.tracks)) {
-        list = parsed.tracks;
-      } else if (Array.isArray(parsed.songs)) {
-        list = parsed.songs;
-      } else if (Array.isArray(parsed.session_songs)) {
-        list = parsed.session_songs;
-      } else if (Array.isArray(parsed.items)) {
-        list = parsed.items;
-      } else if (Array.isArray(parsed.data)) {
-        list = parsed.data;
-      } else if (parsed.title || parsed.track_id || parsed.id) {
-        list = [parsed];
+      const obj = parsed as Record<string, unknown>;
+      if (Array.isArray(obj.tracks)) {
+        list = obj.tracks;
+      } else if (Array.isArray(obj.songs)) {
+        list = obj.songs;
+      } else if (Array.isArray(obj.session_songs)) {
+        list = obj.session_songs;
+      } else if (Array.isArray(obj.items)) {
+        list = obj.items;
+      } else if (Array.isArray(obj.data)) {
+        list = obj.data;
+      } else if (obj.title || obj.track_id || obj.id) {
+        list = [obj];
       } else {
-        const values = Object.values(parsed);
-        if (values.length > 0 && typeof values[0] === 'object') {
+        const values = Object.values(obj);
+        if (values.length > 0 && typeof values[0] === 'object' && values[0] !== null) {
           list = values;
         } else {
-          list = [parsed];
+          list = [obj];
         }
       }
     }
 
-    return list.map((item, idx) => {
-      const poolCode = Number(item.pool_code) || 20;
-      const styleCode = Number(item.style_code) || (poolCode + 1);
-      const cStart = Number(item.chorus_start_sec) || 65;
-      const cEnd = Number(item.chorus_end_sec) || (cStart + 30);
-      const cDur = Number(item.chorus_duration_sec) || Math.max(1, cEnd - cStart);
+    return list.map((rawItem, idx) => {
+      const item: Record<string, unknown> = (rawItem && typeof rawItem === 'object') ? (rawItem as Record<string, unknown>) : {};
+
+      const numVal = (v: unknown, fallback: number): number => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : fallback;
+      };
+
+      const strVal = (v: unknown, fallback: string = ''): string => {
+        if (v === null || v === undefined) return fallback;
+        return String(v).trim();
+      };
+
+      const poolCode = numVal(item.pool_code, 20);
+      const styleCode = numVal(item.style_code, poolCode + 1);
+      const cStart = numVal(item.chorus_start_sec, 65);
+      const cEnd = numVal(item.chorus_end_sec, cStart + 30);
+      const cDur = numVal(item.chorus_duration_sec, Math.max(1, cEnd - cStart));
+
+      const title = strVal(item.title) || `トラック ${idx + 1}`;
+      const trackId = strVal(item.track_id || item.id) || `trk_${Date.now()}_${idx + 1}`;
 
       return {
-        id: item.id || `trk_${Date.now()}_${idx}`,
-        track_id: item.track_id || item.id || `trk_${Date.now()}_${idx}`,
-        track_no: Number(item.track_no) || idx + 1,
-        title: item.title || '無題のトラック',
-        format: item.format || '🎵 音楽MV (12カット)',
-        track_type: item.track_type || 'Vocal',
+        id: trackId,
+        track_id: trackId,
+        track_no: numVal(item.track_no, idx + 1),
+        title,
+        format: strVal(item.format, '🎵 音楽MV (12カット)'),
+        track_type: strVal(item.track_type, 'Vocal'),
         pool_code: poolCode,
         style_code: styleCode,
-        taste: item.taste || 'youth_pop',
-        taste_name: item.taste_name || '',
-        taste_reason: item.taste_reason || '',
-        bpm: Number(item.bpm) || 125,
-        surface_theme: item.surface_theme || '',
-        hidden_drama: item.hidden_drama || '',
-        visual_hints: item.visual_hints || '',
-        scene_context: item.scene_context || '',
-        character_setting: item.character_setting || '',
-        sensory_details: item.sensory_details || '',
+        taste: strVal(item.taste, 'youth_pop'),
+        taste_name: strVal(item.taste_name),
+        taste_reason: strVal(item.taste_reason),
+        bpm: numVal(item.bpm, 125),
+        surface_theme: strVal(item.surface_theme),
+        hidden_drama: strVal(item.hidden_drama),
+        visual_hints: strVal(item.visual_hints),
+        scene_context: strVal(item.scene_context),
+        character_setting: strVal(item.character_setting),
+        sensory_details: strVal(item.sensory_details),
         chorus_start_sec: cStart,
         chorus_end_sec: cEnd,
         chorus_duration_sec: cDur,
-        chorus_start_ms: item.chorus_start_ms || Math.round(cStart * 1000),
-        chorus_end_ms: item.chorus_end_ms || Math.round(cEnd * 1000),
-        chorus_lyrics: item.chorus_lyrics || '',
-        input_lyrics: item.input_lyrics || '',
-        lyrics_kanji: item.lyrics_kanji || '',
-        audio_filename: item.audio_filename || '',
-        wav_url: item.wav_url || '',
-        cover_url: item.cover_url || ''
+        chorus_start_ms: numVal(item.chorus_start_ms, Math.round(cStart * 1000)),
+        chorus_end_ms: numVal(item.chorus_end_ms, Math.round(cEnd * 1000)),
+        chorus_lyrics: strVal(item.chorus_lyrics),
+        input_lyrics: strVal(item.input_lyrics),
+        lyrics_kanji: strVal(item.lyrics_kanji),
+        audio_filename: strVal(item.audio_filename),
+        wav_url: strVal(item.wav_url),
+        cover_url: strVal(item.cover_url)
       };
     });
-  } catch (err: any) {
-    // JSON解析に失敗した場合、テキスト形式（Key: Value）のフォールバック解析を試行
-    console.warn('JSON parse failed, attempting plain text parsing fallback...', err.message);
+  } catch (err: unknown) {
+    const errMessage = err instanceof Error ? err.message : String(err);
+    console.warn('JSON parse failed, attempting plain text parsing fallback...', errMessage);
+
+    // フォールバック 1: プレーンテキスト形式（Key: Value）の解析
     const fallbackTracks = parseTextTracksFormat(cleanText);
     if (fallbackTracks.length > 0) {
       console.log('✅ Successfully parsed track from plain text format!');
       return fallbackTracks;
     }
-    console.error('Failed to parse music tracks JSON or plain text:', err);
-    throw new Error(`JSONまたは楽曲テキストの解析に失敗しました: ${err.message}`);
+
+    // フォールバック 2: 破損JSONからの正規表現サルベージ
+    const salvaged = salvageTracksFromCorruptedText(cleanText);
+    if (salvaged.length > 0) {
+      console.log(`✅ Salvaged ${salvaged.length} tracks from corrupted text!`);
+      return salvaged;
+    }
+
+    // フォールバック 3: 単なる歌詞・テキストとして1曲生成
+    if (cleanText.length > 0) {
+      const firstLine = cleanText.split('\n')[0].slice(0, 30).trim();
+      return [{
+        id: `trk_${Date.now()}_fallback`,
+        track_id: `trk_${Date.now()}_fallback`,
+        track_no: 1,
+        title: firstLine || 'インポート楽曲',
+        format: '🎵 音楽MV (12カット)',
+        track_type: 'Vocal',
+        pool_code: 20,
+        style_code: 21,
+        taste: 'youth_pop',
+        bpm: 125,
+        chorus_start_sec: 65,
+        chorus_end_sec: 95,
+        chorus_duration_sec: 30,
+        chorus_start_ms: 65000,
+        chorus_end_ms: 95000,
+        input_lyrics: cleanText,
+        lyrics_kanji: cleanText
+      }];
+    }
+
+    return [];
   }
 }
 
@@ -503,18 +597,18 @@ export function convertTrackToEpisode(
     promptEnComponents.push(
       isPropCut 
         ? `Shallow depth of field, dramatic dust motes in sunbeam, crisp macro reflections.` 
-        : `Atmospheric cinematography, 8k resolution, cinematic lighting, photorealistic texture.`
+        : `Atmospheric cinematography, aesthetic lighting, beautifully detailed textures, clean edge-to-edge artwork.`
     );
 
     const promptEn = promptEnComponents.join(' ');
 
-    // ★ ユーザー設計規範: 手前カット（Cut N-1）のポーズ・小道具・構図を次カットのネガティブプロンプトへ完全自動初期バインド
-    const prevCut = i > 1 ? cuts[i - 2] : undefined;
-    const dynamicAntiPrev = prevCut ? buildDynamicAntiPreviousNegative({
-      scale: prevCut.shotScale,
-      angle: prevCut.cameraWork,
-      prompt: prevCut.promptEn
-    }) : '';
+    // ★ ユーザー設計規範: 直近カット（直前1〜2カット）のポーズ・小道具・構図を次カットのネガティブプロンプトへ完全自動初期バインド
+    const recentCuts = cuts.slice(Math.max(0, cuts.length - 2));
+    const dynamicAntiPrev = recentCuts.length > 0 ? buildDynamicAntiPreviousNegative(recentCuts.map(c => ({
+      scale: c.shotScale,
+      angle: c.cameraWork,
+      prompt: c.promptEn
+    }))) : '';
 
     cuts.push({
       id: i,
@@ -529,6 +623,11 @@ export function convertTrackToEpisode(
       focalPoint: isPropCut ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'key_prop' } : undefined,
       duration: isChorus ? 7.5 : 5.0,
       isSelectedForVideo: isCutSelectedForVideo(i - 1, videoRatio),
+      targetVideoModel: 'omni-flash',
+      isDirecting: false,
+      isGeneratingImage: false,
+      isGeneratingVideo: false,
+      isQueued: false,
       telop: {
         fullText: lyric,
         highlights: hl,

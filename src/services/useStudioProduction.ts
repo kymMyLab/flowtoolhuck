@@ -350,21 +350,21 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎨 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成中 [${modelDef.label}]...`, 'process');
 
     try {
-      // ★ ユーザー設計規範: 直前カット（cutId - 1）のプロンプト・構図を動的ネガティブプロンプトとして完全バインド
+      // ★ ユーザー設計規範: 直近カット（直前1〜2カット）のプロンプト・構図を動的ネガティブプロンプトとして完全バインド
       let effectiveNegative = task.negativePrompt || '';
       if (cutId > 1) {
         const ep = episodesRef.current.find(e => e.id === epId);
-        const prevCut = ep?.cuts.find(c => c.id === cutId - 1);
-        if (prevCut && prevCut.promptEn) {
-          const antiPrev = buildDynamicAntiPreviousNegative({
-            scale: prevCut.shotScale,
-            angle: prevCut.cinematicAngle,
-            prompt: prevCut.promptEn,
-            tag: prevCut.cameraWork
-          });
+        const prevCuts = ep?.cuts.filter(c => (c.id === cutId - 1 || c.id === cutId - 2) && c.promptEn) || [];
+        if (prevCuts.length > 0) {
+          const antiPrev = buildDynamicAntiPreviousNegative(prevCuts.map(c => ({
+            scale: c.shotScale,
+            angle: c.cinematicAngle,
+            prompt: c.promptEn,
+            tag: c.cameraWork
+          })));
           if (antiPrev) {
             effectiveNegative = effectiveNegative ? `${effectiveNegative}, ${antiPrev}` : antiPrev;
-            addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 直前カット対比ネガティブ注入 [C${(cutId - 1).toString().padStart(2, '0')}の構図・ポーズ・小道具を除外]`, 'info');
+            addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 直近カット対比ネガティブ注入 [構図・ポーズ・小道具・視線の重複排除]`, 'info');
           }
         }
       }

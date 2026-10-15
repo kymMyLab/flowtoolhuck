@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ImportedTrack, parseMusicTracksJson, convertTrackToEpisode } from '../../services/musicImporter';
 import { Episode, CastCharacter } from '../../types';
-import { loadMangaProject } from '../../services/castStorage';
+import { loadMangaProject, createDefaultCastCharacter } from '../../services/castStorage';
 import { COVER_PALETTES, getCoverPalettesForGenre, CoverPalette } from '../../services/export/coverRenderer';
 import { CHARACTER_ARCHETYPES } from '../../config/characterArchetypes';
 
@@ -59,6 +59,16 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const boxDragCounterRef = useRef(0);
+  const successTimerRef = useRef<any>(null);
+
+  // アンマウント時のタイマークリーンアップ
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+      }
+    };
+  }, []);
 
   // モーダルオープン時またはリロール時にランダム選定
   useEffect(() => {
@@ -70,26 +80,43 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     }
   }, [isOpen]);
 
-  const handleRerollTheme = () => {
+  const handleRerollTheme = useCallback(() => {
     const list = getCoverPalettesForGenre('mv');
     if (list.length > 0) {
-      const pool = list.filter(p => p.id !== autoTheme.id);
-      const next = (pool.length > 0 ? pool : list)[Math.floor(Math.random() * (pool.length > 0 ? pool.length : list.length))];
-      setAutoTheme(next);
+      setAutoTheme(prevTheme => {
+        const pool = list.filter(p => p.id !== prevTheme.id);
+        return (pool.length > 0 ? pool : list)[Math.floor(Math.random() * (pool.length > 0 ? pool.length : list.length))];
+      });
     }
-  };
+  }, []);
+
+  const handleToggleCastLock = useCallback((enabled: boolean) => {
+    setIsCastLockEnabled(enabled);
+  }, []);
+
+  const handleSelectCastId = useCallback((id: string) => {
+    setSelectedCastId(id);
+  }, []);
+
+  const handleSelectTasteKey = useCallback((tasteKey: string) => {
+    setSelectedTasteKey(tasteKey);
+  }, []);
+
+  const handleSelectCoverThemeId = useCallback((themeId: string) => {
+    setSelectedCoverThemeId(themeId);
+  }, []);
 
   // 選択中のキャストまたは様態の解決
   const resolveSelectedCharacter = useCallback((): CastCharacter | undefined => {
     if (!isCastLockEnabled || selectedCastId === 'none') return undefined;
     const selectedArch = CHARACTER_ARCHETYPES.find(a => a.id === selectedCastId);
     if (selectedArch) {
-      return {
-        id: selectedArch.id,
-        name: selectedArch.name,
-        role: 'protagonist',
-        dnaPromptEn: selectedArch.dnaPromptEn,
-      };
+      return createDefaultCastCharacter(
+        selectedArch.id,
+        selectedArch.name,
+        'protagonist',
+        selectedArch.dnaPromptEn
+      );
     }
     return castCharacters.find(c => c.id === selectedCastId);
   }, [isCastLockEnabled, selectedCastId, castCharacters]);
@@ -138,7 +165,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         const label = sourceName ? `「${sourceName}」から ` : '';
         setSuccessMessage(`✅ ${label}${tracks.length}曲の楽曲メタデータを正常に読み込みました！`);
         console.log(`✅ [MusicImporter] ${tracks.length}曲の展開完了:`, tracks.map(t => t.title));
-        setTimeout(() => setSuccessMessage(null), 6000);
+        if (successTimerRef.current) clearTimeout(successTimerRef.current);
+        successTimerRef.current = setTimeout(() => setSuccessMessage(null), 6000);
       }
     } catch (err: any) {
       console.error('❌ [MusicImporter] JSON解析エラー:', err);
@@ -332,9 +360,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         {/* 🎭 主演キャスト様態設定 (サブコンポーネント) */}
         <CharacterSelectorAccordion
           isCastLockEnabled={isCastLockEnabled}
-          onToggleCastLock={setIsCastLockEnabled}
+          onToggleCastLock={handleToggleCastLock}
           selectedCastId={selectedCastId}
-          onSelectCastId={setSelectedCastId}
+          onSelectCastId={handleSelectCastId}
           castCharacters={castCharacters}
           onOpenCastModal={onOpenCastModal}
         />
@@ -342,13 +370,13 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         {/* 🎨 MV画風スタイル設定 (サブコンポーネント) */}
         <TasteShowcaseGrid
           selectedTasteKey={selectedTasteKey}
-          onSelectTasteKey={setSelectedTasteKey}
+          onSelectTasteKey={handleSelectTasteKey}
         />
 
         {/* 🎨 サムネイル配色テーマ (サブコンポーネント) */}
         <CoverThemeSelector
           selectedCoverThemeId={selectedCoverThemeId}
-          onSelectCoverThemeId={setSelectedCoverThemeId}
+          onSelectCoverThemeId={handleSelectCoverThemeId}
           autoTheme={autoTheme}
           onRerollTheme={handleRerollTheme}
         />

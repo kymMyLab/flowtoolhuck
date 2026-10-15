@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { MangaProject, CastCharacter, ExpressionType, CastExpression, MangaStoryConcept } from '../types';
 import { EXPRESSION_METAS, createDefaultCastCharacter, exportProjectJson, importProjectJson } from '../services/castStorage';
-import { PrimaryButton, SecondaryButton, SectionLabel } from './Primitives';
+import { SectionLabel } from './Primitives';
 import { Flow } from 'flow-sdk';
 import { resolveImageModel } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage, formatDataUri } from '../services/utils';

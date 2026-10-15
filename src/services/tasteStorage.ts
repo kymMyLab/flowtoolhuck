@@ -1,8 +1,8 @@
 import { TASTES } from '../constants';
 import { TASTE_GALLERY_DATA } from '../config/tasteGalleryData';
 
-const STORAGE_KEY = 'flowtool_custom_tastes_v12';
-const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v11', 'flowtool_custom_tastes_v10', 'flowtool_custom_tastes_v9', 'flowtool_custom_tastes_v8', 'flowtool_custom_tastes_v7', 'flowtool_custom_tastes_v6', 'flowtool_custom_tastes_v5', 'flowtool_custom_tastes_v4', 'flowtool_custom_tastes_v3', 'flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
+const STORAGE_KEY = 'flowtool_custom_tastes_v13';
+const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v12', 'flowtool_custom_tastes_v11', 'flowtool_custom_tastes_v10', 'flowtool_custom_tastes_v9', 'flowtool_custom_tastes_v8', 'flowtool_custom_tastes_v7', 'flowtool_custom_tastes_v6', 'flowtool_custom_tastes_v5', 'flowtool_custom_tastes_v4', 'flowtool_custom_tastes_v3', 'flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
 
 const DEPRECATED_KEYS = [
   '🧪⚡ ネオ・バーチャル・ポップ (Neo Virtual Pop Anime)',

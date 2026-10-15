@@ -6,6 +6,7 @@ import { DEFAULT_ASPECT_RATIO, resolveVideoModel } from '../constants';
 import { callWithRetry, formatDurationMs, formatErrorMessage } from './utils';
 import { resolveCameraWork } from '../config/studioDefinitions';
 import { renderKenBurnsVideo } from './browserVideoService';
+import { sanitizePromptForGoogleSafety } from './promptEngine';
 
 interface UseVideoGenerationProps {
   settings: GeneratorSettings;

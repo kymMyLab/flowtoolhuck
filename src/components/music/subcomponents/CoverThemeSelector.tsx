@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { COVER_PALETTES, getCoverPalettesForGenre, CoverPalette } from '../../../services/export/coverRenderer';
 
 export interface CoverThemeSelectorProps {
@@ -8,15 +8,19 @@ export interface CoverThemeSelectorProps {
   onRerollTheme: () => void;
 }
 
-export const CoverThemeSelector: React.FC<CoverThemeSelectorProps> = ({
+const CoverThemeSelectorComponent: React.FC<CoverThemeSelectorProps> = ({
   selectedCoverThemeId,
   onSelectCoverThemeId,
   autoTheme,
   onRerollTheme,
 }) => {
-  const currentPalette = selectedCoverThemeId === 'auto' 
-    ? autoTheme 
-    : (COVER_PALETTES[selectedCoverThemeId] || autoTheme);
+  const mvPalettes = useMemo(() => getCoverPalettesForGenre('mv'), []);
+
+  const currentPalette = useMemo(() => {
+    return selectedCoverThemeId === 'auto' 
+      ? autoTheme 
+      : (COVER_PALETTES[selectedCoverThemeId] || autoTheme);
+  }, [selectedCoverThemeId, autoTheme]);
 
   return (
     <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm relative shrink-0 group">
@@ -44,7 +48,7 @@ export const CoverThemeSelector: React.FC<CoverThemeSelectorProps> = ({
             <option value="auto">
               🎲 ランダム自動セレクト（今回の選定: {autoTheme.name}）
             </option>
-            {getCoverPalettesForGenre('mv').map(p => (
+            {mvPalettes.map(p => (
               <option key={p.id} value={p.id} className="bg-slate-900 text-white">
                 {p.name}
               </option>
@@ -90,3 +94,5 @@ export const CoverThemeSelector: React.FC<CoverThemeSelectorProps> = ({
     </div>
   );
 };
+
+export const CoverThemeSelector = React.memo(CoverThemeSelectorComponent);
