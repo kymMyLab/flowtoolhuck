@@ -270,7 +270,7 @@ export const TASTES: Record<string, string> = {
 
   // ── 🎸 ユーザーリクエスト追加: サブカル・不良・ギャグ・特定ジャンル ──
   "🎸 ガレージパンク・地下ライブハウス (Garage Punk & Underground Live)":
-    "Raw explosive underground garage punk anime illustration, gritty livehouse stage aesthetic, high-contrast monochrome and neon purple lighting, harsh strobe light flares, flying sweat and electric sparks, battered vintage electric guitars, screaming amplifiers with cable clutter, dynamic fish-eye lens perspective, raw xerox zine texture and aggressive ink splatters, clean artwork, NO subtitles, NO speech bubbles",
+    "Raw explosive underground garage punk anime art style, 2D graphic illustration, heavy gritty black ink lines, dynamic ink splatters and rough screentone texture, high-contrast monochrome with fierce crimson and neon accents, wild rebellious energy, authentic 2D anime illustration, absolutely NO realistic photograph, NO photorealism, NO 3D render, clean edge-to-edge artwork, NO subtitles, NO speech bubbles",
 
   "👊 昭和ツッパリ・熱血暴走劇画 (Retro Showa Yankee Action Manga)":
     "Classic 1980s Showa yankee delinquent action manga style, ultra-bold black ink brushwork, intense speed lines and dramatic impact screech marks, sharp fierce eyes with heavy screentone hatching, retro modified gakuran uniforms and pompadour hairstyles, gritty industrial backdrop under neon sodium streetlights, hot-blooded nostalgic retro comic finish, dynamic manga splash page",
