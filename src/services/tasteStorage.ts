@@ -1,4 +1,5 @@
 import { TASTES } from '../constants';
+import { TASTE_GALLERY_DATA } from '../config/tasteGalleryData';
 
 const STORAGE_KEY = 'flowtool_custom_tastes_v12';
 const OLD_STORAGE_KEYS = ['flowtool_custom_tastes_v11', 'flowtool_custom_tastes_v10', 'flowtool_custom_tastes_v9', 'flowtool_custom_tastes_v8', 'flowtool_custom_tastes_v7', 'flowtool_custom_tastes_v6', 'flowtool_custom_tastes_v5', 'flowtool_custom_tastes_v4', 'flowtool_custom_tastes_v3', 'flowtool_custom_tastes_v2', 'flowtool_custom_tastes_v1'];
@@ -91,10 +92,42 @@ export function resetCustomTastes(): CustomTasteMap {
 }
 
 /**
+ * 短縮ID（例: cinematic_sky, city_pop, retro_witch）や部分名から正規の画風キー（TASTESのキー）を完全解決
+ */
+export function resolveTasteKey(tasteKeyOrId: string = ''): string {
+  if (!tasteKeyOrId) return '';
+  const trimmed = tasteKeyOrId.trim();
+
+  // 1. すでにTASTESのキーと完全一致している場合
+  if (TASTES[trimmed]) return trimmed;
+
+  // 2. TASTE_GALLERY_DATA の id（例: cinematic_sky）または displayName と一致
+  const galleryMatch = TASTE_GALLERY_DATA.find(
+    t => t.id === trimmed || t.displayName === trimmed || t.tasteKey === trimmed
+  );
+  if (galleryMatch) return galleryMatch.tasteKey;
+
+  // 3. 小文字・大文字無視の部分一致（例: 'cinematic', 'retro_witch', 'hokusai'）
+  const lower = trimmed.toLowerCase();
+  const partialGallery = TASTE_GALLERY_DATA.find(
+    t => t.id.toLowerCase() === lower || t.tasteKey.toLowerCase().includes(lower)
+  );
+  if (partialGallery) return partialGallery.tasteKey;
+
+  const partialKey = Object.keys(TASTES).find(k => k.toLowerCase().includes(lower));
+  if (partialKey) return partialKey;
+
+  return trimmed;
+}
+
+/**
  * 指定されたキーから画風プロンプト文字列を解決
  */
 export function resolveTastePrompt(tasteKey: string, customTastes?: CustomTasteMap): string {
   if (!tasteKey) return '';
   const map = customTastes || loadCustomTastes();
-  return map[tasteKey] || TASTES[tasteKey] || tasteKey;
+  const fullKey = resolveTasteKey(tasteKey);
+
+  return map[fullKey] || map[tasteKey] || TASTES[fullKey] || TASTES[tasteKey] || tasteKey;
 }
+

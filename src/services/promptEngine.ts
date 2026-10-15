@@ -173,15 +173,19 @@ export function buildFinalCinematicPromptAndNegative(
   const isMv = settings.isMvMode || task.isMvMode;
 
   // Layer 1: Master Style Anchor
-  const masterStylePrefix = `Masterpiece, authentic ${rawStyle}. Consistent visual art style in ${rawStyle}.`;
-  const masterStylePrompt = `[MASTER ART STYLE: ${rawStyle}, strictly maintain identical visual medium and rendering consistency across scenes]`;
-
   const isPhoto = isPhotoStyle(styleKey, rawStyle);
   const isNonPhoto = !isPhoto;
   const isPixel = (styleKey + ' ' + rawStyle).toLowerCase().includes('ドット') || 
                   (styleKey + ' ' + rawStyle).toLowerCase().includes('ピクセル') || 
                   (styleKey + ' ' + rawStyle).toLowerCase().includes('pixel') || 
                   (styleKey + ' ' + rawStyle).toLowerCase().includes('8-bit');
+
+  const animeAnchor = (isNonPhoto && !rawStyle.toLowerCase().includes('anime') && !rawStyle.toLowerCase().includes('manga') && !rawStyle.toLowerCase().includes('illustration'))
+    ? '2D anime illustration, anime aesthetic, '
+    : '';
+
+  const masterStylePrefix = `Masterpiece, authentic ${animeAnchor}${rawStyle}. Consistent visual art style in ${rawStyle}.`;
+  const masterStylePrompt = `[MASTER ART STYLE: ${animeAnchor}${rawStyle}, strictly maintain identical visual medium and rendering consistency across scenes]`;
 
   // Layer 2 & 3: Camera Context & Action
   const isAllowedEyeContact = isMv && isMvChorusCut(task.cutId || 1);
@@ -230,9 +234,10 @@ export function buildFinalCinematicPromptAndNegative(
   // Layer 6: Negative Rules (厳密な優先度で結合)
   const allows3d = (styleKey + ' ' + rawStyle).toLowerCase().includes('3d') || (styleKey + ' ' + rawStyle).toLowerCase().includes('cg');
   const baseIllustrationNeg = allows3d
-    ? 'photorealistic, realistic photo, hyperrealistic photograph, real life, live-action, 35mm photograph, DSLR, camera photo'
-    : 'photorealistic, realistic photo, hyperrealistic photograph, real life, live-action, 35mm photograph, DSLR, camera photo, 3d render, cgi';
+    ? 'photorealistic, realistic photo, hyperrealistic photograph, real life, live-action, 35mm photograph, DSLR, camera photo, raw photograph, realistic human photo, western live-action film'
+    : 'photorealistic, realistic photo, hyperrealistic photograph, real life, live-action, 35mm photograph, DSLR, camera photo, 3d render, cgi, raw photograph, realistic human photo, western live-action film';
   const illustrationNegative = isNonPhoto ? baseIllustrationNeg : '';
+
 
   const dynamicForbidden = forbiddenKeywordsEn || (forbiddenAnachronisms || []).join(', ');
 

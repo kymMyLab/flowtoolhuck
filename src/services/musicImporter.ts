@@ -3,6 +3,7 @@ import { extractHighlights } from './directorService';
 import { resolveMasterCategory } from '../config/masterCategories';
 import { CAMERA_WORK_REGISTRY } from '../constants';
 import { isCutSelectedForVideo } from './utils';
+import { resolveTasteKey } from './tasteStorage';
 
 export interface ImportedTrack {
   id: string;
@@ -531,7 +532,7 @@ export function convertTrackToEpisode(
     titleEn: track.title,
     summary: track.hidden_drama || track.surface_theme || '',
     theme: track.surface_theme || track.title,
-    taste: selectedTaste || track.taste || 'youth_pop',
+    taste: resolveTasteKey(selectedTaste || track.taste || 'youth_pop'),
     isMvMode: true,
     productionMode: 'mv',
     cuts: cuts,

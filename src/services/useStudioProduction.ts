@@ -418,9 +418,13 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
                 .slice(0, 800)
                 .replace(/,[^,]*$/, '')
                 .trim();
-              currentNegative = ''; // ネガティブ競合を完全排除
+              // 非写真スタイルの場合は、実写写真の誤混入を防ぐ最小限ネガティブを死守
+              currentNegative = finalNegative.includes('photorealistic')
+                ? 'photorealistic, realistic photo, 35mm photograph, DSLR, raw photograph'
+                : '';
               currentRefIds = undefined;
             }
+
 
             return await Flow.generate.image({ 
               prompt: currentPrompt,
