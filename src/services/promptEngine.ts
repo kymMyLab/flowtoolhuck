@@ -32,10 +32,20 @@ export interface ActiveReferenceContext {
 }
 
 /**
- * MVモードにおけるサビ（クライマックス）判定（12カット中、Cut 8 のみ）
+ * MVモードにおけるサビ（クライマックス）判定
+ * v2.2.0-HybridScalable規格:
+ * - 30カット時: Cut 17〜24 (比率 0.53〜0.80)
+ * - 12カット時: Cut 5〜8 または Cut 8
  */
-export function isMvChorusCut(cutId: number = 1): boolean {
-  return (cutId % 12) === 8 || cutId === 8;
+export function isMvChorusCut(cutId: number = 1, totalCuts: number = 30): boolean {
+  if (totalCuts === 30) {
+    return cutId >= 17 && cutId <= 24;
+  }
+  if (totalCuts <= 12) {
+    return (cutId % 12) === 8 || cutId === 8 || (cutId >= 5 && cutId <= 8);
+  }
+  const ratio = (cutId - 1) / Math.max(1, totalCuts);
+  return ratio >= 0.53 && ratio <= 0.80;
 }
 
 /**

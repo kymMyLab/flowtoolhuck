@@ -1,22 +1,76 @@
 {
-  "schema_version": "2.2.0-GrandProduction",
-  "document_title": "Proxmoxクラスタ3者共通グランドマスター規格：master_categories.json (v2.2.0-GrandProduction)",
-  "effective_date": "2026-10-12",
+  "schema_version": "2.2.0-HybridScalable",
+  "document_title": "Proxmoxクラスタ3者共通グランドマスター規格（全9大プール・動的スケーラブル＆ハイブリッド本番仕様）",
+  "effective_date": "2026-10-17",
+
+  "architecture_execution_policy": {
+    "primary_engine": "CT192 (Central Studio / Standalone Capable)",
+    "design_philosophy": "中央（CT192）は単独で全工程（企画・台本・音声・画像・動画合成）を完結できるフルスタック能力を持つ。同時に、外部クレジットの有効活用と最高品質の追求のため、音楽担当（CT198）および画像/脚本担当（FlowTool）からのAdditional素材注入（Override）を最優先で受け入れるハイブリッド構成とする。",
+    "asset_resolution_priority": [
+      "1_additional_injected: 外部（FlowTool / Music Factory）から明示的に投入された高品質アセット（課金APIスキップ・最優先採用）",
+      "2_vault_stockpile: 余剰クレジットで事前生成・ストックされた同Poolコードの未使用アセット（課金APIスキップ）",
+      "3_central_api_fallback: 上記が存在しない場合（または不足カット分のみ）、中央（CT192）がVertex AI等の課金APIを叩いて自己完結生成（Partial Fill対応）"
+    ],
+    "execution_modes": {
+      "hybrid_smart": "【標準】持ち込み素材（音楽・台本・画像の一部または全部）を優先使用し、未指定・不足カット分のみ中央APIで自動補完する",
+      "standalone_full": "【中央単独】外部素材を使わず、中央のAPIと内部エンジンのみでゼロから全自動生成する",
+      "credit_saver_strict": "【課金ロック】中央の有料画像生成APIを無効化し、持ち込み素材とストック素材のみで合成する（API課金完全0円保証）"
+    },
+    "drop_and_go_support": {
+      "audio_only_injected": "音源のみAdditional投入された場合、中央が実音声尺（actual_audio_duration_sec）と波形ピークを自動解析し、台本と不足画像を自動生成する",
+      "images_only_injected": "画像群（任意のN枚）のみ投入された場合、中央が枚数を動的カウントし、BGMとテロップを自動合成する",
+      "partial_cuts_injected": "30カット中の一部の画像（例：サビの8枚のみ）が投入された場合、存在するカットはそのまま採用し、欠番カットのみ中央APIが差分生成して埋める"
+    }
+  },
+
+  "system_runtime_policy": {
+    "description": "マジックナンバーのハードコード厳禁。カット数・尺・API制御はすべて本定義の変数および実行時引数を動的に参照すること。",
+    "scaling_rules": {
+      "cut_count_override_allowed": true,
+      "dynamic_duration_formula": "actual_audio_duration_sec ? (actual_audio_duration_sec / total_cuts) : duration_sec_per_cut",
+      "crossfade_transition_sec": 0.5,
+      "veo_base_clip_sec": 5.0,
+      "base_fps": 30,
+      "file_naming_convention": "ゼロパディング可変長許容（cut_01〜cut_30、または配列長動的参照。固定長12や30の決め打ち正規表現を禁止する）"
+    },
+    "vertex_ai_rate_limit_policy": {
+      "max_concurrency": 1,
+      "default_pacing_delay_sec": 8.5,
+      "min_pacing_delay_sec": 2.5,
+      "retry_backoff_sec": [15, 30, 45, 60],
+      "region_failover_order": ["global", "us-central1", "us-east4"]
+    }
+  },
 
   "formats": {
     "music_mv": {
       "format_id": "music_mv",
-      "name_ja": "音楽MV (12カット)",
-      "default_cuts": 12,
+      "name_ja": "音楽MV",
+      "default_cuts": 30,
+      "min_cuts": 12,
+      "max_cuts": 60,
+      "target_duration_sec": 180,
+      "duration_sec_per_cut": 6.0,
       "recommended_aspect_ratio": "both",
-      "audio_role": "歌モノ（サビ30秒神仕様）。chorus_start_sec / chorus_end_sec の出力必須。",
-      "story_role": "セリフなし。世界観と12カット起承転結・カメラワーク演出。",
-      "visual_role": "サビ秒数（カット5〜8）とカット10（伏線小道具）のビート同期結合。キネティック歌詞テロップ。"
+      "section_ratio_allocation": {
+        "comment": "カット数が変動しても Math.round(total_cuts * ratio) で自動配分するための比率定義（N=30時の標準カット番号を併記）",
+        "intro":   { "ratio_range": [0.00, 0.13], "default_30_cuts": "Cut 01-04 (24s)", "role": "導入・世界観提示" },
+        "verse_a": { "ratio_range": [0.13, 0.33], "default_30_cuts": "Cut 05-10 (36s)", "role": "Aメロ・日常描写と初期伏線" },
+        "verse_b": { "ratio_range": [0.33, 0.53], "default_30_cuts": "Cut 11-16 (36s)", "role": "Bメロ・感情の揺らぎ・転調ビルドアップ" },
+        "chorus":  { "ratio_range": [0.53, 0.80], "default_30_cuts": "Cut 17-24 (48s)", "role": "サビ・感情爆発・カメラ目線解禁・高密度ビート同期演出" },
+        "bridge":  { "ratio_range": [0.80, 0.93], "default_30_cuts": "Cut 25-28 (24s)", "role": "間奏/Cメロ・裏設定（Hidden-Drama）の伏線小道具回収・心理メタファー" },
+        "outro":   { "ratio_range": [0.93, 1.00], "default_30_cuts": "Cut 29-30 (12s)", "role": "結び・余韻・フィナーレ" }
+      },
+      "audio_role": "歌モノ（標準180秒 / サビ48秒神仕様）。chorus_start_sec / chorus_end_sec および実音声尺（actual_audio_duration_sec）の出力必須。楽曲側の展開に応じた緩急表現は裁量許容。",
+      "story_role": "セリフなし。世界観と可変total_cuts（標準30カット）の起承転結・映画的カメラワーク演出。section_ratio_allocation に従い、Chorus区間（全体の53%〜80%：標準Cut 17-24）で最高潮、Bridge区間（80%〜93%：標準Cut 25-28）で裏設定の伏線回収を行う。",
+      "visual_role": "標準6.0秒/カット（5秒Veo動画＋前後0.5秒クロスフェード、180f@30fps基準、実音声尺やサビ緩急に応じた動的伸縮許容）。Chorus区間（標準Cut 17〜24）のビート同期結合とBridge区間（標準Cut 25〜28）の伏線小道具描写。キネティック歌詞テロップ。"
     },
     "drama_manga": {
       "format_id": "drama_manga",
-      "name_ja": "ドラマ連番・短編マンガ (24カット)",
+      "name_ja": "ドラマ連番・短編マンガ",
       "default_cuts": 24,
+      "min_cuts": 8,
+      "max_cuts": 50,
       "recommended_aspect_ratio": "16:9",
       "audio_role": "セリフを邪魔しない控えめな劇伴BGM（インスト）。",
       "story_role": "登場人物の掛け合いセリフ、時代考証・禁忌語句チェックの厳格適用。",
@@ -26,6 +80,8 @@
       "format_id": "trivia_shorts",
       "name_ja": "雑学・解説Shorts",
       "default_cuts": 5,
+      "min_cuts": 3,
+      "max_cuts": 15,
       "recommended_aspect_ratio": "9:16",
       "audio_role": "完全シームレスループ・インストゥルメンタル（途切れずループするBGM）。",
       "story_role": "衝撃事実・解説ナレーション台本と箇条書き要約の作成。",

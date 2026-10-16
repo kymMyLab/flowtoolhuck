@@ -1,10 +1,21 @@
 import masterCategoriesData from './master_categories.json';
 
+export interface SectionRatioContract {
+  ratio_range: [number, number];
+  default_30_cuts?: string;
+  role: string;
+}
+
 export interface FormatContract {
   format_id: string;
   name_ja: string;
   default_cuts: number;
+  min_cuts?: number;
+  max_cuts?: number;
+  target_duration_sec?: number;
+  duration_sec_per_cut?: number;
   recommended_aspect_ratio: string;
+  section_ratio_allocation?: Record<string, SectionRatioContract>;
   audio_role: string;
   story_role: string;
   visual_role: string;
@@ -39,12 +50,31 @@ export interface MasterCategoriesManifest {
   schema_version: string;
   document_title: string;
   effective_date: string;
+  architecture_execution_policy?: Record<string, unknown>;
+  system_runtime_policy?: {
+    description?: string;
+    scaling_rules?: {
+      cut_count_override_allowed?: boolean;
+      dynamic_duration_formula?: string;
+      crossfade_transition_sec?: number;
+      veo_base_clip_sec?: number;
+      base_fps?: number;
+      file_naming_convention?: string;
+    };
+    vertex_ai_rate_limit_policy?: {
+      max_concurrency?: number;
+      default_pacing_delay_sec?: number;
+      min_pacing_delay_sec?: number;
+      retry_backoff_sec?: number[];
+      region_failover_order?: string[];
+    };
+  };
   formats: Record<string, FormatContract>;
   lyric_rules: Record<string, string>;
   pools: PoolContract[];
 }
 
-export const MASTER_CATEGORIES: MasterCategoriesManifest = masterCategoriesData as MasterCategoriesManifest;
+export const MASTER_CATEGORIES: MasterCategoriesManifest = masterCategoriesData as unknown as MasterCategoriesManifest;
 
 /**
  * pool_codeから該当プールのコントラクトを取得

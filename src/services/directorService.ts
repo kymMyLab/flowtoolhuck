@@ -183,7 +183,7 @@ export function resolveCinematicEndFrameAndMotion(options: {
     }
   ];
 
-  return universalDroneMotions[cutIndex % 12];
+  return universalDroneMotions[cutIndex % universalDroneMotions.length];
 }
 
 /**
@@ -228,8 +228,8 @@ You MUST retain THIS EXACT SAME character (same gender, same age, same hairstyle
 
   const directorRole = settings.isMvMode ? "music video (MV) visual director" : settings.isMangaMode ? "comic book/manga storyboard artist" : "film director";
   
-  // MVモード時のカメラ目線厳格制御（全12カット中、サビの1回[Cut 8]のみ許可、他は一切カメラを見ない）
-  const isAllowedEyeContact = settings.isMvMode && isMvChorusCut(cutId);
+  // MVモード時のカメラ目線厳格制御（サビ区間[Cut 17〜24]のみ許可、他は一切カメラを見ない）
+  const isAllowedEyeContact = settings.isMvMode && isMvChorusCut(cutId, 30);
   const mvGazeMandate = settings.isMvMode 
     ? (isAllowedEyeContact 
         ? "CRITICAL MV CLIMAX GAZE: This is the ONLY single cut in the entire music video where direct eye contact with the camera is permitted for powerful emotional resonance." 
@@ -454,7 +454,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
       forbiddenKeywordsEn: 'modern items',
       coverCatchphraseJp: `${currentPlan.titleJp}`,
       highlightWords: ['光', '風'],
-      cuts: Array.from({ length: 12 }, (_, j) => {
+      cuts: Array.from({ length: isMangaMode ? 24 : (isMvMode ? 30 : 12) }, (_, j) => {
         const isObj = j === 5 || j === 8; // Cut 6 or Cut 9 as object/insert
         const defaultGrid = isObj ? 'center' : 'top-center';
         const defaultCoord: [number, number] = isObj ? [0.5, 0.5] : [0.5, 0.3];
@@ -509,7 +509,9 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   });
 
   const rawCuts = Array.isArray(parsed.cuts) ? parsed.cuts : (Array.isArray(parsed.scenes) ? parsed.scenes : (Array.isArray(parsed) ? parsed : []));
-  const normalizedCuts = Array.from({ length: 12 }, (_, j) => {
+  const effCutCount = isMangaMode ? 24 : (isMvMode ? 30 : 12);
+  const targetLength = rawCuts.length >= 20 ? rawCuts.length : effCutCount;
+  const normalizedCuts = Array.from({ length: targetLength }, (_, j) => {
     const cutData = rawCuts[j] || {};
     const rawNarration = cutData.narrationJp || cutData.narration || (isMvMode ? `歌詞${j + 1}` : `場面${j + 1}`);
     

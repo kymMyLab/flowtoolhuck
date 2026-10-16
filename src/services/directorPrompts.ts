@@ -201,7 +201,7 @@ export function buildScriptPrompt(
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
   const isHistorical = checkIsHistorical(era, theme);
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
-  const cutCount = effMode === 'manga' ? 24 : 12;
+  const cutCount = effMode === 'manga' ? 24 : (effMode === 'mv' || isMvMode ? 30 : 12);
 
   const modeConfig = getProductionModeConfig(effMode, isMvMode);
   const directorRole = modeConfig.getDirectorRole(isMangaMode, isHistorical);
@@ -218,7 +218,7 @@ MANDATORY VISUAL RULES:
     : "";
 
   const mvCameraMandate = isMvMode
-    ? "CRITICAL MV CAMERA GAZE: Cut 8 (Chorus climax) is the ONLY cut in the entire 12-cut music video where direct eye contact with the camera is permitted for intense emotional resonance. In all other 11 cuts, the subject MUST NOT look at the camera/viewer under any circumstances! Direct the character looking away, into the distance, eyes cast downward in thought, in pure side profile, or seen from behind."
+    ? "CRITICAL MV CAMERA GAZE: The Chorus climax section (Cut 17 to Cut 24 in a 30-cut video) is the ONLY section in the entire music video where direct eye contact with the camera is permitted for intense emotional resonance. In all other non-chorus cuts, the subject MUST NOT look at the camera/viewer under any circumstances! Direct the character looking away, into the distance, eyes cast downward in thought, in pure side profile, or seen from behind."
     : "";
 
   return `You are a ${directorRole} and visual researcher.
@@ -302,7 +302,7 @@ export function buildCompactScriptPrompt(
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
-  const cutCount = effMode === 'manga' ? 24 : 12;
+  const cutCount = effMode === 'manga' ? 24 : (effMode === 'mv' || isMvMode ? 30 : 12);
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
 
   const plannedTitleJp = cleanEpisodeTitle(currentPlan.titleJp || `場面${epId}`);

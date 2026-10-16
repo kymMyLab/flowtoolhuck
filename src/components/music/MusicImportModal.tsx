@@ -327,7 +327,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               </span>
             </h2>
             <p className="text-xs text-white/50">
-              CT198から書き出した session_songs_metadata.json を放り込むだけで、12カットMV絵コンテを自動錬成します
+              CT198から書き出した session_songs_metadata.json を放り込むだけで、30カットMV絵コンテを自動錬成します
             </p>
           </div>
         </div>
@@ -484,7 +484,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               </div>
               <p className="text-xs text-white/50 mt-0.5">
                 {isBoxDragging
-                  ? '指を離すと全自動で12カットMV絵コンテへ瞬時に展開されます'
+                  ? '指を離すと全自動で30カットMV絵コンテへ瞬時に展開されます'
                   : 'この枠内へドラッグ＆ドロップ、または枠内クリックで即座に読み込まれます'}
               </p>
             </div>
@@ -626,7 +626,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                       className="w-full py-2 px-3 rounded-lg text-xs font-black bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 hover:border-purple-400 flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[16px]">movie_edit</span>
-                      この曲で12カットMVを展開
+                      この曲で{t.total_cuts || 30}カットMVを展開
                     </button>
                   </div>
                 );

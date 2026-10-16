@@ -10,6 +10,7 @@ export interface ImportedTrack {
   id: string;
   track_id?: string;
   track_no?: number;
+  total_cuts?: number;
   title: string;
   format?: string;
   track_type?: string;
@@ -110,7 +111,7 @@ export function parseTextTracksFormat(rawText: string): ImportedTrack[] {
     track_id: `trk_${Date.now()}_1`,
     track_no: Number(trackData['track_no']) || 1,
     title: trackData['title'] || '無題のトラック',
-    format: trackData['format'] || '🎵 音楽MV (12カット)',
+    format: trackData['format'] || '🎵 音楽MV (30カット)',
     track_type: trackData['track_type'] || 'Vocal',
     pool_code: poolCode,
     style_code: styleCode,
@@ -152,7 +153,7 @@ function salvageTracksFromCorruptedText(text: string): ImportedTrack[] {
         track_id: trackId,
         track_no: i + 1,
         title: title || `救出トラック ${i + 1}`,
-        format: '🎵 音楽MV (12カット)',
+        format: '🎵 音楽MV (30カット)',
         track_type: 'Vocal',
         pool_code: 20,
         style_code: 21,
@@ -244,8 +245,9 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
         track_id: trackId,
         track_no: numVal(item.track_no, idx + 1),
         title,
-        format: strVal(item.format, '🎵 音楽MV (12カット)'),
+        format: strVal(item.format, '🎵 音楽MV (30カット)'),
         track_type: strVal(item.track_type, 'Vocal'),
+        total_cuts: numVal(item.total_cuts, 30),
         pool_code: poolCode,
         style_code: styleCode,
         taste: strVal(item.taste, 'youth_pop'),
@@ -297,7 +299,7 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
         track_id: `trk_${Date.now()}_fallback`,
         track_no: 1,
         title: firstLine || 'インポート楽曲',
-        format: '🎵 音楽MV (12カット)',
+        format: '🎵 音楽MV (30カット)',
         track_type: 'Vocal',
         pool_code: 20,
         style_code: 21,
@@ -318,9 +320,9 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
 }
 
 /**
- * visual_hints 文字列（例: "Cut 1-3: [...], Cut 4-9: [...], Cut 10: [★...], Cut 11-12: [...]" またはカッコなし）をカット番号（1〜12）へマッピング
+ * visual_hints 文字列（例: "Cut 1-3: [...], Cut 4-9: [...], Cut 10: [★...], Cut 11-12: [...]" またはカッコなし）をカット番号（1〜maxCuts）へマッピング
  */
-export function parseVisualHints(visualHintsText: string): Record<number, string> {
+export function parseVisualHints(visualHintsText: string, maxCuts: number = 60): Record<number, string> {
   const map: Record<number, string> = {};
   if (!visualHintsText) return map;
 
@@ -334,7 +336,7 @@ export function parseVisualHints(visualHintsText: string): Record<number, string
     const content = (match[3] || match[4] || '').trim();
     if (!content) continue;
 
-    for (let c = startCut; c <= endCut && c <= 12; c++) {
+    for (let c = startCut; c <= endCut && c <= maxCuts; c++) {
       map[c] = content;
     }
   }
@@ -409,9 +411,10 @@ export function extractLyricVisualPlot(
     return `[CINEMATIC DIRECTIVE]: Scene ${lyricRef}${cleanHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
   }
 
-  // 3. 演出ヒントがない場合：普遍的・映画的な12カット・ストーリーテリング構図
+  // 3. 演出ヒントがない場合：普遍的・映画的なストーリーテリング構図（30カット対応・多様化サイクル）
   let universalAction = '';
-  switch (cutIndex) {
+  const actionIndex = cutIndex === 1 ? 1 : (((cutIndex - 2) % 10) + 2);
+  switch (actionIndex) {
     case 1:
       universalAction = 'Arresting cinematic extreme close-up visual hook on character\'s intense emotional eyes and expressive face, dramatic directional lighting highlighting sparkling iris reflections, candid gaze, shallow depth of field, face and eyes only, strictly no full-body standing';
       break;
@@ -439,14 +442,14 @@ export function extractLyricVisualPlot(
     case 9:
       universalAction = 'Dynamic low-angle upward shot, character pausing and looking toward the horizon from a heroic low perspective against towering backdrop';
       break;
-    case 11:
+    case 10:
       universalAction = 'Heroic medium close-up bust shot, character turning slightly with calm resolve and serene expression, bathed in twilight warmth';
       break;
-    case 12:
+    case 11:
       universalAction = 'Cinematic crane-up pull-out wide shot of the expansive scenery, elongated shadows stretching into the distance, character silhouette blending into the atmospheric horizon, seamless circular loop back into beginning';
       break;
     default:
-      universalAction = 'Cinematic framing matching the music video narrative';
+      universalAction = 'Atmospheric cinematic framing matching the musical progression';
       break;
   }
 
@@ -458,16 +461,19 @@ export function extractLyricVisualPlot(
 }
 
 /**
- * CT198のインポートトラックから、FlowToolの完全な 12カット MV Episode を自動錬成
+ * CT198のインポートトラックから、FlowToolの完全な 30カット（可変対応）MV Episode を自動錬成
+ * (v2.2.0-HybridScalable: 30カット・6秒/カット・比率ベース section_ratio_allocation 準拠)
  */
 export function convertTrackToEpisode(
   track: ImportedTrack, 
   videoRatio: string = '30%', 
   selectedCharacter?: CastCharacter,
   coverThemeVariant?: string,
-  selectedTaste?: string
+  selectedTaste?: string,
+  targetCuts?: number
 ): Episode {
-  const visualMap = parseVisualHints(track.visual_hints || '');
+  const totalCuts = targetCuts || (typeof track.total_cuts === 'number' && track.total_cuts > 0 ? track.total_cuts : 30);
+  const visualMap = parseVisualHints(track.visual_hints || '', totalCuts);
   const preferredLyrics = track.lyrics_kanji || track.input_lyrics || '';
   const lyricsSec = parseLyricsSections(preferredLyrics);
 
@@ -476,32 +482,77 @@ export function convertTrackToEpisode(
     ? lyricsSec['chorus']
     : (track.chorus_lyrics ? track.chorus_lyrics.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('[') && !l.startsWith('(')) : []);
 
-  // 12カットの歌詞配分マップ
-  const cutLyricsMap: Record<number, string> = {
-    1: lyricsSec['intro']?.[0] || '♪ (Intro Instrumental)',
-    2: lyricsSec['verse1']?.slice(0, 2)?.join(' ') || '冷たい床に伸びる影',
-    3: lyricsSec['verse1']?.slice(2, 4)?.join(' ') || 'べたつく音が響くたび',
-    4: lyricsSec['prechorus']?.slice(0, 2)?.join(' ') || '広くなった空間は',
-    5: chorusLines[0] || '透き通る風が駆け抜けて',
-    6: chorusLines[1] || '何もない部屋に日が落ちる',
-    7: chorusLines[2] || '右手に残る錆びた艶',
-    8: chorusLines[3] || '開かない扉の幻を',
-    9: lyricsSec['verse2']?.slice(0, 2)?.join(' ') || '隅に落ちてた銀の粒',
-    10: lyricsSec['bridge']?.slice(0, 2)?.join(' ') || 'あの日置いてった銀の爪',
-    11: lyricsSec['final_chorus']?.slice(0, 2)?.join(' ') || '新しい明日へ歩き出す',
-    12: lyricsSec['outro']?.[0] || '♪ (Outro / Reverb Tail)'
-  };
+  const introLines = lyricsSec['intro'] || [];
+  const verse1Lines = lyricsSec['verse1'] || [];
+  const prechorusLines = lyricsSec['prechorus'] || [];
+  const verse2Lines = lyricsSec['verse2'] || [];
+  const bridgeLines = lyricsSec['bridge'] || [];
+  const finalChorusLines = lyricsSec['final_chorus'] || [];
+  const outroLines = lyricsSec['outro'] || [];
 
-  // 3者共通グランドマスター規格 (v2.2.0)
+  // 3者共通グランドマスター規格 (v2.2.0-HybridScalable)
   const masterCat = resolveMasterCategory(track.surface_theme || track.title, 'mv');
 
   const cuts: Cut[] = [];
-  for (let i = 1; i <= 12; i++) {
-    const hint = visualMap[i] || '';
-    const lyric = cutLyricsMap[i] || '';
-    const isChorus = i >= 5 && i <= 8;
-    const isPropCut = i === 10;
 
+  for (let i = 1; i <= totalCuts; i++) {
+    const progress = (i - 0.5) / totalCuts;
+
+    // 比率ベースのセクション判定 (master_categories.json 準拠)
+    let section: 'intro' | 'verse_a' | 'verse_b' | 'chorus' | 'bridge' | 'outro' = 'verse_a';
+    if (progress < 0.13) {
+      section = 'intro';
+    } else if (progress < 0.33) {
+      section = 'verse_a';
+    } else if (progress < 0.53) {
+      section = 'verse_b';
+    } else if (progress < 0.80) {
+      section = 'chorus';
+    } else if (progress < 0.93) {
+      section = 'bridge';
+    } else {
+      section = 'outro';
+    }
+
+    const isChorus = section === 'chorus';
+    // 伏線小道具カット: bridge セクションの2番目のカット、または特定インデックス
+    const bridgeStart = Math.round(totalCuts * 0.80) + 1;
+    const isPropCut = totalCuts >= 20 ? (i === bridgeStart + 1) : (i === 10);
+    const isLastCut = i === totalCuts;
+
+    // 動的歌詞配分
+    let lyric = '';
+    if (section === 'intro') {
+      const idx = (i - 1) % Math.max(1, introLines.length);
+      lyric = introLines[idx] || (i === 1 ? '♪ (Intro Instrumental)' : (introLines[0] || '冷たい風が吹き抜ける'));
+    } else if (section === 'verse_a') {
+      const sectionOffset = i - Math.round(totalCuts * 0.13);
+      const idx = (sectionOffset - 1) % Math.max(1, verse1Lines.length);
+      lyric = verse1Lines[idx] || (verse1Lines.length > 0 ? verse1Lines.join(' ') : '冷たい床に伸びる影');
+    } else if (section === 'verse_b') {
+      const bPool = prechorusLines.length > 0 ? prechorusLines : verse2Lines;
+      const sectionOffset = i - Math.round(totalCuts * 0.33);
+      const idx = (sectionOffset - 1) % Math.max(1, bPool.length);
+      lyric = bPool[idx] || (bPool.length > 0 ? bPool.join(' ') : '広くなった空間は');
+    } else if (section === 'chorus') {
+      const cPool = chorusLines.length > 0 ? chorusLines : (finalChorusLines.length > 0 ? finalChorusLines : []);
+      const sectionOffset = i - Math.round(totalCuts * 0.53);
+      const idx = (sectionOffset - 1) % Math.max(1, cPool.length);
+      lyric = cPool[idx] || '透き通る風が駆け抜けて';
+    } else if (section === 'bridge') {
+      const brPool = bridgeLines.length > 0 ? bridgeLines : (verse2Lines.length > 0 ? verse2Lines : prechorusLines);
+      const sectionOffset = i - Math.round(totalCuts * 0.80);
+      const idx = (sectionOffset - 1) % Math.max(1, brPool.length);
+      lyric = brPool[idx] || (isPropCut ? 'あの日置いてった銀の爪' : '隅に落ちてた銀の粒');
+    } else {
+      // outro
+      const idx = (i - Math.round(totalCuts * 0.93) - 1) % Math.max(1, outroLines.length);
+      lyric = outroLines[idx] || (isLastCut ? '♪ (Outro / Reverb Tail)' : '新しい明日へ歩き出す');
+    }
+
+    const hint = visualMap[i] || '';
+
+    // ショットスケールとカメラワーク
     let shotScale = 'Wide';
     let cameraWork = 'static';
     let isObjectOnly = false;
@@ -510,38 +561,57 @@ export function convertTrackToEpisode(
     let telopPosition: any = 'bottom-center';
 
     if (i === 1) {
-      // ★ アルゴリズム必勝: 冒頭0.5秒スワイプキラー（極限顔面・瞳のアップ）
+      // ★ 冒頭スワイプキラー（極限顔面・瞳のアップ）
       shotScale = 'Extreme Close-Up (Swipe Hook)';
       cameraWork = 'push-in-heroic';
       telopPosition = 'bottom-center';
-    } else if (i === 2 || i === 3) {
-      shotScale = 'Medium Close-Up';
-      cameraWork = 'push-in';
-    } else if (i === 4) {
-      shotScale = 'Dutch Angle Medium (Clue Hook)';
-      cameraWork = 'dutch-tilt';
-    } else if (isChorus) {
-      shotScale = i === 5 ? 'Extreme Wide' : (i === 6 ? 'Medium Dynamic' : (i === 7 ? 'Close-Up' : 'Wide Dynamic'));
-      cameraWork = i % 2 === 0 ? 'cinematic-orbit' : 'dynamic-pan-zoom';
-      telopPosition = 'center-stagger';
-    } else if (i === 9) {
-      shotScale = 'Low Angle Medium (Discovery)';
-      cameraWork = 'pull-out';
-    } else if (isPropCut) {
-      shotScale = 'Extreme Close-Up Macro';
-      cameraWork = 'macro-reveal';
-      isObjectOnly = true; // ★カット10は伏線小道具確定！
-      telopStyle = 'mv-neon-glow';
-      telopPosition = 'bottom-center';
-    } else if (i === 11) {
-      shotScale = 'Heroic Close-Up';
-      cameraWork = 'push-in-heroic';
-      telopPosition = 'center-climax';
-    } else if (i === 12) {
+    } else if (isLastCut) {
       // ★ 不在の余韻 ＆ 無限ループ構図
       shotScale = 'Cinematic Wide (Void Loop)';
       cameraWork = 'crane-up-fade';
       telopPosition = 'bottom-center';
+    } else if (isPropCut) {
+      // ★ 伏線小道具確定
+      shotScale = 'Extreme Close-Up Macro';
+      cameraWork = 'macro-reveal';
+      isObjectOnly = true;
+      telopStyle = 'mv-neon-glow';
+      telopPosition = 'bottom-center';
+    } else if (isChorus) {
+      // ★ サビ演出
+      const cIdx = i % 4;
+      shotScale = cIdx === 0 ? 'Extreme Wide Dynamic' : (cIdx === 1 ? 'Heroic Close-Up' : (cIdx === 2 ? 'Medium Dynamic' : 'Wide Dynamic'));
+      cameraWork = i % 2 === 0 ? 'cinematic-orbit' : 'dynamic-pan-zoom';
+      telopPosition = 'center-stagger';
+    } else {
+      // 通常カットの多様化サイクル
+      const normIdx = i % 6;
+      switch (normIdx) {
+        case 0:
+          shotScale = 'Medium Close-Up';
+          cameraWork = 'push-in';
+          break;
+        case 1:
+          shotScale = 'Dutch Angle Medium (Clue Hook)';
+          cameraWork = 'dutch-tilt';
+          break;
+        case 2:
+          shotScale = 'Low Angle Medium (Discovery)';
+          cameraWork = 'pull-out';
+          break;
+        case 3:
+          shotScale = 'Overhead High-Angle';
+          cameraWork = 'tilt-down';
+          break;
+        case 4:
+          shotScale = 'Dynamic Tracking Side Profile';
+          cameraWork = 'pan-left';
+          break;
+        default:
+          shotScale = 'Medium Bust Shot';
+          cameraWork = 'handheld';
+          break;
+      }
     }
 
     const hl = extractHighlights(lyric);
@@ -553,15 +623,15 @@ export function convertTrackToEpisode(
     ];
 
     // キャストDNAおよび表情のインポート（キャスト固定が明示的にONのときのみ注入）
-    if (selectedCharacter && !isPropCut && i !== 12) {
+    if (selectedCharacter && !isPropCut && !isLastCut) {
       let expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
       if (i === 1) {
         expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
-      } else if (i === 4) {
+      } else if (section === 'verse_b') {
         expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
       } else if (isChorus) {
         expressionPrompt = selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
-      } else if (i === 11) {
+      } else if (section === 'bridge') {
         expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || '';
       }
 
@@ -578,7 +648,7 @@ export function convertTrackToEpisode(
     }
 
     // 登場人物詳細（character_setting）の注入（一過性の立ちポーズ・傘持ちポーズを削ぎ落とし、純粋な容姿DNAのみ注入）
-    if (track.character_setting && !isPropCut && i !== 12) {
+    if (track.character_setting && !isPropCut && !isLastCut) {
       const cleanSettingDna = track.character_setting
         .replace(/\b(standing|seated|sitting|holding an? umbrella|holding umbrellas?|with an? umbrella|holding hands?|walking straight|facing camera)\b/gi, '')
         .replace(/(傘を差して|傘を持ち|傘を持った|傘を差す|立っている|佇んでいる|佇む|直立して|正面を向いて)/g, '')
@@ -589,8 +659,8 @@ export function convertTrackToEpisode(
       }
     }
 
-    // 五感・小道具ディテール（sensory_details）の注入（小道具Cut10や手元接写Cut）
-    if (track.sensory_details && (isPropCut || i === 1 || i === 3 || i === 7 || i === 10)) {
+    // 五感・小道具ディテール（sensory_details）の注入
+    if (track.sensory_details && (isPropCut || i === 1 || i === 3 || i === 7 || isChorus)) {
       promptEnComponents.push(`[TACTILE DETAILS]: ${track.sensory_details.trim().replace(/\.+$/, '')}.`);
     }
 
@@ -602,7 +672,7 @@ export function convertTrackToEpisode(
 
     const promptEn = promptEnComponents.join(' ');
 
-    // ★ ユーザー設計規範: 直近カット（直前1〜2カット）のポーズ・小道具・構図を次カットのネガティブプロンプトへ完全自動初期バインド
+    // 直近カットのポーズ・小道具・構図を次カットのネガティブプロンプトへ完全自動バインド
     const recentCuts = cuts.slice(Math.max(0, cuts.length - 2));
     const dynamicAntiPrev = recentCuts.length > 0 ? buildDynamicAntiPreviousNegative(recentCuts.map(c => ({
       scale: c.shotScale,
@@ -621,7 +691,7 @@ export function convertTrackToEpisode(
       isObjectOnly: isObjectOnly,
       panelLayout: isPropCut ? 'single' : (isChorus ? 'diagonal-slash' : 'single'),
       focalPoint: isPropCut ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'key_prop' } : undefined,
-      duration: isChorus ? 7.5 : 5.0,
+      duration: 6.0,
       isSelectedForVideo: isCutSelectedForVideo(i - 1, videoRatio),
       targetVideoModel: 'omni-flash',
       isDirecting: false,
