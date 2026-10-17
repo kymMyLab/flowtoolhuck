@@ -75,20 +75,20 @@ export function buildDynamicAntiPreviousNegative(previous?: PreviousShotContext 
     } else if (ctx.scale) {
       const lowerScale = ctx.scale.toLowerCase();
       if (lowerScale.includes('close')) {
-        antiTokens.push('extreme close-up', 'macro face', 'zoomed in headshot', 'tight portrait');
+        antiTokens.push('extreme close-up', 'macro face', 'zoomed in headshot', 'tight portrait', 'identical close camera distance');
       } else if (lowerScale.includes('wide')) {
-        antiTokens.push('distant tiny figure', 'extreme wide shot', 'panoramic view');
+        antiTokens.push('distant tiny figure', 'extreme wide shot', 'panoramic view', 'identical wide landscape');
       } else if (lowerScale.includes('medium')) {
-        antiTokens.push('standard medium shot', 'static bust portrait');
+        antiTokens.push('standard medium shot', 'static bust portrait', 'monotonous medium distance', 'identical standing pose');
       }
     }
 
-    // 2. 直前のカメラアングルに基づく除外トークン
-    if (ctx.angle) {
-      const lowerAngle = ctx.angle.toLowerCase();
-      if (lowerAngle.includes('high-angle') || lowerAngle.includes('downward') || lowerAngle.includes('俯瞰')) {
+    // 2. 直前のカメラアングル・動きに基づく除外トークン
+    if (ctx.angle || ctx.tag) {
+      const angleStr = `${ctx.angle || ''} ${ctx.tag || ''}`.toLowerCase();
+      if (angleStr.includes('high') || angleStr.includes('down') || angleStr.includes('俯瞰')) {
         antiTokens.push('high angle looking down', 'overhead camera perspective');
-      } else if (lowerAngle.includes('low-angle') || lowerAngle.includes('worm') || lowerAngle.includes('煽り')) {
+      } else if (angleStr.includes('low') || angleStr.includes('worm') || angleStr.includes('煽り')) {
         antiTokens.push('low angle looking up', 'worm-eye perspective');
       }
     }
@@ -102,7 +102,10 @@ export function buildDynamicAntiPreviousNegative(previous?: PreviousShotContext 
         antiTokens.push('sitting on floor', 'sitting down', 'seated posture', 'crouching pose', 'squatting on ground', 'sitting pose', 'hugging knees on floor', 'sitting on bench');
       }
       if (lowerPrompt.includes('stand') || lowerPrompt.includes('standing') || lowerPrompt.includes('upright') || lowerPrompt.includes('立')) {
-        antiTokens.push('identical standing pose', 'repeating standing posture', 'static upright standing', 'straight standing pose', 'stiff standing posture');
+        antiTokens.push('identical standing pose', 'repeating standing posture', 'static upright standing', 'straight standing pose', 'stiff standing posture', 'standing by railing', 'leaning on fence', 'duplicate fence pose', 'monotonous standing figure');
+      }
+      if (lowerPrompt.includes('fence') || lowerPrompt.includes('railing') || lowerPrompt.includes('手すり') || lowerPrompt.includes('柵')) {
+        antiTokens.push('identical fence background', 'repeating railing', 'same fence perspective');
       }
       if (lowerPrompt.includes('walk') || lowerPrompt.includes('walking') || lowerPrompt.includes('stride') || lowerPrompt.includes('歩')) {
         antiTokens.push('walking in same direction', 'repeating walking pose', 'identical walking stride');

@@ -497,13 +497,7 @@ export function extractLyricVisualPlot(
     return `[STRICT STILL-LIFE INSERT]: Extreme close-up macro product still-life photography of (${propName}), in natural environmental setting (${theme}), completely deserted scene with strictly NO humans, NO person, shallow depth of field, atmospheric cinematic lighting, crisp tactile reflections and dust motes.`;
   }
 
-  // 2. もしCT198等の演出ヒント(visual_hints)が存在する場合、最優先でその情景・アクションを主役に据える！
-  if (cleanHint) {
-    const lyricRef = cleanLyric ? `embodying lyric "${cleanLyric}", ` : '';
-    return `[CINEMATIC DIRECTIVE]: Scene ${lyricRef}${cleanHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
-  }
-
-  // 3. 演出ヒントがない場合：普遍的・映画的なストーリーテリング構図（30カット対応・多様化サイクル）
+  // 2. 普遍的・映画的なストーリーテリング構図（30カット対応・多様化サイクル）
   let universalAction = '';
   const actionIndex = cutIndex === 1 ? 1 : (((cutIndex - 2) % 10) + 2);
   switch (actionIndex) {
@@ -514,13 +508,13 @@ export function extractLyricVisualPlot(
       universalAction = 'Atmospheric medium shot in dynamic walking motion, character taking brisk strides forward along the pavement, long cast shadows, natural kinetic movement rather than standing still';
       break;
     case 3:
-      universalAction = 'Intimate close-up macro framing purely on character\'s hand and delicate fingers touching texture or adjusting accessory, subtle emotional gesture, shallow depth of field, strictly hand-focused composition';
+      universalAction = 'Intimate close-up macro framing purely on character\'s hand and delicate fingers touching texture or adjusting sleeve cuffs, subtle emotional gesture, shallow depth of field, strictly hand-focused composition, no full body';
       break;
     case 4:
-      universalAction = 'Dutch-tilt medium angle, character in three-quarter profile gazing upwards into the ambient night sky, dramatic diagonal perspective with distinct leading lines';
+      universalAction = 'Dutch-tilt medium angle, character in three-quarter profile gazing upwards into the ambient twilight sky, dramatic diagonal perspective with distinct leading lines';
       break;
     case 5:
-      universalAction = 'Dynamic wide chorus opening shot with active forward momentum, energetic motion with wind billowing hair and clothes, stepping dynamically into the open illuminated space';
+      universalAction = 'Cinematic wide-angle establishing landscape shot, expansive horizon and dramatic clouds dominating the frame, atmospheric distance, non-centered composition';
       break;
     case 6:
       universalAction = 'Cinematic medium-wide shot seen from behind, character walking away into the glowing distance, expressive silhouette and rich environmental atmospheric depth';
@@ -543,6 +537,12 @@ export function extractLyricVisualPlot(
     default:
       universalAction = 'Atmospheric cinematic framing matching the musical progression';
       break;
+  }
+
+  // もしCT198等の演出ヒント(visual_hints)が存在する場合、各カット固有のカメラアングル・構図ディレクティブと強力融合！
+  if (cleanHint) {
+    const lyricRef = cleanLyric ? `embodying lyric "${cleanLyric}", ` : '';
+    return `[CAMERA DIRECTIVE: ${universalAction}]. [SCENE CONTEXT]: Scene ${lyricRef}${cleanHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
   }
 
   if (!cleanLyric || cleanLyric.startsWith('♪') || /^\(.*\)$/.test(cleanLyric)) {
@@ -740,8 +740,11 @@ export function convertTrackToEpisode(
       promptEnComponents.push(`[SCENE CONTEXT]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
     }
 
-    // 登場人物詳細（character_setting）の注入（一過性の立ちポーズ・傘持ちポーズを削ぎ落とし、純粋な容姿DNAのみ注入）
-    if (track.character_setting && !isPropCut && !isLastCut) {
+    // 登場人物詳細（character_setting）の注入（手元マクロカットや風景カットでは全身立ち姿の重複を避けるため除外）
+    const curActionIndex = i === 1 ? 1 : (((i - 2) % 10) + 2);
+    const isHandMacroCut = curActionIndex === 3;
+    const isLandscapeCut = curActionIndex === 5;
+    if (track.character_setting && !isPropCut && !isLastCut && !isHandMacroCut && !isLandscapeCut) {
       const cleanSettingDna = track.character_setting
         .replace(/\b(standing|seated|sitting|holding an? umbrella|holding umbrellas?|with an? umbrella|holding hands?|walking straight|facing camera)\b/gi, '')
         .replace(/(傘を差して|傘を持ち|傘を持った|傘を差す|立っている|佇んでいる|佇む|直立して|正面を向いて)/g, '')
@@ -750,6 +753,10 @@ export function convertTrackToEpisode(
       if (cleanSettingDna) {
         promptEnComponents.push(`[CHARACTER SETTING]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
       }
+    } else if (isHandMacroCut) {
+      promptEnComponents.push(`[SUBJECT FOCUS]: Hands, fingers, wrist, and sleeve fabric only. Intimate macro tactile shot. Strictly NO head, NO full face.`);
+    } else if (isLandscapeCut) {
+      promptEnComponents.push(`[SUBJECT FOCUS]: Expansive scenery, riverbank staircase, vast sky gradient. Pure environmental composition.`);
     }
 
     // 五感・小道具ディテール（sensory_details）の注入
