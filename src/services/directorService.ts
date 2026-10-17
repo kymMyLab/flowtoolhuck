@@ -320,8 +320,12 @@ Output ONLY valid JSON:
     antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${multiPanelNeg}` : multiPanelNeg;
   }
 
+  // プロンプトにすでにカメラディレクティブが含まれている場合は二重付与せず最高解像度の指示を優先
+  const hasCameraDirective = prompt.includes('[CAMERA DIRECTIVE:') || prompt.includes('[STRICT') || prompt.includes('[IRONCLAD');
+  const finalPromptEn = hasCameraDirective ? prompt : `${preset.angle}. ${prompt}`;
+
   return {
-    promptEn: `${preset.angle}. ${prompt}`,
+    promptEn: finalPromptEn,
     negativePrompt: antiPreviousNegative,
     cameraWork: recCw.id,
     cameraMotion: recCw.motionPrompt,

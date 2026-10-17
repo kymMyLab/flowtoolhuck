@@ -5,6 +5,7 @@ import {
   SHOT_SCALE_REGISTRY, 
   POSE_CONTRAST_RULES, 
   TWELVE_CUT_STORYBOARD_PRESETS, 
+  UNIVERSAL_CINE_CYCLE,
   BASELINE_NEGATIVE_TOKENS,
   StoryShotPreset 
 } from '../config/studioDefinitions';
@@ -204,13 +205,22 @@ export function getStoryboardPreset(
   isMvMode?: boolean, 
   isMangaMode?: boolean
 ): { scale: string; angle: string; tag: string } {
+  // 音楽MVモード時は、YouTubeで天下を取る8大映画カメラサイクルを最優先で適用！
+  if (isMvMode) {
+    const cycleIdx = Math.max(0, cutId - 1) % UNIVERSAL_CINE_CYCLE.length;
+    const rule = UNIVERSAL_CINE_CYCLE[cycleIdx];
+    return {
+      scale: rule.scale,
+      angle: rule.directive,
+      tag: rule.tag
+    };
+  }
+
   const index = Math.max(0, cutId - 1) % TWELVE_CUT_STORYBOARD_PRESETS.length;
   const def = TWELVE_CUT_STORYBOARD_PRESETS[index];
   
   let angle = def.cinematicAngle;
-  if (isMvMode) {
-    angle = def.mvAngle;
-  } else if (isMangaMode) {
+  if (isMangaMode) {
     angle = def.mangaAngle;
   }
 
@@ -472,36 +482,68 @@ export function buildFinalCinematicPromptAndNegative(
   // 今後どんなプロンプトや設定が飛んできても、FlowTool側が画角・アングルに応じてポーズの偏りを自動中和
   const fullPromptContext = `${cleanActionPrompt} ${cameraContext} ${task.shotScale || ''} ${task.cinematicAngle || ''} ${task.camera || ''}`.toLowerCase();
 
-  const isCloseUpShot = fullPromptContext.includes('close-up') || fullPromptContext.includes('macro') || fullPromptContext.includes('headshot') || fullPromptContext.includes('tight portrait') || fullPromptContext.includes('bust shot');
-  const isWideShot = fullPromptContext.includes('wide') || fullPromptContext.includes('panorama') || fullPromptContext.includes('establishing') || fullPromptContext.includes('landscape');
-  const isHighAngle = fullPromptContext.includes('high-angle') || fullPromptContext.includes('bird') || fullPromptContext.includes('overhead') || fullPromptContext.includes('looking down') || fullPromptContext.includes('俯瞰');
+  const isCloseUpShot = fullPromptContext.includes('close-up') || fullPromptContext.includes('macro') || fullPromptContext.includes('headshot') || fullPromptContext.includes('tight portrait') || fullPromptContext.includes('bust shot') || fullPromptContext.includes('ドアップ');
   const isLowAngle = fullPromptContext.includes('low-angle') || fullPromptContext.includes('worm') || fullPromptContext.includes('upward') || fullPromptContext.includes('looking up') || fullPromptContext.includes('煽り');
-  const isProfileShot = fullPromptContext.includes('profile') || fullPromptContext.includes('side view') || fullPromptContext.includes('90-degree');
-  const isRearShot = fullPromptContext.includes('rear') || fullPromptContext.includes('back view') || fullPromptContext.includes('from behind');
+  const isDutchAngle = fullPromptContext.includes('dutch') || fullPromptContext.includes('diagonal') || fullPromptContext.includes('斜め');
+  const isWideShot = fullPromptContext.includes('wide') || fullPromptContext.includes('panorama') || fullPromptContext.includes('establishing') || fullPromptContext.includes('landscape') || fullPromptContext.includes('全景');
+  const isHighAngle = fullPromptContext.includes('high-angle') || fullPromptContext.includes('bird') || fullPromptContext.includes('overhead') || fullPromptContext.includes('looking down') || fullPromptContext.includes('俯瞰');
+  const isProfileShot = fullPromptContext.includes('profile') || fullPromptContext.includes('side view') || fullPromptContext.includes('90-degree') || fullPromptContext.includes('横顔');
+  const isRearShot = fullPromptContext.includes('rear') || fullPromptContext.includes('back view') || fullPromptContext.includes('from behind') || fullPromptContext.includes('後ろ姿') || fullPromptContext.includes('背後');
 
   const cineShotSpecificNegatives: string[] = [];
 
   if (isCloseUpShot) {
-    // 寄り・接写: 全身立ちポーズを完全排除し、顔・瞳・表情に強制フォーカス
-    cineShotSpecificNegatives.push('full body', 'standing pose', 'standing upright', 'standing full length', 'head-to-toe', 'legs and feet', 'shoes', 'stiff standing posture', 'monotonous standing figure');
-    cleanActionPrompt = cleanActionPrompt
-      .replace(/\b(standing|standing upright|upright|standing by[^\,]+|leaning on[^\,]+)\b/gi, 'candid close portrait')
-      .replace(/(立っている|佇んでいる|佇む|直立して)/g, '');
-  } else if (isWideShot) {
-    // 引き・全景: 中央に大きく直立する人物を排除し、雄大な情景を主役に
-    cineShotSpecificNegatives.push('dominant close standing figure', 'centered close-up portrait', 'large prominent standing person', 'portrait framing', 'waist-up crop');
-  } else if (isHighAngle) {
-    // 俯瞰: 平凡な正面アイレベル立ちを排除
-    cineShotSpecificNegatives.push('eye-level standing', 'straight frontal standing', 'horizontal camera view', 'level eye contact');
+    // 寄り・接写: 顔面・瞳・表情のみ。身体・椅子・背景を徹底粉砕
+    cineShotSpecificNegatives.push(
+      'full body', 'torso', 'chest', 'shoulders', 'arms', 'hands', 'legs', 'feet', 'shoes',
+      'standing pose', 'seated on chair', 'sitting on bench', 'room interior', 'outdoor street',
+      'wide shot', 'medium shot', 'distant face', 'normal portrait', 'waist-up crop', 'stiff standing posture'
+    );
+    cleanActionPrompt = `[STRICT MACRO PORTRAIT: Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly face and eyes only, absolutely NO full body, NO torso, NO legs, NO background scene]. ${cleanActionPrompt
+      .replace(/\b(standing|standing upright|upright|standing by[^\,]+|leaning on[^\,]+|seated|sitting|chair|bench)\b/gi, '')
+      .replace(/(立っている|佇んでいる|佇む|直立して|座っている|ベンチ|椅子)/g, '')}`;
   } else if (isLowAngle) {
-    // 煽り: 平坦なアイレベル立ちを排除
-    cineShotSpecificNegatives.push('flat eye-level standing', 'boring standard standing', 'level camera angle', 'straight horizontal eye level');
+    // 煽り: 地面スレスレからの極限見上げパースを強制
+    cineShotSpecificNegatives.push(
+      'eye-level shot', 'horizontal camera angle', 'flat perspective', 'looking down',
+      'high angle', 'normal eye level', 'standard seated pose', 'level horizon', 'flat straight perspective'
+    );
+    cleanActionPrompt = `[STRICT DRAMATIC LOW-ANGLE: Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening, subject standing tall framed against the immense towering sky and dynamic overhead clouds, dramatic worm-eye parallax]. ${cleanActionPrompt}`;
+  } else if (isDutchAngle) {
+    // ダッチアングル: 斜め35度傾き
+    cineShotSpecificNegatives.push(
+      'horizontal level frame', 'straight horizontal camera', 'level horizon', 'flat standard shot',
+      'vertical upright symmetry', 'level camera'
+    );
+    cleanActionPrompt = `[STRICT DUTCH ANGLE: Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal horizon slashing across the frame, dramatic diagonal leading lines, stylish cinematic slant]. ${cleanActionPrompt}`;
+  } else if (isWideShot) {
+    // 引き・全景: 風景が画面の90%を支配、被写体は豆粒シルエット
+    cineShotSpecificNegatives.push(
+      'close-up', 'medium shot', 'prominent character in foreground', 'large face',
+      'dominant person in center', 'waist-up', 'chest-up', 'normal portrait'
+    );
+    cleanActionPrompt = `[STRICT EXTREME WIDE PANORAMA: Grand panoramic environmental tableau where sweeping sky, colossal horizon, and expansive landscape overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, immense breathing space and breathtaking atmospheric scale]. ${cleanActionPrompt}`;
+  } else if (isHighAngle) {
+    // 俯瞰: 真上75度見下ろし
+    cineShotSpecificNegatives.push(
+      'eye-level shot', 'horizontal angle', 'looking up from below', 'worm-eye view',
+      'frontal portrait', 'standard eye level', 'horizontal eye contact'
+    );
+    cleanActionPrompt = `[STRICT OVERHEAD BIRD'S-EYE: Steep overhead high-angle bird-eye view looking down from high vantage point at a 75-degree angle, emphasizing ground geometry, environmental textures, and long elongated dramatic shadows cast across the floor plane, unique top-down perspective]. ${cleanActionPrompt}`;
   } else if (isProfileShot) {
-    // 横顔: 正面向き・カメラ目線を排除
-    cineShotSpecificNegatives.push('facing camera', 'front view standing', 'centered eye contact', 'looking directly into camera');
+    // 横顔: 90度真横
+    cineShotSpecificNegatives.push(
+      'facing camera', 'front view', '3/4 front view', 'direct eye contact',
+      'looking at viewer', 'centered portrait', 'front-facing character'
+    );
+    cleanActionPrompt = `[STRICT SIDE PROFILE: Exact 90-degree horizontal side profile view of subject placed along the outer rule-of-thirds, gazing across immense open negative space toward the frame edge, razor-sharp silhouette with brilliant directional rim lighting outlining hair and facial profile]. ${cleanActionPrompt}`;
   } else if (isRearShot) {
-    // 背後: 正面向きを排除
-    cineShotSpecificNegatives.push('facing camera front', 'front view standing', 'direct camera gaze', 'full face front view');
+    // 背後: 後ろ姿
+    cineShotSpecificNegatives.push(
+      'facing camera', 'front view', 'looking back at camera', 'direct eye contact',
+      'full frontal face', 'front view portrait'
+    );
+    cleanActionPrompt = `[STRICT REAR VIEW: Atmospheric rear three-quarter view seen from behind looking outward into the glowing depth of the world, back turned to camera, expressive back silhouette, sharing the character forward gaze toward the unfolding horizon]. ${cleanActionPrompt}`;
   }
 
   if (cineShotSpecificNegatives.length > 0) {
@@ -513,13 +555,14 @@ export function buildFinalCinematicPromptAndNegative(
     characterPromptLayer = '[STRICT STILL-LIFE INSERT: completely deserted scene, strictly NO humans, NO person, pure macro shot of object and atmospheric environment]. ';
     negativeLayers.push('human, person, girl, boy, man, woman, child, face, eye, hands, fingers, legs, feet, body silhouette, crowd, portrait');
   } else if (effectiveDna) {
-    // クローズアップ等の場合、DNAやキャラクター設定内の立ちポーズ指定を安全に中和
+    // クローズアップ等の場合、DNAやキャラクター設定内の立ちポーズ・服装指定を安全に顔・瞳のみに純化
     let sanitizedDna = effectiveDna;
     if (isCloseUpShot) {
-      sanitizedDna = sanitizedDna.replace(/\b(standing|standing upright|upright|full body|head-to-toe)\b/gi, '').trim();
-    }
-
-    if (task.isEndFrame) {
+      sanitizedDna = sanitizedDna
+        .replace(/\b(standing|standing upright|upright|full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|pants|skirt|jacket|coat|windbreaker)\b/gi, '')
+        .trim();
+      characterPromptLayer = `[PROTAGONIST CLOSE-UP DNA: ${sanitizedDna}, face, facial features, hair, eyes only]. `;
+    } else if (task.isEndFrame) {
       // 到達点フレーム: 顔正面の縛りを解き、髪型・衣装の一貫性を維持したまま大胆なアングル変更を許容
       characterPromptLayer = `[PROTAGONIST CONTINUITY: ${sanitizedDna}, strictly maintain identical hairstyle, hair color, and clothing from this transformed perspective]. `;
       negativeLayers.push('different character, change of clothes, multiple people, extra person, duplicate characters');

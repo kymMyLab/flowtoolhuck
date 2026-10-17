@@ -5,6 +5,7 @@ import { CAMERA_WORK_REGISTRY } from '../constants';
 import { isCutSelectedForVideo } from './utils';
 import { resolveTasteKey } from './tasteStorage';
 import { buildDynamicAntiPreviousNegative } from './promptEngine';
+import { UNIVERSAL_CINE_CYCLE, CineCameraRule } from '../config/studioDefinitions';
 
 export interface ImportedTrack {
   id: string;
@@ -477,67 +478,7 @@ export function parseLyricsSections(lyricsText: string): Record<string, string[]
   return sections;
 }
 
-export interface CineCameraRule {
-  scale: string;
-  cameraWork: string;
-  directive: string;
-}
 
-/**
- * 映画・アニメMV制作の王道演出に基づく8ショット普遍カメラアングル＆画角サイクル
- * （小道具や特定の仕草・場所を一切決め打ちせず、純粋な画角・カメラアングル・パースの切り替えによって
- * どんなジャンル・設定・プロンプトでも劇的なバリエーションと映像的躍動感を自動演出する）
- */
-export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
-  // 1. Extreme Close-Up / 寄り・表情・瞳 (顔・目元のみ。全身・立ち姿を完全排除)
-  {
-    scale: 'Extreme Close-Up',
-    cameraWork: 'intimate-macro',
-    directive: 'Arresting cinematic extreme close-up shot focusing intensely on facial emotion, eyes, and subtle expression, shallow depth of field with soft atmospheric background blur, strictly tight head and face framing only, absolutely NO full body, NO standing pose'
-  },
-  // 2. Dramatic Low-Angle Upward / 煽り (見上げるローアングルパース)
-  {
-    scale: 'Low-Angle Upward',
-    cameraWork: 'low-angle-tilt-up',
-    directive: 'Dynamic low-angle upward camera perspective looking up from below toward subject against expansive sky and dramatic horizon, strong vertical perspective and kinetic parallax'
-  },
-  // 3. Dutch-Angle Diagonal Tilt / 斜め傾き (緊張感・斜め構図)
-  {
-    scale: 'Dutch-Angle Medium',
-    cameraWork: 'dutch-tilt',
-    directive: 'Stylistic Dutch-angle shot with a dynamic diagonal tilted camera frame, off-kilter dynamic perspective with sharp diagonal leading lines, conveying emotional motion and kinetic tension'
-  },
-  // 4. Extreme Wide Environmental Panorama / 引き・情景主役 (人物は風景の一部の小さなシルエット)
-  {
-    scale: 'Extreme Wide Panorama',
-    cameraWork: 'wide-establishing',
-    directive: 'Grand panoramic extreme wide establishing shot where vast sweeping landscape, horizon, and immense atmosphere dominate the canvas, character naturally integrated as a tiny distant silhouette within the grand environment'
-  },
-  // 5. Overhead High-Angle Bird\'s-Eye / 俯瞰・見下ろし (幾何学・影)
-  {
-    scale: 'Overhead High-Angle',
-    cameraWork: 'high-angle-tilt-down',
-    directive: 'Steep overhead high-angle bird\'s-eye view looking down from high vantage point, emphasizing ground geometry, environmental textures, and long cast shadows across the ground plane'
-  },
-  // 6. Cinematic Side Profile / 真横・横顔 (横向き・余白を活かしたシネマ構図)
-  {
-    scale: 'Medium Close-Up Profile',
-    cameraWork: 'cinematic-profile-pan',
-    directive: 'Clean cinematic profile view from the side, subject positioned along rule-of-thirds looking across generous negative space toward the frame edge, rich directional rim lighting'
-  },
-  // 7. Atmospheric Rear View / 背後・見送り (背中から広がる世界)
-  {
-    scale: 'Medium-Wide Rear View',
-    cameraWork: 'over-the-shoulder',
-    directive: 'Atmospheric rear three-quarter view seen from behind looking outward into the expansive world, capturing silhouette and spatial depth as the character gazes forward'
-  },
-  // 8. Cinematic Medium Bust / 感情の収束・バストアップ (胸上・自然な佇まい)
-  {
-    scale: 'Medium Bust Shot',
-    cameraWork: 'medium-push-in',
-    directive: 'Cinematic chest-up bust framing capturing nuanced upper-body gesture and calm presence, soft directional rim lighting, beautifully framed rule-of-thirds composition'
-  }
-];
 
 /**
  * 歌詞テキスト・演出ヒント・カット位置から、AI作画が1対1で呼応する具体的な情景・カメラ指示を錬成

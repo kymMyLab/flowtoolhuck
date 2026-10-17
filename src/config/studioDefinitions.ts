@@ -241,8 +241,91 @@ export interface ShotScaleDefinition {
 }
 
 export const SHOT_SCALE_REGISTRY: Record<string, ShotScaleDefinition> = {
+  // ── YouTubeで天下を取る映画的8大カメラサイクル ──
+  'Extreme Close-Up': {
+    scale: 'Extreme Close-Up',
+    tag: '極限ドアップ・瞳',
+    cinematicAngle: 'Intense macro close-up cropped tightly at mid-forehead and lower lip, massive emotive sparkling eyes dominating the canvas, delicate iris reflections, trembling eyelashes, pure face and eyes only',
+    mangaAngle: 'Full-bleed extreme macro eye panel, intense screentones, hyper-detailed iris reflections, dramatic emotional tension',
+    antiRepeatNegatives: [
+      'extreme close-up', 'macro face', 'zoomed in headshot', 'tight portrait', 'cropped forehead', 'face-only framing'
+    ],
+    suggestedContrastScales: ['Extreme Wide Panorama', 'Low-Angle Upward', 'Dutch-Angle Medium']
+  },
+  'Low-Angle Upward': {
+    scale: 'Low-Angle Upward',
+    tag: '極限煽り・見上げ',
+    cinematicAngle: 'Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening against the immense soaring sky',
+    mangaAngle: 'Dynamic low-angle upward worm-eye view, dramatic perspective lines, character towering over camera, full-bleed kinetic angle',
+    antiRepeatNegatives: [
+      'low-angle upward', 'worm-eye perspective', 'looking up from below', 'steep upward angle'
+    ],
+    suggestedContrastScales: ['Overhead High-Angle', 'Extreme Close-Up', 'Medium Close-Up Profile']
+  },
+  'Dutch-Angle Medium': {
+    scale: 'Dutch-Angle Medium',
+    tag: '斜め傾き・ダッチアングル',
+    cinematicAngle: 'Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal horizon slashing across frame, dramatic diagonal leading lines, off-kilter cinematic slant',
+    mangaAngle: 'Dynamic Dutch-tilt diagonal frame, kinetic speed lines cutting across canvas, diagonal dramatic tension, borderless',
+    antiRepeatNegatives: [
+      'dutch angle', 'diagonal tilted framing', 'slanted horizon', 'off-axis camera'
+    ],
+    suggestedContrastScales: ['Medium Bust Shot', 'Overhead High-Angle', 'Extreme Wide Panorama']
+  },
+  'Extreme Wide Panorama': {
+    scale: 'Extreme Wide Panorama',
+    tag: '超広角・情景主役',
+    cinematicAngle: 'Grand panoramic environmental tableau where sweeping sky, colossal horizon, and expansive landscape overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette',
+    mangaAngle: 'Massive double-spread establishing panorama, detailed environment dominating canvas, tiny distant character silhouette, full-bleed',
+    antiRepeatNegatives: [
+      'extreme wide panorama', 'distant landscape', 'tiny distant character', 'sweeping panorama', 'vast horizon shot'
+    ],
+    suggestedContrastScales: ['Extreme Close-Up', 'Medium Bust Shot', 'Medium Close-Up Profile']
+  },
+  'Overhead High-Angle': {
+    scale: 'Overhead High-Angle',
+    tag: '真上俯瞰・影と幾何学',
+    cinematicAngle: 'Steep overhead high-angle bird-eye view looking down from above at a 75-degree angle, emphasizing ground geometry, environmental textures, and long dramatic cast shadows across the floor plane',
+    mangaAngle: 'High-angle bird-eye manga panel looking down on character from above, dramatic floor textures, angular top-down perspective, full-bleed',
+    antiRepeatNegatives: [
+      'overhead high-angle', 'bird-eye view', 'looking down from above', 'steep top-down angle'
+    ],
+    suggestedContrastScales: ['Low-Angle Upward', 'Extreme Close-Up', 'Medium-Wide Rear View']
+  },
+  'Medium Close-Up Profile': {
+    scale: 'Medium Close-Up Profile',
+    tag: '完全真横・プロファイル',
+    cinematicAngle: 'Exact 90-degree horizontal side profile view of subject placed along outer rule-of-thirds gazing across wide open negative space toward frame edge, razor-sharp silhouette with brilliant rim lighting',
+    mangaAngle: 'Clean side profile manga portrait, dramatic negative space, stylish profile line art, rim light contrast, full-bleed',
+    antiRepeatNegatives: [
+      'side profile', '90-degree profile view', 'looking sideways across frame', 'profile silhouette'
+    ],
+    suggestedContrastScales: ['Medium-Wide Rear View', 'Extreme Wide Panorama', 'Extreme Close-Up']
+  },
+  'Medium-Wide Rear View': {
+    scale: 'Medium-Wide Rear View',
+    tag: '背後・見送り・視線共有',
+    cinematicAngle: 'Atmospheric rear three-quarter view seen from behind looking outward into the glowing depth of the world, back turned to camera, sharing character\'s forward gaze toward unfolding horizon',
+    mangaAngle: 'Dramatic back view manga panel, character seen from behind facing vast open world, expressive shoulder line, full-bleed',
+    antiRepeatNegatives: [
+      'rear view', 'seen from behind', 'back turned to camera', 'over the shoulder'
+    ],
+    suggestedContrastScales: ['Extreme Close-Up', 'Low-Angle Upward', 'Medium Close-Up Profile']
+  },
+  'Medium Bust Shot': {
+    scale: 'Medium Bust Shot',
+    tag: '堂々たるバストアップ',
+    cinematicAngle: 'Cinematic tight chest-up bust framing capturing nuanced facial emotion and upper-body posture, soft directional chiaroscuro rim lighting, beautifully framed rule-of-thirds composition',
+    mangaAngle: 'Heroic chest-up manga bust portrait, cel-shaded lighting, intense focus on character eyes and collar, full-bleed',
+    antiRepeatNegatives: [
+      'bust shot repetition', 'chest-up framing', 'static bust portrait'
+    ],
+    suggestedContrastScales: ['Extreme Wide Panorama', 'Dutch-Angle Medium', 'Extreme Close-Up']
+  },
+
+  // ── レガシー互換スケール ──
   'Wide': {
-    scale: 'Wide',
+    scale: 'Extreme Wide Panorama',
     tag: '引き・世界観',
     cinematicAngle: 'Cinematic wide horizontal shot, street-level atmospheric perspective with environment and props',
     mangaAngle: 'Establishing shot with detailed pen-and-ink architecture, deep shadows, cinematic comic perspective, full-bleed edge-to-edge',
@@ -253,9 +336,9 @@ export const SHOT_SCALE_REGISTRY: Record<string, ShotScaleDefinition> = {
     suggestedContrastScales: ['Close-up', 'Medium']
   },
   'Close-up': {
-    scale: 'Close-up',
+    scale: 'Extreme Close-Up',
     tag: '迫真アップ',
-    cinematicAngle: 'Dramatic low-angle worm\'s-eye view looking up from below, intense cinematic perspective showing head and shoulders firmly grounded, dynamic sky background',
+    cinematicAngle: 'Intense macro close-up cropped tightly at forehead and chin, massive emotive sparkling eyes dominating the canvas, delicate iris reflections',
     mangaAngle: 'Intense macro eye close-up filling the frame, heavy screen tones, speed lines radiating, dramatic monologue expression, borderless',
     antiRepeatNegatives: [
       'extreme close-up', 'macro face', 'zoomed-in headshot', 
@@ -264,9 +347,9 @@ export const SHOT_SCALE_REGISTRY: Record<string, ShotScaleDefinition> = {
     suggestedContrastScales: ['Wide', 'Medium', 'Splash']
   },
   'Medium': {
-    scale: 'Medium',
+    scale: 'Low-Angle Upward',
     tag: '上半身・対峙',
-    cinematicAngle: 'Looking back over the shoulder while walking away, dynamic three-quarter view, candid emotional glance',
+    cinematicAngle: 'Dramatic low-angle worm\'s-eye view looking up from below, intense cinematic perspective showing head and shoulders firmly grounded, dynamic sky background',
     mangaAngle: 'Dramatic high-contrast cel-shaded lighting, character holding a dynamic combat or decisive standing pose, speed lines, full-bleed',
     antiRepeatNegatives: [
       'standard medium shot', 'static bust portrait', 'waist-up centered portrait', 
@@ -640,6 +723,85 @@ export function getProductionModeConfig(mode?: string, isMvMode?: boolean): Prod
 }
 
 export const PRODUCTION_MODES_LIST = Object.values(PRODUCTION_MODES_CONFIG);
+
+export interface CineCameraRule {
+  scale: string;
+  tag: string;
+  cameraWork: string;
+  directive: string;
+  antiPoseTokens: string[];
+}
+
+/**
+ * YouTubeで天下を取る映画的8大カメラディレクションサイクル
+ * （Google AIの中庸バイアスを強制破壊し、ドアップ・煽り・ダッチ・超広角・俯瞰・横顔を極限の迫力で描画させる）
+ */
+export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
+  // 1. Extreme Close-Up / 極限ドアップ・瞳と表情 (身体・背景・立ち姿を完全粉砕)
+  {
+    scale: 'Extreme Close-Up',
+    tag: '極限ドアップ・瞳',
+    cameraWork: 'intimate-macro',
+    directive: 'Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly face and eyes only, absolutely NO full body, NO torso, NO legs, NO background scene',
+    antiPoseTokens: ['full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'sitting on bench', 'seated on chair', 'room interior', 'outdoor street', 'wide shot', 'medium shot', 'distant face']
+  },
+  // 2. Dramatic Low-Angle Upward / 地面スレスレからの極限煽り見上げ (アイレベル立ちを完全粉砕)
+  {
+    scale: 'Low-Angle Upward',
+    tag: '極限煽り・見上げ',
+    cameraWork: 'low-angle-tilt-up',
+    directive: 'Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening, subject standing tall framed against the immense towering sky and dynamic overhead clouds, dramatic worm-eye parallax',
+    antiPoseTokens: ['eye-level shot', 'horizontal camera angle', 'flat perspective', 'looking down', 'high angle', 'normal eye level', 'standard seated pose', 'level horizon']
+  },
+  // 3. Dutch-Angle Diagonal Tilt / 傾き35度のダッチアングル・斜め構図 (水平直立を完全粉砕)
+  {
+    scale: 'Dutch-Angle Medium',
+    tag: '斜め傾き・ダッチアングル',
+    cameraWork: 'dutch-tilt',
+    directive: 'Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal horizon slashing across the frame, dramatic diagonal leading lines creating palpable tension and emotional instability, stylish cinematic slant',
+    antiPoseTokens: ['horizontal level frame', 'straight horizontal camera', 'level horizon', 'flat standard shot', 'vertical upright symmetry', 'level camera']
+  },
+  // 4. Extreme Wide Landscape Panorama / 超広角・風景主役 (中央の巨大人物を完全粉砕)
+  {
+    scale: 'Extreme Wide Panorama',
+    tag: '超広角・情景主役',
+    cameraWork: 'wide-establishing',
+    directive: 'Grand panoramic environmental tableau where the sweeping sky, colossal horizon, and expansive landscape overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, immense breathing space and breathtaking atmospheric scale',
+    antiPoseTokens: ['close-up', 'medium shot', 'prominent character in foreground', 'large face', 'dominant person in center', 'waist-up', 'chest-up', 'normal portrait']
+  },
+  // 5. Overhead High-Angle Bird\'s-Eye / 真上75度俯瞰・影と幾何学 (正面アイレベルを完全粉砕)
+  {
+    scale: 'Overhead High-Angle',
+    tag: '真上俯瞰・影と幾何学',
+    cameraWork: 'high-angle-tilt-down',
+    directive: 'Steep overhead high-angle bird-eye view looking down from high vantage point at a 75-degree angle, emphasizing ground geometry, environmental textures, and long elongated dramatic shadows cast across the floor plane, unique top-down perspective',
+    antiPoseTokens: ['eye-level shot', 'horizontal angle', 'looking up from below', 'worm-eye view', 'frontal portrait', 'standard eye level', 'horizontal eye contact']
+  },
+  // 6. Medium Close-Up Profile / 完全真横90度プロファイル (カメラ目線・正面向きを完全粉砕)
+  {
+    scale: 'Medium Close-Up Profile',
+    tag: '完全真横・プロファイル',
+    cameraWork: 'cinematic-profile-pan',
+    directive: 'Exact 90-degree horizontal side profile view of subject placed along the outer rule-of-thirds, gazing across immense open negative space toward the frame edge, razor-sharp silhouette with brilliant directional rim lighting outlining hair and facial profile',
+    antiPoseTokens: ['facing camera', 'front view', '3/4 front view', 'direct eye contact', 'looking at viewer', 'centered portrait', 'front-facing character']
+  },
+  // 7. Medium-Wide Rear View / 背後・見送り・視線共有 (正面向きを完全粉砕)
+  {
+    scale: 'Medium-Wide Rear View',
+    tag: '背後・見送り・視線共有',
+    cameraWork: 'over-the-shoulder',
+    directive: 'Atmospheric rear three-quarter view seen from behind looking outward into the glowing depth of the world, back turned to camera, expressive back silhouette, sharing the character forward gaze toward the unfolding horizon',
+    antiPoseTokens: ['facing camera', 'front view', 'looking back at camera', 'direct eye contact', 'full frontal face', 'front view portrait']
+  },
+  // 8. Medium Bust Shot / 堂々たるバストアップ (全身棒立ちを完全粉砕)
+  {
+    scale: 'Medium Bust Shot',
+    tag: '堂々たるバストアップ',
+    cameraWork: 'medium-push-in',
+    directive: 'Cinematic tight chest-up bust framing capturing nuanced facial emotion and upper-body posture, heavy directional side chiaroscuro rim lighting, strong contrast between light and shadow, shallow depth of field, strictly chest and head only',
+    antiPoseTokens: ['full body', 'legs', 'feet', 'knees', 'shoes', 'standing full length', 'wide landscape', 'tiny distant face']
+  }
+];
 
 // ── 7. 12カット・ストーリー展開プリセット（シネマ・漫画・音楽MV） ────────
 export interface StoryShotPreset {
