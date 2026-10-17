@@ -88,7 +88,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       titleJp: p.titleJp,
       titleEn: p.titleEn,
       summary: p.summary,
-      cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12) }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
+      cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, settings.previewCutCount || (settings.productionMode === 'mv' ? 30 : 12)) }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
       isGenerating: false,
       isGeneratingRemainingImages: false,
       isBatchGeneratingVideos: false,
@@ -163,7 +163,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         titleJp: cleanEpisodeTitle(newPlan.titleJp),
         titleEn: cleanEpisodeTitleEn(newPlan.titleEn),
         summary: newPlan.summary,
-        cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12) }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
+        cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, settings.previewCutCount || (settings.productionMode === 'mv' ? 30 : 12)) }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
         isGenerating: false,
         isGeneratingRemainingImages: false,
         isBatchGeneratingVideos: false,
@@ -223,7 +223,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
 
       addLog(`✨ 【第${epId}${unitLabel}】脚本＆演出構成が完成！（考証: ${sharedScript.eraAnalysisJp?.slice(0, 24) || '完了'}...）`, 'success');
 
-      const seriesCutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12);
+      const seriesCutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || (isMv ? 30 : 12));
       const episodeCuts: Cut[] = Array.from({ length: seriesCutsCount }, (_, j) => {
         const cutData = sharedScript.cuts[j] || {} as any;
         return createPipelineCut(j, cutData, sharedScript, settings, effectiveMode, isMv, isManga);

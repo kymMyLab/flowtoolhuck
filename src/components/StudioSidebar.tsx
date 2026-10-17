@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FieldDropdown, SegmentedToggle, ToggleSwitch, NumberChoice } from './Primitives';
-import { GeneratorSettings, ReferenceAsset, ProductionMode } from '../types';
+import { GeneratorSettings, ReferenceAsset, ProductionMode, Episode } from '../types';
 import { 
   IMAGE_MODELS, 
   VIDEO_RATIO_OPTIONS,
@@ -17,10 +17,11 @@ interface StudioSidebarProps {
   setSettings: React.Dispatch<React.SetStateAction<GeneratorSettings>>;
   isProducing: boolean;
   onAddLog: (msg: string, type?: LogEntry['type']) => void;
+  episodes?: Episode[];
 }
 
 export const StudioSidebar: React.FC<StudioSidebarProps> = ({
-  settings, setSettings, isProducing, onAddLog
+  settings, setSettings, isProducing, onAddLog, episodes = []
 }) => {
   const [referenceAssets, setReferenceAssets] = useState<ReferenceAsset[]>([]);
 
@@ -36,6 +37,20 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   const [isWorldOpen, setIsWorldOpen] = useState(true);
   const [isVolumeOpen, setIsVolumeOpen] = useState(true);
   const [isPipelineOpen, setIsPipelineOpen] = useState(true);
+
+  // 現在のエピソードの最大カット数を判定（MVは30、ショートは12、マンガは24など）
+  const activeMaxCuts = episodes[0]?.cuts?.length || (settings.productionMode === 'mv' ? 30 : settings.productionMode === 'manga' ? 24 : 12);
+
+  // カット数選択肢の動的構築
+  const cutOptions = React.useMemo(() => {
+    if (settings.productionMode === 'mv') {
+      if (activeMaxCuts <= 12) {
+        return [1, 3, 5, 12];
+      }
+      return [1, 3, 5, 12, 30];
+    }
+    return [1, 3, 5, 12, 24, 30];
+  }, [settings.productionMode, activeMaxCuts]);
 
   const pipelineBadge = [
     settings.enableTurnaroundSheet !== false ? '三面図' : '',
@@ -203,10 +218,11 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                   <NumberChoice 
                     label={settings.productionMode === 'mv' ? '先行カット数' : '生成カット数'} 
                     value={settings.previewCutCount} 
-                    options={settings.productionMode === 'mv' ? [1, 3, 5, 12] : [1, 3, 5, 12, 24, 30]} 
+                    options={cutOptions} 
                     formatLabel={v => {
                       if (settings.productionMode === 'mv') {
-                        return v === 12 ? '12枚 (全カット)' : `${v}枚`;
+                        if (v === activeMaxCuts) return `${v}枚 (全カット)`;
+                        return `${v}枚`;
                       }
                       return v === 30 ? '30枚 (コミック)' : v === 24 ? '24枚' : v === 12 ? '12枚 (全)' : `${v}枚`;
                     }} 

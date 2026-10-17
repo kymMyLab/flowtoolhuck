@@ -77,7 +77,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
 
       // 先行カット数分の描画を実行
       const cutsCount = existingEp.cuts.length;
-      const targetCutCount = Math.min(settings.previewCutCount || 12, cutsCount);
+      const targetCutCount = Math.min(settings.previewCutCount || cutsCount, cutsCount);
       const pendingCuts = existingEp.cuts.slice(0, targetCutCount).filter(c => !(c.imageBase64 || c.imageMediaId));
       if (pendingCuts.length > 0) {
         await runTasks(buildCutTasks(existingEp, pendingCuts));
@@ -145,7 +145,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       addLog
     });
 
-    const cutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || 12, curMode === 'manga' ? 24 : 12);
+    const cutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || (curMode === 'mv' ? 30 : 12), curMode === 'mv' ? 30 : curMode === 'manga' ? 24 : 12);
     const baseCutsData = Array.from({ length: cutsCount }, (_, j) => {
       const cutData = parsed.cuts[j] || {} as any;
       return createPipelineCut(j, cutData, parsed, settings, curMode, curMode === 'mv', curMode === 'manga' || settings.isMangaMode);

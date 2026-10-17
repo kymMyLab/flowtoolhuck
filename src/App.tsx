@@ -180,14 +180,16 @@ export default function App() {
       theme: ep.theme || prev.theme,
       taste: ep.taste || prev.taste,
       episodeCount: 1,
-      totalEpisodes: 1
+      totalEpisodes: 1,
+      previewCutCount: ep.cuts.length || 30
     }));
-    addLog(`🎵 CT198楽曲「${ep.titleJp}」の12カット絵コンテを展開しました！（サビ30秒テロップ＆伏線小道具自動バインド済）`, 'success');
+    addLog(`🎵 CT198楽曲「${ep.titleJp}」の${ep.cuts.length}カット絵コンテを展開しました！（サビ30秒テロップ＆伏線小道具自動バインド済）`, 'success');
   }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog]);
 
   const handleDeployBatchMusicEpisodes = useCallback((eps: Episode[]) => {
     setEpisodes(eps);
     setActiveSeriesManifest(null);
+    const cutsCount = eps[0]?.cuts.length || 30;
     setSettings(prev => ({
       ...prev,
       productionMode: 'mv',
@@ -195,9 +197,10 @@ export default function App() {
       theme: eps[0]?.theme || prev.theme,
       taste: eps[0]?.taste || prev.taste,
       episodeCount: eps.length,
-      totalEpisodes: eps.length
+      totalEpisodes: eps.length,
+      previewCutCount: cutsCount
     }));
-    addLog(`🎵 CT198楽曲 全${eps.length}曲の12カット絵コンテを一括展開しました！`, 'success');
+    addLog(`🎵 CT198楽曲 全${eps.length}曲の${cutsCount}カット絵コンテを一括展開しました！`, 'success');
   }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog]);
 
   // ヘッダー等で画風（taste）が変更された際、画像未生成のエピソード群のtasteも即座に同期
@@ -557,7 +560,7 @@ export default function App() {
 
   // 先行プレビュー枚数分（または各話のカット）の画像がまだ未生成であるかどうかを厳密に判定
   const hasPendingCuts = episodes.length > 0 && episodes.some(ep => {
-    const targetCount = Math.min(settings.previewCutCount || 12, ep.cuts.length);
+    const targetCount = Math.min(settings.previewCutCount || 30, ep.cuts.length);
     const readyCount = ep.cuts.slice(0, targetCount).filter(c => !!(c.imageBase64 || c.imageMediaId)).length;
     return readyCount < targetCount;
   });
@@ -607,7 +610,7 @@ export default function App() {
           isWaitingForStart={isWaitingForStart}
         />
         <div className="flex flex-1 overflow-hidden relative">
-          <StudioSidebar settings={settings} setSettings={setSettings} isProducing={isProducing} onAddLog={addLog} />
+          <StudioSidebar settings={settings} setSettings={setSettings} isProducing={isProducing} onAddLog={addLog} episodes={episodes} />
           
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark-scrollbar relative">
             <div className="max-w-[1300px] mx-auto flex flex-col gap-6">
