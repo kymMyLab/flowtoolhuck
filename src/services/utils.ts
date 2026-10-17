@@ -224,7 +224,13 @@ export async function callWithRetry<T>(
 
       if (attempt === totalMaxAttempts) throw err;
       
-      const baseDelay = delays[attempt] ?? 80000;
+      let baseDelay = delays[attempt] ?? 80000;
+      // Googleのアクセス制限・アクティビティ検知時は、早すぎる再叩きで規制が長引かないよう最低20秒の冷却待機を確保
+      const isActivityThrottle = msg.includes('通常とは異なるアクティビティ') || msg.includes('アクティビティ') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('RATE_LIMIT');
+      if (isActivityThrottle && baseDelay < 20000) {
+        baseDelay = 20000;
+      }
+
       const isSuper = effectiveSuperBackoff && attempt >= standardDelays.length;
       // ジッター加算（通常は0〜1秒、超バックオフ時は0〜5秒）
       const jitter = isSuper ? Math.random() * 5000 : Math.random() * 1000;

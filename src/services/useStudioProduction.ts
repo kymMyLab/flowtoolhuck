@@ -357,16 +357,16 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     const workers = Array(concurrency).fill(null).map(async (_, workerIdx) => {
       // ワーカー間で開始時間をスタッガー（時間差）させ、同時リクエスト集中による503拒絶を防止
       if (workerIdx > 0) {
-        await sleep(workerIdx * 800);
+        await sleep(workerIdx * 1200);
       }
       while (queueRef.current.length > 0) {
         if (isAbortedRef.current) break;
         const task = queueRef.current.shift();
         if (!task) break;
         await generateImage(task);
-        // タスク完了後も短いクールダウンを挟んでAPIレートリミットを平滑化
+        // タスク完了後もクールダウンを挟んでAPIレートリミットを平滑化
         if (queueRef.current.length > 0 && !isAbortedRef.current) {
-          await sleep(500);
+          await sleep(1200);
         }
       }
     });
