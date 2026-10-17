@@ -110,11 +110,13 @@ export function buildDynamicAntiPreviousNegative(
     }
 
     // (C) 直前が「手元・指先・袖口」の場合
-    if (prevScale.includes('hands') || prevPrompt.includes('macro hands') || prevPrompt.includes('fingers') || prevAngle.includes('手元')) {
+    if (prevScale.includes('hands') || prevPrompt.includes('macro hands') || prevPrompt.includes('fingers') || prevAngle.includes('手元') || prevAngle.includes('hands')) {
       if (!isCurrentHands) {
         antiTokens.push(
-          'macro hands', 'fingers close-up', 'clenching knuckles',
-          'touching hands', 'holding hands', 'sleeve cuffs macro', 'tactile fingers'
+          'macro hands', 'hands close-up', 'fingers close-up', 'clenching knuckles',
+          'touching hands', 'holding hands', 'clasped hands', 'interlocked fingers',
+          'sleeve cuffs macro', 'tactile fingers', 'fists', 'hands in foreground',
+          'wringing hands', 'hands fidgeting', 'gloves close-up'
         );
       }
     }
@@ -532,25 +534,26 @@ export function buildFinalCinematicPromptAndNegative(
   const rawScale = (task.shotScale || '').toLowerCase();
   const rawAngle = (task.cinematicAngle || '').toLowerCase();
 
-  // 1. 部位特化マクロ・ディテール判定（最優先）
-  const isHandsShot = fullPromptContext.includes('hands & gestures') || fullPromptContext.includes('macro hands') || fullPromptContext.includes('tactile details') || fullPromptContext.includes('手元') || fullPromptContext.includes('指先');
-  const isFootstepsShot = fullPromptContext.includes('footsteps') || fullPromptContext.includes('low-angle footsteps') || fullPromptContext.includes('ground details') || fullPromptContext.includes('足元') || fullPromptContext.includes('靴');
-  const isMouthShot = fullPromptContext.includes('mouth & breath') || fullPromptContext.includes('macro mouth') || fullPromptContext.includes('口元') || fullPromptContext.includes('吐息') || fullPromptContext.includes('唇');
+  // 1. 部位特化マクロ・ディテール判定（最優先・タイトルや歌詞の「指先」「足音」による誤爆を完全防止）
+  // ※タイトルや歌詞に「指先」「手元」が含まれていても、shotScaleまたはcinematicAngleが明示的に手元・足元・口元指定の場合のみ発動させる
+  const isHandsShot = rawScale.includes('hands') || rawAngle.includes('macro hands') || rawAngle.includes('hands & gestures') || rawAngle.includes('tactile extreme close-up macro');
+  const isFootstepsShot = rawScale.includes('footsteps') || rawAngle.includes('low-angle footsteps') || rawAngle.includes('ground-level low-angle worm-eye');
+  const isMouthShot = rawScale.includes('mouth') || rawAngle.includes('macro mouth') || rawAngle.includes('mouth & breath');
 
   // 2. カメラアングル特化判定（横顔、背後、俯瞰、煽り、斜め）
-  const isProfileShot = rawScale.includes('profile') || rawAngle.includes('profile') || fullPromptContext.includes('profile') || fullPromptContext.includes('side view') || fullPromptContext.includes('90-degree') || fullPromptContext.includes('横顔') || fullPromptContext.includes('横姿');
-  const isRearShot = rawScale.includes('rear') || rawAngle.includes('rear') || fullPromptContext.includes('rear view') || fullPromptContext.includes('back view') || fullPromptContext.includes('from behind') || fullPromptContext.includes('後ろ姿') || fullPromptContext.includes('背後') || fullPromptContext.includes('背中');
-  const isHighAngle = rawScale.includes('high-angle') || rawAngle.includes('high-angle') || fullPromptContext.includes('high-angle') || fullPromptContext.includes("bird's-eye") || fullPromptContext.includes('overhead') || fullPromptContext.includes('looking down') || fullPromptContext.includes('俯瞰') || fullPromptContext.includes('見下ろし');
-  const isLowAngle = rawScale.includes('low-angle') || rawAngle.includes('low-angle') || fullPromptContext.includes('low-angle') || fullPromptContext.includes('worm-eye') || fullPromptContext.includes('upward') || fullPromptContext.includes('looking up') || fullPromptContext.includes('煽り') || fullPromptContext.includes('見上げ');
-  const isDutchAngle = rawScale.includes('dutch') || rawAngle.includes('dutch') || fullPromptContext.includes('dutch-angle') || fullPromptContext.includes('diagonal') || fullPromptContext.includes('斜め') || fullPromptContext.includes('傾き');
+  const isProfileShot = rawScale.includes('profile') || rawAngle.includes('profile') || rawAngle.includes('side profile') || rawAngle.includes('side view') || rawAngle.includes('90-degree');
+  const isRearShot = rawScale.includes('rear') || rawAngle.includes('rear') || rawAngle.includes('back view') || rawAngle.includes('from behind');
+  const isHighAngle = rawScale.includes('high-angle') || rawAngle.includes('high-angle') || rawScale.includes('overhead') || rawAngle.includes("bird's-eye") || rawAngle.includes('overhead') || rawAngle.includes('looking down');
+  const isLowAngle = rawScale.includes('low-angle') || rawAngle.includes('low-angle') || rawAngle.includes('worm-eye') || rawAngle.includes('looking sharply upward');
+  const isDutchAngle = rawScale.includes('dutch') || rawAngle.includes('dutch') || rawAngle.includes('dutch-angle') || rawAngle.includes('diagonal') || rawAngle.includes('tilted');
 
   // 3. 構図スケール判定（バストアップ、超広角、極限ドアップ）
-  const isBustShot = (rawScale.includes('bust') || fullPromptContext.includes('bust shot') || fullPromptContext.includes('chest-up') || fullPromptContext.includes('candid medium') || fullPromptContext.includes('バストアップ') || fullPromptContext.includes('日常シチュエーション')) && !isProfileShot;
-  const isWideShot = rawScale.includes('wide') || rawScale.includes('panorama') || fullPromptContext.includes('extreme wide') || fullPromptContext.includes('panorama') || fullPromptContext.includes('establishing') || fullPromptContext.includes('landscape') || fullPromptContext.includes('全景') || fullPromptContext.includes('引き');
+  const isBustShot = (rawScale.includes('bust') || rawAngle.includes('bust shot') || rawAngle.includes('chest-up') || rawAngle.includes('candid medium')) && !isProfileShot;
+  const isWideShot = rawScale.includes('wide') || rawScale.includes('panorama') || rawAngle.includes('wide panorama') || rawAngle.includes('panoramic environmental tableau');
 
   // 極限顔面ドアップ: 他の特化アングル（横顔・バスト・口元・手元・足元・引き）ではない、純粋な顔面クローズアップのみ
   const isCloseUpShot = !isProfileShot && !isBustShot && !isHandsShot && !isFootstepsShot && !isMouthShot && !isWideShot && (
-    rawScale.includes('close-up') || rawScale.includes('macro') || fullPromptContext.includes('extreme close-up') || fullPromptContext.includes('macro eyes') || fullPromptContext.includes('tight portrait') || fullPromptContext.includes('ドアップ') || fullPromptContext.includes('迫真アップ')
+    rawScale.includes('close-up') || rawAngle.includes('macro portrait') || rawAngle.includes('extreme macro close-up portrait') || rawScale.includes('extreme close-up')
   );
 
   const isMacroOrDetailShot = isCloseUpShot || isMouthShot || isHandsShot || isFootstepsShot || isObjectCut;
