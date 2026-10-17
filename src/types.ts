@@ -221,6 +221,8 @@ export interface GenerationTask {
   shotScale?: string;
   cinematicAngle?: string;
   camera?: string;
+  previousContexts?: any;
+  antiPreviousMandate?: string;
 }
 
 /** 

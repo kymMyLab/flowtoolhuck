@@ -737,7 +737,7 @@ export interface CineCameraRule {
  * （Google AIの中庸バイアスを強制破壊し、ドアップ・口元・手元・足元・煽り・ダッチ・超広角・俯瞰・横顔・象徴静物を極限の迫力で描画させる）
  */
 export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
-  // 1. Extreme Close-Up / 極限ドアップ・瞳と表情 (身体・全身立ち姿を完全粉砕、環境ボケは世界観に調和)
+  // 1. Extreme Close-Up / 極限ドアップ・瞳と表情
   {
     scale: 'Extreme Close-Up',
     tag: '極限ドアップ・瞳',
@@ -745,23 +745,7 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit',
     antiPoseTokens: ['full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'seated pose', 'sitting', 'wide shot', 'medium shot', 'distant face', 'normal portrait', 'waist-up crop', 'stiff standing posture']
   },
-  // 2. Macro Mouth & Breath / 口元・表情・吐息のドアップ (曲の情感を宿す口元)
-  {
-    scale: 'Macro Mouth & Breath',
-    tag: '口元・歌唱・吐息',
-    cameraWork: 'intimate-macro',
-    directive: 'Intimate macro close-up focusing tightly on parted expressive lips, chin, and throat, delicate kinetic breathing reflecting the emotional atmosphere, shallow depth of field with 100% blurred background, strictly lower face and lips only',
-    antiPoseTokens: ['full body', 'legs', 'feet', 'shoes', 'wide shot', 'medium shot', 'full face', 'distant portrait', 'standing pose']
-  },
-  // 3. Macro Hands & Gestures / 手元・指先のアクション (小道具、指先の仕草、感情の機微)
-  {
-    scale: 'Macro Hands & Gestures',
-    tag: '手元・指先・仕草',
-    cameraWork: 'macro-reveal',
-    directive: 'Tactile extreme close-up macro focusing sharply on hands, fingers, and tactile gestures matching the character attire and setting, natural expressive kinetic movement, background softly blurred, strictly hands and tactile gesture only, NO face',
-    antiPoseTokens: ['full face', 'eyes', 'portrait', 'full body', 'legs', 'feet', 'distant shot', 'standing pose', 'wide shot']
-  },
-  // 4. Low-Angle Footsteps / 足元・歩行・ローアングル (地面スレスレ、踏み出す一歩)
+  // 2. Low-Angle Footsteps / 足元・歩行・ローアングル (顔面アップから一気に足元へスイッチ)
   {
     scale: 'Low-Angle Footsteps',
     tag: '足元・踏み出し',
@@ -769,7 +753,23 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Extreme ground-level low-angle worm-eye camera looking at footsteps, footwear or feet taking a resolute kinetic stride across the environmental terrain matching the scene setting, ground surface texture, dynamic cinematic motion, strictly ground and feet level',
     antiPoseTokens: ['face', 'portrait', 'upper body', 'chest-up', 'eyes', 'standard eye level', 'high angle', 'looking down']
   },
-  // 5. Extreme Wide Landscape Panorama / 超広角・情景主役 (人物は豆粒シルエット、大自然・都市・河川敷すべてに対応)
+  // 3. Candid Medium Situation / 日常バストアップ・佇まい (自然な全身/上半身と背景の調和)
+  {
+    scale: 'Medium Bust Shot',
+    tag: '日常シチュエーション',
+    cameraWork: 'medium-push-in',
+    directive: 'Candid medium atmospheric framing capturing authentic unposed posture within the scene, resting quietly or shifting weight thoughtfully, natural relaxed aesthetic, rich directional side chiaroscuro rim lighting, shallow depth of field',
+    antiPoseTokens: ['stiff upright pose', 'facing camera rigidly', 'formal portrait', 'direct eye contact', 'extreme close-up of eyes']
+  },
+  // 4. Macro Mouth & Breath / 口元・表情・吐息のドアップ (曲の情感を宿す口元)
+  {
+    scale: 'Macro Mouth & Breath',
+    tag: '口元・歌唱・吐息',
+    cameraWork: 'intimate-macro',
+    directive: 'Intimate macro close-up focusing tightly on parted expressive lips, chin, and throat, delicate kinetic breathing reflecting the emotional atmosphere, shallow depth of field with 100% blurred background, strictly lower face and lips only',
+    antiPoseTokens: ['full body', 'legs', 'feet', 'shoes', 'wide shot', 'medium shot', 'full face', 'distant portrait', 'standing pose', 'eyes close-up']
+  },
+  // 5. Extreme Wide Landscape Panorama / 超広角・情景主役 (口元から一転、雄大な風景へ)
   {
     scale: 'Extreme Wide Panorama',
     tag: '超広角・情景主役',
@@ -777,15 +777,15 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Grand panoramic environmental tableau where the vast grand environment, immense background scale, and sweeping atmospheric horizon overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, breathtaking spatial depth',
     antiPoseTokens: ['close-up', 'medium shot', 'prominent character in foreground', 'large face', 'dominant person in center', 'waist-up', 'chest-up', 'normal portrait']
   },
-  // 6. Overhead High-Angle Bird\'s-Eye / 真上75度俯瞰・影と幾何学 (床・地面のテクスチャと影を主役に)
+  // 6. Macro Hands & Gestures / 手元・指先のアクション (感情を宿す指先)
   {
-    scale: 'Overhead High-Angle',
-    tag: '真上俯瞰・影と幾何学',
-    cameraWork: 'high-angle-tilt-down',
-    directive: 'Steep overhead high-angle bird-eye view looking down from high vantage point at a 75-degree angle, emphasizing ground geometry, environmental textures, and long elongated dramatic shadows cast across the floor plane, unique top-down perspective',
-    antiPoseTokens: ['eye-level shot', 'horizontal angle', 'looking up from below', 'worm-eye view', 'frontal portrait', 'standard eye level', 'horizontal eye contact']
+    scale: 'Macro Hands & Gestures',
+    tag: '手元・指先・仕草',
+    cameraWork: 'macro-reveal',
+    directive: 'Tactile extreme close-up macro focusing sharply on hands, fingers, and tactile gestures matching the character attire and setting, natural expressive kinetic movement, background softly blurred, strictly hands and tactile gesture only, NO face',
+    antiPoseTokens: ['full face', 'eyes', 'portrait', 'full body', 'legs', 'feet', 'distant shot', 'standing pose', 'wide shot']
   },
-  // 7. Dutch-Angle Diagonal Tilt / 傾き35度のダッチアングル・斜め構図 (疾走感・感情の揺らぎ)
+  // 7. Dutch-Angle Diagonal Tilt / 傾き35度のダッチアングル・斜め構図
   {
     scale: 'Dutch-Angle Medium',
     tag: '斜め傾き・ダッチアングル',
@@ -793,7 +793,7 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal lines slashing across the frame, off-kilter dynamic perspective creating palpable tension and emotional instability, stylish cinematic slant',
     antiPoseTokens: ['horizontal level frame', 'straight horizontal camera', 'level horizon', 'flat standard shot', 'vertical upright symmetry', 'level camera']
   },
-  // 8. Medium Close-Up Profile / 完全真横90度・横顔・振り返り (背後を振り返る切ない視線)
+  // 8. Medium Close-Up Profile / 完全真横90度・横顔・振り返り
   {
     scale: 'Medium Close-Up Profile',
     tag: '完全真横・プロファイル',
@@ -801,21 +801,21 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Exact 90-degree horizontal side profile view halting mid-stride, poignant three-quarter view or turning head to glance back over shoulder with a bittersweet searching gaze, razor-sharp silhouette with brilliant directional rim lighting outlining hair and facial profile',
     antiPoseTokens: ['facing camera', 'front view', 'direct eye contact', 'centered portrait', 'front-facing character']
   },
-  // 9. Candid Medium Situation / 日常全身シチュエーション (階段に腰掛ける・佇まいと陰影)
+  // 9. Overhead High-Angle Bird\'s-Eye / 真上75度俯瞰・影と幾何学
   {
-    scale: 'Medium Bust Shot',
-    tag: '日常シチュエーション',
-    cameraWork: 'medium-push-in',
-    directive: 'Candid medium atmospheric framing capturing authentic unposed posture within the scene, resting quietly or shifting weight thoughtfully, natural relaxed aesthetic, rich directional side chiaroscuro rim lighting, shallow depth of field',
-    antiPoseTokens: ['stiff upright pose', 'facing camera rigidly', 'formal portrait', 'direct eye contact']
+    scale: 'Overhead High-Angle',
+    tag: '真上俯瞰・影と幾何学',
+    cameraWork: 'high-angle-tilt-down',
+    directive: 'Steep overhead high-angle bird-eye view looking down from high vantage point at a 75-degree angle, emphasizing ground geometry, environmental textures, and long elongated dramatic shadows cast across the floor plane, unique top-down perspective',
+    antiPoseTokens: ['eye-level shot', 'horizontal angle', 'looking up from below', 'worm-eye view', 'frontal portrait', 'standard eye level', 'horizontal eye contact']
   },
   // 10. Still-Life Key Prop / ★象徴アイテム・静物マクロ (OBJ・人物完全排除)
   {
-    scale: 'Extreme Close-Up Macro',
+    scale: 'Still-Life Object Macro',
     tag: '象徴アイテム・静物',
     cameraWork: 'macro-reveal',
     directive: 'Cinematic extreme close-up macro product still-life photography of an iconic symbolic keepsake object, resting quietly in ambient natural lighting, completely deserted scene with strictly NO humans, NO person, rich tactile texture, crisp specular reflections, and fine floating dust motes',
-    antiPoseTokens: ['human', 'person', 'face', 'eyes', 'hands', 'body', 'crowd', 'portrait', 'girl', 'boy', 'man', 'woman']
+    antiPoseTokens: ['human', 'person', 'face', 'eyes', 'hands', 'body', 'crowd', 'portrait', 'girl', 'boy', 'man', 'woman', 'head', 'torso']
   }
 ];
 

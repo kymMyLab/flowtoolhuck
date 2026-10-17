@@ -55,6 +55,43 @@ export function isMvChorusCut(cutId: number = 1, totalCuts: number = 30): boolea
 export const MV_ANTI_CAMERA_LOOK_NEGATIVE = 'looking at camera, eye contact, looking at viewer, staring into lens, frontal eye contact, breaking fourth wall, posed portrait, mugshot, mugshot gaze, smiling at camera';
 
 /**
+ * 顔面・瞳・口元の極限接写（フェイスアップ系マクロ）であるかを厳密に判定
+ */
+export function isFaceMacroScale(scale?: string, angle?: string): boolean {
+  if (!scale && !angle) return false;
+  const s = (scale || '').toLowerCase();
+  const a = (angle || '').toLowerCase();
+  
+  // 静物・手元・足元・引き・横顔・俯瞰は除外
+  if (s.includes('still-life') || s.includes('object') || s.includes('prop')) return false;
+  if (s.includes('hands') || s.includes('footsteps') || s.includes('wide') || s.includes('overhead')) return false;
+  if (s.includes('profile') && !s.includes('close-up')) return false;
+
+  // 顔面ドアップ（瞳、顔全体）、口元・吐息
+  if (s.includes('extreme close-up') || s.includes('mouth') || s.includes('macro portrait')) return true;
+  if (a.includes('extreme macro close-up portrait') || a.includes('eyes dominating') || a.includes('tight face') || a.includes('parted lips') || a.includes('macro mouth') || a.includes('lips only')) return true;
+  return false;
+}
+
+/**
+ * 第2段セーフティ: 直前カットと同一の構図・アングル・シーンの反復を厳格に禁止するポジティブ指令
+ */
+export function buildPositiveAntiPreviousMandate(
+  previous?: PreviousShotContext | PreviousShotContext[]
+): string {
+  if (!previous) return '';
+  const contexts: PreviousShotContext[] = Array.isArray(previous) ? previous : [previous];
+  if (contexts.length === 0) return '';
+
+  const prev = contexts[0];
+  const prevScale = prev.scale || '';
+  const prevAngle = prev.tag || prev.angle || '';
+  const framingDesc = [prevScale, prevAngle].filter(Boolean).join(' / ');
+
+  return `[MANDATORY CINEMATIC CONTRAST - STRICTLY PROHIBIT IDENTICAL FRAMING]: Strictly forbidden from repeating previous scene framing, camera distance, or composition (${framingDesc || 'previous cut'}). You MUST create a stark visual contrast in camera perspective, composition, and subject focus. Do NOT render an identical crop or repeated angle.`;
+}
+
+/**
  * 直前カット（または直近の複数カット）の情報に基づいて、構図・ポーズ・アングル・小道具の重複を徹底排除するネガティブプロンプトを自動生成
  * （ロジック定義テーブル POSE_CONTRAST_RULES および SHOT_SCALE_REGISTRY を参照）
  */
@@ -78,7 +115,7 @@ export function buildDynamicAntiPreviousNegative(
   const isCurrentDutch = currentScaleLower.includes('dutch');
   const isCurrentProfile = currentScaleLower.includes('profile');
   const isCurrentBust = currentScaleLower.includes('bust');
-  const isCurrentProp = currentScaleLower.includes('prop') || currentScaleLower.includes('object');
+  const isCurrentProp = currentScaleLower.includes('prop') || currentScaleLower.includes('object') || currentScaleLower.includes('still-life');
 
   for (const ctx of contexts) {
     if (!ctx) continue;
@@ -96,6 +133,9 @@ export function buildDynamicAntiPreviousNegative(
           'iris reflection macro', 'staring eye framing', 'cropped forehead',
           'identical eye close-up', 'macro face', 'huge eyes filling screen'
         );
+      } else {
+        // 同一顔面アップ連続時も完全複製や同一構図の繰り返しを強く排除
+        antiTokens.push('identical eye close-up', 'repeated framing', 'duplicate crop', 'cloned eye reflection');
       }
     }
 
@@ -106,6 +146,8 @@ export function buildDynamicAntiPreviousNegative(
           'parted lips close-up', 'macro mouth', 'mouth and breath framing',
           'trembling lips', 'lower face macro', 'puff of breath'
         );
+      } else {
+        antiTokens.push('identical mouth close-up', 'repeated mouth framing', 'duplicate crop');
       }
     }
 
@@ -519,7 +561,10 @@ export function buildFinalCinematicPromptAndNegative(
   const panelDirective = multiPanelPrompt ? `[PANEL COMPOSITION: ${multiPanelPrompt}]. ` : '';
 
   // ── キャラクター一貫性（Character Consistency DNA）＆ 物体カット分離 ──
-  const isObjectCut = !!task.isObjectOnly;
+  const rawScale = (task.shotScale || '').toLowerCase();
+  const rawAngle = (task.cinematicAngle || '').toLowerCase();
+  const isObjectStillLife = !!task.isObjectOnly || rawScale.includes('object') || rawScale.includes('still-life') || rawAngle.includes('still-life') || rawScale.includes('prop');
+  const isObjectCut = isObjectStillLife;
   const effectiveDna = !isObjectCut ? (task.characterDna || activeReference?.characterDna) : '';
 
   // 重要: もし prompt 内にすでに [PROTAGONIST DNA]: が含まれている場合、二重注入・長大化を防ぐためにアクションプロンプトから分離
@@ -529,13 +574,9 @@ export function buildFinalCinematicPromptAndNegative(
   }
 
   // ── 映画的画角＆アングル連動インテリジェント制御（立ち姿の呪縛解放＆視点防衛） ──
-  // 今後どんなプロンプトや画角指定が来ても、優先度階層と排他制御により意図した構図・ポーズを100%確実に実現
   const fullPromptContext = `${cleanActionPrompt} ${cameraContext} ${task.shotScale || ''} ${task.cinematicAngle || ''} ${task.camera || ''}`.toLowerCase();
-  const rawScale = (task.shotScale || '').toLowerCase();
-  const rawAngle = (task.cinematicAngle || '').toLowerCase();
 
   // 1. 部位特化マクロ・ディテール判定（最優先・タイトルや歌詞の「指先」「足音」による誤爆を完全防止）
-  // ※タイトルや歌詞に「指先」「手元」が含まれていても、shotScaleまたはcinematicAngleが明示的に手元・足元・口元指定の場合のみ発動させる
   const isHandsShot = rawScale.includes('hands') || rawAngle.includes('macro hands') || rawAngle.includes('hands & gestures') || rawAngle.includes('tactile extreme close-up macro');
   const isFootstepsShot = rawScale.includes('footsteps') || rawAngle.includes('low-angle footsteps') || rawAngle.includes('ground-level low-angle worm-eye');
   const isMouthShot = rawScale.includes('mouth') || rawAngle.includes('macro mouth') || rawAngle.includes('mouth & breath');
@@ -551,8 +592,8 @@ export function buildFinalCinematicPromptAndNegative(
   const isBustShot = (rawScale.includes('bust') || rawAngle.includes('bust shot') || rawAngle.includes('chest-up') || rawAngle.includes('candid medium')) && !isProfileShot;
   const isWideShot = rawScale.includes('wide') || rawScale.includes('panorama') || rawAngle.includes('wide panorama') || rawAngle.includes('panoramic environmental tableau');
 
-  // 極限顔面ドアップ: 他の特化アングル（横顔・バスト・口元・手元・足元・引き）ではない、純粋な顔面クローズアップのみ
-  const isCloseUpShot = !isProfileShot && !isBustShot && !isHandsShot && !isFootstepsShot && !isMouthShot && !isWideShot && (
+  // 極限顔面ドアップ: 静物OBJや他の特化アングル（横顔・バスト・口元・手元・足元・引き）ではない、純粋な顔面クローズアップのみ
+  const isCloseUpShot = !isObjectStillLife && !isProfileShot && !isBustShot && !isHandsShot && !isFootstepsShot && !isMouthShot && !isWideShot && (
     rawScale.includes('close-up') || rawAngle.includes('macro portrait') || rawAngle.includes('extreme macro close-up portrait') || rawScale.includes('extreme close-up')
   );
 
@@ -642,8 +683,8 @@ export function buildFinalCinematicPromptAndNegative(
 
   let characterPromptLayer = '';
   if (isObjectCut) {
-    characterPromptLayer = '[STRICT STILL-LIFE INSERT: completely deserted scene, strictly NO humans, NO person, pure macro shot of object and atmospheric environment]. ';
-    negativeLayers.push('human, person, girl, boy, man, woman, child, face, eye, hands, fingers, legs, feet, body silhouette, crowd, portrait');
+    characterPromptLayer = '[STRICT STILL-LIFE OBJECT MACRO: completely deserted scene, strictly NO humans, NO person, NO face, pure cinematic macro shot of symbolic keepsake prop item and atmospheric environment]. ';
+    negativeLayers.push('human, person, girl, boy, man, woman, child, face, eye, eyes, pupils, mouth, lips, cheeks, hands, fingers, legs, feet, body silhouette, crowd, portrait');
   } else {
     // ── 案A（明示的に男と指定されていない限り100%美少女・女子高生にする）規約 ──
     const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${effectiveDna || ''} ${cleanActionPrompt}`);
@@ -726,6 +767,13 @@ export function buildFinalCinematicPromptAndNegative(
     remainingAction = cleanActionPrompt.slice(strictMatch[0].length);
   }
 
+  // ★ 第2段セーフティ: 直前カットと同一の構図・アングル・シーンの反復を厳格に禁止するポジティブ指令
+  let positiveContrastMandate = task.antiPreviousMandate || '';
+  if (!positiveContrastMandate && task.previousContexts) {
+    positiveContrastMandate = buildPositiveAntiPreviousMandate(task.previousContexts);
+  }
+  const contrastDirective = positiveContrastMandate ? `${positiveContrastMandate}. ` : '';
+
   if (activeReference && !isObjectCut) {
     const { styleDna, antiPoseNegative, eraNegative } = activeReference;
     if (antiPoseNegative) sanitizedNegativeLayers.push(antiPoseNegative);
@@ -733,8 +781,8 @@ export function buildFinalCinematicPromptAndNegative(
 
     const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${leadingDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${leadingDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
@@ -744,8 +792,8 @@ export function buildFinalCinematicPromptAndNegative(
   } else {
     const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${leadingDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${remainingAction}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${leadingDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${remainingAction}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),

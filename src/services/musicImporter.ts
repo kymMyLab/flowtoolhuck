@@ -4,7 +4,7 @@ import { resolveMasterCategory } from '../config/masterCategories';
 import { CAMERA_WORK_REGISTRY } from '../constants';
 import { isCutSelectedForVideo } from './utils';
 import { resolveTasteKey } from './tasteStorage';
-import { buildDynamicAntiPreviousNegative } from './promptEngine';
+import { buildDynamicAntiPreviousNegative, isFaceMacroScale } from './promptEngine';
 import { UNIVERSAL_CINE_CYCLE, CineCameraRule } from '../config/studioDefinitions';
 
 export interface ImportedTrack {
@@ -713,6 +713,8 @@ export function convertTrackToEpisode(
   const masterCat = resolveMasterCategory(track.surface_theme || track.title, 'mv');
 
   const cuts: Cut[] = [];
+  let lastShotScale = '';
+  let lastCinematicAngle = '';
 
   for (let i = 1; i <= totalCuts; i++) {
     const progress = (i - 0.5) / totalCuts;
@@ -821,7 +823,7 @@ export function convertTrackToEpisode(
       telopPosition = 'bottom-center';
     } else if (isPropCut) {
       // ★ 伏線・象徴小道具確定（人物除外・マクロ静物インサート）
-      shotScale = 'Extreme Close-Up Macro';
+      shotScale = 'Still-Life Object Macro';
       cameraWork = 'macro-reveal';
       cinematicAngle = UNIVERSAL_CINE_CYCLE[9].directive;
       isObjectOnly = true;
@@ -832,6 +834,16 @@ export function convertTrackToEpisode(
       cameraWork = (i % 2 === 0) ? 'cinematic-orbit' : 'dynamic-pan-zoom';
       telopPosition = 'center-stagger';
     }
+
+    // 🛡️ [連続顔面アップ防止ガード] 直前と今回がともに顔面/瞳/口元マクロの場合、バストショットまたは全景へ自動シフト
+    if (i > 1 && lastShotScale && isFaceMacroScale(lastShotScale, lastCinematicAngle) && isFaceMacroScale(shotScale, cinematicAngle)) {
+      shotScale = 'Medium Bust Shot';
+      cameraWork = 'slow-push-in';
+      cinematicAngle = 'Cinematic upper-body bust shot portrait from the chest up, expressive captivating eyes with natural highlights, beautifully styled hair fluttering softly in the ambient breeze, authentic attire details clearly visible, atmospheric scenic background with gorgeous cinematic depth and soft bokeh, perfectly balanced golden-ratio composition';
+    }
+
+    lastShotScale = shotScale;
+    lastCinematicAngle = cinematicAngle;
 
     const hl = extractHighlights(lyric);
     const visualPlot = extractLyricVisualPlot(lyric, hint, track.surface_theme || track.title, i, isPropCut, section);

@@ -11,7 +11,7 @@ import {
   resolveRecommendedTelopStaging
 } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId } from './utils';
-import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative } from './promptEngine';
+import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate } from './promptEngine';
 import { getAllReferenceAssets } from './db';
 import { renderFullEpisodeMovie, renderKenBurnsVideo } from './browserVideoService';
 import { renderCoverBase64 } from './exportService';
@@ -314,10 +314,17 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         addLog
       );
 
-      const shotScale = directResult.shotScale || existingCut?.shotScale || 'Wide';
-      const cinematicAngle = directResult.cinematicAngle || existingCut?.cinematicAngle || 'Cinematic perspective';
-      const promptEn = directResult.promptEn || existingCut?.promptEn || task.prompt;
-      const antiPreviousNegative = directResult.negativePrompt || '';
+      let shotScale = directResult.shotScale || existingCut?.shotScale || 'Wide';
+      let cinematicAngle = directResult.cinematicAngle || existingCut?.cinematicAngle || 'Cinematic perspective';
+      let promptEn = directResult.promptEn || existingCut?.promptEn || task.prompt;
+      let antiPreviousNegative = directResult.negativePrompt || '';
+
+      // 🛡️ [Tier 2 構図被り防止ガード: フェイスアップ連続の絶対遮断]
+      if (previousShotInfo && isFaceMacroScale(previousShotInfo.scale, previousShotInfo.angle) && isFaceMacroScale(shotScale, cinematicAngle)) {
+        addLog(`🛡️ [構図被り防止ガード] Ep.${task.epId} C${task.cutId.toString().padStart(2, '0')}: 顔面アップの連続（直前: ${previousShotInfo.scale}）を検知。バストアップ構図へ自動シフトしました`, 'info');
+        shotScale = 'Medium Bust Shot';
+        cinematicAngle = 'Candid cinematic chest-up framing capturing authentic posture, upper-body clothing, and natural atmospheric presence within the environment, unposed natural aesthetic, rich rim lighting, rule-of-thirds composition, head and shoulders visible with comfortable breathing room';
+      }
 
       updateCut(task.epId, task.cutId, { 
         promptEn,
@@ -410,26 +417,31 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
       // ★ ユーザー設計規範: 直近カット（直前1〜2カット）のプロンプト・構図を動的ネガティブプロンプトとして完全バインド
       let effectiveNegative = task.negativePrompt || '';
+      let positiveMandate = '';
       if (cutId > 1) {
         const prevCuts = ep?.cuts.filter(c => (c.id === cutId - 1 || c.id === cutId - 2) && (c.promptEn || c.shotScale)) || [];
         if (prevCuts.length > 0) {
-          const antiPrev = buildDynamicAntiPreviousNegative(prevCuts.map(c => ({
+          const prevContexts = prevCuts.map(c => ({
             scale: c.shotScale,
             angle: c.cinematicAngle || c.cameraWork,
             prompt: c.promptEn,
             tag: c.cameraWork
-          })), task.shotScale);
+          }));
+          const antiPrev = buildDynamicAntiPreviousNegative(prevContexts, task.shotScale);
           if (antiPrev) {
             effectiveNegative = effectiveNegative ? `${effectiveNegative}, ${antiPrev}` : antiPrev;
             addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 直近カット対比ネガティブ注入 [構図・ポーズ・小道具・視線の重複排除]`, 'info');
           }
+          // ★ 第2段セーフティ: 直前構図反復禁止のポジティブ指令も生成！
+          positiveMandate = buildPositiveAntiPreviousMandate(prevContexts);
         }
       }
 
       const taskWithAntiPrevious: GenerationTask = {
         ...task,
         referenceImageMediaId: refMediaId,
-        negativePrompt: effectiveNegative
+        negativePrompt: effectiveNegative,
+        antiPreviousMandate: positiveMandate
       };
 
       const effectiveActiveRef = ep?.isMvMode ? undefined : activeReferenceRef.current;
