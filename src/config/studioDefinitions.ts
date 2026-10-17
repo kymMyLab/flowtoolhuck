@@ -488,9 +488,9 @@ export const PRODUCTION_MODES_CONFIG: Record<ProductionMode, ProductionModeConfi
   },
   mv: {
     value: 'mv',
-    label: '🎵 音楽MV (12カット)',
+    label: '🎵 音楽MV',
     icon: 'music_note',
-    badge: '全12カット',
+    badge: '全30カット',
     desc: 'Ado風キネティック対向スルー・ビート同期',
     telopNote: 'キネティック対向スルー・ネオン枠',
     colorClass: 'border-purple-500/30 bg-purple-950/40 text-purple-200',
