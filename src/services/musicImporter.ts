@@ -438,10 +438,11 @@ export function parseVisualHints(visualHintsText: string, maxCuts: number = 60):
 }
 
 /**
- * 歌詞テキスト（正規漢字またはひらがな）をセクションタグ [Intro], [Verse], [Chorus] ごとに分離
+ * 歌詞テキスト（正規漢字またはひらがな）をセクションタグ [Intro (0:00 - 0:20)], [Verse 1 - Fast Rap], [Chorus] 等ごとに高精度に分離
+ * タグのタイムコードや追加表記に完全対応し、タグなし歌詞でも全行を均等配分できるように保持
  */
-export function parseLyricsSections(lyricsText: string): Record<string, string[]> {
-  const sections: Record<string, string[]> = {};
+export function parseLyricsSections(lyricsText: string): Record<string, string[]> & { _allLines: string[] } {
+  const sections: Record<string, string[]> & { _allLines: string[] } = { _allLines: [] };
   if (!lyricsText) return sections;
 
   const lines = lyricsText.split(/\r?\n/);
@@ -452,25 +453,28 @@ export function parseLyricsSections(lyricsText: string): Record<string, string[]
     const line = rawLine.trim();
     if (!line) continue;
 
-    const tagMatch = line.match(/^\[([a-zA-Z0-9\s\-]+)(?:\([^\)]+\))?\]/);
+    // 角括弧 [ ... ] で囲まれたヘッダー・タグを検出（タイムコードやサブタイトル付きも完全捕捉）
+    const tagMatch = line.match(/^\[([^\]]+)\]/);
     if (tagMatch) {
-      const tagLower = tagMatch[1].toLowerCase();
-      if (tagLower.includes('intro')) currentSection = 'intro';
-      else if (tagLower.includes('verse 1') || tagLower.includes('verse1')) currentSection = 'verse1';
-      else if (tagLower.includes('pre-chorus') || tagLower.includes('prechorus')) currentSection = 'prechorus';
-      else if (tagLower.includes('final chorus') || tagLower.includes('climax')) currentSection = 'final_chorus';
-      else if (tagLower.includes('chorus')) currentSection = 'chorus';
-      else if (tagLower.includes('verse 2') || tagLower.includes('verse2')) currentSection = 'verse2';
-      else if (tagLower.includes('bridge')) currentSection = 'bridge';
-      else if (tagLower.includes('outro')) currentSection = 'outro';
-      else currentSection = tagLower.replace(/[^a-z0-9]/g, '_');
-
+      const tagContent = tagMatch[1].toLowerCase();
+      // セクション名の判定
+      if (tagContent.includes('intro')) currentSection = 'intro';
+      else if (tagContent.includes('verse 1') || tagContent.includes('verse1')) currentSection = 'verse1';
+      else if (tagContent.includes('pre-chorus') || tagContent.includes('prechorus')) currentSection = 'prechorus';
+      else if (tagContent.includes('final chorus') || tagContent.includes('climax')) currentSection = 'final_chorus';
+      else if (tagContent.includes('chorus')) currentSection = 'chorus';
+      else if (tagContent.includes('verse 2') || tagContent.includes('verse2')) currentSection = 'verse2';
+      else if (tagContent.includes('bridge')) currentSection = 'bridge';
+      else if (tagContent.includes('outro')) currentSection = 'outro';
+      // 音楽の演奏ト書き [Sparkling Pluck...], [Full Bedroom Trap...] 等はセクション変更せずスキップ
+      
       if (!sections[currentSection]) sections[currentSection] = [];
     } else {
-      // 歌詞本文（英語のト書き行 [Playful 8-bit...] などを除外）
-      if (!line.startsWith('[') && !line.startsWith('(')) {
+      // 歌詞本文（英語のト書き行や単なる(gasp)以外の歌唱行を収集）
+      if (!line.startsWith('[') && !/^\((?:gasp|silence|end|tu-tu-tu|yeah|la-la-la|ooh)\)$/i.test(line)) {
         if (!sections[currentSection]) sections[currentSection] = [];
         sections[currentSection].push(line);
+        sections._allLines.push(line);
       }
     }
   }
@@ -555,9 +559,60 @@ export function parseLyricKineticAction(lyric: string, section?: string, isPropC
   }
 }
 
+
+/**
+ * 歌詞テキストから具体的な小道具・ロケーション・映画的情景モチーフを抽出
+ * 「夕暮れのガードレール」一辺倒になるのを完全に破壊し、自販機、階段、橋、自転車、缶、手すりなど歌詞通りの世界を描かせる
+ */
+export function extractLyricScenicMotif(lyric: string): string {
+  const text = (lyric || '').trim();
+  if (!text) return '';
+
+  const motifs: string[] = [];
+
+  // 1. 自販機・缶・ボタン・温もり
+  if (/ボタン|アルミ|フタ|つめ.*かけ|おちてき|おもみ/i.test(text)) {
+    motifs.push('standing by a glowing illuminated drink vending machine on the corner, warm red light glowing in twilight, warm canned beverage dropping into slot');
+  } else if (/缶|かん|あたたかさ|ぬくもり|三秒/i.test(text)) {
+    motifs.push('holding a warm aluminum drink can between both hands, faint steam rising into the chill, tactile metal reflections');
+  }
+
+  // 2. 階段・河川敷・座る
+  if (/かいだん|階段|かわべり|河川敷|こしかけ|腰掛|ひざ/i.test(text)) {
+    motifs.push('concrete riverside stairs embankment overlooking calm dark water, sitting on the steps in natural relaxed posture, twilight sky reflection');
+  }
+
+  // 3. 自転車・ライト・すれ違い
+  if (/じてんしゃ|自転車|ライト|まぶし|すれちが/i.test(text)) {
+    motifs.push('dramatic cinematic headlight glare from a passing commuter bicycle cutting through the dusk, intense luminous lens flare slashing across scene');
+  }
+
+  // 4. 橋・手すり・日付・数字
+  if (/はし|橋|てすり|手すり|ひづけ|日付|すうじ|刻まれ/i.test(text)) {
+    motifs.push('solitary pedestrian footbridge railing in twilight, weathered metallic texture with etched marks and numbers in fading daylight');
+  }
+
+  // 5. ファスナー・ウィンドブレーカー・煙・息
+  if (/ファスナ|あご|ひきあげ|しろい|けむり|そら.*のぼ/i.test(text)) {
+    motifs.push('tugging dark jacket zipper tightly all the way up to chin, visible plume of white breath dissolving into the evening sky');
+  }
+
+  // 6. ポケット・袖口・握りしめる
+  if (/そでぐち|袖口|ポケット|にぎりしめ/i.test(text)) {
+    motifs.push('oversized dark windbreaker sleeves hiding clenched fists, hands shoved deep into coat pockets against the chill');
+  }
+
+  // 7. 影・地面・夕日
+  if (/かげ|影|にしび|西日|つち|地面|床/i.test(text)) {
+    motifs.push('long elongated sharp shadow cast across the textured ground under low slant golden-hour sunlight');
+  }
+
+  return motifs[0] || '';
+}
+
 /**
  * 歌詞テキスト・演出ヒント・カット位置から、AI作画が1対1で呼応する具体的な情景・カメラ指示を錬成
- * （FlowTool映画的画角＆アングル自律ディレクションエンジン）
+ * （FlowTool 10大映画的演出パターン × 歌詞情景自律融合ディレクションエンジン）
  */
 export function extractLyricVisualPlot(
   lyric: string,
@@ -574,42 +629,45 @@ export function extractLyricVisualPlot(
   if (isPropCut) {
     let propDesc = cleanHint;
     if (!propDesc) {
-      if (/銀の爪|銀の粒|粒|爪|指輪|鍵|チケット|手紙|メモ|コイン/i.test(cleanLyric)) {
-        propDesc = `a solitary gleaming small keepsake object (${cleanLyric}) resting quietly`;
+      if (/銀の爪|銀の粒|粒|爪|指輪|鍵|チケット|手紙|メモ|コイン|アルミ|缶|底|ひづけ|日付|すうじ/i.test(cleanLyric)) {
+        propDesc = `a solitary gleaming small keepsake object (${cleanLyric}) resting quietly on surface`;
       } else if (cleanLyric) {
         propDesc = `a poetic symbolic still-life item evoking the essence of "${cleanLyric}"`;
       } else {
         propDesc = 'a poetic weathered keepsake object imbued with nostalgic memory';
       }
     }
-    return `[STRICT STILL-LIFE INSERT]: Cinematic extreme close-up macro product still-life photography of (${propDesc}), in natural environmental setting (${theme}), completely deserted scene with strictly NO humans, NO person, shallow depth of field, atmospheric cinematic lighting, rich tactile textures, crisp specular reflections and fine floating dust motes.`;
+    return `[STRICT STILL-LIFE INSERT]: Cinematic extreme close-up macro product still-life photography of (${propDesc}), set within atmospheric environment (${theme}), completely deserted scene with strictly NO humans, NO person, shallow depth of field, atmospheric cinematic lighting, rich tactile textures, crisp specular reflections and fine floating dust motes.`;
   }
 
-  // 2. 普遍的8サイクル画角＆カメラアングルディレクション
+  // 2. 普遍的10大映画的演出ルール
   const ruleIndex = (cutIndex - 1) % UNIVERSAL_CINE_CYCLE.length;
   const rule = UNIVERSAL_CINE_CYCLE[ruleIndex];
 
-  // 3. 歌詞連動キネティック・アクション（身体動作・感情の身体化）の抽出
+  // 3. 歌詞連動キネティック・アクション（身体動作・仕草）
   const kineticAction = parseLyricKineticAction(cleanLyric, section, isPropCut);
   const actionPart = kineticAction ? ` [KINETIC ACTION: ${kineticAction}].` : '';
 
-  // 演出ヒント(cleanHint)や歌詞に「立っている」等の立ちポーズが固定化されている場合、
-  // クローズアップや俯瞰などの画角と衝突して棒立ちになるのを防ぐため、画角に合わせてインテリジェントに中和
+  // 4. 歌詞固有のシチュエーション・ロケーション・小道具モチーフ
+  const scenicMotif = extractLyricScenicMotif(cleanLyric);
+  const motifPart = scenicMotif ? ` [SCENIC MOTIF: ${scenicMotif}].` : '';
+
+  // 演出ヒント(cleanHint)が特定の立ちポーズで固まっている場合の中和
   let adaptiveHint = cleanHint;
-  if (rule.scale.includes('Close-Up') || rule.scale.includes('High-Angle')) {
+  if (rule.scale.includes('Close-Up') || rule.scale.includes('High-Angle') || rule.scale.includes('Footsteps')) {
     adaptiveHint = adaptiveHint.replace(/(立っている|佇んでいる|佇む|直立して|直立の|standing|standing upright)/gi, '').trim();
   }
 
-  if (adaptiveHint) {
+  if (adaptiveHint && !adaptiveHint.includes('Cut ')) {
     const lyricRef = cleanLyric ? `embodying lyric "${cleanLyric}", ` : '';
-    return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart} [SCENE CONTEXT]: Scene ${lyricRef}${adaptiveHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
+    return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart}${motifPart} [SCENE CONTEXT]: Scene ${lyricRef}${adaptiveHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
   }
 
-  if (!cleanLyric || cleanLyric.startsWith('♪') || /^\(.*\)$/.test(cleanLyric)) {
-    return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart} Set within the world of "${theme}". Atmospheric cinematic depth, natural lighting.`;
+  if (cleanLyric && !cleanLyric.startsWith('♪') && !/^\(.*\)$/.test(cleanLyric)) {
+    return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart}${motifPart} Scene visually embodying lyric "${cleanLyric}", set within the world of "${theme}".`;
   }
 
-  return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart} Scene visually embodying lyric "${cleanLyric}", set within the world of "${theme}".`;
+  return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart}${motifPart} Set within the world of "${theme}". Atmospheric cinematic depth, natural lighting.`;
 }
 
 /**
@@ -677,34 +735,36 @@ export function convertTrackToEpisode(
     const isPropCut = hasStarInHint || (totalCuts >= 20 ? (i === 10 || i === bridgeStart + 1) : (i === 10));
     const isLastCut = i === totalCuts;
 
-    // 動的歌詞配分
+    // 動的歌詞配分（全カット均等ニアリー同期マッピング）
     let lyric = '';
+    const allLines = lyricsSec._allLines || [];
+
     if (section === 'intro') {
       const idx = (i - 1) % Math.max(1, introLines.length);
-      lyric = introLines[idx] || (i === 1 ? '♪ (Intro Instrumental)' : (introLines[0] || '冷たい風が吹き抜ける'));
+      lyric = introLines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (i === 1 ? '♪ (Intro Instrumental)' : '冷たい風が吹き抜ける'));
     } else if (section === 'verse_a') {
       const sectionOffset = i - Math.round(totalCuts * 0.13);
       const idx = (sectionOffset - 1) % Math.max(1, verse1Lines.length);
-      lyric = verse1Lines[idx] || (verse1Lines.length > 0 ? verse1Lines.join(' ') : (isPropCut ? '静かに残された記憶の欠片' : '冷たい床に伸びる影'));
+      lyric = verse1Lines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isPropCut ? '静かに残された記憶の欠片' : '冷たい床に伸びる影'));
     } else if (section === 'verse_b') {
       const bPool = prechorusLines.length > 0 ? prechorusLines : verse2Lines;
       const sectionOffset = i - Math.round(totalCuts * 0.33);
       const idx = (sectionOffset - 1) % Math.max(1, bPool.length);
-      lyric = bPool[idx] || (bPool.length > 0 ? bPool.join(' ') : '広くなった空間は');
+      lyric = bPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : '広くなった空間は');
     } else if (section === 'chorus') {
       const cPool = chorusLines.length > 0 ? chorusLines : (finalChorusLines.length > 0 ? finalChorusLines : []);
       const sectionOffset = i - Math.round(totalCuts * 0.53);
       const idx = (sectionOffset - 1) % Math.max(1, cPool.length);
-      lyric = cPool[idx] || '透き通る風が駆け抜けて';
+      lyric = cPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : '透き通る風が駆け抜けて');
     } else if (section === 'bridge') {
       const brPool = bridgeLines.length > 0 ? bridgeLines : (verse2Lines.length > 0 ? verse2Lines : prechorusLines);
       const sectionOffset = i - Math.round(totalCuts * 0.80);
       const idx = (sectionOffset - 1) % Math.max(1, brPool.length);
-      lyric = brPool[idx] || (isPropCut ? 'あの日置いてった銀の爪' : '隅に落ちてた銀の粒');
+      lyric = brPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isPropCut ? 'あの日置いてった銀の爪' : '隅に落ちてた銀の粒'));
     } else {
       // outro
       const idx = (i - Math.round(totalCuts * 0.93) - 1) % Math.max(1, outroLines.length);
-      lyric = outroLines[idx] || (isLastCut ? '♪ (Outro / Reverb Tail)' : '新しい明日へ歩き出す');
+      lyric = outroLines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isLastCut ? '♪ (Outro / Reverb Tail)' : '新しい明日へ歩き出す'));
     }
 
     // 映画的カメラアングル＆画角サイクルの解決
@@ -767,13 +827,13 @@ export function convertTrackToEpisode(
       }
     }
 
-    // 情景コンテキスト（scene_context）の注入
-    if (track.scene_context) {
-      promptEnComponents.push(`[SCENE CONTEXT]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
+    // 情景コンテキスト（scene_context）の注入（カット固有の歌詞情景を最優先し、全体コンテキストは背景アンビエンスとして調和）
+    if (track.scene_context && !isPropCut && !shotScale.includes('Hands') && !shotScale.includes('Footsteps')) {
+      promptEnComponents.push(`[WORLD AMBIENCE]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
     }
 
     // 登場人物詳細（character_setting）の画角連動インテリジェント注入
-    // （画角がClose-UpやHigh-Angle、Wideの時に「立っている」という固定ポーズが構図を殺さないよう、FlowTool側でスマートに中和）
+    // （画角がClose-UpやHigh-Angle、Hands、Footstepsの時に「立っている」という固定ポーズが構図を殺さないよう、FlowTool側でスマートに中和）
     if (track.character_setting && !isPropCut && !isLastCut) {
       let cleanSettingDna = track.character_setting
         .replace(/\b(standing|standing upright|upright|seated|sitting|holding an? umbrella|holding umbrellas?|with an? umbrella|holding hands?|walking straight|facing camera)\b/gi, '')
@@ -782,8 +842,14 @@ export function convertTrackToEpisode(
         .trim();
 
       if (cleanSettingDna) {
-        if (shotScale.includes('Close-Up') || shotScale.includes('Profile')) {
-          // 接写・横顔: 全身立ちポーズを殺し、顔・髪・上半身の容姿特徴のみにフォーカス
+        if (shotScale.includes('Hands')) {
+          // 手元マクロ: 顔・全身を完全排除し、袖口と手元の服装特徴のみ
+          promptEnComponents.push(`[TACTILE DETAILS]: Focused on jacket sleeves and hands only, absolutely NO face.`);
+        } else if (shotScale.includes('Footsteps')) {
+          // 足元ローアングル: 靴・裾・足元のみ
+          promptEnComponents.push(`[GROUND DETAILS]: Focused on sneakers and pants hem stepping forward across pavement, ground level only, absolutely NO face.`);
+        } else if (shotScale.includes('Close-Up') || shotScale.includes('Profile') || shotScale.includes('Mouth')) {
+          // 接写・横顔・口元: 全身立ちポーズを殺し、顔・髪・上半身の容姿特徴のみにフォーカス
           cleanSettingDna = cleanSettingDna.replace(/\b(full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet)\b/gi, '').trim();
           promptEnComponents.push(`[CHARACTER PORTRAIT DETAILS]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
         } else if (shotScale.includes('Wide') || shotScale.includes('Panorama')) {

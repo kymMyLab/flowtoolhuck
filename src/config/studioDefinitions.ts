@@ -733,8 +733,8 @@ export interface CineCameraRule {
 }
 
 /**
- * YouTubeで天下を取る映画的8大カメラディレクションサイクル
- * （Google AIの中庸バイアスを強制破壊し、ドアップ・煽り・ダッチ・超広角・俯瞰・横顔を極限の迫力で描画させる）
+ * YouTubeで天下を取る映画的10大カメラディレクションサイクル (Cine Director 10 Patterns)
+ * （Google AIの中庸バイアスを強制破壊し、ドアップ・口元・手元・足元・煽り・ダッチ・超広角・俯瞰・横顔・象徴静物を極限の迫力で描画させる）
  */
 export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
   // 1. Extreme Close-Up / 極限ドアップ・瞳と表情 (身体・全身立ち姿を完全粉砕、環境ボケは世界観に調和)
@@ -745,23 +745,31 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit',
     antiPoseTokens: ['full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'seated pose', 'sitting', 'wide shot', 'medium shot', 'distant face', 'normal portrait', 'waist-up crop', 'stiff standing posture']
   },
-  // 2. Dramatic Low-Angle Upward / 地面スレスレからの極限煽り見上げ (どんな屋内・屋外・SF・ファンタジーでも100%適合)
+  // 2. Macro Mouth & Breath / 口元・歌唱・吐息のドアップ (言葉を飲み込む喉元、白くほどける息)
   {
-    scale: 'Low-Angle Upward',
-    tag: '極限煽り・見上げ',
+    scale: 'Macro Mouth & Breath',
+    tag: '口元・歌唱・吐息',
+    cameraWork: 'intimate-macro',
+    directive: 'Intimate macro close-up focusing tightly on parted trembling lips, chin, and throat, delicate puff of translucent white breath dissolving into the chilly air, holding back unspoken words, shallow depth of field, strictly lower face and lips only',
+    antiPoseTokens: ['full body', 'legs', 'feet', 'shoes', 'wide shot', 'medium shot', 'full face', 'distant portrait', 'standing pose']
+  },
+  // 3. Macro Hands & Gestures / 手元・指先・袖口のアクション (ポケット、自販機ボタン、缶を握る拳)
+  {
+    scale: 'Macro Hands & Gestures',
+    tag: '手元・指先・仕草',
+    cameraWork: 'macro-reveal',
+    directive: 'Tactile extreme close-up macro focusing sharply on hands, fingers, and sleeve cuffs, fingers nervously hooking into hem or clenching tightly, suppressed kinetic emotion, white knuckles, background softly blurred, strictly hands and tactile gesture only, NO face',
+    antiPoseTokens: ['full face', 'eyes', 'portrait', 'full body', 'legs', 'feet', 'distant shot', 'standing pose', 'wide shot']
+  },
+  // 4. Low-Angle Footsteps / 足元・靴・ローアングル (地面スレスレ、踏み出す一歩)
+  {
+    scale: 'Low-Angle Footsteps',
+    tag: '足元・踏み出し',
     cameraWork: 'low-angle-tilt-up',
-    directive: 'Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening, subject standing tall framed against the soaring expanse above, dramatic worm-eye parallax',
-    antiPoseTokens: ['eye-level shot', 'horizontal camera angle', 'flat perspective', 'looking down', 'high angle', 'normal eye level', 'standard seated pose', 'level horizon', 'flat straight perspective']
+    directive: 'Extreme ground-level low-angle worm-eye camera looking at shoes, brisk sneakers, and lower legs taking a resolute kinetic stride across the pavement, ground texture and long shadows stretching forward, dynamic cinematic motion, strictly ground and feet level',
+    antiPoseTokens: ['face', 'portrait', 'upper body', 'chest-up', 'eyes', 'standard eye level', 'high angle', 'looking down']
   },
-  // 3. Dutch-Angle Diagonal Tilt / 傾き35度のダッチアングル・斜め構図 (水平直立を完全粉砕)
-  {
-    scale: 'Dutch-Angle Medium',
-    tag: '斜め傾き・ダッチアングル',
-    cameraWork: 'dutch-tilt',
-    directive: 'Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal lines slashing across the frame, off-kilter dynamic perspective creating palpable tension and emotional instability, stylish cinematic slant',
-    antiPoseTokens: ['horizontal level frame', 'straight horizontal camera', 'level horizon', 'flat standard shot', 'vertical upright symmetry', 'level camera']
-  },
-  // 4. Extreme Wide Landscape Panorama / 超広角・情景主役 (人物は豆粒シルエット、大自然・都市・宇宙船内・城郭すべてに対応)
+  // 5. Extreme Wide Landscape Panorama / 超広角・情景主役 (人物は豆粒シルエット、大自然・都市・河川敷すべてに対応)
   {
     scale: 'Extreme Wide Panorama',
     tag: '超広角・情景主役',
@@ -769,7 +777,7 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Grand panoramic environmental tableau where the vast grand environment, immense background scale, and sweeping atmospheric horizon overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, breathtaking spatial depth',
     antiPoseTokens: ['close-up', 'medium shot', 'prominent character in foreground', 'large face', 'dominant person in center', 'waist-up', 'chest-up', 'normal portrait']
   },
-  // 5. Overhead High-Angle Bird\'s-Eye / 真上75度俯瞰・影と幾何学 (床・地面のテクスチャと影を主役に)
+  // 6. Overhead High-Angle Bird\'s-Eye / 真上75度俯瞰・影と幾何学 (床・地面のテクスチャと影を主役に)
   {
     scale: 'Overhead High-Angle',
     tag: '真上俯瞰・影と幾何学',
@@ -777,29 +785,37 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Steep overhead high-angle bird-eye view looking down from high vantage point at a 75-degree angle, emphasizing ground geometry, environmental textures, and long elongated dramatic shadows cast across the floor plane, unique top-down perspective',
     antiPoseTokens: ['eye-level shot', 'horizontal angle', 'looking up from below', 'worm-eye view', 'frontal portrait', 'standard eye level', 'horizontal eye contact']
   },
-  // 6. Medium Close-Up Profile / 完全真横90度プロファイル (カメラ目線・正面向きを完全粉砕)
+  // 7. Dutch-Angle Diagonal Tilt / 傾き35度のダッチアングル・斜め構図 (疾走感・感情の揺らぎ)
+  {
+    scale: 'Dutch-Angle Medium',
+    tag: '斜め傾き・ダッチアングル',
+    cameraWork: 'dutch-tilt',
+    directive: 'Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal lines slashing across the frame, off-kilter dynamic perspective creating palpable tension and emotional instability, stylish cinematic slant',
+    antiPoseTokens: ['horizontal level frame', 'straight horizontal camera', 'level horizon', 'flat standard shot', 'vertical upright symmetry', 'level camera']
+  },
+  // 8. Medium Close-Up Profile / 完全真横90度・横顔・振り返り (背後を振り返る切ない視線)
   {
     scale: 'Medium Close-Up Profile',
     tag: '完全真横・プロファイル',
     cameraWork: 'cinematic-profile-pan',
-    directive: 'Exact 90-degree horizontal side profile view of subject placed along the outer rule-of-thirds, gazing across immense open negative space toward the frame edge, razor-sharp silhouette with brilliant directional rim lighting outlining hair and facial profile',
-    antiPoseTokens: ['facing camera', 'front view', '3/4 front view', 'direct eye contact', 'looking at viewer', 'centered portrait', 'front-facing character']
+    directive: 'Exact 90-degree horizontal side profile view halting mid-stride, poignant three-quarter view or turning head to glance back over shoulder with a bittersweet searching gaze, razor-sharp silhouette with brilliant directional rim lighting outlining hair and facial profile',
+    antiPoseTokens: ['facing camera', 'front view', 'direct eye contact', 'centered portrait', 'front-facing character']
   },
-  // 7. Medium-Wide Rear View / 背後・見送り・視線共有 (背中越しに広がる世界)
-  {
-    scale: 'Medium-Wide Rear View',
-    tag: '背後・見送り・視線共有',
-    cameraWork: 'over-the-shoulder',
-    directive: 'Atmospheric rear three-quarter view seen from behind looking outward into the glowing depth of the world, back turned to camera, expressive back silhouette, sharing the character forward gaze toward the unfolding scene ahead',
-    antiPoseTokens: ['facing camera', 'front view', 'looking back at camera', 'direct eye contact', 'full frontal face', 'front view portrait']
-  },
-  // 8. Medium Bust Shot / 堂々たるバストアップ (胸上・自然な佇まいと陰影)
+  // 9. Candid Medium Situation / 日常全身シチュエーション (階段に腰掛ける・佇まいと陰影)
   {
     scale: 'Medium Bust Shot',
-    tag: '堂々たるバストアップ',
+    tag: '日常シチュエーション',
     cameraWork: 'medium-push-in',
-    directive: 'Cinematic tight chest-up bust framing capturing nuanced facial emotion and upper-body posture, rich directional side chiaroscuro rim lighting, strong contrast between light and shadow, shallow depth of field, strictly chest and head only',
-    antiPoseTokens: ['full body', 'legs', 'feet', 'knees', 'shoes', 'standing full length', 'wide landscape', 'tiny distant face']
+    directive: 'Candid medium atmospheric framing capturing authentic unposed posture within the scene, resting quietly or shifting weight thoughtfully, natural relaxed aesthetic, rich directional side chiaroscuro rim lighting, shallow depth of field',
+    antiPoseTokens: ['stiff upright pose', 'facing camera rigidly', 'formal portrait', 'direct eye contact']
+  },
+  // 10. Still-Life Key Prop / ★象徴アイテム・静物マクロ (OBJ・人物完全排除)
+  {
+    scale: 'Extreme Close-Up Macro',
+    tag: '象徴アイテム・静物',
+    cameraWork: 'macro-reveal',
+    directive: 'Cinematic extreme close-up macro product still-life photography of an iconic symbolic keepsake object, resting quietly in ambient natural lighting, completely deserted scene with strictly NO humans, NO person, rich tactile texture, crisp specular reflections, and fine floating dust motes',
+    antiPoseTokens: ['human', 'person', 'face', 'eyes', 'hands', 'body', 'crowd', 'portrait', 'girl', 'boy', 'man', 'woman']
   }
 ];
 

@@ -490,9 +490,25 @@ export function buildFinalCinematicPromptAndNegative(
   const isProfileShot = fullPromptContext.includes('profile') || fullPromptContext.includes('side view') || fullPromptContext.includes('90-degree') || fullPromptContext.includes('横顔');
   const isRearShot = fullPromptContext.includes('rear') || fullPromptContext.includes('back view') || fullPromptContext.includes('from behind') || fullPromptContext.includes('後ろ姿') || fullPromptContext.includes('背後');
 
+  const isHandsShot = fullPromptContext.includes('hands & gestures') || fullPromptContext.includes('macro hands') || fullPromptContext.includes('tactile details') || fullPromptContext.includes('手元');
+  const isFootstepsShot = fullPromptContext.includes('footsteps') || fullPromptContext.includes('low-angle footsteps') || fullPromptContext.includes('ground details') || fullPromptContext.includes('足元');
+  const isMouthShot = fullPromptContext.includes('mouth & breath') || fullPromptContext.includes('macro mouth') || fullPromptContext.includes('口元');
+
   const cineShotSpecificNegatives: string[] = [];
 
-  if (isCloseUpShot) {
+  if (isHandsShot) {
+    // 手元・指先マクロ: 顔・全身・頭部を完全粉砕
+    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'portrait', 'full body', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot');
+    cleanActionPrompt = `[STRICT MACRO HANDS: Tactile extreme close-up macro focusing sharply on hands, fingers, and sleeve cuffs, white knuckles, delicate subconscious fidgeting, hands in sharp focus, background softly blurred, strictly hands and tactile gesture only, absolutely NO face]. ${cleanActionPrompt}`;
+  } else if (isFootstepsShot) {
+    // 足元・靴ローアングル: 顔・上半身を完全粉砕
+    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'torso', 'chest', 'portrait', 'upper body', 'standard eye level', 'high angle');
+    cleanActionPrompt = `[STRICT LOW-ANGLE FOOTSTEPS: Extreme ground-level low-angle worm-eye camera looking at shoes, brisk sneakers, and lower legs taking a resolute kinetic stride across the pavement, ground texture and long shadows stretching forward, dynamic cinematic motion, strictly ground and feet level, absolutely NO face]. ${cleanActionPrompt}`;
+  } else if (isMouthShot) {
+    // 口元・吐息マクロ: 全身・足元を粉砕
+    cineShotSpecificNegatives.push('full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot', 'distant face');
+    cleanActionPrompt = `[STRICT MACRO MOUTH & BREATH: Intimate macro close-up focusing tightly on parted trembling lips, chin, and throat, delicate puff of translucent white breath dissolving into the chilly air, holding back unspoken words, shallow depth of field, strictly lower face and lips only]. ${cleanActionPrompt}`;
+  } else if (isCloseUpShot) {
     // 寄り・接写: 顔面・瞳・表情のみ。身体・椅子・背景を徹底粉砕（世界観のボケ味は保持）
     cineShotSpecificNegatives.push(
       'full body', 'torso', 'chest', 'shoulders', 'arms', 'hands', 'legs', 'feet', 'shoes',
