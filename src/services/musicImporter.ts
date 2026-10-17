@@ -781,6 +781,7 @@ export function convertTrackToEpisode(
     const cineRule = UNIVERSAL_CINE_CYCLE[(i - 1) % UNIVERSAL_CINE_CYCLE.length];
     let shotScale = cineRule.scale;
     let cameraWork = cineRule.cameraWork;
+    let cinematicAngle = cineRule.directive;
     let isObjectOnly = false;
     let telopStyle: any = 'mv-kinetic-pop';
     let telopTransition: any = 'gsap-kinetic-stagger';
@@ -790,16 +791,19 @@ export function convertTrackToEpisode(
       // ★ 冒頭スワイプキラー（極限顔面・瞳のアップ）
       shotScale = 'Extreme Close-Up';
       cameraWork = 'intimate-macro';
+      cinematicAngle = UNIVERSAL_CINE_CYCLE[0].directive;
       telopPosition = 'bottom-center';
     } else if (isLastCut) {
       // ★ 不在の余韻 ＆ 無限ループ構図
       shotScale = 'Extreme Wide Panorama';
       cameraWork = 'wide-establishing';
+      cinematicAngle = UNIVERSAL_CINE_CYCLE[4].directive;
       telopPosition = 'bottom-center';
     } else if (isPropCut) {
       // ★ 伏線・象徴小道具確定（人物除外・マクロ静物インサート）
       shotScale = 'Extreme Close-Up Macro';
       cameraWork = 'macro-reveal';
+      cinematicAngle = UNIVERSAL_CINE_CYCLE[9].directive;
       isObjectOnly = true;
       telopStyle = 'mv-neon-glow';
       telopPosition = 'bottom-center';
@@ -915,7 +919,7 @@ export function convertTrackToEpisode(
       narrationEn: '',
       shotScale: shotScale,
       cameraWork: cameraWork,
-      cinematicAngle: cineRule.directive,
+      cinematicAngle: cinematicAngle,
       isObjectOnly: isObjectOnly,
       panelLayout: isPropCut ? 'single' : (isChorus ? 'diagonal-slash' : 'single'),
       focalPoint: isPropCut ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'key_prop' } : undefined,
