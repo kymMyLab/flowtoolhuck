@@ -187,20 +187,24 @@ export default function App() {
   }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog]);
 
   const handleDeployBatchMusicEpisodes = useCallback((eps: Episode[]) => {
-    setEpisodes(eps);
+    const normalizedEps = eps.map((ep, idx) => ({
+      ...ep,
+      id: idx + 1
+    }));
+    setEpisodes(normalizedEps);
     setActiveSeriesManifest(null);
-    const cutsCount = eps[0]?.cuts.length || 30;
+    const cutsCount = normalizedEps[0]?.cuts.length || 30;
     setSettings(prev => ({
       ...prev,
       productionMode: 'mv',
       isMvMode: true,
-      theme: eps[0]?.theme || prev.theme,
-      taste: eps[0]?.taste || prev.taste,
-      episodeCount: eps.length,
-      totalEpisodes: eps.length,
+      theme: normalizedEps[0]?.theme || prev.theme,
+      taste: normalizedEps[0]?.taste || prev.taste,
+      episodeCount: normalizedEps.length,
+      totalEpisodes: normalizedEps.length,
       previewCutCount: cutsCount
     }));
-    addLog(`🎵 CT198楽曲 全${eps.length}曲の${cutsCount}カット絵コンテを一括展開しました！`, 'success');
+    addLog(`🎵 CT198楽曲 全${normalizedEps.length}曲の${cutsCount}カット絵コンテを一括展開しました！`, 'success');
   }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog]);
 
   // ヘッダー等で画風（taste）が変更された際、画像未生成のエピソード群のtasteも即座に同期
@@ -650,9 +654,9 @@ export default function App() {
                 </React.Suspense>
               )}
 
-              {episodes.map(ep => (
+              {episodes.map((ep, idx) => (
             <EpisodeSection 
-              key={ep.id} ep={ep} aspectRatio={settings.aspectRatio || '1:1'} onGenerateRemaining={handleGenerateRemaining} onBulkVideo={handleBulkVideo} onBulkBrowserVideo={handleBulkBrowserVideo} onExportFullMovie={handleExportFullMovie} onDownloadZip={handleDownloadZip} onAnimateRequest={generateVideo} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onUpdateCut={updateCutWrapped} onBulkRerollTelop={handleBulkRerollTelop} onGenerateCover={generateInfographicCover} onRetry={(type, eId, cId) => {
+              key={ep.internalId || `ep_${ep.id}_${idx}`} ep={ep} aspectRatio={settings.aspectRatio || '1:1'} onGenerateRemaining={handleGenerateRemaining} onBulkVideo={handleBulkVideo} onBulkBrowserVideo={handleBulkBrowserVideo} onExportFullMovie={handleExportFullMovie} onDownloadZip={handleDownloadZip} onAnimateRequest={generateVideo} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onUpdateCut={updateCutWrapped} onBulkRerollTelop={handleBulkRerollTelop} onGenerateCover={generateInfographicCover} onRetry={(type, eId, cId) => {
                 const epFound = episodes.find(e => e.id === eId);
                 const cutFound = epFound?.cuts.find(c => c.id === cId);
                 if (type === 'image' && cutFound) {

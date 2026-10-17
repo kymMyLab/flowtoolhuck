@@ -562,7 +562,8 @@ export function convertTrackToEpisode(
   selectedCharacter?: CastCharacter,
   coverThemeVariant?: string,
   selectedTaste?: string,
-  targetCuts?: number
+  targetCuts?: number,
+  explicitEpisodeId?: number
 ): Episode {
   const totalCuts = targetCuts || (typeof track.total_cuts === 'number' && track.total_cuts > 0 ? track.total_cuts : 30);
   const visualMap = parseVisualHints(track.visual_hints || '', totalCuts);
@@ -809,7 +810,13 @@ export function convertTrackToEpisode(
     });
   }
 
-  const episodeId = Number(track.track_no) || 1;
+  // トラック番号の自動判定（explicitEpisodeId > track_no > sound_prompt内のTrack-Number > 1）
+  let autoTrackNo = explicitEpisodeId || Number(track.track_no);
+  if (!autoTrackNo && track.sound_prompt) {
+    const match = track.sound_prompt.match(/Track-Number:\s*#?(\d+)/i);
+    if (match) autoTrackNo = parseInt(match[1], 10);
+  }
+  const episodeId = autoTrackNo || 1;
   const uniqueId = `ep_mv_${Date.now()}_${track.id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8)}`;
 
   return {

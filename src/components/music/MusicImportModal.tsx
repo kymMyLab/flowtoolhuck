@@ -288,7 +288,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       const charToInject = resolveSelectedCharacter();
       const effectiveTheme = selectedCoverThemeId === 'auto' ? autoTheme.id : selectedCoverThemeId;
       const effectiveTaste = selectedTasteKey === 'auto' ? undefined : selectedTasteKey;
-      const episodes = parsedTracks.map(t => convertTrackToEpisode(t, videoRatio, charToInject, effectiveTheme, effectiveTaste));
+      const episodes = parsedTracks.map((t, idx) => 
+        convertTrackToEpisode(t, videoRatio, charToInject, effectiveTheme, effectiveTaste, undefined, idx + 1)
+      );
       if (onDeployBatchEpisodes) {
         onDeployBatchEpisodes(episodes);
       } else {
