@@ -25,12 +25,13 @@ export {
  */
 export async function renderFullEpisodeMovie(
   episode: Episode, 
-  onProgress: (cutIndex: number, total: number) => void
+  onProgress: (cutIndex: number, total: number) => void,
+  isHorizontal: boolean = true
 ): Promise<Blob> {
   await document.fonts.ready;
 
-  const width = 720;
-  const height = 1280;
+  const width = isHorizontal ? 1280 : 720;
+  const height = isHorizontal ? 720 : 1280;
   const fps = 30;
   const defaultCutDuration = 4;
 
@@ -182,12 +183,17 @@ export async function renderFullEpisodeMovie(
 /**
  * 単一カットの Ken Burns 動画をレンダリングして Base64 文字列で返却
  */
-export async function renderKenBurnsVideo(cut: Cut, durationSec: number = 4, isMvMode: boolean = false): Promise<string> {
+export async function renderKenBurnsVideo(
+  cut: Cut, 
+  durationSec: number = 4, 
+  isMvMode: boolean = false,
+  isHorizontal: boolean = true
+): Promise<string> {
   await document.fonts.ready;
   if (!cut.imageBase64) throw new Error('Image data missing');
 
-  const width = 720;
-  const height = 1280;
+  const width = isHorizontal ? 1280 : 720;
+  const height = isHorizontal ? 720 : 1280;
   const fps = 30;
   const totalFrames = durationSec * fps;
 

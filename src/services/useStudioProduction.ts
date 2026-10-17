@@ -260,9 +260,10 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎬 Ep.${epId}: 映像結合を開始...`, 'process');
     updateEpisode(epId, { isExportingMovie: true });
     try {
+      const isHorizontal = settings.aspectRatio !== '9:16';
       const movieBlob = await renderFullEpisodeMovie(ep, (idx, total) => {
         addLog(`🎞️ 映像レンダリング中... ${idx}/${total}`, 'info');
-      });
+      }, isHorizontal);
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64 = (reader.result as string).split(',')[1];

@@ -76,8 +76,8 @@ export function useVideoGeneration({
         finalVideoPrompt = 'Cinematic moving shot, high quality';
       }
 
-      // 動画のアスペクト比決定: 16:9 以外はショート・MV特化の 9:16（縦型）に確定（Veo APIは 1:1 を拒絶するため）
-      const targetAspectRatio: "16:9" | "9:16" = settings.aspectRatio === '16:9' ? '16:9' : '9:16';
+      // ユーザー絶対方針: 動画は横動画(16:9)を基本とする（横→縦のクロップは容易だが、縦→横は困難なため）
+      const targetAspectRatio: "16:9" | "9:16" = settings.aspectRatio === '9:16' ? '9:16' : '16:9';
       const safeVideoModelName = modelDef.name || 'Veo 3.1 - Fast';
 
       let res: any;
@@ -165,7 +165,8 @@ export function useVideoGeneration({
     updateCut(epId, cutId, { isGeneratingVideo: true, videoModelUsed: 'Browser (0pt)', error: undefined });
     try {
       const isMvMode = episodesRef.current.find(e => e.id === epId)?.isMvMode || false;
-      const base64 = await renderKenBurnsVideo(cut, 4, isMvMode);
+      const isHorizontal = settings.aspectRatio !== '9:16';
+      const base64 = await renderKenBurnsVideo(cut, 4, isMvMode, isHorizontal);
       const cleanVideoBase64 = base64 ? base64.replace(/^data:[^;]+;base64,/, '') : '';
       updateCut(epId, cutId, { videoBase64: cleanVideoBase64, isGeneratingVideo: false, error: undefined, videoDuration: 4 });
       addLog(`🎬 Ep.${epId} C${cutId.toString().padStart(2, '0')}: ブラウザ動画化完了`, 'success');
