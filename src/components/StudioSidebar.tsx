@@ -58,6 +58,51 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     });
   }, [activeMaxCuts]);
 
+  // 生成曲数/話数の選択肢プリセット（100曲あっても見やすく、全曲ボタン付き）
+  const episodeOptions = React.useMemo(() => {
+    if (settings.productionMode === 'style-matrix') {
+      const totalTastesCount = Object.keys({ ...TASTES, ...loadCustomTastes() }).length;
+      const base = [3, 5, 10, 20];
+      const list = base.filter(n => n < totalTastesCount);
+      const res = [...list, totalTastesCount];
+      if (!res.includes(settings.episodeCount)) {
+        return [...res, settings.episodeCount].sort((a, b) => a - b);
+      }
+      return res;
+    }
+    if (settings.productionMode === 'mv') {
+      const max = settings.totalEpisodes || episodes.length || 5;
+      if (max <= 5) {
+        const base = [1, 2, 3, 4, 5].filter(n => n <= max);
+        return base;
+      }
+      // 100曲など大規模の場合: よく使う [1, 2, 5, 10, 20, 50, 全]
+      const steps = [1, 2, 5, 10, 20, 50].filter(n => n < max);
+      const res = Array.from(new Set([...steps, max])).sort((a, b) => a - b);
+      if (!res.includes(settings.episodeCount)) {
+        return Array.from(new Set([...res, settings.episodeCount])).sort((a, b) => a - b);
+      }
+      return res;
+    }
+    const base = [1, 2, 4, 10, 20, 50];
+    if (!base.includes(settings.episodeCount)) {
+      return [...base, settings.episodeCount].sort((a, b) => a - b);
+    }
+    return base;
+  }, [settings.productionMode, settings.totalEpisodes, settings.episodeCount, episodes.length]);
+
+  const formatEpisodeLabel = (v: number) => {
+    if (settings.productionMode === 'style-matrix') {
+      const totalTastesCount = Object.keys({ ...TASTES, ...loadCustomTastes() }).length;
+      return v >= totalTastesCount ? `${v}種 (全)` : `${v}種`;
+    }
+    const max = settings.totalEpisodes || episodes.length;
+    if (settings.productionMode === 'mv' && max && v >= max) {
+      return `${v}曲 (全)`;
+    }
+    return `${v}${settings.productionMode === 'mv' ? '曲' : (settings.productionMode === 'episodes' ? '話' : '本')}`;
+  };
+
   const pipelineBadge = [
     settings.enableTurnaroundSheet !== false ? '三面図' : '',
     settings.enableEndFrames !== false ? '2F' : '',
@@ -165,50 +210,51 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               
               <div className="grid grid-cols-2 gap-2.5">
                 <NumberChoice label="並列数" value={settings.parallelCount} options={[1, 2, 3, 4]} onChange={v => setSettings(s => ({ ...s, parallelCount: v }))} />
-                <NumberChoice 
-                  label={settings.productionMode === 'mv' ? '生成曲数' : (settings.productionMode === 'style-matrix' ? '比較画風数' : (settings.productionMode === 'episodes' ? '生成話数' : '生成本数'))} 
-                  value={settings.episodeCount} 
-                  options={
-                    settings.productionMode === 'style-matrix' 
-                      ? (() => {
-                          const totalTastesCount = Object.keys({ ...TASTES, ...loadCustomTastes() }).length;
-                          const base = [3, 5, 10, 20];
-                          const list = base.filter(n => n < totalTastesCount);
-                          const res = [...list, totalTastesCount];
-                          if (!res.includes(settings.episodeCount)) {
-                            return [...res, settings.episodeCount].sort((a, b) => a - b);
+                {/* 生成曲数・話数（直接入力＋動的プリセット） */}
+                <div className="flex flex-col gap-1 w-full">
+                  <div className="flex items-center justify-between px-0.5">
+                    <p className="text-xs font-bold text-slate-600 truncate">
+                      {settings.productionMode === 'mv' ? '生成曲数' : (settings.productionMode === 'style-matrix' ? '比較画風数' : (settings.productionMode === 'episodes' ? '生成話数' : '生成本数'))}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-slate-400 font-medium">指定:</span>
+                      <input 
+                        type="number" 
+                        min="1" 
+                        max={settings.totalEpisodes || 999}
+                        value={settings.episodeCount || 1}
+                        onChange={e => {
+                          const val = parseInt(e.target.value, 10);
+                          if (!isNaN(val) && val > 0) {
+                            const maxLimit = settings.totalEpisodes || 999;
+                            setSettings(s => ({ ...s, episodeCount: Math.min(val, maxLimit) }));
                           }
-                          return res;
-                        })()
-                      : (() => {
-                          if (settings.productionMode === 'mv' && settings.totalEpisodes) {
-                            const max = settings.totalEpisodes;
-                            const steps = [1, 2, 4, 10, 20, 50].filter(n => n < max);
-                            const res = Array.from(new Set([...steps, max])).sort((a, b) => a - b);
-                            if (!res.includes(settings.episodeCount)) {
-                              return Array.from(new Set([...res, settings.episodeCount])).sort((a, b) => a - b);
-                            }
-                            return res;
-                          }
-                          const base = [1, 2, 4, 10, 20, 50];
-                          if (!base.includes(settings.episodeCount)) {
-                            return [...base, settings.episodeCount].sort((a, b) => a - b);
-                          }
-                          return base;
-                        })()
-                  } 
-                  formatLabel={v => {
-                    if (settings.productionMode === 'style-matrix') {
-                      const totalTastesCount = Object.keys({ ...TASTES, ...loadCustomTastes() }).length;
-                      return v >= totalTastesCount ? `${v}種 (全)` : `${v}種`;
-                    }
-                    if (settings.productionMode === 'mv' && settings.totalEpisodes && v >= settings.totalEpisodes) {
-                      return `${v}曲 (全)`;
-                    }
-                    return `${v}${settings.productionMode === 'mv' ? '曲' : (settings.productionMode === 'episodes' ? '話' : '本')}`;
-                  }}
-                  onChange={v => setSettings(s => ({ ...s, episodeCount: v }))} 
-                />
+                        }}
+                        className="w-12 h-5 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-indigo-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-inner"
+                      />
+                      <span className="text-[10px] font-bold text-slate-500">
+                        {settings.productionMode === 'mv' ? '曲' : (settings.productionMode === 'style-matrix' ? '種' : (settings.productionMode === 'episodes' ? '話' : '本'))}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full items-center border border-slate-300 rounded-xl overflow-x-auto no-scrollbar bg-slate-100 p-0.5">
+                    {episodeOptions.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setSettings(s => ({ ...s, episodeCount: opt }))}
+                        className={`flex-1 min-w-[36px] flex items-center justify-center h-[30px] text-xs font-bold transition-all cursor-pointer rounded-lg px-1 shrink-0 ${
+                          settings.episodeCount === opt 
+                            ? 'bg-indigo-600 text-white shadow-sm font-black' 
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                        }`}
+                      >
+                        <span className="truncate">{formatEpisodeLabel(opt)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {settings.productionMode === 'style-matrix' ? (
