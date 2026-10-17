@@ -94,28 +94,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       // インフォグラフィック扉絵
       await ensureInfographicCover(ctx, episodesRef.current.find(e => Number(e.id) === Number(epIndex)) || existingEp);
 
-      if (settings.autoVideo && !isAbortedRef.current) {
-        const currentEpForVideo = episodesRef.current.find(e => Number(e.id) === Number(epIndex));
-        let selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
-
-        // ★ セーフティネット: autoVideoがONなのに全カット未選択の場合、videoRatioに基づき自動救済選定
-        if (selectedCuts.length === 0 && settings.videoRatio !== 'none' && currentEpForVideo) {
-          addLog(`💡 [動画化自動救済] カット選択が0枚のため、設定割合「${settings.videoRatio || '30%'}」に基づきキメカットを自動選定して動画化を開始します`, 'info');
-          currentEpForVideo.cuts.forEach((c, idx) => {
-            if (isCutSelectedForVideo(idx, settings.videoRatio || '30%')) {
-              c.isSelectedForVideo = true;
-            }
-          });
-          setEpisodes(prev => prev.map(e => Number(e.id) === Number(epIndex) ? { ...e, cuts: currentEpForVideo.cuts } : e));
-          selectedCuts = currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo);
-        }
-
-        if (selectedCuts.length > 0) {
-          addLog(`🎬 第${epIndex}${modeInfo.unit}の自動動画化を開始します（対象: ${selectedCuts.length}カット）...`, 'process');
-          await handleBulkVideo(epIndex);
-        }
-      }
-
+      cleanupEpisodeMemory();
       continue; // インポート済みエピソードの作画完了、次の曲へ
     }
 
@@ -199,50 +178,48 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     // ★インフォグラフィック扉絵（9:16特大ポスター）を全自動生成！
     await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epIndex) || newEpisode);
 
-    if (settings.autoVideo && !isAbortedRef.current) {
-      const currentEpForVideo = episodesRef.current.find(e => e.id === epIndex);
-      let selectedCuts = currentEpForVideo ? currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo) : [];
+    await saveStory({ titleJp: newEpisode.titleJp, titleEn: newEpisode.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: newEpisode.summary || '', createdAt: new Date().toISOString() });
+    cleanupEpisodeMemory();
+  }
 
-      // ★ セーフティネット: autoVideoがONなのに全カット未選択の場合、videoRatioに基づき自動救済選定
-      if (selectedCuts.length === 0 && settings.videoRatio !== 'none' && currentEpForVideo) {
-        addLog(`💡 [動画化自動救済] カット選択が0枚のため、設定割合「${settings.videoRatio || '30%'}」に基づきキメカットを自動選定して動画化を開始します`, 'info');
+  // ── Phase 2: 自動動画化フェーズ（全エピソードの画像生成が完了した後に4多重で安全に並列実行） ──
+  if (settings.autoVideo && !isAbortedRef.current) {
+    addLog(`🎬 【自動動画化フェーズ】全${modeInfo.unit}の画像作画が完了しました。キメカットの並列動画化を開始します...`, 'process');
+    for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
+      if (isAbortedRef.current) break;
+      const currentEpForVideo = episodesRef.current.find(e => Number(e.id) === Number(epIndex));
+      if (!currentEpForVideo) continue;
+
+      const cutsCount = currentEpForVideo.cuts.length;
+      const targetCutCount = Math.min(settings.previewCutCount || cutsCount, cutsCount);
+      let selectedCuts = currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo);
+
+      // セーフティネット: autoVideoがONなのに全カット未選択の場合、videoRatioに基づき自動救済選定
+      if (selectedCuts.length === 0 && settings.videoRatio !== 'none') {
+        addLog(`💡 [動画化自動救済] 第${epIndex}${modeInfo.unit}のカット選択が0枚のため、設定割合「${settings.videoRatio || '30%'}」に基づきキメカットを自動選定します`, 'info');
         currentEpForVideo.cuts.forEach((c, idx) => {
           if (isCutSelectedForVideo(idx, settings.videoRatio || '30%')) {
             c.isSelectedForVideo = true;
           }
         });
-        setEpisodes(prev => prev.map(e => e.id === epIndex ? { ...e, cuts: currentEpForVideo.cuts } : e));
+        setEpisodes(prev => prev.map(e => Number(e.id) === Number(epIndex) ? { ...e, cuts: currentEpForVideo.cuts } : e));
         selectedCuts = currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo);
       }
 
       if (selectedCuts.length > 0) {
-        addLog(`🎬 第${epIndex}${modeInfo.unit}の自動動画化を開始します（対象: ${selectedCuts.length}カット）...`, 'process');
+        addLog(`🎬 第${epIndex}${modeInfo.unit}『${currentEpForVideo.titleJp}』の並列動画化を開始（対象: ${selectedCuts.length}カット）...`, 'process');
         await handleBulkVideo(epIndex);
       }
     }
+  }
 
-    // 先行プレビュー＋動画化完了フラグを確実にONにして全ボタンを解放、かつ全カットのisGeneratingVideoを確実にクリア
-    episodesRef.current = episodesRef.current.map(e => e.id === epIndex ? {
-      ...e,
-      isGenerating: false,
-      isBatchGeneratingVideos: false,
-      isPreviewDone: true,
-      isDone: true,
-      cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
-    } : e);
-    setEpisodes(prev => prev.map(e => e.id === epIndex ? {
-      ...e,
-      isGenerating: false,
-      isBatchGeneratingVideos: false,
-      isPreviewDone: true,
-      isDone: true,
-      cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
-    } : e));
-
-    // 自動ダウンロードがONの場合、パッケージング＆直接保存を実行
-    const freshEp = episodesRef.current.find(e => e.id === epIndex) || newEpisode;
-    if (settings.autoDownload && !isAbortedRef.current) {
-      addLog(`📦 第${epIndex}${modeInfo.unit}の完了時自動ダウンロードを開始します...`, 'process');
+  // ── Phase 3: 自動ダウンロードフェーズ ──
+  if (settings.autoDownload && !isAbortedRef.current) {
+    for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
+      if (isAbortedRef.current) break;
+      const freshEp = episodesRef.current.find(e => Number(e.id) === Number(epIndex));
+      if (!freshEp) continue;
+      addLog(`📦 第${epIndex}${modeInfo.unit}『${freshEp.titleJp}』の完了時自動ダウンロードを開始します...`, 'process');
       const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
       const res = await downloadZip(freshEp, addLog, undefined, currentLogs);
       if (res) {
@@ -256,8 +233,6 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
         });
       }
     }
-    await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
-    cleanupEpisodeMemory();
   }
 
   if (!isAbortedRef.current) {

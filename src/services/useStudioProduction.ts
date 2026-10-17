@@ -353,7 +353,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
     // ── Phase 2: 画像生成フェーズ（確定したプロンプト＆直前構図ネガティブで並列実行） ──
     queueRef.current = [...preparedTasks];
-    const concurrency = Math.min(2, Math.max(1, settings.parallelCount || 2));
+    const concurrency = Math.min(4, Math.max(1, settings.parallelCount || 2));
     const workers = Array(concurrency).fill(null).map(async (_, workerIdx) => {
       // ワーカー間で開始時間をスタッガー（時間差）させ、同時リクエスト集中による503拒絶を防止
       if (workerIdx > 0) {
@@ -727,14 +727,30 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     if (!ep) return;
     setIsProducing(true);
     updateEpisode(epId, { isBatchGeneratingVideos: true });
-    for (const cut of ep.cuts) {
-      if (isAbortedRef.current) break;
-      const currentCut = episodesRef.current.find(e => e.id === epId)?.cuts.find(c => c.id === cut.id);
-      if (currentCut?.isSelectedForVideo && !currentCut.videoBase64 && !currentCut.videoMediaId) {
+
+    const targets = ep.cuts.filter(c => c.isSelectedForVideo && !c.videoBase64 && !c.videoMediaId);
+    const videoQueue = [...targets];
+    const videoConcurrency = Math.min(4, Math.max(1, settings.parallelCount || 2));
+
+    const workers = Array(videoConcurrency).fill(null).map(async (_, wIdx) => {
+      if (wIdx > 0) await sleep(wIdx * 1500);
+      while (videoQueue.length > 0) {
+        if (isAbortedRef.current) break;
+        const currentCut = videoQueue.shift();
+        if (!currentCut) break;
         const targetModel = resolveVideoModel(currentCut.targetVideoModel || settings.videoModel).id;
-        await generateVideo(epId, currentCut.id, targetModel as VideoModelType);
+        try {
+          await generateVideo(epId, currentCut.id, targetModel as VideoModelType);
+        } catch (err) {
+          console.error(`Video generation error on cut ${currentCut.id}:`, err);
+        }
+        if (videoQueue.length > 0 && !isAbortedRef.current) {
+          await sleep(1500);
+        }
       }
-    }
+    });
+    await Promise.all(workers);
+
     // 確実に全カットの isGeneratingVideo を解除し、バッチフラグをOFFにする
     episodesRef.current = episodesRef.current.map(e => e.id === epId ? {
       ...e,

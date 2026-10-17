@@ -30,6 +30,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     runTasks, 
     buildCutTasks, 
     generateVideo, 
+    handleBulkVideo,
     seriesManifestRef, 
     setActiveSeriesManifest, 
     currentAssetRef, 
@@ -297,16 +298,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       }
 
       if (settings.autoVideo && cutsToAnimate.length > 0 && !isAbortedRef.current) {
-        updateEpisode(epId, { isBatchGeneratingVideos: true });
-        for (const cutTask of cutsToAnimate) {
-          if (isAbortedRef.current) break;
-          const currentCut = episodesRef.current.find(e => e.id === epId)?.cuts.find(c => c.id === cutTask.id);
-          if (currentCut && (currentCut.imageMediaId || currentCut.imageBase64)) {
-            const targetModel = resolveVideoModel(currentCut.targetVideoModel || settings.videoModel).id;
-            await generateVideo(epId, cutTask.id, targetModel as VideoModelType);
-          }
-        }
-        updateEpisode(epId, { isBatchGeneratingVideos: false });
+        await handleBulkVideo(epId);
       }
 
       // 確実に全カットの isGeneratingVideo を解除し、先行プレビュー完了フラグをセット

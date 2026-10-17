@@ -786,10 +786,32 @@ export function convertTrackToEpisode(
     let telopPosition: any = 'bottom-center';
 
     if (i === 1) {
-      // ★ 冒頭スワイプキラー（極限顔面・瞳のアップ）
-      shotScale = 'Extreme Close-Up';
-      cameraWork = 'intimate-macro';
-      cinematicAngle = UNIVERSAL_CINE_CYCLE[0].directive;
+      // ★ 冒頭オープニング構図（ユーザー選定 案A: 曲ごとに表情・バスト・横顔・ドアップをローテーション）
+      const rawNum = explicitEpisodeId ?? track.track_no ?? 1;
+      const songIdx = Math.max(0, Number(rawNum) - 1);
+      const introStyle = songIdx % 4;
+
+      if (introStyle === 0) {
+        // パターン0: 王道バストアップ（美少女の可愛い顔＋風になびく髪＋夕暮れ/背景・衣装が映える黄金比ポートレート）
+        shotScale = 'Medium Bust Shot';
+        cameraWork = 'slow-push-in';
+        cinematicAngle = 'Cinematic upper-body bust shot portrait from the chest up, expressive captivating eyes with natural highlights, beautifully styled hair fluttering softly in the ambient breeze, authentic attire details clearly visible, atmospheric scenic background with gorgeous cinematic depth and soft bokeh, perfectly balanced golden-ratio composition, highly aesthetic music video intro';
+      } else if (introStyle === 1) {
+        // パターン1: 横顔・振り返り（情景と光のコントラスト、切ない余韻と輪郭が美しいシネマティック導入）
+        shotScale = 'Medium Close-Up Profile';
+        cameraWork = 'cinematic-orbit';
+        cinematicAngle = 'Artistic medium close-up profile and three-quarter view, gentle turn-back glance towards the camera, emotional silhouette and delicate facial contour, cinematic rim lighting against atmospheric scenic background, breeze blowing through hair, poetic and evocative storytelling frame';
+      } else if (introStyle === 2) {
+        // パターン2: 極限ドアップ・瞳（★偶に来ると刺さる圧倒的な目力・感情のインサート）
+        shotScale = 'Extreme Close-Up';
+        cameraWork = 'intimate-macro';
+        cinematicAngle = UNIVERSAL_CINE_CYCLE[0].directive;
+      } else {
+        // パターン3: 情景と佇まい・ミディアム（世界観全体の空気感・背景に佇む少女）
+        shotScale = 'Medium Shot';
+        cameraWork = 'wide-establishing';
+        cinematicAngle = 'Atmospheric medium shot capturing the protagonist standing gracefully within the scenic environment, full upper body and environment in harmonious balance, ambient breeze, cinematic filmic lighting and natural depth of field, poetic introductory scene';
+      }
       telopPosition = 'bottom-center';
     } else if (isLastCut) {
       // ★ 不在の余韻 ＆ 無限ループ構図
