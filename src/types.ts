@@ -1,7 +1,7 @@
 export type VideoModelType = 'veo-lite' | 'omni-flash' | 'veo-fast' | 'browser-0pt';
 export type ProductionMode = 'episodes' | 'manga' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix' | 'manzai';
 export type RecommendationModel = VideoModelType | 'none';
-export type VideoRatio = 'none' | '30%' | '50%' | '100%';
+export type VideoRatio = 'none' | 'cut2' | '30%' | '50%' | '100%';
 
 export type KenBurnsPreset = 'none' | 'zoom-in' | 'zoom-out' | 'pan-left' | 'pan-right' | 'tilt-up' | 'tilt-down';
 

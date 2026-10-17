@@ -339,6 +339,7 @@ export const VIDEO_MODELS = VIDEO_MODELS_REGISTRY;
 
 export const VIDEO_RATIO_OPTIONS = [
   { label: 'なし(0%)', value: 'none' },
+  { label: '2話目のみ', value: 'cut2' },
   { label: 'キメ(30%)', value: '30%' },
   { label: '半分(50%)', value: '50%' },
   { label: '全部(100%)', value: '100%' }

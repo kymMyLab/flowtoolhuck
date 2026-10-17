@@ -257,6 +257,7 @@ export function createLogMessage(message: string): string {
 }
 
 export function isCutSelectedForVideo(idx: number, ratio?: string): boolean {
+  if (ratio === 'cut2') return idx === 1; // 2話目（Cut 02）のみ
   if (ratio === '30%') return [0, 4, 8, 11].includes(idx);
   if (ratio === '50%') return [0, 2, 4, 6, 8, 10].includes(idx);
   if (ratio === '100%') return true;
