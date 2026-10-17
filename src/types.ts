@@ -156,6 +156,11 @@ export interface Episode {
   packageZipBlobUrl?: string;
   packageZipFilename?: string;
   packageZipSizeStr?: string;
+
+  // 音楽メタデータ連携（リリアプロンプト・スタイル・カラオケ）
+  soundPrompt?: string;
+  musicStyle?: string;
+  instrumentalTrack?: unknown;
 }
 
 export interface GeneratorSettings {

@@ -14,7 +14,9 @@ export interface ImportedTrack {
   title: string;
   format?: string;
   track_type?: string;
+  pool?: string;
   pool_code?: number;
+  style?: string;
   style_code?: number;
   taste?: string;
   taste_name?: string;
@@ -26,6 +28,7 @@ export interface ImportedTrack {
   scene_context?: string;
   character_setting?: string;
   sensory_details?: string;
+  sound_prompt?: string;
   chorus_start_sec?: number;
   chorus_end_sec?: number;
   chorus_duration_sec?: number;
@@ -33,11 +36,42 @@ export interface ImportedTrack {
   chorus_end_ms?: number;
   chorus_lyrics?: string;
   input_lyrics?: string;
+  generated_lyrics?: string;
   lyrics_kanji?: string;
   audio_filename?: string;
   wav_url?: string;
   cover_url?: string;
+  is_instrumental?: boolean;
+  paired_vocal_track_id?: string;
+  instrumental_track?: ImportedTrack;
   [key: string]: unknown;
+}
+
+/**
+ * カラオケ（オフボーカル / インスト）トラックの4重判定
+ * 1. style が "Audio effects"（FlowMusicのStem/オフボーカル固有シグネチャ）
+ * 2. title に (Off-Vocal...), (Instrumental...), インスト, カラオケ 等が含まれる
+ * 3. track_type に Instrumental が含まれる
+ */
+export function isKaraokeOrInstrumentalTrack(track: {
+  title?: string;
+  style?: string;
+  track_type?: string;
+}): boolean {
+  const title = (track.title || '').toLowerCase();
+  const style = (track.style || '').toLowerCase();
+  const trackType = (track.track_type || '').toLowerCase();
+
+  // 1. FlowMusic Stem/Off-Vocal固有シグネチャ
+  if (style === 'audio effects' || style.includes('audio effects')) return true;
+
+  // 2. タイトル文字列の包括的判定
+  if (/(off-?vocal|instrumental|インスト|カラオケ|stem|伴奏)/i.test(title)) return true;
+
+  // 3. Track-Type判定
+  if (trackType.includes('instrumental') && !trackType.includes('vocal')) return true;
+
+  return false;
 }
 
 /**
@@ -218,7 +252,7 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
       }
     }
 
-    return list.map((rawItem, idx) => {
+    const mapped: ImportedTrack[] = list.map((rawItem, idx) => {
       const item: Record<string, unknown> = (rawItem && typeof rawItem === 'object') ? (rawItem as Record<string, unknown>) : {};
 
       const numVal = (v: unknown, fallback: number): number => {
@@ -240,15 +274,30 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
       const title = strVal(item.title) || `トラック ${idx + 1}`;
       const trackId = strVal(item.track_id || item.id) || `trk_${Date.now()}_${idx + 1}`;
 
+      const formatStr = strVal(item.format, '🎵 音楽MV (30カット)');
+
+      // フォーマットに応じたカット数の自動判定 (MV: 30, Shorts/雑学: 12, ドラマ/マンガ: 24)
+      let defaultCuts = 30;
+      const lowerFormat = formatStr.toLowerCase();
+      if (lowerFormat.includes('shorts') || lowerFormat.includes('ショート') || lowerFormat.includes('雑学') || lowerFormat.includes('trivia')) {
+        defaultCuts = 12;
+      } else if (lowerFormat.includes('drama') || lowerFormat.includes('ドラマ') || lowerFormat.includes('マンガ') || lowerFormat.includes('manga')) {
+        defaultCuts = 24;
+      }
+
+      const totalCuts = numVal(item.total_cuts, defaultCuts);
+
       return {
         id: trackId,
         track_id: trackId,
         track_no: numVal(item.track_no, idx + 1),
         title,
-        format: strVal(item.format, '🎵 音楽MV (30カット)'),
+        format: formatStr,
         track_type: strVal(item.track_type, 'Vocal'),
-        total_cuts: numVal(item.total_cuts, 30),
+        total_cuts: totalCuts,
+        pool: strVal(item.pool, '20_日常・アオハル'),
         pool_code: poolCode,
+        style: strVal(item.style),
         style_code: styleCode,
         taste: strVal(item.taste, 'youth_pop'),
         taste_name: strVal(item.taste_name),
@@ -260,6 +309,7 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
         scene_context: strVal(item.scene_context),
         character_setting: strVal(item.character_setting),
         sensory_details: strVal(item.sensory_details),
+        sound_prompt: strVal(item.sound_prompt),
         chorus_start_sec: cStart,
         chorus_end_sec: cEnd,
         chorus_duration_sec: cDur,
@@ -267,12 +317,54 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
         chorus_end_ms: numVal(item.chorus_end_ms, Math.round(cEnd * 1000)),
         chorus_lyrics: strVal(item.chorus_lyrics),
         input_lyrics: strVal(item.input_lyrics),
+        generated_lyrics: strVal(item.generated_lyrics || item.input_lyrics),
         lyrics_kanji: strVal(item.lyrics_kanji),
         audio_filename: strVal(item.audio_filename),
         wav_url: strVal(item.wav_url),
         cover_url: strVal(item.cover_url)
       };
     });
+
+    // 🎸 カラオケ（オフボーカル / インスト）の自動検知＆親ボーカル曲への自動ペアリング
+    const vocalTracks: ImportedTrack[] = [];
+    const instrumentalTracks: ImportedTrack[] = [];
+
+    mapped.forEach(t => {
+      if (isKaraokeOrInstrumentalTrack(t)) {
+        t.is_instrumental = true;
+        instrumentalTracks.push(t);
+      } else {
+        t.is_instrumental = false;
+        vocalTracks.push(t);
+      }
+    });
+
+    // ペアリング処理: タイトル前方一致または同一ベース名でボーカル曲にカラオケを紐付ける
+    instrumentalTracks.forEach(inst => {
+      const cleanInstTitle = inst.title
+        .replace(/\s*[\(（](?:off-?vocal|instrumental|インスト|カラオケ|take\s*\d+|sunset\s*chill\s*off-?vocal)[^\)）]*[\)）]/gi, '')
+        .trim();
+
+      const parent = vocalTracks.find(v => {
+        const cleanVocalTitle = v.title
+          .replace(/\s*[\(（](?:vocal|take\s*\d+|sunset\s*chill\s*ver\.?)[^\)）]*[\)）]/gi, '')
+          .trim();
+        return v.title === cleanInstTitle || cleanVocalTitle === cleanInstTitle || inst.title.startsWith(v.title) || v.title.startsWith(cleanInstTitle);
+      });
+
+      if (parent) {
+        parent.instrumental_track = inst;
+        inst.paired_vocal_track_id = parent.id;
+        console.log(`🔗 [MusicImporter] カラオケ自動ペアリング完了: 「${parent.title}」 ⇦ 「${inst.title}」`);
+      }
+    });
+
+    // ボーカル曲が存在する場合は、ボーカル曲のみを返却（カラオケ版は画像の製造対象外として除外）
+    if (vocalTracks.length > 0) {
+      console.log(`🎤 [MusicImporter] 本命ボーカル曲 ${vocalTracks.length}件を画像製造対象として抽出 (カラオケ ${instrumentalTracks.length}件は自動除外＆ペアリング)`);
+      return vocalTracks;
+    }
+    return mapped;
   } catch (err: unknown) {
     const errMessage = err instanceof Error ? err.message : String(err);
     console.warn('JSON parse failed, attempting plain text parsing fallback...', errMessage);
@@ -664,6 +756,14 @@ export function convertTrackToEpisode(
       promptEnComponents.push(`[TACTILE DETAILS]: ${track.sensory_details.trim().replace(/\.+$/, '')}.`);
     }
 
+    // 音楽スタイル（曲調・雰囲気）の作画プロンプト自動注入
+    if (track.style && track.style !== 'Audio effects') {
+      const moodMatches = track.style.match(/(?:intimate domestic atmosphere|bittersweet nostalgic mood|nostalgic|chill|sparkly|dreamy|melancholic|energetic)[^,]*/gi);
+      if (moodMatches && moodMatches.length > 0) {
+        promptEnComponents.push(`[AUDIO MOOD]: ${[...new Set(moodMatches)].join(', ')}.`);
+      }
+    }
+
     promptEnComponents.push(
       isPropCut 
         ? `Shallow depth of field, dramatic dust motes in sunbeam, crisp macro reflections.` 
@@ -734,6 +834,9 @@ export function convertTrackToEpisode(
     characterTurnaroundBase64: selectedCharacter ? (selectedCharacter.turnaroundBase64 || selectedCharacter.avatarBase64) : undefined,
     characterTurnaroundMediaId: selectedCharacter ? selectedCharacter.turnaroundMediaId : undefined,
     characterTurnaroundPrompt: selectedCharacter ? selectedCharacter.turnaroundPromptEn : undefined,
-    coverThemeVariant: coverThemeVariant
+    coverThemeVariant: coverThemeVariant,
+    soundPrompt: track.sound_prompt,
+    musicStyle: track.style,
+    instrumentalTrack: track.instrumental_track
   };
 }

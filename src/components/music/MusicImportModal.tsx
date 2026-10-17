@@ -586,20 +586,49 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                       )}
 
                       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
                             #{t.track_no || idx + 1}
                           </span>
                           <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
                             Pool {t.pool_code}
                           </span>
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30">
+                            {t.total_cuts || 30}カット
+                          </span>
                           <span className="text-[9px] text-white/40 font-mono">
                             {t.bpm} BPM
                           </span>
+                          {t.instrumental_track && (
+                            <span 
+                              className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/25 text-emerald-300 font-black border border-emerald-500/40 flex items-center gap-0.5 shadow-sm"
+                              title={`カラオケ音源自動ペアリング完了: ${t.instrumental_track.title}`}
+                            >
+                              <span className="material-symbols-outlined text-[11px]">music_note</span>
+                              カラオケ連携済
+                            </span>
+                          )}
                         </div>
-                        <h3 className="text-xs font-black text-white truncate" title={t.title}>
-                          {t.title}
-                        </h3>
+                        <div className="flex items-center justify-between gap-1">
+                          <h3 className="text-xs font-black text-white truncate" title={t.title}>
+                            {t.title}
+                          </h3>
+                          {t.sound_prompt && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(t.sound_prompt!);
+                                alert(`📋 「${t.title}」のリリア宛てプロンプトをクリップボードにコピーしました！`);
+                              }}
+                              className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-[9px] font-bold flex items-center gap-0.5 border border-white/10 shrink-0 cursor-pointer transition-colors"
+                              title="リリア宛て生成プロンプトをコピー"
+                            >
+                              <span className="material-symbols-outlined text-[11px]">content_copy</span>
+                              <span>プロンプト</span>
+                            </button>
+                          )}
+                        </div>
                         <p className="text-[10px] text-white/50 truncate" title={t.surface_theme}>
                           {t.surface_theme || '日常テーマ未設定'}
                         </p>
@@ -626,7 +655,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                       className="w-full py-2 px-3 rounded-lg text-xs font-black bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 hover:border-purple-400 flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[16px]">movie_edit</span>
-                      この曲で{t.total_cuts || 30}カットMVを展開
+                      この曲で{t.total_cuts || 30}カット{t.format?.includes('Shorts') || t.format?.includes('ショート') ? 'Shorts' : 'MV'}を展開
                     </button>
                   </div>
                 );
