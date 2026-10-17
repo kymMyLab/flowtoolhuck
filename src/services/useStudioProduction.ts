@@ -170,7 +170,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     return cuts.map(c => {
       // 三面図（characterTurnaroundMediaId）はキャラクター専用の360度基準シート（背景無しの純粋な設定資料）
       // 物体専用カット（isObjectOnly）のみ除外し、キャラクターが登場する全カット（ドアップ、横顔、手元、足元、俯瞰等）には三面図を最優先バインド！
-      const turnaroundMediaId = ep.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId;
+      const turnaroundMediaId = ep.characterTurnaroundMediaId || (ep.isMvMode ? undefined : activeReferenceRef.current?.mediaId);
       const refMediaId = c.isObjectOnly
         ? undefined
         : (turnaroundMediaId || ep.masterAnchorMediaId);
@@ -398,7 +398,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       }
 
       // 三面図が利用可能なら人物カットで確実にバインド
-      const turnaroundMediaId = ep?.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId;
+      const turnaroundMediaId = ep?.characterTurnaroundMediaId || (ep?.isMvMode ? undefined : activeReferenceRef.current?.mediaId);
       const refMediaId = task.isObjectOnly ? undefined : (turnaroundMediaId || task.referenceImageMediaId || ep?.masterAnchorMediaId);
 
       // ★ ユーザー設計規範: 直近カット（直前1〜2カット）のプロンプト・構図を動的ネガティブプロンプトとして完全バインド

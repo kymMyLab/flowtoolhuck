@@ -23,7 +23,8 @@ export async function ensureCharacterTurnaround(
   if (ep.characterTurnaroundMediaId) {
     return { mediaId: ep.characterTurnaroundMediaId, base64: ep.characterTurnaroundBase64 };
   }
-  if (activeReferenceRef.current?.mediaId) {
+  // MVモード（曲ごとのオムニバス形式）では前話の参照画像を流用せず、曲固有のキャラクターを生成
+  if (!ep.isMvMode && !settings.isMvMode && activeReferenceRef.current?.mediaId) {
     return { mediaId: activeReferenceRef.current.mediaId };
   }
 
@@ -35,10 +36,10 @@ export async function ensureCharacterTurnaround(
   try {
     addLog(`🎨 【三面図マスター生成】360度キャラ一貫性を保証する主人公の三面図（正面・横顔・後ろ姿）を設計中...`, 'process');
     const turnaroundPrompt = buildCharacterTurnaroundPrompt(
-      settings.theme,
+      ep.theme || settings.theme,
       settings.country,
-      settings.era,
-      settings.taste,
+      ep.era || settings.era,
+      ep.taste || settings.taste,
       ep.characterDna
     );
 

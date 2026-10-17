@@ -563,15 +563,15 @@ export function buildFinalCinematicPromptAndNegative(
   if (isHandsShot) {
     // 手元・指先マクロ: 顔・全身・頭部・ベンチ・自販機を完全粉砕
     cineShotSpecificNegatives.push('face', 'eyes', 'head', 'portrait', 'full body', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot', 'sitting on bench', 'bench', 'vending machine');
-    cleanActionPrompt = `[STRICT MACRO HANDS: Tactile extreme close-up macro focusing sharply on hands, fingers, and sleeve cuffs, white knuckles, delicate subconscious fidgeting, hands in sharp focus, background softly blurred, strictly hands and tactile gesture only, absolutely NO face]. ${cleanActionPrompt}`;
+    cleanActionPrompt = `[STRICT MACRO HANDS: Tactile extreme close-up macro focusing sharply on hands, fingers, and subtle emotional gestures, hands in sharp focus, background softly blurred, strictly hands and tactile gesture only, absolutely NO face]. ${cleanActionPrompt}`;
   } else if (isFootstepsShot) {
     // 足元・靴ローアングル: 顔・上半身・ベンチを完全粉砕
     cineShotSpecificNegatives.push('face', 'eyes', 'head', 'torso', 'chest', 'portrait', 'upper body', 'standard eye level', 'high angle', 'sitting on bench', 'bench', 'seated pose');
-    cleanActionPrompt = `[STRICT LOW-ANGLE FOOTSTEPS: Extreme ground-level low-angle worm-eye camera looking at shoes, brisk sneakers, and lower legs taking a resolute kinetic stride across the pavement, ground texture and long shadows stretching forward, dynamic cinematic motion, strictly ground and feet level, absolutely NO face]. ${cleanActionPrompt}`;
+    cleanActionPrompt = `[STRICT LOW-ANGLE FOOTSTEPS: Extreme ground-level low-angle worm-eye camera tracking footsteps and footwear stepping across terrain, natural ground texture and environmental atmosphere, dynamic kinetic motion, strictly ground and feet level, absolutely NO face]. ${cleanActionPrompt}`;
   } else if (isMouthShot) {
     // 口元・吐息マクロ: 全身・足元・ベンチ・自販機を徹底粉砕
     cineShotSpecificNegatives.push('full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot', 'distant face', 'sitting on bench', 'bench', 'vending machine', 'seated posture', 'seated pose');
-    cleanActionPrompt = `[STRICT MACRO MOUTH & BREATH: Intimate macro close-up focusing tightly on parted trembling lips, chin, and throat, delicate puff of translucent white breath dissolving into the chilly air, holding back unspoken words, shallow depth of field with 100% blurred abstract bokeh, strictly lower face and lips only, absolutely NO full body, NO legs, NO torso, NO bench]. ${cleanActionPrompt}`;
+    cleanActionPrompt = `[STRICT MACRO MOUTH & BREATH: Intimate macro close-up focusing tightly on lips, mouth, chin, and throat in emotional contemplation, holding back unspoken words, shallow depth of field with 100% blurred abstract bokeh, strictly lower face and lips only, absolutely NO full body, NO legs, NO torso, NO bench]. ${cleanActionPrompt}`;
   } else if (isProfileShot) {
     // 横顔・プロファイル（90度真横・振り返り）: 正面向き・カメラ目線を徹底粉砕！三面図があっても必ず真横を向かせる
     cineShotSpecificNegatives.push(

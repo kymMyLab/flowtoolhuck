@@ -570,40 +570,38 @@ export function extractLyricScenicMotif(lyric: string): string {
 
   const motifs: string[] = [];
 
-  // 1. 自販機・缶・ボタン・温もり
-  if (/ボタン|アルミ|フタ|つめ.*かけ|おちてき|おもみ/i.test(text)) {
+  // 1. 海・ビーチ・波・砂浜・夏
+  if (/うみ|海|なみ|波|しぶき|飛沫|すな|砂|かいがん|海岸|ビーチ|beach|shore|ocean|wave|サンダル|みずぎ|水着/i.test(text)) {
+    motifs.push('crystal clear emerald ocean shallows, sparkling turquoise ripples, wet white sand shoreline under bright radiant sunlight');
+  }
+  // 2. 雪・冬・粉雪・寒さ・氷
+  else if (/ゆき|雪|こおり|氷|ふぶき|吹雪|しろい|白い|つめたい|冷たい|冬|winter|snow/i.test(text)) {
+    motifs.push('pristine untouched powdery snow covering the tranquil ground, delicate floating snowflakes in crisp silent winter morning air');
+  }
+  // 3. 自販機・缶・ボタン・温もり
+  else if (/ボタン|アルミ|フタ|つめ.*かけ|おちてき|おもみ/i.test(text)) {
     motifs.push('standing by a glowing illuminated drink vending machine on the corner, warm red light glowing in twilight, warm canned beverage dropping into slot');
   } else if (/缶|かん|あたたかさ|ぬくもり|三秒/i.test(text)) {
     motifs.push('holding a warm aluminum drink can between both hands, faint steam rising into the chill, tactile metal reflections');
   }
-
-  // 2. 階段・河川敷・座る
-  if (/かいだん|階段|かわべり|河川敷|こしかけ|腰掛|ひざ/i.test(text)) {
-    motifs.push('concrete riverside stairs embankment overlooking calm dark water, sitting on the steps in natural relaxed posture, twilight sky reflection');
+  // 4. 階段・河川敷・水辺
+  else if (/かいだん|階段|かわべり|河川敷|こしかけ|腰掛|ひざ/i.test(text)) {
+    motifs.push('concrete riverside stairs embankment overlooking calm water, sitting on the steps in natural relaxed posture');
   }
-
-  // 3. 自転車・ライト・すれ違い
-  if (/じてんしゃ|自転車|ライト|まぶし|すれちが/i.test(text)) {
-    motifs.push('dramatic cinematic headlight glare from a passing commuter bicycle cutting through the dusk, intense luminous lens flare slashing across scene');
+  // 5. 自転車・ライト・疾走
+  else if (/じてんしゃ|自転車|ライト|すれちが/i.test(text)) {
+    motifs.push('dramatic cinematic headlight glare from a passing commuter bicycle, intense luminous lens flare slashing across scene');
   }
-
-  // 4. 橋・手すり・日付・数字
-  if (/はし|橋|てすり|手すり|ひづけ|日付|すうじ|刻まれ/i.test(text)) {
-    motifs.push('solitary pedestrian footbridge railing in twilight, weathered metallic texture with etched marks and numbers in fading daylight');
+  // 6. 橋・手すり・日付・掲示板
+  else if (/はし|橋|てすり|手すり|ひづけ|日付|すうじ|刻まれ/i.test(text)) {
+    motifs.push('solitary pedestrian footbridge railing, weathered metallic texture in atmospheric daylight');
   }
-
-  // 5. ファスナー・ウィンドブレーカー・煙・息
-  if (/ファスナ|あご|ひきあげ|しろい|けむり|そら.*のぼ/i.test(text)) {
-    motifs.push('tugging dark jacket zipper tightly all the way up to chin, visible plume of white breath dissolving into the evening sky');
+  // 7. 教室・黒板・放課後
+  else if (/きょうしつ|教室|こくばん|黒板|つくえ|机|カーテン|窓|チャイム/i.test(text)) {
+    motifs.push('empty nostalgic classroom with wooden desks and fluttering curtains catching warm slant sunlight');
   }
-
-  // 6. ポケット・袖口・握りしめる
-  if (/そでぐち|袖口|ポケット|にぎりしめ/i.test(text)) {
-    motifs.push('oversized dark windbreaker sleeves hiding clenched fists, hands shoved deep into coat pockets against the chill');
-  }
-
-  // 7. 影・地面・夕日
-  if (/かげ|影|にしび|西日|つち|地面|床/i.test(text)) {
+  // 8. 影・夕日・西日
+  else if (/にしび|西日|夕暮れ|夕日|sunset|twilight/i.test(text)) {
     motifs.push('long elongated sharp shadow cast across the textured ground under low slant golden-hour sunlight');
   }
 
@@ -662,10 +660,10 @@ export function extractLyricVisualPlot(
       .trim();
   }
 
-  // 接写系（瞳・口元）は、背景環境（河川敷・階段等）に引っ張られて全身引き絵になるのを完全に防ぐため、光とボケ味に特化
+  // 接写系（瞳・口元）は、背景環境に引っ張られて全身引き絵になるのを完全に防ぎつつ、曲の世界観・光とボケ味を調和
   if (isFaceMacro) {
     const emotionContext = cleanLyric ? `reflective emotive expression for "${cleanLyric}", ` : '';
-    return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart} [LIGHTING & BOKEH]: ${emotionContext}Soft atmospheric rim lighting from dusk sky, gorgeous 100% shallow depth of field abstract bokeh, emotional cinematic color grading.`;
+    return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart} [LIGHTING & BOKEH]: ${emotionContext}Atmospheric lighting reflecting the visual theme of "${theme}", gorgeous 100% shallow depth of field abstract bokeh, emotional cinematic color grading.`;
   }
 
   if (adaptiveHint && !adaptiveHint.includes('Cut ')) {
@@ -851,6 +849,8 @@ export function convertTrackToEpisode(
 
     if (track.scene_context && !isMacroOrDetailCut) {
       promptEnComponents.push(`[WORLD AMBIENCE]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
+    } else if (track.surface_theme && isMacroOrDetailCut && !isPropCut) {
+      promptEnComponents.push(`[AMBIENT ATMOSPHERE]: Atmospheric lighting and subtle environment reflecting the world of "${track.surface_theme}".`);
     }
 
     // 登場人物詳細（character_setting）の画角連動インテリジェント注入
@@ -875,11 +875,11 @@ export function convertTrackToEpisode(
 
       if (cleanSettingDna) {
         if (shotScale.includes('Hands')) {
-          // 手元マクロ: 顔・全身を完全排除し、袖口と手元の服装特徴のみ
-          promptEnComponents.push(`[TACTILE DETAILS]: Focused on jacket sleeves and hands only, absolutely NO face.`);
+          // 手元マクロ: 顔・全身を完全排除し、手元・仕草・服装ディテールのみ
+          promptEnComponents.push(`[TACTILE DETAILS]: Focused on hands, fingers, and tactile gestures matching the character's attire and setting, absolutely NO face.`);
         } else if (shotScale.includes('Footsteps')) {
-          // 足元ローアングル: 靴・裾・足元のみ
-          promptEnComponents.push(`[GROUND DETAILS]: Focused on sneakers and pants hem stepping forward across pavement, ground level only, absolutely NO face.`);
+          // 足元ローアングル: 靴・足元・地面のみ
+          promptEnComponents.push(`[GROUND DETAILS]: Focused on footsteps, footwear, and terrain reflecting the setting, ground level only, absolutely NO face.`);
         } else if (shotScale.includes('Close-Up') || shotScale.includes('Profile') || shotScale.includes('Mouth')) {
           // 接写・横顔・口元: 全身立ちポーズを殺し、顔・髪・上半身の容姿特徴のみにフォーカス
           cleanSettingDna = cleanSettingDna.replace(/\b(full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|bench|chair|seated)\b/gi, '').trim();

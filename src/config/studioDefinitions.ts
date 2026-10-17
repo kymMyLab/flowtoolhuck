@@ -745,28 +745,28 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit',
     antiPoseTokens: ['full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'seated pose', 'sitting', 'wide shot', 'medium shot', 'distant face', 'normal portrait', 'waist-up crop', 'stiff standing posture']
   },
-  // 2. Macro Mouth & Breath / 口元・歌唱・吐息のドアップ (言葉を飲み込む喉元、白くほどける息)
+  // 2. Macro Mouth & Breath / 口元・表情・吐息のドアップ (曲の情感を宿す口元)
   {
     scale: 'Macro Mouth & Breath',
     tag: '口元・歌唱・吐息',
     cameraWork: 'intimate-macro',
-    directive: 'Intimate macro close-up focusing tightly on parted trembling lips, chin, and throat, delicate puff of translucent white breath dissolving into the chilly air, holding back unspoken words, shallow depth of field, strictly lower face and lips only',
+    directive: 'Intimate macro close-up focusing tightly on parted expressive lips, chin, and throat, delicate kinetic breathing reflecting the emotional atmosphere, shallow depth of field with 100% blurred background, strictly lower face and lips only',
     antiPoseTokens: ['full body', 'legs', 'feet', 'shoes', 'wide shot', 'medium shot', 'full face', 'distant portrait', 'standing pose']
   },
-  // 3. Macro Hands & Gestures / 手元・指先・袖口のアクション (ポケット、自販機ボタン、缶を握る拳)
+  // 3. Macro Hands & Gestures / 手元・指先のアクション (小道具、指先の仕草、感情の機微)
   {
     scale: 'Macro Hands & Gestures',
     tag: '手元・指先・仕草',
     cameraWork: 'macro-reveal',
-    directive: 'Tactile extreme close-up macro focusing sharply on hands, fingers, and sleeve cuffs, fingers nervously hooking into hem or clenching tightly, suppressed kinetic emotion, white knuckles, background softly blurred, strictly hands and tactile gesture only, NO face',
+    directive: 'Tactile extreme close-up macro focusing sharply on hands, fingers, and tactile gestures matching the character attire and setting, natural expressive kinetic movement, background softly blurred, strictly hands and tactile gesture only, NO face',
     antiPoseTokens: ['full face', 'eyes', 'portrait', 'full body', 'legs', 'feet', 'distant shot', 'standing pose', 'wide shot']
   },
-  // 4. Low-Angle Footsteps / 足元・靴・ローアングル (地面スレスレ、踏み出す一歩)
+  // 4. Low-Angle Footsteps / 足元・歩行・ローアングル (地面スレスレ、踏み出す一歩)
   {
     scale: 'Low-Angle Footsteps',
     tag: '足元・踏み出し',
     cameraWork: 'low-angle-tilt-up',
-    directive: 'Extreme ground-level low-angle worm-eye camera looking at shoes, brisk sneakers, and lower legs taking a resolute kinetic stride across the pavement, ground texture and long shadows stretching forward, dynamic cinematic motion, strictly ground and feet level',
+    directive: 'Extreme ground-level low-angle worm-eye camera looking at footsteps, footwear or feet taking a resolute kinetic stride across the environmental terrain matching the scene setting, ground surface texture, dynamic cinematic motion, strictly ground and feet level',
     antiPoseTokens: ['face', 'portrait', 'upper body', 'chest-up', 'eyes', 'standard eye level', 'high angle', 'looking down']
   },
   // 5. Extreme Wide Landscape Panorama / 超広角・情景主役 (人物は豆粒シルエット、大自然・都市・河川敷すべてに対応)

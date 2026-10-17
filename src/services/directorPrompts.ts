@@ -20,9 +20,14 @@ export function buildCharacterTurnaroundPrompt(
     ? `Strictly authentic historical attire matching ${era || 'period Japan'}. No modern elements.` 
     : `Aesthetic, evocative outfit and styling fitting ${worldSetting}.`;
 
+  const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${characterDna || ''} ${theme || ''}`);
+  const defaultProtagonistDesc = hasExplicitMale 
+    ? `Male protagonist designed for ${worldSetting}.`
+    : `Delicate cute charming anime high school girl protagonist designed for ${worldSetting}.`;
+
   const protagonistProfile = characterDna 
     ? `Protagonist design: ${characterDna}.` 
-    : `Protagonist designed for ${worldSetting}.`;
+    : defaultProtagonistDesc;
 
   return `Master character model sheet, three-view turnaround:
 front view, side profile view, back view of the same single protagonist standing in a neutral pose side-by-side.
