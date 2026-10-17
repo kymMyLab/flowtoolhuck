@@ -481,6 +481,81 @@ export function parseLyricsSections(lyricsText: string): Record<string, string[]
 
 
 /**
+ * 歌詞テキスト（日本語）からキャラクターの具体的なキネティック・アクション（身体動作・仕草・感情の身体化）を自動抽出
+ * 棒立ち・無感情・退屈なポーズを排し、歌詞の感情と直結した生々しい映画的躍動感を注入
+ */
+export function parseLyricKineticAction(lyric: string, section?: string, isPropCut?: boolean): string {
+  if (isPropCut) return '';
+  const text = (lyric || '').trim();
+  if (!text || text.startsWith('♪') || /^\(.*\)$/.test(text)) return '';
+
+  const actions: string[] = [];
+
+  // 1. 手・拳・ポケット・袖（抑圧された感情・微細なしぐさ）
+  if (/にぎりしめ|握る|拳|つかむ|つかんだ|力込/i.test(text)) {
+    actions.push('hands clenching tightly into trembling fists inside oversized sleeves, white knuckles, suppressed emotional intensity');
+  } else if (/ポケット/i.test(text)) {
+    actions.push('hands thrust deeply into jacket pockets, shoulders slightly hunched against the chilly atmosphere');
+  } else if (/袖|指先|爪|引っ掛け/i.test(text)) {
+    actions.push('nervously tugging sleeve cuffs down over fingers, delicate subconscious fidgeting gesture');
+  } else if (/触れ|なぞる|手のひら|あたたか|温もり|ぬくもり/i.test(text)) {
+    actions.push('tenderly resting open palm against a surface, feeling faint lingering warmth through fingertips');
+  } else if (/放す|こぼれ|すり抜け|ほどけ|落と/i.test(text)) {
+    actions.push('fingers slowly parting open in surrender as something intangible slips through grasp');
+  }
+
+  // 2. 呼吸・唇・視線・表情（内面の吐露・沈黙）
+  if (/息|白く|ため息|吐息/i.test(text)) {
+    actions.push('delicate puff of translucent white breath dissolving into the chilly air, soft wistful exhalation');
+  }
+  if (/唇|噛む|言えな|声|叫ぶ|言葉/i.test(text)) {
+    actions.push('biting lower lip slightly, lips parted as if holding back unspoken words');
+  }
+  if (/見上げ|空|仰ぐ|雲|星|天井/i.test(text)) {
+    actions.push('chin lifted upward, reflective glassy eyes gazing into the soaring expanse above');
+  } else if (/うつむ|影|床|足元|見つめる|落とす/i.test(text)) {
+    actions.push('eyes cast downward staring intently at elongated shadows stretching across the ground, pensive bowed posture');
+  }
+  if (/涙|瞳|濡れ|揺れる|滲む/i.test(text)) {
+    actions.push('glistening eyes catching specular rim light, resolute emotional intensity, trembling gaze');
+  } else if (/目を閉じ|瞼|閉じる/i.test(text)) {
+    actions.push('eyes softly closed in peaceful introspection, subtle breeze brushing across eyelashes');
+  }
+
+  // 3. 移動・歩行・振り返り（ドラマの推進・時間の進行）
+  if (/振り返|背中|振り向|立ち止ま|去る/i.test(text)) {
+    actions.push('halting mid-stride and glancing back over shoulder with a bittersweet searching gaze');
+  } else if (/走る|駆け|急ぐ|追いかけ/i.test(text)) {
+    actions.push('dynamic forward athletic momentum, hair and clothes whipping back in kinetic sprint');
+  } else if (/歩く|歩き出|足音|踏み出|一歩/i.test(text)) {
+    actions.push('taking a resolute brisk step forward, dynamic leg stride, clothes swishing with kinetic purpose');
+  } else if (/しゃがむ|座る|膝|うずくま/i.test(text)) {
+    actions.push('crouching down low with knees drawn together, thoughtful solitary resting posture');
+  }
+
+  // 4. 風・光・環境との相互作用
+  if (/風|吹き抜け|靡く|揺れる|冷気/i.test(text)) {
+    actions.push('sudden gust of wind whipping hair across the face, raising forearm to shield eyes against the breeze');
+  }
+  if (/眩しい|光|差し込む|夕暮れ|西日|朝|太陽/i.test(text)) {
+    actions.push('squinting gently against piercing dramatic backlight, hand slightly raised to shade eyes');
+  }
+
+  if (actions.length > 0) {
+    return actions.slice(0, 2).join(', ');
+  }
+
+  // 5. フォールバック（セクションに応じた自律アクション）
+  if (section === 'chorus') {
+    return 'passionate singing posture, chin lifted with resonant emotion, dynamic kinetic hair motion';
+  } else if (section === 'bridge') {
+    return 'stillness charged with anticipation, subtle chest rise on a deep breath, intense introspective focus';
+  } else {
+    return 'natural candid movement, shifting weight slightly with an introspective thoughtful gaze';
+  }
+}
+
+/**
  * 歌詞テキスト・演出ヒント・カット位置から、AI作画が1対1で呼応する具体的な情景・カメラ指示を錬成
  * （FlowTool映画的画角＆アングル自律ディレクションエンジン）
  */
@@ -489,20 +564,34 @@ export function extractLyricVisualPlot(
   hint: string,
   theme: string,
   cutIndex: number,
-  isPropCut: boolean
+  isPropCut: boolean,
+  section?: string
 ): string {
   const cleanHint = (hint || '').replace(/★\s*/g, '').trim();
   const cleanLyric = (lyric || '').trim();
 
-  // 1. 小道具カット（Cut 10: 伏線アイテム）のマクロ静物処理
+  // 1. 小道具カット（Cut 10 / Cut 26: 抽象的・象徴的アイテム）のマクロ静物処理
   if (isPropCut) {
-    const propName = cleanHint || (cleanLyric ? `symbolic item representing "${cleanLyric}"` : 'a meaningful evocative keepsake object');
-    return `[STRICT STILL-LIFE INSERT]: Extreme close-up macro product still-life photography of (${propName}), in natural environmental setting (${theme}), completely deserted scene with strictly NO humans, NO person, shallow depth of field, atmospheric cinematic lighting, crisp tactile reflections and dust motes.`;
+    let propDesc = cleanHint;
+    if (!propDesc) {
+      if (/銀の爪|銀の粒|粒|爪|指輪|鍵|チケット|手紙|メモ|コイン/i.test(cleanLyric)) {
+        propDesc = `a solitary gleaming small keepsake object (${cleanLyric}) resting quietly`;
+      } else if (cleanLyric) {
+        propDesc = `a poetic symbolic still-life item evoking the essence of "${cleanLyric}"`;
+      } else {
+        propDesc = 'a poetic weathered keepsake object imbued with nostalgic memory';
+      }
+    }
+    return `[STRICT STILL-LIFE INSERT]: Cinematic extreme close-up macro product still-life photography of (${propDesc}), in natural environmental setting (${theme}), completely deserted scene with strictly NO humans, NO person, shallow depth of field, atmospheric cinematic lighting, rich tactile textures, crisp specular reflections and fine floating dust motes.`;
   }
 
   // 2. 普遍的8サイクル画角＆カメラアングルディレクション
   const ruleIndex = (cutIndex - 1) % UNIVERSAL_CINE_CYCLE.length;
   const rule = UNIVERSAL_CINE_CYCLE[ruleIndex];
+
+  // 3. 歌詞連動キネティック・アクション（身体動作・感情の身体化）の抽出
+  const kineticAction = parseLyricKineticAction(cleanLyric, section, isPropCut);
+  const actionPart = kineticAction ? ` [KINETIC ACTION: ${kineticAction}].` : '';
 
   // 演出ヒント(cleanHint)や歌詞に「立っている」等の立ちポーズが固定化されている場合、
   // クローズアップや俯瞰などの画角と衝突して棒立ちになるのを防ぐため、画角に合わせてインテリジェントに中和
@@ -513,14 +602,14 @@ export function extractLyricVisualPlot(
 
   if (adaptiveHint) {
     const lyricRef = cleanLyric ? `embodying lyric "${cleanLyric}", ` : '';
-    return `[CAMERA DIRECTIVE: ${rule.directive}]. [SCENE CONTEXT]: Scene ${lyricRef}${adaptiveHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
+    return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart} [SCENE CONTEXT]: Scene ${lyricRef}${adaptiveHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
   }
 
   if (!cleanLyric || cleanLyric.startsWith('♪') || /^\(.*\)$/.test(cleanLyric)) {
-    return `[CAMERA DIRECTIVE: ${rule.directive}]. Set within the world of "${theme}". Atmospheric cinematic depth, natural lighting.`;
+    return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart} Set within the world of "${theme}". Atmospheric cinematic depth, natural lighting.`;
   }
 
-  return `[CAMERA DIRECTIVE: ${rule.directive}]. Scene visually embodying lyric "${cleanLyric}", set within the world of "${theme}".`;
+  return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart} Scene visually embodying lyric "${cleanLyric}", set within the world of "${theme}".`;
 }
 
 /**
@@ -579,9 +668,13 @@ export function convertTrackToEpisode(
     }
 
     const isChorus = section === 'chorus';
-    // 伏線小道具カット: bridge セクションの2番目のカット、または特定インデックス
+    const hint = visualMap[i] || '';
+
+    // 伏線・象徴小道具カット: 30カット構成では、Aメロ終わりの転換点(Cut 10)と、ブリッジ/落ちサビ(Cut 26)の2箇所に配置し、
+    // また演出ヒントに ★ がついているカットも完全自律で小道具・静物カットとして確立
     const bridgeStart = Math.round(totalCuts * 0.80) + 1;
-    const isPropCut = totalCuts >= 20 ? (i === bridgeStart + 1) : (i === 10);
+    const hasStarInHint = (hint && hint.includes('★')) || ((track.visual_hints || '').match(new RegExp(`Cut\\s*${i}[^:\n]*:\\s*\\[?\\s*★`)) !== null);
+    const isPropCut = hasStarInHint || (totalCuts >= 20 ? (i === 10 || i === bridgeStart + 1) : (i === 10));
     const isLastCut = i === totalCuts;
 
     // 動的歌詞配分
@@ -592,7 +685,7 @@ export function convertTrackToEpisode(
     } else if (section === 'verse_a') {
       const sectionOffset = i - Math.round(totalCuts * 0.13);
       const idx = (sectionOffset - 1) % Math.max(1, verse1Lines.length);
-      lyric = verse1Lines[idx] || (verse1Lines.length > 0 ? verse1Lines.join(' ') : '冷たい床に伸びる影');
+      lyric = verse1Lines[idx] || (verse1Lines.length > 0 ? verse1Lines.join(' ') : (isPropCut ? '静かに残された記憶の欠片' : '冷たい床に伸びる影'));
     } else if (section === 'verse_b') {
       const bPool = prechorusLines.length > 0 ? prechorusLines : verse2Lines;
       const sectionOffset = i - Math.round(totalCuts * 0.33);
@@ -614,8 +707,6 @@ export function convertTrackToEpisode(
       lyric = outroLines[idx] || (isLastCut ? '♪ (Outro / Reverb Tail)' : '新しい明日へ歩き出す');
     }
 
-    const hint = visualMap[i] || '';
-
     // 映画的カメラアングル＆画角サイクルの解決
     const cineRule = UNIVERSAL_CINE_CYCLE[(i - 1) % UNIVERSAL_CINE_CYCLE.length];
     let shotScale = cineRule.scale;
@@ -636,7 +727,7 @@ export function convertTrackToEpisode(
       cameraWork = 'wide-establishing';
       telopPosition = 'bottom-center';
     } else if (isPropCut) {
-      // ★ 伏線小道具確定
+      // ★ 伏線・象徴小道具確定（人物除外・マクロ静物インサート）
       shotScale = 'Extreme Close-Up Macro';
       cameraWork = 'macro-reveal';
       isObjectOnly = true;
@@ -649,7 +740,7 @@ export function convertTrackToEpisode(
     }
 
     const hl = extractHighlights(lyric);
-    const visualPlot = extractLyricVisualPlot(lyric, hint, track.surface_theme || track.title, i, isPropCut);
+    const visualPlot = extractLyricVisualPlot(lyric, hint, track.surface_theme || track.title, i, isPropCut, section);
 
     const promptEnComponents = [
       `Masterpiece, high production music video, authentic ${masterCat.pool.visual_contract.style_preset}.`,
