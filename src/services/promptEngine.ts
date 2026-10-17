@@ -68,136 +68,171 @@ export function buildDynamicAntiPreviousNegative(
   if (contexts.length === 0) return '';
 
   const antiTokens: string[] = [];
-  const isCurrentMacro = currentCutScale 
-    ? (/close-up|macro|mouth|hands|feet|footsteps|detail|prop/i.test(currentCutScale))
-    : false;
+  const currentScaleLower = (currentCutScale || '').toLowerCase();
+  const isCurrentEyeMacro = currentScaleLower.includes('extreme close-up') && !currentScaleLower.includes('mouth') && !currentScaleLower.includes('macro');
+  const isCurrentMouth = currentScaleLower.includes('mouth');
+  const isCurrentHands = currentScaleLower.includes('hands');
+  const isCurrentFootsteps = currentScaleLower.includes('footsteps') || currentScaleLower.includes('feet');
+  const isCurrentWide = currentScaleLower.includes('wide') || currentScaleLower.includes('panorama');
+  const isCurrentHighAngle = currentScaleLower.includes('high-angle') || currentScaleLower.includes('overhead');
+  const isCurrentDutch = currentScaleLower.includes('dutch');
+  const isCurrentProfile = currentScaleLower.includes('profile');
+  const isCurrentBust = currentScaleLower.includes('bust');
+  const isCurrentProp = currentScaleLower.includes('prop') || currentScaleLower.includes('object');
 
   for (const ctx of contexts) {
     if (!ctx) continue;
+    const prevScale = (ctx.scale || '').toLowerCase();
+    const prevPrompt = (ctx.prompt || '').toLowerCase();
+    const prevAngle = `${ctx.angle || ''} ${ctx.tag || ''}`.toLowerCase();
 
-    // 1. 直前のスケールに基づく除外トークン
-    if (ctx.scale && SHOT_SCALE_REGISTRY[ctx.scale]) {
-      const scaleNegs = SHOT_SCALE_REGISTRY[ctx.scale].antiRepeatNegatives;
-      // 現在のカットがマクロ接写（瞳、口元、手元など）の場合、直前が接写であっても「接写そのもの」をネガティブで禁止しない！
-      if (isCurrentMacro) {
-        antiTokens.push(...scaleNegs.filter(t => !/close-up|macro|portrait|headshot|face-only/i.test(t)));
-      } else {
-        antiTokens.push(...scaleNegs);
-        antiTokens.push(`identical ${ctx.scale} framing`, `same shot scale as previous scene`);
-      }
-    } else if (ctx.scale) {
-      const lowerScale = ctx.scale.toLowerCase();
-      if (lowerScale.includes('close')) {
-        if (!isCurrentMacro) {
-          antiTokens.push('extreme close-up', 'macro face', 'zoomed in headshot', 'tight portrait', 'identical close camera distance', 'face-only framing');
-        }
-      } else if (lowerScale.includes('wide') || lowerScale.includes('panorama')) {
-        antiTokens.push('distant tiny figure', 'extreme wide shot', 'panoramic view', 'identical wide landscape', 'sweeping panorama');
-      } else if (lowerScale.includes('bust')) {
-        antiTokens.push('bust shot repetition', 'identical bust portrait', 'chest-up framing repetition');
-      } else if (lowerScale.includes('medium')) {
-        antiTokens.push('standard medium shot', 'static bust portrait', 'monotonous medium distance', 'identical standing pose');
+    // ── 1. 直前カットの主要被写体・構図の直接ネガティブ化（直前の画像を次のネガティブにする） ──
+    
+    // (A) 直前が「瞳・顔面ドアップ」の場合
+    if (prevScale.includes('extreme close-up') || prevPrompt.includes('extreme close-up') || prevPrompt.includes('macro portrait') || prevPrompt.includes('sparkling eyes') || prevAngle.includes('瞳')) {
+      if (!isCurrentEyeMacro) {
+        antiTokens.push(
+          'extreme close-up of eyes', 'macro eyes', 'sparkling eye close-up',
+          'iris reflection macro', 'staring eye framing', 'cropped forehead',
+          'identical eye close-up', 'macro face', 'huge eyes filling screen'
+        );
       }
     }
 
-    // 2. 直前のカメラアングル・動きに基づく除外トークン
-    if (ctx.angle || ctx.tag) {
-      const angleStr = `${ctx.angle || ''} ${ctx.tag || ''}`.toLowerCase();
-      if (angleStr.includes('high') || angleStr.includes('down') || angleStr.includes('俯瞰') || angleStr.includes('overhead') || angleStr.includes('bird')) {
-        antiTokens.push('high angle looking down', 'overhead camera perspective', 'bird-eye view repetition');
-      } else if (angleStr.includes('low') || angleStr.includes('worm') || angleStr.includes('煽り') || angleStr.includes('upward')) {
-        antiTokens.push('low angle looking up', 'worm-eye perspective', 'upward tilt repetition');
-      } else if (angleStr.includes('dutch') || angleStr.includes('diagonal') || angleStr.includes('tilt') || angleStr.includes('斜め')) {
-        antiTokens.push('dutch angle tilt', 'diagonal horizon repetition', 'slanted camera axis');
-      } else if (angleStr.includes('profile') || angleStr.includes('side') || angleStr.includes('横')) {
-        antiTokens.push('side profile view', '90-degree profile repetition', 'looking sideways repetition');
-      } else if (angleStr.includes('rear') || angleStr.includes('back') || angleStr.includes('behind') || angleStr.includes('背')) {
-        antiTokens.push('seen from behind', 'back view repetition', 'over the shoulder framing');
+    // (B) 直前が「口元・吐息」の場合
+    if (prevScale.includes('mouth') || prevPrompt.includes('parted lips') || prevPrompt.includes('macro mouth') || prevAngle.includes('口元')) {
+      if (!isCurrentMouth) {
+        antiTokens.push(
+          'parted lips close-up', 'macro mouth', 'mouth and breath framing',
+          'trembling lips', 'lower face macro', 'puff of breath'
+        );
       }
     }
 
-    // 3. 直前のポーズ・姿勢・背景要素・小道具のダイレクトネガティブ化
-    if (ctx.prompt && typeof ctx.prompt === 'string') {
-      const lowerPrompt = ctx.prompt.toLowerCase();
+    // (C) 直前が「手元・指先・袖口」の場合
+    if (prevScale.includes('hands') || prevPrompt.includes('macro hands') || prevPrompt.includes('fingers') || prevAngle.includes('手元')) {
+      if (!isCurrentHands) {
+        antiTokens.push(
+          'macro hands', 'fingers close-up', 'clenching knuckles',
+          'touching hands', 'holding hands', 'sleeve cuffs macro', 'tactile fingers'
+        );
+      }
+    }
 
-      // (A) 姿勢・ポーズ・向きの除外
-      if (lowerPrompt.includes('sit') || lowerPrompt.includes('crouch') || lowerPrompt.includes('seated') || lowerPrompt.includes('floor') || lowerPrompt.includes('ground') || lowerPrompt.includes('座')) {
-        antiTokens.push('sitting on floor', 'sitting down', 'seated posture', 'crouching pose', 'squatting on ground', 'sitting pose', 'hugging knees on floor', 'sitting on bench');
+    // (D) 直前が「足元・靴・ローアングル」の場合
+    if (prevScale.includes('footsteps') || prevScale.includes('feet') || prevPrompt.includes('sneakers') || prevPrompt.includes('footsteps') || prevAngle.includes('足元')) {
+      if (!isCurrentFootsteps) {
+        antiTokens.push(
+          'low-angle footsteps', 'sneakers close-up', 'shoes on ground',
+          'pavement worm-eye view', 'walking feet', 'stride across pavement'
+        );
       }
-      if (lowerPrompt.includes('stand') || lowerPrompt.includes('standing') || lowerPrompt.includes('upright') || lowerPrompt.includes('立')) {
-        antiTokens.push('identical standing pose', 'repeating standing posture', 'static upright standing', 'straight standing pose', 'stiff standing posture', 'standing by railing', 'leaning on fence', 'duplicate fence pose', 'monotonous standing figure');
-      }
-      if (lowerPrompt.includes('fence') || lowerPrompt.includes('railing') || lowerPrompt.includes('手すり') || lowerPrompt.includes('柵')) {
-        antiTokens.push('identical fence background', 'repeating railing', 'same fence perspective');
-      }
-      if (lowerPrompt.includes('walk') || lowerPrompt.includes('walking') || lowerPrompt.includes('stride') || lowerPrompt.includes('歩')) {
-        antiTokens.push('walking in same direction', 'repeating walking pose', 'identical walking stride');
-      }
-      if (lowerPrompt.includes('run') || lowerPrompt.includes('running') || lowerPrompt.includes('dash') || lowerPrompt.includes('走')) {
-        antiTokens.push('running pose repetition', 'dashing posture repetition');
-      }
-      if (lowerPrompt.includes('turn') || lowerPrompt.includes('behind') || lowerPrompt.includes('back view') || lowerPrompt.includes('背') || lowerPrompt.includes('振り')) {
-        antiTokens.push('seen from behind', 'looking back over shoulder', 'back turned', 'rear view repetition');
-      }
-      if (lowerPrompt.includes('front') || lowerPrompt.includes('facing camera') || lowerPrompt.includes('centered') || lowerPrompt.includes('look at') || lowerPrompt.includes('eye contact') || lowerPrompt.includes('正面') || lowerPrompt.includes('目線')) {
-        antiTokens.push('facing front camera', 'identical front view', 'centered head-on angle', 'looking straight into camera', 'monotonous eye contact');
-      }
-      if (lowerPrompt.includes('lean') || lowerPrompt.includes('leaning') || lowerPrompt.includes('寄りかか')) {
-        antiTokens.push('leaning against wall', 'leaning on railing', 'slouching posture');
-      }
-      if (lowerPrompt.includes('chin') || lowerPrompt.includes('cheek') || lowerPrompt.includes('thinking') || lowerPrompt.includes('頬杖')) {
-        antiTokens.push('hand on chin pose', 'hand on cheek', 'touching face pose');
-      }
+    }
 
-      // (B) 傘・手持ち小道具・アクセサリの重複防止（前カットと同一ポーズ・小道具の完全排除）
-      if (lowerPrompt.includes('umbrella') || lowerPrompt.includes('parasol') || lowerPrompt.includes('傘')) {
-        antiTokens.push('holding umbrella', 'open umbrella', 'umbrella in hand', 'repeating umbrella pose', 'holding clear vinyl umbrella', 'carrying umbrella', 'parasol');
+    // (E) 直前が「超広角・情景主役」の場合
+    if (prevScale.includes('wide') || prevScale.includes('panorama') || prevPrompt.includes('panorama') || prevAngle.includes('超広角')) {
+      if (!isCurrentWide) {
+        antiTokens.push(
+          'extreme wide panorama', 'distant miniature silhouette', 'sweeping landscape',
+          'vast panoramic horizon', 'distant tiny figure', 'panoramic establishing shot'
+        );
       }
-      if (lowerPrompt.includes('phone') || lowerPrompt.includes('smartphone') || lowerPrompt.includes('mobile') || lowerPrompt.includes('スマホ') || lowerPrompt.includes('携帯')) {
-        antiTokens.push('holding smartphone', 'looking at phone screen', 'repeating phone gesture', 'operating mobile phone');
-      }
-      if (lowerPrompt.includes('cup') || lowerPrompt.includes('mug') || lowerPrompt.includes('glass') || lowerPrompt.includes('drink') || lowerPrompt.includes('coffee') || lowerPrompt.includes('tea') || lowerPrompt.includes('コップ')) {
-        antiTokens.push('holding cup', 'holding mug', 'drinking pose', 'holding beverage');
-      }
-      if (lowerPrompt.includes('bike') || lowerPrompt.includes('bicycle') || lowerPrompt.includes('cycling') || lowerPrompt.includes('自転車')) {
-        antiTokens.push('riding bicycle', 'identical bicycle pose', 'repeating bicycle framing');
-      }
-      if (lowerPrompt.includes('book') || lowerPrompt.includes('notebook') || lowerPrompt.includes('reading') || lowerPrompt.includes('本') || lowerPrompt.includes('読書')) {
-        antiTokens.push('holding book', 'reading book pose', 'holding notebook', 'open book repetition');
-      }
-      if (lowerPrompt.includes('sword') || lowerPrompt.includes('katana') || lowerPrompt.includes('blade') || lowerPrompt.includes('刀')) {
-        antiTokens.push('holding katana', 'drawing sword pose', 'brandishing weapon repetition');
-      }
-      if (lowerPrompt.includes('fan') || lowerPrompt.includes('folding fan') || lowerPrompt.includes('sensu') || lowerPrompt.includes('扇子')) {
-        antiTokens.push('holding folding fan', 'waving fan repetition');
-      }
-      if (lowerPrompt.includes('headphone') || lowerPrompt.includes('earphone') || lowerPrompt.includes('ヘッドホン')) {
-        antiTokens.push('wearing headphones repetition', 'adjusting headphones');
-      }
+    }
 
-      // (C) 特徴的な背景・小道具シチュエーションの重複防止
-      if (lowerPrompt.includes('window') || lowerPrompt.includes('balcony') || lowerPrompt.includes('窓')) {
-        antiTokens.push('identical window background', 'same window frame backdrop', 'repeating window perspective');
+    // (F) 直前が「真上俯瞰・トップダウン」の場合
+    if (prevScale.includes('overhead') || prevScale.includes('high-angle') || prevPrompt.includes('bird-eye') || prevPrompt.includes('overhead') || prevAngle.includes('俯瞰')) {
+      if (!isCurrentHighAngle) {
+        antiTokens.push(
+          'overhead high-angle', 'bird-eye view', 'top-down perspective',
+          'looking down from 75 degrees', 'steep high angle view', 'overhead looking down'
+        );
       }
-      if (lowerPrompt.includes('cardboard') || lowerPrompt.includes('moving box') || lowerPrompt.includes('段ボール')) {
-        antiTokens.push('identical cardboard boxes background', 'repeating stacked moving boxes');
-      }
-      if (lowerPrompt.includes('door') || lowerPrompt.includes('doorway') || lowerPrompt.includes('扉') || lowerPrompt.includes('ドア')) {
-        antiTokens.push('identical doorway framing', 'same door backdrop');
-      }
-      if (lowerPrompt.includes('street') || lowerPrompt.includes('sidewalk') || lowerPrompt.includes('crossing') || lowerPrompt.includes('交差点') || lowerPrompt.includes('路地')) {
-        antiTokens.push('identical street perspective', 'repeating sidewalk angle', 'same street corner');
-      }
+    }
 
-      for (const rule of POSE_CONTRAST_RULES) {
-        if (rule.triggerKeywords.some(keyword => lowerPrompt.includes(keyword))) {
-          antiTokens.push(...rule.antiRepeatNegatives);
-        }
+    // (G) 直前が「斜め傾き・ダッチアングル」の場合
+    if (prevScale.includes('dutch') || prevPrompt.includes('dutch') || prevPrompt.includes('diagonal') || prevAngle.includes('ダッチ') || prevAngle.includes('斜め')) {
+      if (!isCurrentDutch) {
+        antiTokens.push(
+          'dutch angle tilt', 'diagonal horizon', 'slanted camera angle',
+          '35-degree tilt', 'off-axis frame', 'slanted horizon repetition'
+        );
+      }
+    }
+
+    // (H) 直前が「完全真横・プロファイル」の場合
+    if (prevScale.includes('profile') || prevPrompt.includes('side profile') || prevAngle.includes('横顔') || prevAngle.includes('プロファイル')) {
+      if (!isCurrentProfile) {
+        antiTokens.push(
+          'exact side profile', '90-degree profile view', 'looking sideways',
+          'profile silhouette', 'profile repetition'
+        );
+      }
+    }
+
+    // (I) 直前が「バストショット・日常シチュエーション」の場合
+    if (prevScale.includes('bust') || prevPrompt.includes('chest-up') || prevAngle.includes('バスト')) {
+      if (!isCurrentBust) {
+        antiTokens.push(
+          'bust shot portrait', 'chest-up framing', 'centered upper body portrait',
+          'identical bust portrait repetition'
+        );
+      }
+    }
+
+    // (J) 直前が「象徴小道具・静物マクロ」の場合
+    if (prevScale.includes('prop') || prevScale.includes('object') || prevPrompt.includes('still-life') || prevAngle.includes('静物')) {
+      if (!isCurrentProp) {
+        antiTokens.push(
+          'still life object macro', 'key prop close-up', 'inanimate item',
+          'deserted scene without human'
+        );
+      }
+    }
+
+    // ── 2. 直前カットのカメラアングル・動きの直接除外 ──
+    if (prevAngle.includes('high') || prevAngle.includes('俯瞰') || prevAngle.includes('overhead')) {
+      if (!isCurrentHighAngle) antiTokens.push('high angle looking down', 'overhead camera perspective');
+    } else if (prevAngle.includes('low') || prevAngle.includes('煽り') || prevAngle.includes('upward')) {
+      if (!currentScaleLower.includes('low')) antiTokens.push('low angle looking up', 'worm-eye perspective');
+    } else if (prevAngle.includes('dutch') || prevAngle.includes('diagonal') || prevAngle.includes('斜め')) {
+      if (!isCurrentDutch) antiTokens.push('dutch angle tilt', 'slanted camera axis');
+    }
+
+    // ── 3. 直前カットの固有シチュエーション・背景・小道具の排除 ──
+    if (prevPrompt.includes('crosswalk') || prevPrompt.includes('crossing') || prevPrompt.includes('横断歩道')) {
+      antiTokens.push('crosswalk', 'pedestrian crossing', 'white zebra road stripes');
+    }
+    if (prevPrompt.includes('bench') || prevPrompt.includes('ベンチ') || prevPrompt.includes('seated') || prevPrompt.includes('sitting')) {
+      antiTokens.push('bench', 'sitting on bench', 'seated posture', 'sitting pose');
+    }
+    if (prevPrompt.includes('stairs') || prevPrompt.includes('riverbank') || prevPrompt.includes('階段') || prevPrompt.includes('河川敷')) {
+      antiTokens.push('concrete stairs', 'riverbank steps', 'stairs embankment');
+    }
+    if (prevPrompt.includes('bicycle') || prevPrompt.includes('bike') || prevPrompt.includes('自転車')) {
+      antiTokens.push('bicycle', 'riding bike');
+    }
+    if (prevPrompt.includes('umbrella') || prevPrompt.includes('傘')) {
+      antiTokens.push('holding umbrella', 'umbrella', 'parasol');
+    }
+    if (prevPrompt.includes('phone') || prevPrompt.includes('smartphone') || prevPrompt.includes('スマホ')) {
+      antiTokens.push('holding smartphone', 'operating phone');
+    }
+    if (prevPrompt.includes('can') || prevPrompt.includes('aluminum') || prevPrompt.includes('缶')) {
+      antiTokens.push('aluminum can', 'holding can', 'beverage can');
+    }
+    if (prevPrompt.includes('classroom') || prevPrompt.includes('chalkboard') || prevPrompt.includes('blackboard') || prevPrompt.includes('教室') || prevPrompt.includes('机')) {
+      antiTokens.push('classroom desks', 'blackboard', 'empty classroom');
+    }
+
+    // ── 4. ポーズの重複防止 ──
+    for (const rule of POSE_CONTRAST_RULES) {
+      if (rule.triggerKeywords.some(keyword => prevPrompt.includes(keyword))) {
+        antiTokens.push(...rule.antiRepeatNegatives);
       }
     }
   }
 
-  // 4. 一般的な重複防止ガード
+  // 5. 一般的な重複防止ガード
   antiTokens.push(
     'identical composition to previous cut',
     'repeating previous scene composition',
@@ -205,7 +240,6 @@ export function buildDynamicAntiPreviousNegative(
     'monotonous repetitive pose'
   );
 
-  // 重複排除して最大30トークン程度に制限（トークンあふれ防止）
   const uniqueTokens = Array.from(new Set(antiTokens));
   return uniqueTokens.slice(0, 30).join(', ');
 }
@@ -585,52 +619,44 @@ export function buildFinalCinematicPromptAndNegative(
   if (isObjectCut) {
     characterPromptLayer = '[STRICT STILL-LIFE INSERT: completely deserted scene, strictly NO humans, NO person, pure macro shot of object and atmospheric environment]. ';
     negativeLayers.push('human, person, girl, boy, man, woman, child, face, eye, hands, fingers, legs, feet, body silhouette, crowd, portrait');
-  } else if (effectiveDna) {
-    // クローズアップ等の場合、DNAやキャラクター設定内の立ちポーズ・服装指定を安全に顔・瞳のみに純化
-    let sanitizedDna = effectiveDna;
+  } else {
+    // 参照画像（三面図）またはキャラクターDNAが存在する場合、全人物カットで主人公の同一性を100%固定
+    const baseDna = effectiveDna || 'female anime protagonist';
+    let sanitizedDna = baseDna;
+
     if (isCloseUpShot || isMouthShot) {
       sanitizedDna = sanitizedDna
         .replace(/\b(standing|standing upright|upright|full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|pants|skirt|jacket|coat|windbreaker|sitting|seated|bench)\b/gi, '')
         .trim();
-      characterPromptLayer = `[PROTAGONIST CLOSE-UP DNA: ${sanitizedDna}, face, facial features, hair, eyes only]. `;
+      characterPromptLayer = `[PROTAGONIST CLOSE-UP: ${sanitizedDna}, face, facial features, hair, eyes matching reference turnaround sheet]. `;
     } else if (isHandsShot || isFootstepsShot) {
       sanitizedDna = sanitizedDna
         .replace(/\b(face|eyes|hair|headshot|portrait|smile|gaze)\b/gi, '')
         .trim();
-      characterPromptLayer = `[PROTAGONIST ATTIRE DNA: ${sanitizedDna}]. `;
+      characterPromptLayer = `[PROTAGONIST ATTIRE: ${sanitizedDna}]. `;
     } else if (task.isEndFrame) {
       // 到達点フレーム: 顔正面の縛りを解き、髪型・衣装の一貫性を維持したまま大胆なアングル変更を許容
       characterPromptLayer = `[PROTAGONIST CONTINUITY: ${sanitizedDna}, strictly maintain identical hairstyle, hair color, and clothing from this transformed perspective]. `;
       negativeLayers.push('different character, change of clothes, multiple people, extra person, duplicate characters');
     } else {
-      characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${sanitizedDna}, strictly maintain identical facial appearance, hairstyle, hair color, and clothing across all scenes]. `;
-      negativeLayers.push('different character, different face, different hair, change of clothes, multiple people, extra person, duplicate characters, changing appearance');
+      characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${sanitizedDna}, strictly maintain identical female protagonist appearance, hairstyle, hair color, and clothing across all scenes matching turnaround sheet]. `;
+      negativeLayers.push('different character, different face, different hair, change of clothes, multiple people, extra person, duplicate characters, changing appearance, male character, boy');
     }
   }
 
   // 参照画像（Reference Images / Turnaround / Master Anchor）
-  // 【超重要防衛】マクロ接写（瞳ドアップ、口元、手元、足元、小道具静物）には人物参照画像を絶対に渡さない！
-  // 渡してしまうと、Google AIが前カットの全身座りポーズや背景（ベンチ・自販機・画角）をi2i参照して完コピしてしまう。
+  // 物体専用カット（isObjectCut）のみ人物参照を除外し、
+  // キャラクターが登場する全カット（ドアップ、横顔、手元、足元、俯瞰、斜め等）には三面図を100%完全バインド！
   const targetMediaIds: string[] = [];
-  if (!isMacroOrDetailShot) {
+  if (!isObjectCut) {
     if (task.referenceImageMediaId) targetMediaIds.push(task.referenceImageMediaId);
     if (activeReference?.mediaId && !targetMediaIds.includes(activeReference.mediaId)) {
       targetMediaIds.push(activeReference.mediaId);
     }
   }
 
-  // マクロ接写カットの場合、前カットから継承されたネガティブから「接写そのものを阻害するワード」を緊急サニタイズ
-  let sanitizedNegativeLayers = negativeLayers;
-  if (isCloseUpShot || isMouthShot) {
-    sanitizedNegativeLayers = negativeLayers.map(layer => {
-      if (!layer) return '';
-      return layer
-        .split(',')
-        .map(t => t.trim())
-        .filter(t => !/^(extreme close-up|macro face|zoomed in headshot|tight portrait|face-only framing|cropped face filling screen)$/i.test(t))
-        .join(', ');
-    });
-  }
+  // ネガティブレイヤーの結合（前カットからの対比ネガティブは絶対に消さない）
+  let sanitizedNegativeLayers = negativeLayers.filter(Boolean);
 
   // 【プロンプト先頭配置ガード】マクロ接写・極限画角の場合、AIが最初に見る位置にカメラディレクティブを直接配置して最優先解釈させる
   let leadingDirective = '';

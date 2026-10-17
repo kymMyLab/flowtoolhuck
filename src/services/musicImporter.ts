@@ -871,9 +871,9 @@ export function convertTrackToEpisode(
           promptEnComponents.push(`[CHARACTER PORTRAIT DETAILS]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
         } else if (shotScale.includes('Wide') || shotScale.includes('Panorama')) {
           // 引き・全景: 人物が中央に立ちはだからないよう、風景に溶け込むシルエットとして注入
-          promptEnComponents.push(`[CHARACTER IN SCENERY]: Subtle atmospheric silhouette of ${cleanSettingDna.replace(/\.+$/, '')}, naturally placed in the expansive landscape.`);
+          promptEnComponents.push(`[CHARACTER IN SCENERY]: Subtle atmospheric silhouette of female protagonist, ${cleanSettingDna.replace(/\.+$/, '')}, naturally placed in the expansive landscape.`);
         } else {
-          promptEnComponents.push(`[CHARACTER SETTING]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
+          promptEnComponents.push(`[CHARACTER SETTING]: Female protagonist, ${cleanSettingDna.replace(/\.+$/, '')}.`);
         }
       }
     }
@@ -903,7 +903,7 @@ export function convertTrackToEpisode(
     const recentCuts = cuts.slice(Math.max(0, cuts.length - 2));
     const dynamicAntiPrev = recentCuts.length > 0 ? buildDynamicAntiPreviousNegative(recentCuts.map(c => ({
       scale: c.shotScale,
-      angle: c.cameraWork,
+      angle: c.cinematicAngle || c.cameraWork,
       prompt: c.promptEn
     })), shotScale) : '';
 
@@ -915,6 +915,7 @@ export function convertTrackToEpisode(
       narrationEn: '',
       shotScale: shotScale,
       cameraWork: cameraWork,
+      cinematicAngle: cineRule.directive,
       isObjectOnly: isObjectOnly,
       panelLayout: isPropCut ? 'single' : (isChorus ? 'diagonal-slash' : 'single'),
       focalPoint: isPropCut ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'key_prop' } : undefined,

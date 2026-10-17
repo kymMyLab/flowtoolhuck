@@ -168,17 +168,12 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
   const buildCutTasks = (ep: Episode, cuts: Cut[], styleKey?: string): GenerationTask[] => {
     return cuts.map(c => {
-      // 物体・インサートカット（isObjectOnly）や、極限マクロ（瞳、口元、手元、足元）なら人物参照（三面図/マスター絵）は絶対に除外！
-      // （※全身立ちポーズや前カットのベンチ・背景をi2i参照して完コピしてしまうのを完全防止）
-      const isMacroOrDetailCut = c.isObjectOnly || 
-        c.shotScale?.includes('Close-Up') || 
-        c.shotScale?.includes('Macro') || 
-        c.shotScale?.includes('Hands') || 
-        c.shotScale?.includes('Footsteps');
-
-      const refMediaId = isMacroOrDetailCut
+      // 三面図（characterTurnaroundMediaId）はキャラクター専用の360度基準シート（背景無しの純粋な設定資料）
+      // 物体専用カット（isObjectOnly）のみ除外し、キャラクターが登場する全カット（ドアップ、横顔、手元、足元、俯瞰等）には三面図を最優先バインド！
+      const turnaroundMediaId = ep.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId;
+      const refMediaId = c.isObjectOnly
         ? undefined
-        : (ep.masterAnchorMediaId || ep.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId);
+        : (turnaroundMediaId || ep.masterAnchorMediaId);
 
       let effectivePrompt = c.promptEn || '';
       const rawLyric = c.telop?.fullText || c.narrationJp || '';
@@ -194,6 +189,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         epId: ep.id,
         cutId: c.id,
         prompt: effectivePrompt,
+        negativePrompt: c.negativePrompt,
         styleKey: styleKey || ep.taste || settings.taste,
         imageModel: settings.imageModel,
         isMvMode: ep.isMvMode,
@@ -217,6 +213,26 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
   const handleGenerateRemaining = async (epId: number) => {
     const ep = episodesRef.current.find(e => e.id === epId);
     if (!ep) return;
+
+    // エピソードの三面図が未アップロードなら即座にFlowへ自動アップロード
+    if (ep.characterTurnaroundBase64 && !ep.characterTurnaroundMediaId) {
+      try {
+        addLog(`📤 Ep.${epId}: 三面図（Character Turnaround）をFlowへ自動アップロード中...`, 'process');
+        const uploadRes = await Flow.upload({
+          base64: ep.characterTurnaroundBase64,
+          mimeType: 'image/png',
+          name: `Turnaround_Ep${epId}.png`
+        });
+        if (uploadRes?.mediaId) {
+          ep.characterTurnaroundMediaId = uploadRes.mediaId;
+          updateEpisode(epId, { characterTurnaroundMediaId: uploadRes.mediaId });
+          addLog(`✅ Ep.${epId}: 三面図のmediaIdを発行・確定しました [${uploadRes.mediaId}]`, 'success');
+        }
+      } catch (err: any) {
+        addLog(`⚠️ Ep.${epId}: 三面図アップロード失敗: ${err.message}`, 'warning');
+      }
+    }
+
     const remainingCuts = ep.cuts.filter(c => !c.imageBase64);
     if (remainingCuts.length === 0) {
       addLog(`Ep.${epId}: すべての画像が生成済みです。`, 'info');
@@ -362,15 +378,37 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎨 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成中 [${modelDef.label}]...`, 'process');
 
     try {
+      const ep = episodesRef.current.find(e => e.id === epId);
+
+      // 三面図が未アップロードなら画像生成直前にも確実にアップロードして救済
+      if (ep?.characterTurnaroundBase64 && !ep.characterTurnaroundMediaId) {
+        try {
+          const uploadRes = await Flow.upload({
+            base64: ep.characterTurnaroundBase64,
+            mimeType: 'image/png',
+            name: `Turnaround_Ep${epId}.png`
+          });
+          if (uploadRes?.mediaId) {
+            ep.characterTurnaroundMediaId = uploadRes.mediaId;
+            updateEpisode(epId, { characterTurnaroundMediaId: uploadRes.mediaId });
+          }
+        } catch (e) {
+          console.warn('Turnaround upload error:', e);
+        }
+      }
+
+      // 三面図が利用可能なら人物カットで確実にバインド
+      const turnaroundMediaId = ep?.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId;
+      const refMediaId = task.isObjectOnly ? undefined : (turnaroundMediaId || task.referenceImageMediaId || ep?.masterAnchorMediaId);
+
       // ★ ユーザー設計規範: 直近カット（直前1〜2カット）のプロンプト・構図を動的ネガティブプロンプトとして完全バインド
       let effectiveNegative = task.negativePrompt || '';
       if (cutId > 1) {
-        const ep = episodesRef.current.find(e => e.id === epId);
-        const prevCuts = ep?.cuts.filter(c => (c.id === cutId - 1 || c.id === cutId - 2) && c.promptEn) || [];
+        const prevCuts = ep?.cuts.filter(c => (c.id === cutId - 1 || c.id === cutId - 2) && (c.promptEn || c.shotScale)) || [];
         if (prevCuts.length > 0) {
           const antiPrev = buildDynamicAntiPreviousNegative(prevCuts.map(c => ({
             scale: c.shotScale,
-            angle: c.cinematicAngle,
+            angle: c.cinematicAngle || c.cameraWork,
             prompt: c.promptEn,
             tag: c.cameraWork
           })), task.shotScale);
@@ -383,6 +421,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
       const taskWithAntiPrevious: GenerationTask = {
         ...task,
+        referenceImageMediaId: refMediaId,
         negativePrompt: effectiveNegative
       };
 
@@ -392,6 +431,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       updateCut(epId, cutId, {
         finalPromptUsed: finalPrompt,
         finalNegativeUsed: finalNegative,
+        negativePrompt: effectiveNegative,
         styleKeyUsed: task.styleKey || settings.taste,
         imageModelUsed: modelDef.label
       });
