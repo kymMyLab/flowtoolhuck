@@ -218,6 +218,9 @@ export interface GenerationTask {
   isObjectOnly?: boolean;
   isEndFrame?: boolean;
   endFrameCameraDirective?: string;
+  shotScale?: string;
+  cinematicAngle?: string;
+  camera?: string;
 }
 
 /** 

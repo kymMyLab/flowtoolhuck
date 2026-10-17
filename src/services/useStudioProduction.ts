@@ -200,7 +200,10 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         forbiddenKeywordsEn: ep.forbiddenKeywordsEn,
         referenceImageMediaId: refMediaId,
         characterDna: ep.characterDna,
-        isObjectOnly: c.isObjectOnly
+        isObjectOnly: c.isObjectOnly,
+        shotScale: c.shotScale,
+        cinematicAngle: c.cinematicAngle,
+        camera: c.cameraWork
       };
     });
   };
@@ -309,7 +312,10 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       preparedTasks.push({
         ...task,
         prompt: promptEn,
-        negativePrompt: antiPreviousNegative
+        negativePrompt: antiPreviousNegative,
+        shotScale,
+        cinematicAngle,
+        camera: directResult.cameraWork || existingCut?.cameraWork
       });
     }
 

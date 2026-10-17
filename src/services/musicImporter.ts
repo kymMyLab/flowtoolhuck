@@ -477,9 +477,71 @@ export function parseLyricsSections(lyricsText: string): Record<string, string[]
   return sections;
 }
 
+export interface CineCameraRule {
+  scale: string;
+  cameraWork: string;
+  directive: string;
+}
+
 /**
- * 歌詞テキスト・演出ヒント・カット位置から、AI作画が1対1で呼応する具体的な情景・被写体・小道具プロンプトを錬成
- * （「あればそれを意識し、なければ楽曲世界観から自動生成補完する」FlowTool映画的演出ロジック）
+ * 映画・アニメMV制作の王道演出に基づく8ショット普遍カメラアングル＆画角サイクル
+ * （小道具や特定の仕草・場所を一切決め打ちせず、純粋な画角・カメラアングル・パースの切り替えによって
+ * どんなジャンル・設定・プロンプトでも劇的なバリエーションと映像的躍動感を自動演出する）
+ */
+export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
+  // 1. Extreme Close-Up / 寄り・表情・瞳 (顔・目元のみ。全身・立ち姿を完全排除)
+  {
+    scale: 'Extreme Close-Up',
+    cameraWork: 'intimate-macro',
+    directive: 'Arresting cinematic extreme close-up shot focusing intensely on facial emotion, eyes, and subtle expression, shallow depth of field with soft atmospheric background blur, strictly tight head and face framing only, absolutely NO full body, NO standing pose'
+  },
+  // 2. Dramatic Low-Angle Upward / 煽り (見上げるローアングルパース)
+  {
+    scale: 'Low-Angle Upward',
+    cameraWork: 'low-angle-tilt-up',
+    directive: 'Dynamic low-angle upward camera perspective looking up from below toward subject against expansive sky and dramatic horizon, strong vertical perspective and kinetic parallax'
+  },
+  // 3. Dutch-Angle Diagonal Tilt / 斜め傾き (緊張感・斜め構図)
+  {
+    scale: 'Dutch-Angle Medium',
+    cameraWork: 'dutch-tilt',
+    directive: 'Stylistic Dutch-angle shot with a dynamic diagonal tilted camera frame, off-kilter dynamic perspective with sharp diagonal leading lines, conveying emotional motion and kinetic tension'
+  },
+  // 4. Extreme Wide Environmental Panorama / 引き・情景主役 (人物は風景の一部の小さなシルエット)
+  {
+    scale: 'Extreme Wide Panorama',
+    cameraWork: 'wide-establishing',
+    directive: 'Grand panoramic extreme wide establishing shot where vast sweeping landscape, horizon, and immense atmosphere dominate the canvas, character naturally integrated as a tiny distant silhouette within the grand environment'
+  },
+  // 5. Overhead High-Angle Bird\'s-Eye / 俯瞰・見下ろし (幾何学・影)
+  {
+    scale: 'Overhead High-Angle',
+    cameraWork: 'high-angle-tilt-down',
+    directive: 'Steep overhead high-angle bird\'s-eye view looking down from high vantage point, emphasizing ground geometry, environmental textures, and long cast shadows across the ground plane'
+  },
+  // 6. Cinematic Side Profile / 真横・横顔 (横向き・余白を活かしたシネマ構図)
+  {
+    scale: 'Medium Close-Up Profile',
+    cameraWork: 'cinematic-profile-pan',
+    directive: 'Clean cinematic profile view from the side, subject positioned along rule-of-thirds looking across generous negative space toward the frame edge, rich directional rim lighting'
+  },
+  // 7. Atmospheric Rear View / 背後・見送り (背中から広がる世界)
+  {
+    scale: 'Medium-Wide Rear View',
+    cameraWork: 'over-the-shoulder',
+    directive: 'Atmospheric rear three-quarter view seen from behind looking outward into the expansive world, capturing silhouette and spatial depth as the character gazes forward'
+  },
+  // 8. Cinematic Medium Bust / 感情の収束・バストアップ (胸上・自然な佇まい)
+  {
+    scale: 'Medium Bust Shot',
+    cameraWork: 'medium-push-in',
+    directive: 'Cinematic chest-up bust framing capturing nuanced upper-body gesture and calm presence, soft directional rim lighting, beautifully framed rule-of-thirds composition'
+  }
+];
+
+/**
+ * 歌詞テキスト・演出ヒント・カット位置から、AI作画が1対1で呼応する具体的な情景・カメラ指示を錬成
+ * （FlowTool映画的画角＆アングル自律ディレクションエンジン）
  */
 export function extractLyricVisualPlot(
   lyric: string,
@@ -493,63 +555,31 @@ export function extractLyricVisualPlot(
 
   // 1. 小道具カット（Cut 10: 伏線アイテム）のマクロ静物処理
   if (isPropCut) {
-    const propName = cleanHint || (cleanLyric ? `symbolic item representing "${cleanLyric}"` : 'a solitary meaningful keepsake object');
+    const propName = cleanHint || (cleanLyric ? `symbolic item representing "${cleanLyric}"` : 'a meaningful evocative keepsake object');
     return `[STRICT STILL-LIFE INSERT]: Extreme close-up macro product still-life photography of (${propName}), in natural environmental setting (${theme}), completely deserted scene with strictly NO humans, NO person, shallow depth of field, atmospheric cinematic lighting, crisp tactile reflections and dust motes.`;
   }
 
-  // 2. 普遍的・映画的なストーリーテリング構図（30カット対応・多様化サイクル）
-  let universalAction = '';
-  const actionIndex = cutIndex === 1 ? 1 : (((cutIndex - 2) % 10) + 2);
-  switch (actionIndex) {
-    case 1:
-      universalAction = 'Arresting cinematic extreme close-up visual hook on character\'s intense emotional eyes and expressive face, dramatic directional lighting highlighting sparkling iris reflections, candid gaze, shallow depth of field, face and eyes only, strictly no full-body standing';
-      break;
-    case 2:
-      universalAction = 'Atmospheric medium shot in dynamic walking motion, character taking brisk strides forward along the pavement, long cast shadows, natural kinetic movement rather than standing still';
-      break;
-    case 3:
-      universalAction = 'Intimate close-up macro framing purely on character\'s hand and delicate fingers touching texture or adjusting sleeve cuffs, subtle emotional gesture, shallow depth of field, strictly hand-focused composition, no full body';
-      break;
-    case 4:
-      universalAction = 'Dutch-tilt medium angle, character in three-quarter profile gazing upwards into the ambient twilight sky, dramatic diagonal perspective with distinct leading lines';
-      break;
-    case 5:
-      universalAction = 'Cinematic wide-angle establishing landscape shot, expansive horizon and dramatic clouds dominating the frame, atmospheric distance, non-centered composition';
-      break;
-    case 6:
-      universalAction = 'Cinematic medium-wide shot seen from behind, character walking away into the glowing distance, expressive silhouette and rich environmental atmospheric depth';
-      break;
-    case 7:
-      universalAction = 'Overhead high-angle perspective looking down from above, capturing character from bird\'s-eye view against the textured ground reflections, distinct top-down geometry';
-      break;
-    case 8:
-      universalAction = 'Intense emotional medium close-up, powerful three-quarter expressive framing capturing subtle facial nuance and emotional catharsis under dramatic rim lighting';
-      break;
-    case 9:
-      universalAction = 'Dynamic low-angle upward shot, character pausing and looking toward the horizon from a heroic low perspective against towering backdrop';
-      break;
-    case 10:
-      universalAction = 'Heroic medium close-up bust shot, character turning slightly with calm resolve and serene expression, bathed in twilight warmth';
-      break;
-    case 11:
-      universalAction = 'Cinematic crane-up pull-out wide shot of the expansive scenery, elongated shadows stretching into the distance, character silhouette blending into the atmospheric horizon, seamless circular loop back into beginning';
-      break;
-    default:
-      universalAction = 'Atmospheric cinematic framing matching the musical progression';
-      break;
+  // 2. 普遍的8サイクル画角＆カメラアングルディレクション
+  const ruleIndex = (cutIndex - 1) % UNIVERSAL_CINE_CYCLE.length;
+  const rule = UNIVERSAL_CINE_CYCLE[ruleIndex];
+
+  // 演出ヒント(cleanHint)や歌詞に「立っている」等の立ちポーズが固定化されている場合、
+  // クローズアップや俯瞰などの画角と衝突して棒立ちになるのを防ぐため、画角に合わせてインテリジェントに中和
+  let adaptiveHint = cleanHint;
+  if (rule.scale.includes('Close-Up') || rule.scale.includes('High-Angle')) {
+    adaptiveHint = adaptiveHint.replace(/(立っている|佇んでいる|佇む|直立して|直立の|standing|standing upright)/gi, '').trim();
   }
 
-  // もしCT198等の演出ヒント(visual_hints)が存在する場合、各カット固有のカメラアングル・構図ディレクティブと強力融合！
-  if (cleanHint) {
+  if (adaptiveHint) {
     const lyricRef = cleanLyric ? `embodying lyric "${cleanLyric}", ` : '';
-    return `[CAMERA DIRECTIVE: ${universalAction}]. [SCENE CONTEXT]: Scene ${lyricRef}${cleanHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
+    return `[CAMERA DIRECTIVE: ${rule.directive}]. [SCENE CONTEXT]: Scene ${lyricRef}${adaptiveHint}. Set within the world of "${theme}". Dynamic atmospheric depth, natural cinematic lighting, beautiful filmic color grading.`;
   }
 
   if (!cleanLyric || cleanLyric.startsWith('♪') || /^\(.*\)$/.test(cleanLyric)) {
-    return `${universalAction}, set in "${theme}". Atmospheric cinematic depth, natural lighting.`;
+    return `[CAMERA DIRECTIVE: ${rule.directive}]. Set within the world of "${theme}". Atmospheric cinematic depth, natural lighting.`;
   }
 
-  return `Scene visually embodying lyric "${cleanLyric}": ${universalAction}, set in "${theme}".`;
+  return `[CAMERA DIRECTIVE: ${rule.directive}]. Scene visually embodying lyric "${cleanLyric}", set within the world of "${theme}".`;
 }
 
 /**
@@ -645,9 +675,10 @@ export function convertTrackToEpisode(
 
     const hint = visualMap[i] || '';
 
-    // ショットスケールとカメラワーク
-    let shotScale = 'Wide';
-    let cameraWork = 'static';
+    // 映画的カメラアングル＆画角サイクルの解決
+    const cineRule = UNIVERSAL_CINE_CYCLE[(i - 1) % UNIVERSAL_CINE_CYCLE.length];
+    let shotScale = cineRule.scale;
+    let cameraWork = cineRule.cameraWork;
     let isObjectOnly = false;
     let telopStyle: any = 'mv-kinetic-pop';
     let telopTransition: any = 'gsap-kinetic-stagger';
@@ -655,13 +686,13 @@ export function convertTrackToEpisode(
 
     if (i === 1) {
       // ★ 冒頭スワイプキラー（極限顔面・瞳のアップ）
-      shotScale = 'Extreme Close-Up (Swipe Hook)';
-      cameraWork = 'push-in-heroic';
+      shotScale = 'Extreme Close-Up';
+      cameraWork = 'intimate-macro';
       telopPosition = 'bottom-center';
     } else if (isLastCut) {
       // ★ 不在の余韻 ＆ 無限ループ構図
-      shotScale = 'Cinematic Wide (Void Loop)';
-      cameraWork = 'crane-up-fade';
+      shotScale = 'Extreme Wide Panorama';
+      cameraWork = 'wide-establishing';
       telopPosition = 'bottom-center';
     } else if (isPropCut) {
       // ★ 伏線小道具確定
@@ -671,40 +702,9 @@ export function convertTrackToEpisode(
       telopStyle = 'mv-neon-glow';
       telopPosition = 'bottom-center';
     } else if (isChorus) {
-      // ★ サビ演出
-      const cIdx = i % 4;
-      shotScale = cIdx === 0 ? 'Extreme Wide Dynamic' : (cIdx === 1 ? 'Heroic Close-Up' : (cIdx === 2 ? 'Medium Dynamic' : 'Wide Dynamic'));
-      cameraWork = i % 2 === 0 ? 'cinematic-orbit' : 'dynamic-pan-zoom';
+      // ★ サビ演出: カメラワークに動的エナジーを付加
+      cameraWork = (i % 2 === 0) ? 'cinematic-orbit' : 'dynamic-pan-zoom';
       telopPosition = 'center-stagger';
-    } else {
-      // 通常カットの多様化サイクル
-      const normIdx = i % 6;
-      switch (normIdx) {
-        case 0:
-          shotScale = 'Medium Close-Up';
-          cameraWork = 'push-in';
-          break;
-        case 1:
-          shotScale = 'Dutch Angle Medium (Clue Hook)';
-          cameraWork = 'dutch-tilt';
-          break;
-        case 2:
-          shotScale = 'Low Angle Medium (Discovery)';
-          cameraWork = 'pull-out';
-          break;
-        case 3:
-          shotScale = 'Overhead High-Angle';
-          cameraWork = 'tilt-down';
-          break;
-        case 4:
-          shotScale = 'Dynamic Tracking Side Profile';
-          cameraWork = 'pan-left';
-          break;
-        default:
-          shotScale = 'Medium Bust Shot';
-          cameraWork = 'handheld';
-          break;
-      }
     }
 
     const hl = extractHighlights(lyric);
@@ -740,23 +740,27 @@ export function convertTrackToEpisode(
       promptEnComponents.push(`[SCENE CONTEXT]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
     }
 
-    // 登場人物詳細（character_setting）の注入（手元マクロカットや風景カットでは全身立ち姿の重複を避けるため除外）
-    const curActionIndex = i === 1 ? 1 : (((i - 2) % 10) + 2);
-    const isHandMacroCut = curActionIndex === 3;
-    const isLandscapeCut = curActionIndex === 5;
-    if (track.character_setting && !isPropCut && !isLastCut && !isHandMacroCut && !isLandscapeCut) {
-      const cleanSettingDna = track.character_setting
-        .replace(/\b(standing|seated|sitting|holding an? umbrella|holding umbrellas?|with an? umbrella|holding hands?|walking straight|facing camera)\b/gi, '')
+    // 登場人物詳細（character_setting）の画角連動インテリジェント注入
+    // （画角がClose-UpやHigh-Angle、Wideの時に「立っている」という固定ポーズが構図を殺さないよう、FlowTool側でスマートに中和）
+    if (track.character_setting && !isPropCut && !isLastCut) {
+      let cleanSettingDna = track.character_setting
+        .replace(/\b(standing|standing upright|upright|seated|sitting|holding an? umbrella|holding umbrellas?|with an? umbrella|holding hands?|walking straight|facing camera)\b/gi, '')
         .replace(/(傘を差して|傘を持ち|傘を持った|傘を差す|立っている|佇んでいる|佇む|直立して|正面を向いて)/g, '')
         .replace(/\s{2,}/g, ' ')
         .trim();
+
       if (cleanSettingDna) {
-        promptEnComponents.push(`[CHARACTER SETTING]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
+        if (shotScale.includes('Close-Up') || shotScale.includes('Profile')) {
+          // 接写・横顔: 全身立ちポーズを殺し、顔・髪・上半身の容姿特徴のみにフォーカス
+          cleanSettingDna = cleanSettingDna.replace(/\b(full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet)\b/gi, '').trim();
+          promptEnComponents.push(`[CHARACTER PORTRAIT DETAILS]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
+        } else if (shotScale.includes('Wide') || shotScale.includes('Panorama')) {
+          // 引き・全景: 人物が中央に立ちはだからないよう、風景に溶け込むシルエットとして注入
+          promptEnComponents.push(`[CHARACTER IN SCENERY]: Subtle atmospheric silhouette of ${cleanSettingDna.replace(/\.+$/, '')}, naturally placed in the expansive landscape.`);
+        } else {
+          promptEnComponents.push(`[CHARACTER SETTING]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
+        }
       }
-    } else if (isHandMacroCut) {
-      promptEnComponents.push(`[SUBJECT FOCUS]: Hands, fingers, wrist, and sleeve fabric only. Intimate macro tactile shot. Strictly NO head, NO full face.`);
-    } else if (isLandscapeCut) {
-      promptEnComponents.push(`[SUBJECT FOCUS]: Expansive scenery, riverbank staircase, vast sky gradient. Pure environmental composition.`);
     }
 
     // 五感・小道具ディテール（sensory_details）の注入
