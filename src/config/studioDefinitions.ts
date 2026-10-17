@@ -737,39 +737,39 @@ export interface CineCameraRule {
  * （Google AIの中庸バイアスを強制破壊し、ドアップ・煽り・ダッチ・超広角・俯瞰・横顔を極限の迫力で描画させる）
  */
 export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
-  // 1. Extreme Close-Up / 極限ドアップ・瞳と表情 (身体・背景・立ち姿を完全粉砕)
+  // 1. Extreme Close-Up / 極限ドアップ・瞳と表情 (身体・全身立ち姿を完全粉砕、環境ボケは世界観に調和)
   {
     scale: 'Extreme Close-Up',
     tag: '極限ドアップ・瞳',
     cameraWork: 'intimate-macro',
-    directive: 'Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly face and eyes only, absolutely NO full body, NO torso, NO legs, NO background scene',
-    antiPoseTokens: ['full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'sitting on bench', 'seated on chair', 'room interior', 'outdoor street', 'wide shot', 'medium shot', 'distant face']
+    directive: 'Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit',
+    antiPoseTokens: ['full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'seated pose', 'sitting', 'wide shot', 'medium shot', 'distant face', 'normal portrait', 'waist-up crop', 'stiff standing posture']
   },
-  // 2. Dramatic Low-Angle Upward / 地面スレスレからの極限煽り見上げ (アイレベル立ちを完全粉砕)
+  // 2. Dramatic Low-Angle Upward / 地面スレスレからの極限煽り見上げ (どんな屋内・屋外・SF・ファンタジーでも100%適合)
   {
     scale: 'Low-Angle Upward',
     tag: '極限煽り・見上げ',
     cameraWork: 'low-angle-tilt-up',
-    directive: 'Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening, subject standing tall framed against the immense towering sky and dynamic overhead clouds, dramatic worm-eye parallax',
-    antiPoseTokens: ['eye-level shot', 'horizontal camera angle', 'flat perspective', 'looking down', 'high angle', 'normal eye level', 'standard seated pose', 'level horizon']
+    directive: 'Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening, subject standing tall framed against the soaring expanse above, dramatic worm-eye parallax',
+    antiPoseTokens: ['eye-level shot', 'horizontal camera angle', 'flat perspective', 'looking down', 'high angle', 'normal eye level', 'standard seated pose', 'level horizon', 'flat straight perspective']
   },
   // 3. Dutch-Angle Diagonal Tilt / 傾き35度のダッチアングル・斜め構図 (水平直立を完全粉砕)
   {
     scale: 'Dutch-Angle Medium',
     tag: '斜め傾き・ダッチアングル',
     cameraWork: 'dutch-tilt',
-    directive: 'Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal horizon slashing across the frame, dramatic diagonal leading lines creating palpable tension and emotional instability, stylish cinematic slant',
+    directive: 'Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal lines slashing across the frame, off-kilter dynamic perspective creating palpable tension and emotional instability, stylish cinematic slant',
     antiPoseTokens: ['horizontal level frame', 'straight horizontal camera', 'level horizon', 'flat standard shot', 'vertical upright symmetry', 'level camera']
   },
-  // 4. Extreme Wide Landscape Panorama / 超広角・風景主役 (中央の巨大人物を完全粉砕)
+  // 4. Extreme Wide Landscape Panorama / 超広角・情景主役 (人物は豆粒シルエット、大自然・都市・宇宙船内・城郭すべてに対応)
   {
     scale: 'Extreme Wide Panorama',
     tag: '超広角・情景主役',
     cameraWork: 'wide-establishing',
-    directive: 'Grand panoramic environmental tableau where the sweeping sky, colossal horizon, and expansive landscape overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, immense breathing space and breathtaking atmospheric scale',
+    directive: 'Grand panoramic environmental tableau where the vast grand environment, immense background scale, and sweeping atmospheric horizon overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, breathtaking spatial depth',
     antiPoseTokens: ['close-up', 'medium shot', 'prominent character in foreground', 'large face', 'dominant person in center', 'waist-up', 'chest-up', 'normal portrait']
   },
-  // 5. Overhead High-Angle Bird\'s-Eye / 真上75度俯瞰・影と幾何学 (正面アイレベルを完全粉砕)
+  // 5. Overhead High-Angle Bird\'s-Eye / 真上75度俯瞰・影と幾何学 (床・地面のテクスチャと影を主役に)
   {
     scale: 'Overhead High-Angle',
     tag: '真上俯瞰・影と幾何学',
@@ -785,20 +785,20 @@ export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
     directive: 'Exact 90-degree horizontal side profile view of subject placed along the outer rule-of-thirds, gazing across immense open negative space toward the frame edge, razor-sharp silhouette with brilliant directional rim lighting outlining hair and facial profile',
     antiPoseTokens: ['facing camera', 'front view', '3/4 front view', 'direct eye contact', 'looking at viewer', 'centered portrait', 'front-facing character']
   },
-  // 7. Medium-Wide Rear View / 背後・見送り・視線共有 (正面向きを完全粉砕)
+  // 7. Medium-Wide Rear View / 背後・見送り・視線共有 (背中越しに広がる世界)
   {
     scale: 'Medium-Wide Rear View',
     tag: '背後・見送り・視線共有',
     cameraWork: 'over-the-shoulder',
-    directive: 'Atmospheric rear three-quarter view seen from behind looking outward into the glowing depth of the world, back turned to camera, expressive back silhouette, sharing the character forward gaze toward the unfolding horizon',
+    directive: 'Atmospheric rear three-quarter view seen from behind looking outward into the glowing depth of the world, back turned to camera, expressive back silhouette, sharing the character forward gaze toward the unfolding scene ahead',
     antiPoseTokens: ['facing camera', 'front view', 'looking back at camera', 'direct eye contact', 'full frontal face', 'front view portrait']
   },
-  // 8. Medium Bust Shot / 堂々たるバストアップ (全身棒立ちを完全粉砕)
+  // 8. Medium Bust Shot / 堂々たるバストアップ (胸上・自然な佇まいと陰影)
   {
     scale: 'Medium Bust Shot',
     tag: '堂々たるバストアップ',
     cameraWork: 'medium-push-in',
-    directive: 'Cinematic tight chest-up bust framing capturing nuanced facial emotion and upper-body posture, heavy directional side chiaroscuro rim lighting, strong contrast between light and shadow, shallow depth of field, strictly chest and head only',
+    directive: 'Cinematic tight chest-up bust framing capturing nuanced facial emotion and upper-body posture, rich directional side chiaroscuro rim lighting, strong contrast between light and shadow, shallow depth of field, strictly chest and head only',
     antiPoseTokens: ['full body', 'legs', 'feet', 'knees', 'shoes', 'standing full length', 'wide landscape', 'tiny distant face']
   }
 ];

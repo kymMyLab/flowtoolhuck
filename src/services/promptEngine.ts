@@ -493,36 +493,36 @@ export function buildFinalCinematicPromptAndNegative(
   const cineShotSpecificNegatives: string[] = [];
 
   if (isCloseUpShot) {
-    // 寄り・接写: 顔面・瞳・表情のみ。身体・椅子・背景を徹底粉砕
+    // 寄り・接写: 顔面・瞳・表情のみ。身体・椅子・背景を徹底粉砕（世界観のボケ味は保持）
     cineShotSpecificNegatives.push(
       'full body', 'torso', 'chest', 'shoulders', 'arms', 'hands', 'legs', 'feet', 'shoes',
-      'standing pose', 'seated on chair', 'sitting on bench', 'room interior', 'outdoor street',
-      'wide shot', 'medium shot', 'distant face', 'normal portrait', 'waist-up crop', 'stiff standing posture'
+      'standing pose', 'seated pose', 'sitting', 'wide shot', 'medium shot', 'distant face',
+      'normal portrait', 'waist-up crop', 'stiff standing posture'
     );
-    cleanActionPrompt = `[STRICT MACRO PORTRAIT: Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly face and eyes only, absolutely NO full body, NO torso, NO legs, NO background scene]. ${cleanActionPrompt
+    cleanActionPrompt = `[STRICT MACRO PORTRAIT: Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit]. ${cleanActionPrompt
       .replace(/\b(standing|standing upright|upright|standing by[^\,]+|leaning on[^\,]+|seated|sitting|chair|bench)\b/gi, '')
       .replace(/(立っている|佇んでいる|佇む|直立して|座っている|ベンチ|椅子)/g, '')}`;
   } else if (isLowAngle) {
-    // 煽り: 地面スレスレからの極限見上げパースを強制
+    // 煽り: 地面スレスレからの極限見上げパースを強制（空・天井・宇宙船などあらゆる空間に対応）
     cineShotSpecificNegatives.push(
       'eye-level shot', 'horizontal camera angle', 'flat perspective', 'looking down',
       'high angle', 'normal eye level', 'standard seated pose', 'level horizon', 'flat straight perspective'
     );
-    cleanActionPrompt = `[STRICT DRAMATIC LOW-ANGLE: Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening, subject standing tall framed against the immense towering sky and dynamic overhead clouds, dramatic worm-eye parallax]. ${cleanActionPrompt}`;
+    cleanActionPrompt = `[STRICT DRAMATIC LOW-ANGLE: Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening, subject standing tall framed against the soaring expanse above, dramatic worm-eye parallax]. ${cleanActionPrompt}`;
   } else if (isDutchAngle) {
     // ダッチアングル: 斜め35度傾き
     cineShotSpecificNegatives.push(
       'horizontal level frame', 'straight horizontal camera', 'level horizon', 'flat standard shot',
       'vertical upright symmetry', 'level camera'
     );
-    cleanActionPrompt = `[STRICT DUTCH ANGLE: Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal horizon slashing across the frame, dramatic diagonal leading lines, stylish cinematic slant]. ${cleanActionPrompt}`;
+    cleanActionPrompt = `[STRICT DUTCH ANGLE: Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal lines slashing across the frame, off-kilter dynamic perspective creating palpable tension and emotional instability, stylish cinematic slant]. ${cleanActionPrompt}`;
   } else if (isWideShot) {
-    // 引き・全景: 風景が画面の90%を支配、被写体は豆粒シルエット
+    // 引き・全景: 風景・環境が画面の90%を支配、被写体は豆粒シルエット
     cineShotSpecificNegatives.push(
       'close-up', 'medium shot', 'prominent character in foreground', 'large face',
       'dominant person in center', 'waist-up', 'chest-up', 'normal portrait'
     );
-    cleanActionPrompt = `[STRICT EXTREME WIDE PANORAMA: Grand panoramic environmental tableau where sweeping sky, colossal horizon, and expansive landscape overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, immense breathing space and breathtaking atmospheric scale]. ${cleanActionPrompt}`;
+    cleanActionPrompt = `[STRICT EXTREME WIDE PANORAMA: Grand panoramic environmental tableau where the vast grand environment, immense background scale, and sweeping atmospheric horizon overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, breathtaking spatial depth]. ${cleanActionPrompt}`;
   } else if (isHighAngle) {
     // 俯瞰: 真上75度見下ろし
     cineShotSpecificNegatives.push(
