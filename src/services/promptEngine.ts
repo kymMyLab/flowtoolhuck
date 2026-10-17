@@ -645,8 +645,26 @@ export function buildFinalCinematicPromptAndNegative(
     characterPromptLayer = '[STRICT STILL-LIFE INSERT: completely deserted scene, strictly NO humans, NO person, pure macro shot of object and atmospheric environment]. ';
     negativeLayers.push('human, person, girl, boy, man, woman, child, face, eye, hands, fingers, legs, feet, body silhouette, crowd, portrait');
   } else {
-    // 参照画像（三面図）またはキャラクターDNAが存在する場合、全人物カットで主人公の同一性を100%固定
-    const baseDna = effectiveDna || 'female anime protagonist';
+    // ── 案A（明示的に男と指定されていない限り100%美少女・女子高生にする）規約 ──
+    const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${effectiveDna || ''} ${cleanActionPrompt}`);
+    
+    // 明示的な男指定がない限り、デフォルトを「透明感のある女子高生・美少女」に強制固定
+    let baseDna = effectiveDna || '';
+    if (!hasExplicitMale) {
+      if (!baseDna) {
+        baseDna = 'delicate cute anime high school girl, beautiful female protagonist, soft feminine features';
+      } else {
+        // 日本語「高校生」「学生」等の曖昧な表現を「女子高校生」に強化
+        baseDna = baseDna.replace(/(?<!女子)高校生/g, '女子高校生')
+          .replace(/(?<!女子)学生/g, '女子学生');
+        if (!/\b(female|girl|woman|美少女|女子)\b/i.test(baseDna)) {
+          baseDna = `delicate anime girl, ${baseDna}`;
+        }
+      }
+      // 全人物カット共通で男性・少年化を100%完全除外！
+      negativeLayers.push('male, boy, man, masculine, male character, young boy, guy, muscular, broad shoulders, facial hair, stubble');
+    }
+
     let sanitizedDna = baseDna;
 
     if (isProfileShot) {
@@ -679,8 +697,8 @@ export function buildFinalCinematicPromptAndNegative(
       characterPromptLayer = `[PROTAGONIST CONTINUITY: ${sanitizedDna}, strictly maintain identical hairstyle, hair color, and clothing from this transformed perspective]. `;
       negativeLayers.push('different character, change of clothes, multiple people, extra person, duplicate characters');
     } else {
-      characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${sanitizedDna}, strictly maintain identical female protagonist appearance, hairstyle, hair color, and clothing across all scenes matching turnaround sheet]. `;
-      negativeLayers.push('different character, different face, different hair, change of clothes, multiple people, extra person, duplicate characters, changing appearance, male character, boy');
+      characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${sanitizedDna}, strictly maintain identical appearance, hairstyle, hair color, and clothing across all scenes matching turnaround sheet]. `;
+      negativeLayers.push('different character, different face, different hair, change of clothes, multiple people, extra person, duplicate characters, changing appearance');
     }
   }
 

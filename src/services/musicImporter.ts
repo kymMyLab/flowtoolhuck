@@ -862,6 +862,17 @@ export function convertTrackToEpisode(
         .replace(/\s{2,}/g, ' ')
         .trim();
 
+      // ── 案A（明示的に男と指定されていない限り100%美少女・女子高生にする）規約 ──
+      const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${cleanSettingDna} ${track.track_name || ''} ${track.style || ''}`);
+      if (!hasExplicitMale) {
+        cleanSettingDna = cleanSettingDna
+          .replace(/(?<!女子)高校生/g, '女子高校生')
+          .replace(/(?<!女子)学生/g, '女子学生');
+        if (!/\b(female|girl|woman|美少女|女子)\b/i.test(cleanSettingDna)) {
+          cleanSettingDna = `delicate cute anime high school girl, ${cleanSettingDna}`;
+        }
+      }
+
       if (cleanSettingDna) {
         if (shotScale.includes('Hands')) {
           // 手元マクロ: 顔・全身を完全排除し、袖口と手元の服装特徴のみ
