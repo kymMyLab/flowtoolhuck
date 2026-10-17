@@ -264,7 +264,7 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
             <div className="flex flex-col gap-1 bg-black/60 p-2.5 rounded-lg border border-white/5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
-                  <span>⚡ 送信された完全プロンプト (Master Prompt)</span>
+                  <span>{cut.finalPromptUsed ? '⚡ API送信実績プロンプト (実際に入力された値)' : '📋 送信予定プロンプト (未送信プレビュー)'}</span>
                 </span>
                 {cut.finalPromptUsed && (
                   <button 
@@ -272,12 +272,12 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
                     onClick={() => navigator.clipboard.writeText(cut.finalPromptUsed || '')}
                     className="text-[9px] text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/40 px-1.5 py-0.5 rounded border border-amber-500/30 transition-colors cursor-pointer"
                   >
-                    コピー
+                    コピー (送信実績)
                   </button>
                 )}
               </div>
               <p className="text-[10px] text-white/70 font-mono leading-relaxed max-h-24 overflow-y-auto dark-scrollbar select-text break-words">
-                {cut.finalPromptUsed || (cut.promptEn ? `(推定) Masterpiece, authentic ${cut.styleKeyUsed || ''}... ${cut.promptEn}` : '生成ログがありません')}
+                {cut.finalPromptUsed || (cut.promptEn ? `(未送信プレビュー) Masterpiece, authentic ${cut.styleKeyUsed || ''}... ${cut.promptEn}` : '生成ログがありません')}
               </p>
             </div>
 
@@ -285,7 +285,7 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
             <div className="flex flex-col gap-1 bg-black/60 p-2.5 rounded-lg border border-white/5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
-                  <span>🚫 送信されたネガティブプロンプト</span>
+                  <span>{cut.finalNegativeUsed ? '🚫 API送信実績ネガティブ (実際に入力された値)' : '🚫 送信予定ネガティブ (未送信プレビュー)'}</span>
                 </span>
                 {cut.finalNegativeUsed && (
                   <button 
@@ -293,12 +293,12 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
                     onClick={() => navigator.clipboard.writeText(cut.finalNegativeUsed || '')}
                     className="text-[9px] text-red-300 hover:text-white bg-red-500/20 hover:bg-red-500/40 px-1.5 py-0.5 rounded border border-red-500/30 transition-colors cursor-pointer"
                   >
-                    コピー
+                    コピー (送信実績)
                   </button>
                 )}
               </div>
               <p className="text-[10px] text-white/70 font-mono leading-relaxed max-h-20 overflow-y-auto dark-scrollbar select-text break-words">
-                {cut.finalNegativeUsed || cut.negativePrompt || '（指定なし）'}
+                {cut.finalNegativeUsed || (cut.negativePrompt ? `(未送信プレビュー) ${cut.negativePrompt}` : '(指定なし)')}
               </p>
             </div>
           </div>

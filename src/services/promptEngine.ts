@@ -58,25 +58,39 @@ export const MV_ANTI_CAMERA_LOOK_NEGATIVE = 'looking at camera, eye contact, loo
  * 直前カット（または直近の複数カット）の情報に基づいて、構図・ポーズ・アングル・小道具の重複を徹底排除するネガティブプロンプトを自動生成
  * （ロジック定義テーブル POSE_CONTRAST_RULES および SHOT_SCALE_REGISTRY を参照）
  */
-export function buildDynamicAntiPreviousNegative(previous?: PreviousShotContext | PreviousShotContext[]): string {
+export function buildDynamicAntiPreviousNegative(
+  previous?: PreviousShotContext | PreviousShotContext[],
+  currentCutScale?: string
+): string {
   if (!previous) return '';
 
   const contexts: PreviousShotContext[] = Array.isArray(previous) ? previous : [previous];
   if (contexts.length === 0) return '';
 
   const antiTokens: string[] = [];
+  const isCurrentMacro = currentCutScale 
+    ? (/close-up|macro|mouth|hands|feet|footsteps|detail|prop/i.test(currentCutScale))
+    : false;
 
   for (const ctx of contexts) {
     if (!ctx) continue;
 
     // 1. 直前のスケールに基づく除外トークン
     if (ctx.scale && SHOT_SCALE_REGISTRY[ctx.scale]) {
-      antiTokens.push(...SHOT_SCALE_REGISTRY[ctx.scale].antiRepeatNegatives);
-      antiTokens.push(`identical ${ctx.scale} framing`, `same shot scale as previous scene`);
+      const scaleNegs = SHOT_SCALE_REGISTRY[ctx.scale].antiRepeatNegatives;
+      // 現在のカットがマクロ接写（瞳、口元、手元など）の場合、直前が接写であっても「接写そのもの」をネガティブで禁止しない！
+      if (isCurrentMacro) {
+        antiTokens.push(...scaleNegs.filter(t => !/close-up|macro|portrait|headshot|face-only/i.test(t)));
+      } else {
+        antiTokens.push(...scaleNegs);
+        antiTokens.push(`identical ${ctx.scale} framing`, `same shot scale as previous scene`);
+      }
     } else if (ctx.scale) {
       const lowerScale = ctx.scale.toLowerCase();
       if (lowerScale.includes('close')) {
-        antiTokens.push('extreme close-up', 'macro face', 'zoomed in headshot', 'tight portrait', 'identical close camera distance', 'face-only framing');
+        if (!isCurrentMacro) {
+          antiTokens.push('extreme close-up', 'macro face', 'zoomed in headshot', 'tight portrait', 'identical close camera distance', 'face-only framing');
+        }
       } else if (lowerScale.includes('wide') || lowerScale.includes('panorama')) {
         antiTokens.push('distant tiny figure', 'extreme wide shot', 'panoramic view', 'identical wide landscape', 'sweeping panorama');
       } else if (lowerScale.includes('bust')) {
@@ -493,31 +507,32 @@ export function buildFinalCinematicPromptAndNegative(
   const isHandsShot = fullPromptContext.includes('hands & gestures') || fullPromptContext.includes('macro hands') || fullPromptContext.includes('tactile details') || fullPromptContext.includes('手元');
   const isFootstepsShot = fullPromptContext.includes('footsteps') || fullPromptContext.includes('low-angle footsteps') || fullPromptContext.includes('ground details') || fullPromptContext.includes('足元');
   const isMouthShot = fullPromptContext.includes('mouth & breath') || fullPromptContext.includes('macro mouth') || fullPromptContext.includes('口元');
+  const isMacroOrDetailShot = isCloseUpShot || isMouthShot || isHandsShot || isFootstepsShot || isObjectCut;
 
   const cineShotSpecificNegatives: string[] = [];
 
   if (isHandsShot) {
-    // 手元・指先マクロ: 顔・全身・頭部を完全粉砕
-    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'portrait', 'full body', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot');
+    // 手元・指先マクロ: 顔・全身・頭部・ベンチ・自販機を完全粉砕
+    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'portrait', 'full body', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot', 'sitting on bench', 'bench', 'vending machine');
     cleanActionPrompt = `[STRICT MACRO HANDS: Tactile extreme close-up macro focusing sharply on hands, fingers, and sleeve cuffs, white knuckles, delicate subconscious fidgeting, hands in sharp focus, background softly blurred, strictly hands and tactile gesture only, absolutely NO face]. ${cleanActionPrompt}`;
   } else if (isFootstepsShot) {
-    // 足元・靴ローアングル: 顔・上半身を完全粉砕
-    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'torso', 'chest', 'portrait', 'upper body', 'standard eye level', 'high angle');
+    // 足元・靴ローアングル: 顔・上半身・ベンチを完全粉砕
+    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'torso', 'chest', 'portrait', 'upper body', 'standard eye level', 'high angle', 'sitting on bench', 'bench', 'seated pose');
     cleanActionPrompt = `[STRICT LOW-ANGLE FOOTSTEPS: Extreme ground-level low-angle worm-eye camera looking at shoes, brisk sneakers, and lower legs taking a resolute kinetic stride across the pavement, ground texture and long shadows stretching forward, dynamic cinematic motion, strictly ground and feet level, absolutely NO face]. ${cleanActionPrompt}`;
   } else if (isMouthShot) {
-    // 口元・吐息マクロ: 全身・足元を粉砕
-    cineShotSpecificNegatives.push('full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot', 'distant face');
-    cleanActionPrompt = `[STRICT MACRO MOUTH & BREATH: Intimate macro close-up focusing tightly on parted trembling lips, chin, and throat, delicate puff of translucent white breath dissolving into the chilly air, holding back unspoken words, shallow depth of field, strictly lower face and lips only]. ${cleanActionPrompt}`;
+    // 口元・吐息マクロ: 全身・足元・ベンチ・自販機を徹底粉砕
+    cineShotSpecificNegatives.push('full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot', 'distant face', 'sitting on bench', 'bench', 'vending machine', 'seated posture', 'seated pose');
+    cleanActionPrompt = `[STRICT MACRO MOUTH & BREATH: Intimate macro close-up focusing tightly on parted trembling lips, chin, and throat, delicate puff of translucent white breath dissolving into the chilly air, holding back unspoken words, shallow depth of field with 100% blurred abstract bokeh, strictly lower face and lips only, absolutely NO full body, NO legs, NO torso, NO bench]. ${cleanActionPrompt}`;
   } else if (isCloseUpShot) {
-    // 寄り・接写: 顔面・瞳・表情のみ。身体・椅子・背景を徹底粉砕（世界観のボケ味は保持）
+    // 寄り・接写: 顔面・瞳・表情のみ。身体・ベンチ・自販機・背景を徹底粉砕（世界観のボケ味は保持）
     cineShotSpecificNegatives.push(
       'full body', 'torso', 'chest', 'shoulders', 'arms', 'hands', 'legs', 'feet', 'shoes',
-      'standing pose', 'seated pose', 'sitting', 'wide shot', 'medium shot', 'distant face',
+      'standing pose', 'seated pose', 'sitting', 'sitting on bench', 'bench', 'vending machine', 'wide shot', 'medium shot', 'distant face',
       'normal portrait', 'waist-up crop', 'stiff standing posture'
     );
-    cleanActionPrompt = `[STRICT MACRO PORTRAIT: Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit]. ${cleanActionPrompt
-      .replace(/\b(standing|standing upright|upright|standing by[^\,]+|leaning on[^\,]+|seated|sitting|chair|bench)\b/gi, '')
-      .replace(/(立っている|佇んでいる|佇む|直立して|座っている|ベンチ|椅子)/g, '')}`;
+    cleanActionPrompt = `[STRICT MACRO PORTRAIT: Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit, NO bench]. ${cleanActionPrompt
+      .replace(/\b(standing|standing upright|upright|standing by[^\,]+|leaning on[^\,]+|seated|sitting|chair|bench|vending machine)\b/gi, '')
+      .replace(/(立っている|佇んでいる|佇む|直立して|座っている|ベンチ|椅子|自販機)/g, '')}`;
   } else if (isLowAngle) {
     // 煽り: 地面スレスレからの極限見上げパースを強制（空・天井・宇宙船などあらゆる空間に対応）
     cineShotSpecificNegatives.push(
@@ -573,11 +588,16 @@ export function buildFinalCinematicPromptAndNegative(
   } else if (effectiveDna) {
     // クローズアップ等の場合、DNAやキャラクター設定内の立ちポーズ・服装指定を安全に顔・瞳のみに純化
     let sanitizedDna = effectiveDna;
-    if (isCloseUpShot) {
+    if (isCloseUpShot || isMouthShot) {
       sanitizedDna = sanitizedDna
-        .replace(/\b(standing|standing upright|upright|full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|pants|skirt|jacket|coat|windbreaker)\b/gi, '')
+        .replace(/\b(standing|standing upright|upright|full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|pants|skirt|jacket|coat|windbreaker|sitting|seated|bench)\b/gi, '')
         .trim();
       characterPromptLayer = `[PROTAGONIST CLOSE-UP DNA: ${sanitizedDna}, face, facial features, hair, eyes only]. `;
+    } else if (isHandsShot || isFootstepsShot) {
+      sanitizedDna = sanitizedDna
+        .replace(/\b(face|eyes|hair|headshot|portrait|smile|gaze)\b/gi, '')
+        .trim();
+      characterPromptLayer = `[PROTAGONIST ATTIRE DNA: ${sanitizedDna}]. `;
     } else if (task.isEndFrame) {
       // 到達点フレーム: 顔正面の縛りを解き、髪型・衣装の一貫性を維持したまま大胆なアングル変更を許容
       characterPromptLayer = `[PROTAGONIST CONTINUITY: ${sanitizedDna}, strictly maintain identical hairstyle, hair color, and clothing from this transformed perspective]. `;
@@ -589,23 +609,47 @@ export function buildFinalCinematicPromptAndNegative(
   }
 
   // 参照画像（Reference Images / Turnaround / Master Anchor）
+  // 【超重要防衛】マクロ接写（瞳ドアップ、口元、手元、足元、小道具静物）には人物参照画像を絶対に渡さない！
+  // 渡してしまうと、Google AIが前カットの全身座りポーズや背景（ベンチ・自販機・画角）をi2i参照して完コピしてしまう。
   const targetMediaIds: string[] = [];
-  if (!isObjectCut) {
+  if (!isMacroOrDetailShot) {
     if (task.referenceImageMediaId) targetMediaIds.push(task.referenceImageMediaId);
     if (activeReference?.mediaId && !targetMediaIds.includes(activeReference.mediaId)) {
       targetMediaIds.push(activeReference.mediaId);
     }
   }
 
+  // マクロ接写カットの場合、前カットから継承されたネガティブから「接写そのものを阻害するワード」を緊急サニタイズ
+  let sanitizedNegativeLayers = negativeLayers;
+  if (isCloseUpShot || isMouthShot) {
+    sanitizedNegativeLayers = negativeLayers.map(layer => {
+      if (!layer) return '';
+      return layer
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => !/^(extreme close-up|macro face|zoomed in headshot|tight portrait|face-only framing|cropped face filling screen)$/i.test(t))
+        .join(', ');
+    });
+  }
+
+  // 【プロンプト先頭配置ガード】マクロ接写・極限画角の場合、AIが最初に見る位置にカメラディレクティブを直接配置して最優先解釈させる
+  let leadingDirective = '';
+  let remainingAction = cleanActionPrompt;
+  const strictMatch = cleanActionPrompt.match(/^(\[STRICT[^\]]+\]\.\s*)/);
+  if (strictMatch) {
+    leadingDirective = `${strictMatch[1]} `;
+    remainingAction = cleanActionPrompt.slice(strictMatch[0].length);
+  }
+
   if (activeReference && !isObjectCut) {
     const { styleDna, antiPoseNegative, eraNegative } = activeReference;
-    if (antiPoseNegative) negativeLayers.push(antiPoseNegative);
-    if (eraNegative) negativeLayers.push(eraNegative);
+    if (antiPoseNegative) sanitizedNegativeLayers.push(antiPoseNegative);
+    if (eraNegative) sanitizedNegativeLayers.push(eraNegative);
 
-    const finalNegative = negativeLayers.filter(Boolean).join(', ');
+    const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${cleanActionPrompt}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${cleanActionPrompt}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${leadingDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${leadingDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
@@ -613,10 +657,10 @@ export function buildFinalCinematicPromptAndNegative(
       referenceImageMediaIds: targetMediaIds.length > 0 ? targetMediaIds : undefined
     };
   } else {
-    const finalNegative = negativeLayers.filter(Boolean).join(', ');
+    const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cleanActionPrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${cleanActionPrompt}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${leadingDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${remainingAction}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${leadingDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),

@@ -168,9 +168,15 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
   const buildCutTasks = (ep: Episode, cuts: Cut[], styleKey?: string): GenerationTask[] => {
     return cuts.map(c => {
-      // 物体・インサートカット（isObjectOnly）なら人物参照（三面図/マスター絵）は絶対に除外！
-      // 人物カットなら、Cut 1のマスターアンカー ＞ 三面図 ＞ activeReference の優先度で参照
-      const refMediaId = c.isObjectOnly
+      // 物体・インサートカット（isObjectOnly）や、極限マクロ（瞳、口元、手元、足元）なら人物参照（三面図/マスター絵）は絶対に除外！
+      // （※全身立ちポーズや前カットのベンチ・背景をi2i参照して完コピしてしまうのを完全防止）
+      const isMacroOrDetailCut = c.isObjectOnly || 
+        c.shotScale?.includes('Close-Up') || 
+        c.shotScale?.includes('Macro') || 
+        c.shotScale?.includes('Hands') || 
+        c.shotScale?.includes('Footsteps');
+
+      const refMediaId = isMacroOrDetailCut
         ? undefined
         : (ep.masterAnchorMediaId || ep.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId);
 
@@ -367,7 +373,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
             angle: c.cinematicAngle,
             prompt: c.promptEn,
             tag: c.cameraWork
-          })));
+          })), task.shotScale);
           if (antiPrev) {
             effectiveNegative = effectiveNegative ? `${effectiveNegative}, ${antiPrev}` : antiPrev;
             addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 直近カット対比ネガティブ注入 [構図・ポーズ・小道具・視線の重複排除]`, 'info');

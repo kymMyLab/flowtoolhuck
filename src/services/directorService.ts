@@ -310,8 +310,11 @@ Output ONLY valid JSON:
   "directorTelopNote": "${defaultTelop.directorNote}"
 }`;
 
+  const effectiveScale = task.shotScale || preset.scale;
+  const effectiveAngle = task.cinematicAngle || preset.angle;
+
   // 定義テーブルに基づき直前構図を自動除外するネガティブ文字列を生成
-  let antiPreviousNegative = buildDynamicAntiPreviousNegative(previousShotInfo);
+  let antiPreviousNegative = buildDynamicAntiPreviousNegative(previousShotInfo, effectiveScale);
   if (settings.isMvMode && !isAllowedEyeContact) {
     antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${MV_ANTI_CAMERA_LOOK_NEGATIVE}` : MV_ANTI_CAMERA_LOOK_NEGATIVE;
   }
@@ -322,15 +325,15 @@ Output ONLY valid JSON:
 
   // プロンプトにすでにカメラディレクティブが含まれている場合は二重付与せず最高解像度の指示を優先
   const hasCameraDirective = prompt.includes('[CAMERA DIRECTIVE:') || prompt.includes('[STRICT') || prompt.includes('[IRONCLAD');
-  const finalPromptEn = hasCameraDirective ? prompt : `${preset.angle}. ${prompt}`;
+  const finalPromptEn = hasCameraDirective ? prompt : `${effectiveAngle}. ${prompt}`;
 
   return {
     promptEn: finalPromptEn,
     negativePrompt: antiPreviousNegative,
-    cameraWork: recCw.id,
+    cameraWork: task.camera || recCw.id,
     cameraMotion: recCw.motionPrompt,
-    cinematicAngle: preset.angle,
-    shotScale: preset.scale,
+    cinematicAngle: effectiveAngle,
+    shotScale: effectiveScale,
     kenBurnsPreset: kbPreset,
     telop: {
       fullText: '',

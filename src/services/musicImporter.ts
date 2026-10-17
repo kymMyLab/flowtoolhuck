@@ -649,13 +649,23 @@ export function extractLyricVisualPlot(
   const actionPart = kineticAction ? ` [KINETIC ACTION: ${kineticAction}].` : '';
 
   // 4. 歌詞固有のシチュエーション・ロケーション・小道具モチーフ
-  const scenicMotif = extractLyricScenicMotif(cleanLyric);
+  // （※瞳や口元の極限接写の場合は、自販機や階段などの大型背景モチーフで画角を壊さないよう除外）
+  const isFaceMacro = rule.scale.includes('Close-Up') || rule.scale.includes('Mouth');
+  const scenicMotif = isFaceMacro ? '' : extractLyricScenicMotif(cleanLyric);
   const motifPart = scenicMotif ? ` [SCENIC MOTIF: ${scenicMotif}].` : '';
 
-  // 演出ヒント(cleanHint)が特定の立ちポーズで固まっている場合の中和
+  // 演出ヒント(cleanHint)が特定の立ちポーズや座り姿勢で固まっている場合の中和
   let adaptiveHint = cleanHint;
-  if (rule.scale.includes('Close-Up') || rule.scale.includes('High-Angle') || rule.scale.includes('Footsteps')) {
-    adaptiveHint = adaptiveHint.replace(/(立っている|佇んでいる|佇む|直立して|直立の|standing|standing upright)/gi, '').trim();
+  if (rule.scale.includes('Close-Up') || rule.scale.includes('Mouth') || rule.scale.includes('High-Angle') || rule.scale.includes('Footsteps')) {
+    adaptiveHint = adaptiveHint
+      .replace(/(立っている|佇んでいる|佇む|直立して|直立の|standing|standing upright|座っている|ベンチ|seated|sitting|bench)/gi, '')
+      .trim();
+  }
+
+  // 接写系（瞳・口元）は、背景環境（河川敷・階段等）に引っ張られて全身引き絵になるのを完全に防ぐため、光とボケ味に特化
+  if (isFaceMacro) {
+    const emotionContext = cleanLyric ? `reflective emotive expression for "${cleanLyric}", ` : '';
+    return `[CAMERA DIRECTIVE: ${rule.directive}].${actionPart} [LIGHTING & BOKEH]: ${emotionContext}Soft atmospheric rim lighting from dusk sky, gorgeous 100% shallow depth of field abstract bokeh, emotional cinematic color grading.`;
   }
 
   if (adaptiveHint && !adaptiveHint.includes('Cut ')) {
@@ -827,8 +837,15 @@ export function convertTrackToEpisode(
       }
     }
 
-    // 情景コンテキスト（scene_context）の注入（カット固有の歌詞情景を最優先し、全体コンテキストは背景アンビエンスとして調和）
-    if (track.scene_context && !isPropCut && !shotScale.includes('Hands') && !shotScale.includes('Footsteps')) {
+    // 情景コンテキスト（scene_context）の注入
+    // 【超重要】極限マクロ（瞳、口元、手元、足元）や静物には河川敷・街角などの全体風景を注入しない（構図の引き戻しを防止）
+    const isMacroOrDetailCut = isPropCut || 
+      shotScale.includes('Close-Up') || 
+      shotScale.includes('Mouth') || 
+      shotScale.includes('Hands') || 
+      shotScale.includes('Footsteps');
+
+    if (track.scene_context && !isMacroOrDetailCut) {
       promptEnComponents.push(`[WORLD AMBIENCE]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
     }
 
@@ -850,7 +867,7 @@ export function convertTrackToEpisode(
           promptEnComponents.push(`[GROUND DETAILS]: Focused on sneakers and pants hem stepping forward across pavement, ground level only, absolutely NO face.`);
         } else if (shotScale.includes('Close-Up') || shotScale.includes('Profile') || shotScale.includes('Mouth')) {
           // 接写・横顔・口元: 全身立ちポーズを殺し、顔・髪・上半身の容姿特徴のみにフォーカス
-          cleanSettingDna = cleanSettingDna.replace(/\b(full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet)\b/gi, '').trim();
+          cleanSettingDna = cleanSettingDna.replace(/\b(full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|bench|chair|seated)\b/gi, '').trim();
           promptEnComponents.push(`[CHARACTER PORTRAIT DETAILS]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
         } else if (shotScale.includes('Wide') || shotScale.includes('Panorama')) {
           // 引き・全景: 人物が中央に立ちはだからないよう、風景に溶け込むシルエットとして注入
@@ -861,8 +878,8 @@ export function convertTrackToEpisode(
       }
     }
 
-    // 五感・小道具ディテール（sensory_details）の注入
-    if (track.sensory_details && (isPropCut || i === 1 || i === 3 || i === 7 || isChorus)) {
+    // 五感・小道具ディテール（sensory_details）の注入: 静物または手元カットのみに限定（Cut 1の顔アップに缶の熱を注入して自販機化するのを防止）
+    if (track.sensory_details && (isPropCut || shotScale.includes('Hands'))) {
       promptEnComponents.push(`[TACTILE DETAILS]: ${track.sensory_details.trim().replace(/\.+$/, '')}.`);
     }
 
@@ -888,7 +905,7 @@ export function convertTrackToEpisode(
       scale: c.shotScale,
       angle: c.cameraWork,
       prompt: c.promptEn
-    }))) : '';
+    })), shotScale) : '';
 
     cuts.push({
       id: i,
