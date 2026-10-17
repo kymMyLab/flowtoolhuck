@@ -467,7 +467,7 @@ export function parseLyricsSections(lyricsText: string): Record<string, string[]
       else if (tagContent.includes('bridge')) currentSection = 'bridge';
       else if (tagContent.includes('outro')) currentSection = 'outro';
       // 音楽の演奏ト書き [Sparkling Pluck...], [Full Bedroom Trap...] 等はセクション変更せずスキップ
-      
+
       if (!sections[currentSection]) sections[currentSection] = [];
     } else {
       // 歌詞本文（英語のト書き行や単なる(gasp)以外の歌唱行を収集）
@@ -685,8 +685,8 @@ export function extractLyricVisualPlot(
  * (v2.2.0-HybridScalable: 30カット・6秒/カット・比率ベース section_ratio_allocation 準拠)
  */
 export function convertTrackToEpisode(
-  track: ImportedTrack, 
-  videoRatio: string = '30%', 
+  track: ImportedTrack,
+  videoRatio: string = '30%',
   selectedCharacter?: CastCharacter,
   coverThemeVariant?: string,
   selectedTaste?: string,
@@ -843,10 +843,10 @@ export function convertTrackToEpisode(
 
     // 情景コンテキスト（scene_context）の注入
     // 【超重要】極限マクロ（瞳、口元、手元、足元）や静物には河川敷・街角などの全体風景を注入しない（構図の引き戻しを防止）
-    const isMacroOrDetailCut = isPropCut || 
-      shotScale.includes('Close-Up') || 
-      shotScale.includes('Mouth') || 
-      shotScale.includes('Hands') || 
+    const isMacroOrDetailCut = isPropCut ||
+      shotScale.includes('Close-Up') ||
+      shotScale.includes('Mouth') ||
+      shotScale.includes('Hands') ||
       shotScale.includes('Footsteps');
 
     if (track.scene_context && !isMacroOrDetailCut) {
@@ -896,8 +896,8 @@ export function convertTrackToEpisode(
     }
 
     promptEnComponents.push(
-      isPropCut 
-        ? `Shallow depth of field, dramatic dust motes in sunbeam, crisp macro reflections.` 
+      isPropCut
+        ? `Shallow depth of field, dramatic dust motes in sunbeam, crisp macro reflections.`
         : `Atmospheric cinematography, aesthetic lighting, beautifully detailed textures, clean edge-to-edge artwork.`
     );
 
