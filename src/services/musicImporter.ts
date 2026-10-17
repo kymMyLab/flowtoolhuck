@@ -497,20 +497,20 @@ export function parseLyricKineticAction(lyric: string, section?: string, isPropC
 
   // 1. 手・拳・ポケット・袖（抑圧された感情・微細なしぐさ）
   if (/にぎりしめ|握る|拳|つかむ|つかんだ|力込/i.test(text)) {
-    actions.push('hands clenching tightly into trembling fists inside oversized sleeves, white knuckles, suppressed emotional intensity');
+    actions.push('hands clenching tightly into trembling fists, suppressed emotional intensity');
   } else if (/ポケット/i.test(text)) {
-    actions.push('hands thrust deeply into jacket pockets, shoulders slightly hunched against the chilly atmosphere');
+    actions.push('hands slipped quietly into pockets, natural contemplative posture');
   } else if (/袖|指先|爪|引っ掛け/i.test(text)) {
-    actions.push('nervously tugging sleeve cuffs down over fingers, delicate subconscious fidgeting gesture');
-  } else if (/触れ|なぞる|手のひら|あたたか|温もり|ぬくもり/i.test(text)) {
+    actions.push('delicate subconscious fidgeting gesture with fingers, contemplative nuance');
+  } else if (/触れ|なぞる|手のひら|温もり|ぬくもり/i.test(text)) {
     actions.push('tenderly resting open palm against a surface, feeling faint lingering warmth through fingertips');
   } else if (/放す|こぼれ|すり抜け|ほどけ|落と/i.test(text)) {
     actions.push('fingers slowly parting open in surrender as something intangible slips through grasp');
   }
 
   // 2. 呼吸・唇・視線・表情（内面の吐露・沈黙）
-  if (/息|白く|ため息|吐息/i.test(text)) {
-    actions.push('delicate puff of translucent white breath dissolving into the chilly air, soft wistful exhalation');
+  if (/白く.*息|吐息.*白|ため息|深く息/i.test(text)) {
+    actions.push('soft wistful exhalation, subtle breathing motion reflecting deep inner thoughts');
   }
   if (/唇|噛む|言えな|声|叫ぶ|言葉/i.test(text)) {
     actions.push('biting lower lip slightly, lips parted as if holding back unspoken words');
@@ -538,7 +538,7 @@ export function parseLyricKineticAction(lyric: string, section?: string, isPropC
   }
 
   // 4. 風・光・環境との相互作用
-  if (/風|吹き抜け|靡く|揺れる|冷気/i.test(text)) {
+  if (/風|吹き抜け|靡く|揺れる/i.test(text)) {
     actions.push('sudden gust of wind whipping hair across the face, raising forearm to shield eyes against the breeze');
   }
   if (/眩しい|光|差し込む|夕暮れ|西日|朝|太陽/i.test(text)) {
@@ -571,37 +571,37 @@ export function extractLyricScenicMotif(lyric: string): string {
   const motifs: string[] = [];
 
   // 1. 海・ビーチ・波・砂浜・夏
-  if (/うみ|海|なみ|波|しぶき|飛沫|すな|砂|かいがん|海岸|ビーチ|beach|shore|ocean|wave|サンダル|みずぎ|水着/i.test(text)) {
+  if (/うみ|海|なみ|波|しぶき|飛沫|砂浜|すなはま|海岸|かいがん|ビーチ|beach|shore|ocean|wave|サンダル|水着|みずぎ/i.test(text)) {
     motifs.push('crystal clear emerald ocean shallows, sparkling turquoise ripples, wet white sand shoreline under bright radiant sunlight');
   }
-  // 2. 雪・冬・粉雪・寒さ・氷
-  else if (/ゆき|雪|こおり|氷|ふぶき|吹雪|しろい|白い|つめたい|冷たい|冬|winter|snow/i.test(text)) {
+  // 2. 雪・冬・粉雪・吹雪・氷
+  else if (/ゆき|雪|こおり|氷|ふぶき|吹雪|粉雪|こゆき|初雪|冬景色|winter|snow|blizzard/i.test(text)) {
     motifs.push('pristine untouched powdery snow covering the tranquil ground, delicate floating snowflakes in crisp silent winter morning air');
   }
-  // 3. 自販機・缶・ボタン・温もり
-  else if (/ボタン|アルミ|フタ|つめ.*かけ|おちてき|おもみ/i.test(text)) {
+  // 3. 自販機・缶ジュース
+  else if (/自販機|じはんき|自動販売機|ベンダー/i.test(text)) {
     motifs.push('standing by a glowing illuminated drink vending machine on the corner, warm red light glowing in twilight, warm canned beverage dropping into slot');
-  } else if (/缶|かん|あたたかさ|ぬくもり|三秒/i.test(text)) {
-    motifs.push('holding a warm aluminum drink can between both hands, faint steam rising into the chill, tactile metal reflections');
+  } else if (/アルミ缶|缶コーヒー|缶ジュース|空き缶|缶の底|プルタブ/i.test(text)) {
+    motifs.push('holding an aluminum drink can between both hands, tactile metal reflections and condensation');
   }
-  // 4. 階段・河川敷・水辺
-  else if (/かいだん|階段|かわべり|河川敷|こしかけ|腰掛|ひざ/i.test(text)) {
-    motifs.push('concrete riverside stairs embankment overlooking calm water, sitting on the steps in natural relaxed posture');
+  // 4. 階段・河川敷・堤防
+  else if (/階段|かいだん|河川敷|かわべり|川沿い|堤防|土手/i.test(text)) {
+    motifs.push('concrete riverside embankment overlooking calm water, sitting on the steps in natural relaxed posture');
   }
-  // 5. 自転車・ライト・疾走
-  else if (/じてんしゃ|自転車|ライト|すれちが/i.test(text)) {
+  // 5. 自転車
+  else if (/じてんしゃ|自転車/i.test(text)) {
     motifs.push('dramatic cinematic headlight glare from a passing commuter bicycle, intense luminous lens flare slashing across scene');
   }
-  // 6. 橋・手すり・日付・掲示板
-  else if (/はし|橋|てすり|手すり|ひづけ|日付|すうじ|刻まれ/i.test(text)) {
+  // 6. 歩道橋・欄干
+  else if (/歩道橋|ほどうきょう|橋の上|はしのうえ|手すり|てすり|欄干/i.test(text)) {
     motifs.push('solitary pedestrian footbridge railing, weathered metallic texture in atmospheric daylight');
   }
   // 7. 教室・黒板・放課後
-  else if (/きょうしつ|教室|こくばん|黒板|つくえ|机|カーテン|窓|チャイム/i.test(text)) {
+  else if (/きょうしつ|教室|こくばん|黒板|放課後|下校/i.test(text)) {
     motifs.push('empty nostalgic classroom with wooden desks and fluttering curtains catching warm slant sunlight');
   }
-  // 8. 影・夕日・西日
-  else if (/にしび|西日|夕暮れ|夕日|sunset|twilight/i.test(text)) {
+  // 8. 影・夕暮れ・西日
+  else if (/にしび|西日|夕暮れ|夕日|夕陽|sunset|golden-hour/i.test(text)) {
     motifs.push('long elongated sharp shadow cast across the textured ground under low slant golden-hour sunlight');
   }
 

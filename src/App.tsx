@@ -171,12 +171,14 @@ export default function App() {
   episodesRef.current = episodes;
 
   const handleDeployMusicEpisode = useCallback((ep: Episode) => {
+    clearEpisodes();
     setEpisodes([ep]);
     setActiveSeriesManifest(null);
     setSettings(prev => ({
       ...prev,
       productionMode: 'mv',
       isMvMode: true,
+      selectedAssetId: undefined,
       theme: ep.theme || prev.theme,
       taste: ep.taste || prev.taste,
       episodeCount: 1,
@@ -184,9 +186,10 @@ export default function App() {
       previewCutCount: ep.cuts.length || 30
     }));
     addLog(`🎵 CT198楽曲「${ep.titleJp}」の${ep.cuts.length}カット絵コンテを展開しました！（サビ30秒テロップ＆伏線小道具自動バインド済）`, 'success');
-  }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog]);
+  }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog, clearEpisodes]);
 
   const handleDeployBatchMusicEpisodes = useCallback((eps: Episode[]) => {
+    clearEpisodes();
     const normalizedEps = eps.map((ep, idx) => ({
       ...ep,
       id: idx + 1
@@ -198,6 +201,7 @@ export default function App() {
       ...prev,
       productionMode: 'mv',
       isMvMode: true,
+      selectedAssetId: undefined,
       theme: normalizedEps[0]?.theme || prev.theme,
       taste: normalizedEps[0]?.taste || prev.taste,
       episodeCount: normalizedEps.length,
@@ -205,7 +209,7 @@ export default function App() {
       previewCutCount: cutsCount
     }));
     addLog(`🎵 CT198楽曲 全${normalizedEps.length}曲の${cutsCount}カット絵コンテを一括展開しました！`, 'success');
-  }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog]);
+  }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog, clearEpisodes]);
 
   // ヘッダー等で画風（taste）が変更された際、画像未生成のエピソード群のtasteも即座に同期
   useEffect(() => {

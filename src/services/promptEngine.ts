@@ -707,8 +707,9 @@ export function buildFinalCinematicPromptAndNegative(
   // キャラクターが登場する全カット（ドアップ、横顔、手元、足元、俯瞰、斜め等）には三面図を100%完全バインド！
   const targetMediaIds: string[] = [];
   if (!isObjectCut) {
-    if (task.referenceImageMediaId) targetMediaIds.push(task.referenceImageMediaId);
-    if (activeReference?.mediaId && !targetMediaIds.includes(activeReference.mediaId)) {
+    if (task.referenceImageMediaId) {
+      targetMediaIds.push(task.referenceImageMediaId);
+    } else if (!task.isMvMode && activeReference?.mediaId) {
       targetMediaIds.push(activeReference.mediaId);
     }
   }

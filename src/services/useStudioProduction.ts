@@ -72,6 +72,12 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
   const currentAssetRef = useRef<{ name: string; base64: string; mimeType: string } | null>(null);
 
+  const handleClearEpisodes = useCallback(() => {
+    activeReferenceRef.current = null;
+    currentAssetRef.current = null;
+    clearEpisodes();
+  }, [clearEpisodes]);
+
 
   const activeReferenceRef = useRef<{
     mediaId: string;
@@ -425,7 +431,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         negativePrompt: effectiveNegative
       };
 
-      const { finalPrompt, finalNegative, referenceImageMediaIds } = buildImagePromptAndNegative(taskWithAntiPrevious, settings, activeReferenceRef.current);
+      const effectiveActiveRef = ep?.isMvMode ? undefined : activeReferenceRef.current;
+      const { finalPrompt, finalNegative, referenceImageMediaIds } = buildImagePromptAndNegative(taskWithAntiPrevious, settings, effectiveActiveRef);
       
       // 生成前に投入パラメータを保存（失敗してもインスペクターで追えるようにする）
       updateCut(epId, cutId, {
@@ -614,7 +621,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           cutIndex: cutId - 1,
           basicPlot: cut.promptEn || cut.narrationJp || cut.narrationEn || '',
           isObjectOnly: cut.isObjectOnly,
-          theme: settings.theme,
+          theme: ep.theme || settings.theme,
           isMvMode: ep.isMvMode
         });
         effectiveEndPlot = evo.endFramePlot;
@@ -882,5 +889,5 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎲 第 ${epId} 話: 全12カットのテロップ演出（動き・配置）を一括再抽選しました！（画像は保持）`, 'success');
   }, [addLog]);
 
-  return { episodes, setEpisodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes };
+  return { episodes, setEpisodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes: handleClearEpisodes };
 }
