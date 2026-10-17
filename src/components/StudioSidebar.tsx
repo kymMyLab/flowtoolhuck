@@ -41,16 +41,22 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   // 現在のエピソードの最大カット数を判定（MVは30、ショートは12、マンガは24など）
   const activeMaxCuts = episodes[0]?.cuts?.length || (settings.productionMode === 'mv' ? 30 : settings.productionMode === 'manga' ? 24 : 12);
 
-  // カット数選択肢の動的構築
-  const cutOptions = React.useMemo(() => {
-    if (settings.productionMode === 'mv') {
-      if (activeMaxCuts <= 12) {
-        return [1, 3, 5, 12];
+  // カット数プリセットの動的構築 (デフォルト30、100枚までボタンで即選択、全カットボタン、手入力で200/300枚も上限なし)
+  const cutPresetOptions = React.useMemo(() => {
+    const baseValues = [1, 5, 12, 30, 50, 100];
+    const allValues = Array.from(new Set([...baseValues, activeMaxCuts])).sort((a, b) => a - b);
+
+    return allValues.map(val => {
+      let label = `${val}枚`;
+      if (val === activeMaxCuts) {
+        label = val === 30 ? '30枚 (全)' : val === 12 ? '12枚 (全)' : `${val}枚 (全)`;
       }
-      return [1, 3, 5, 12, 30];
-    }
-    return [1, 3, 5, 12, 24, 30];
-  }, [settings.productionMode, activeMaxCuts]);
+      return {
+        value: val,
+        label
+      };
+    });
+  }, [activeMaxCuts]);
 
   const pipelineBadge = [
     settings.enableTurnaroundSheet !== false ? '三面図' : '',
@@ -214,22 +220,54 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                   <span className="px-2 py-0.5 rounded-md bg-pink-200 text-pink-900 text-[10px] font-black border border-pink-300">2枚固定</span>
                 </div>
               ) : (
-                <>
-                  <NumberChoice 
-                    label={settings.productionMode === 'mv' ? '先行カット数' : '生成カット数'} 
-                    value={settings.previewCutCount} 
-                    options={cutOptions} 
-                    formatLabel={v => {
-                      if (settings.productionMode === 'mv') {
-                        if (v === activeMaxCuts) return `${v}枚 (全カット)`;
-                        return `${v}枚`;
-                      }
-                      return v === 30 ? '30枚 (コミック)' : v === 24 ? '24枚' : v === 12 ? '12枚 (全)' : `${v}枚`;
-                    }} 
-                    onChange={v => setSettings(s => ({ ...s, previewCutCount: v }))} 
-                  />
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-1.5 w-full">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-indigo-600">movie_creation</span>
+                        {settings.productionMode === 'mv' ? '先行カット数' : '生成カット数'}
+                      </span>
+                      <div className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold">自由指定:</span>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          max="9999"
+                          value={settings.previewCutCount || 30}
+                          onChange={e => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val > 0) {
+                              setSettings(s => ({ ...s, previewCutCount: val }));
+                            }
+                          }}
+                          className="w-14 h-6 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-indigo-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        />
+                        <span className="text-[11px] font-bold text-slate-600">枚</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap w-full items-center gap-1 border border-slate-300 rounded-xl bg-slate-100 p-1">
+                      {cutPresetOptions.map((opt) => {
+                        const isSelected = settings.previewCutCount === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setSettings(s => ({ ...s, previewCutCount: opt.value }))}
+                            className={`flex-1 min-w-[50px] h-[30px] flex items-center justify-center text-xs font-bold transition-all cursor-pointer rounded-lg ${
+                              isSelected 
+                                ? 'bg-indigo-600 text-white shadow-sm font-black' 
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                          >
+                            <span>{opt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                   <SegmentedToggle label="動画化する割合" value={settings.videoRatio} onChange={v => setSettings(s => ({ ...s, videoRatio: v as any }))} items={VIDEO_RATIO_OPTIONS} />
-                </>
+                </div>
               )}
             </div>
           )}
