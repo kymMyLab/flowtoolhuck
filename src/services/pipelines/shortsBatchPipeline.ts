@@ -83,16 +83,30 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
         await runTasks(buildCutTasks(existingEp, pendingCuts));
       }
 
-      const isAllDone = targetCutCount >= cutsCount;
+      if (isAbortedRef.current) {
+        updateEpisode(epIndex, { isGenerating: false });
+        break;
+      }
+
+      // 実際に生成が完了したカット数を再集計
+      const freshEp = episodesRef.current.find(e => Number(e.id) === Number(epIndex)) || existingEp;
+      const completedCutsCount = freshEp.cuts.slice(0, targetCutCount).filter(c => c.imageBase64 || c.imageMediaId).length;
+      const isAllDone = completedCutsCount >= cutsCount;
+      const isPreviewSuccessful = completedCutsCount >= targetCutCount;
+
       updateEpisode(epIndex, { 
         isGenerating: false, 
-        isPreviewDone: true, 
+        isPreviewDone: isPreviewSuccessful, 
         isDone: isAllDone 
       });
-      addLog(`✅ 第${epIndex}${modeInfo.unit}『${existingEp.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！`, 'success');
 
-      // インフォグラフィック扉絵
-      await ensureInfographicCover(ctx, episodesRef.current.find(e => Number(e.id) === Number(epIndex)) || existingEp);
+      if (isPreviewSuccessful) {
+        addLog(`✅ 第${epIndex}${modeInfo.unit}『${existingEp.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！`, 'success');
+        // インフォグラフィック扉絵
+        await ensureInfographicCover(ctx, freshEp);
+      } else {
+        addLog(`⚠️ 第${epIndex}${modeInfo.unit}『${existingEp.titleJp}』画像生成が一部未完了（${completedCutsCount}/${targetCutCount}カット）です。右側の「未生成カットを生成」から再開できます。`, 'warning');
+      }
 
       cleanupEpisodeMemory();
       continue; // インポート済みエピソードの作画完了、次の曲へ
@@ -167,16 +181,29 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     const targetCutCount = Math.min(settings.previewCutCount, cutsCount);
     await runTasks(buildCutTasks(newEpisode, newEpisode.cuts.slice(0, targetCutCount)));
 
-    const isAllDone = targetCutCount >= cutsCount;
+    if (isAbortedRef.current) {
+      updateEpisode(epIndex, { isGenerating: false });
+      break;
+    }
+
+    const freshNewEp = episodesRef.current.find(e => e.id === epIndex) || newEpisode;
+    const completedCount = freshNewEp.cuts.slice(0, targetCutCount).filter(c => c.imageBase64 || c.imageMediaId).length;
+    const isAllDone = completedCount >= cutsCount;
+    const isPreviewSuccessful = completedCount >= targetCutCount;
+
     updateEpisode(epIndex, { 
       isGenerating: false, 
-      isPreviewDone: true, 
+      isPreviewDone: isPreviewSuccessful, 
       isDone: isAllDone 
     });
-    addLog(`✅ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！`, 'success');
 
-    // ★インフォグラフィック扉絵（9:16特大ポスター）を全自動生成！
-    await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epIndex) || newEpisode);
+    if (isPreviewSuccessful) {
+      addLog(`✅ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！`, 'success');
+      // ★インフォグラフィック扉絵（9:16特大ポスター）を全自動生成！
+      await ensureInfographicCover(ctx, freshNewEp);
+    } else {
+      addLog(`⚠️ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』画像生成が一部未完了（${completedCount}/${targetCutCount}カット）です。右側の「未生成カットを生成」から再開できます。`, 'warning');
+    }
 
     await saveStory({ titleJp: newEpisode.titleJp, titleEn: newEpisode.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: newEpisode.summary || '', createdAt: new Date().toISOString() });
     cleanupEpisodeMemory();

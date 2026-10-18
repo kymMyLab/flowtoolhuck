@@ -250,10 +250,21 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     updateEpisode(epId, { isGeneratingRemainingImages: true });
     addLog(`🎨 Ep.${epId}: 残り ${remainingCuts.length} 枚の画像生成を開始...`, 'process');
     await runTasks(buildCutTasks(ep, remainingCuts));
-    updateEpisode(epId, { isGeneratingRemainingImages: false });
-    addLog(`✅ Ep.${epId}: すべての画像生成が完了しました。`, 'success');
-    if (settings.autoVideo && !isAbortedRef.current) {
-      handleBulkBrowserVideo(epId);
+    
+    const freshEp = episodesRef.current.find(e => e.id === epId) || ep;
+    const stillRemaining = freshEp.cuts.filter(c => !c.imageBase64 && !c.imageMediaId).length;
+    
+    if (stillRemaining === 0) {
+      updateEpisode(epId, { isGeneratingRemainingImages: false, isDone: true, isPreviewDone: true });
+      addLog(`✅ Ep.${epId}: すべての画像生成（全${ep.cuts.length}カット）が完了しました！`, 'success');
+      if (settings.autoVideo && !isAbortedRef.current) {
+        handleBulkBrowserVideo(epId);
+      }
+    } else {
+      updateEpisode(epId, { isGeneratingRemainingImages: false });
+      if (!isAbortedRef.current) {
+        addLog(`⚠️ Ep.${epId}: 一部の画像が未完了（残り ${stillRemaining} 枚）です。もう一度実行して再開できます。`, 'warning');
+      }
     }
   };
 

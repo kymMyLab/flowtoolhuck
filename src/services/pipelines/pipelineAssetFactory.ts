@@ -45,17 +45,34 @@ export async function ensureCharacterTurnaround(
 
     const modelDef = resolveImageModel(settings.imageModel);
     let safePrompt = turnaroundPrompt && /[a-zA-Z0-9]/.test(turnaroundPrompt) ? turnaroundPrompt : 'Character turnaround sheet, front side back views';
-    const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
+    let safeModelName = modelDef?.name || '🍌 Nano Banana 2';
 
-    const res = await callWithRetry<any>(
-      () => Flow.generate.image({
+    let res: any;
+    try {
+      res = await callWithRetry<any>(
+        () => Flow.generate.image({
+          prompt: safePrompt,
+          modelDisplayName: safeModelName,
+          aspectRatio: '16:9' as any
+        }),
+        (attempt, max, delay, err) => {
+          const errMsg = formatErrorMessage(err);
+          if (errMsg.includes('使用量の上限') || errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+            safeModelName = '🍌 Nano Banana Pro';
+            addLog(`👑 【三面図】Banana 2の上限を検知！独立枠の「🍌 Nano Banana Pro」へ自動昇格します`, 'success');
+          }
+        },
+        3
+      );
+    } catch (firstErr) {
+      // 最終フォールバック: 独立枠のBanana Proで再挑戦
+      safeModelName = '🍌 Nano Banana Pro';
+      res = await Flow.generate.image({
         prompt: safePrompt,
         modelDisplayName: safeModelName,
         aspectRatio: '16:9' as any
-      }),
-      undefined,
-      4
-    );
+      });
+    }
 
     const base64 = extractImageBase64(res);
     const mediaId = extractMediaId(res);
@@ -121,19 +138,37 @@ export async function ensureInfographicCover(
 
     const modelDef = resolveImageModel(settings.imageModel);
     let safePrompt = coverPromptObj.promptEn && /[a-zA-Z0-9]/.test(coverPromptObj.promptEn) ? coverPromptObj.promptEn : 'Cinematic poster, high quality';
-    const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
+    let safeModelName = modelDef?.name || '🍌 Nano Banana 2';
 
-    const res = await callWithRetry<any>(
-      () => Flow.generate.image({
+    let res: any;
+    try {
+      res = await callWithRetry<any>(
+        () => Flow.generate.image({
+          prompt: safePrompt,
+          negativePrompt: coverPromptObj.negativePromptEn,
+          modelDisplayName: safeModelName,
+          aspectRatio: '9:16' as any,
+          referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
+        }),
+        (attempt, max, delay, err) => {
+          const errMsg = formatErrorMessage(err);
+          if (errMsg.includes('使用量の上限') || errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+            safeModelName = '🍌 Nano Banana Pro';
+            addLog(`👑 【扉絵】Banana 2の上限を検知！独立枠の「🍌 Nano Banana Pro」へ自動昇格します`, 'success');
+          }
+        },
+        3
+      );
+    } catch (firstErr) {
+      safeModelName = '🍌 Nano Banana Pro';
+      res = await Flow.generate.image({
         prompt: safePrompt,
         negativePrompt: coverPromptObj.negativePromptEn,
         modelDisplayName: safeModelName,
         aspectRatio: '9:16' as any,
         referenceImageMediaIds: refMediaIds.length > 0 ? refMediaIds : undefined
-      }),
-      undefined,
-      4
-    );
+      });
+    }
 
     const coverBase64 = extractImageBase64(res);
     const coverMediaId = extractMediaId(res);
