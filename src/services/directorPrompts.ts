@@ -21,18 +21,26 @@ export function buildCharacterTurnaroundPrompt(
     : `Aesthetic, evocative outfit and styling fitting ${worldSetting}.`;
 
   const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${characterDna || ''} ${theme || ''}`);
+  
+  // Google Imagenセーフティ対策: "school girl" と着衣の乱れ（着崩した、ほどけた等）の直結を完全排除
   const defaultProtagonistDesc = hasExplicitMale 
-    ? `Male protagonist designed for ${worldSetting}.`
-    : `Delicate cute charming anime high school girl protagonist designed for ${worldSetting}.`;
+    ? `Handsome aesthetic anime youth protagonist with neat modern styling.`
+    : `Charming elegant anime female protagonist with neat modern school uniform attire.`;
 
   const protagonistProfile = characterDna 
     ? `Protagonist design: ${characterDna}.` 
     : defaultProtagonistDesc;
 
+  // テーマからセーフティNG語句（着崩し、露出等）を除去して安全な世界観プロンプトを構築
+  const safeThemeDesc = (theme || 'Japanese youth drama')
+    .replace(/(少し着崩した|着崩した|ほどけかけた|乱れた|はだけた)/g, 'stylish')
+    .replace(/[^\w\s,\.\-]/g, ' ')
+    .trim() || 'Japanese school youth';
+
   return `Master character model sheet, three-view turnaround:
 front view, side profile view, back view of the same single protagonist standing in a neutral pose side-by-side.
 Full body from head to toe, perfectly consistent face, hairstyle, facial features, and attire.
-${protagonistProfile} (${costumeInstruction})
+${protagonistProfile} (Setting inspired by: ${safeThemeDesc})
 Clean plain pure white background, professional animation concept art, character turnaround sheet, model sheet, masterpiece, highly detailed, 8k resolution.
 ${rawStyle ? `Art style: ${rawStyle}.` : ''}
 CRITICAL MANDATE: EXACTLY THREE VIEWS (front, side, back) of ONE SINGLE INDIVIDUAL aligned on a single sheet. Absolutely NO multiple different people, NO cluttered props, NO extra poses!`;

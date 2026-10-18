@@ -218,6 +218,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
   };
 
   const handleGenerateRemaining = async (epId: number) => {
+    isAbortedRef.current = false;
     const ep = episodesRef.current.find(e => e.id === epId);
     if (!ep) return;
 
@@ -362,21 +363,22 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
     // ── Phase 2: 画像生成フェーズ（確定したプロンプト＆直前構図ネガティブで並列実行） ──
     queueRef.current = [...preparedTasks];
-    // レートリミット（429: 使用量上限）を回避するため、並列数は最大2に制限
-    const concurrency = Math.min(2, Math.max(1, settings.parallelCount || 2));
+    // 並列度はユーザー設定（デフォルト2）を尊重し、ユーザーの意思で増減可能
+    const concurrency = Math.max(1, settings.parallelCount || 2);
     const workers = Array(concurrency).fill(null).map(async (_, workerIdx) => {
-      // ワーカー間で開始時間をスタッガー（時間差3.5秒）させ、同時リクエスト集中による429/503を防止
+      // ワーカー間で開始時間をスタッガー（時間差5.0秒）させ、同時リクエスト集中による429/503を防止
       if (workerIdx > 0) {
-        await sleep(workerIdx * 3500);
+        await sleep(workerIdx * 5000);
       }
       while (queueRef.current.length > 0) {
         if (isAbortedRef.current) break;
         const task = queueRef.current.shift();
         if (!task) break;
         await generateImage(task);
-        // タスク完了後は 5秒 のクールダウンをしっかり挟んでAPIレートリミットを平滑化
+        // タスク完了後は 10秒〜15秒 のクールダウン（＋ランダムゆらぎ）をしっかり挟んでAPIレートリミット（動的RPM減衰）を回避
         if (queueRef.current.length > 0 && !isAbortedRef.current) {
-          await sleep(5000);
+          const cooldownMs = 10000 + Math.random() * 5000;
+          await sleep(cooldownMs);
         }
       }
     });

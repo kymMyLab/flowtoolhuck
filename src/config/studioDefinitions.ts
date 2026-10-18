@@ -20,29 +20,33 @@ export interface ImageModelDefinition {
 
 export const IMAGE_MODELS_REGISTRY: ImageModelDefinition[] = [
   { 
-    id: 'banana-2-lite', 
-    name: '🍌 Nano Banana 2 Lite', 
-    label: '🍌 2 Lite（超爆速 / 0pt）', 
-    description: '下書き・大量プレビュー確認向け' 
+    id: 'banana-pro', 
+    name: '🍌 Nano Banana Pro', 
+    label: '🍌 Banana Pro（最高峰シネマ / 0pt・別枠クォータ）', 
+    description: '圧倒的ディテールとライティング。2.1制限時も別枠で描画可能' 
   },
   { 
-    id: 'banana-2', 
-    name: '🍌 Nano Banana 2', 
-    label: '🍌 Banana 2（高速・高画質 / 0pt）★推奨', 
+    id: 'banana-2.1', 
+    name: '🍌 Nano Banana 2.1', 
+    label: '🍌 Banana 2.1（高速・高画質 / 0pt）★新標準', 
     description: '速度と描画精度のバランスが最も優れた標準モデル',
     isDefault: true
   },
   { 
-    id: 'banana-pro', 
-    name: '🍌 Nano Banana Pro', 
-    label: '🍌 Banana Pro（最高峰シネマ / 0pt）', 
-    description: '圧倒的ディテールとライティング。キメカット向け' 
+    id: 'banana-2-lite', 
+    name: '🍌 Nano Banana 2 Lite', 
+    label: '🍌 2 Lite（超爆速 / 0pt）', 
+    description: '下書き・大量プレビュー確認向け' 
   }
 ];
 
 export function resolveImageModel(keyOrLabel?: string): ImageModelDefinition {
   const defaultModel = IMAGE_MODELS_REGISTRY.find(m => m.isDefault) || IMAGE_MODELS_REGISTRY[1];
   if (!keyOrLabel) return defaultModel;
+  // 旧 "banana-2" や部分一致もスマートに解決
+  if (keyOrLabel === 'banana-2' || keyOrLabel.includes('Banana 2（')) {
+    return IMAGE_MODELS_REGISTRY.find(m => m.id === 'banana-2.1') || defaultModel;
+  }
   return IMAGE_MODELS_REGISTRY.find(m => m.id === keyOrLabel || m.label === keyOrLabel || m.name === keyOrLabel) || defaultModel;
 }
 

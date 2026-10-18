@@ -225,15 +225,25 @@ export async function callWithRetry<T>(
       if (attempt === totalMaxAttempts) throw err;
       
       let baseDelay = delays[attempt] ?? 80000;
-      // Googleのアクセス制限・アクティビティ検知・使用量上限時は、早すぎる再叩きで規制が長引かないよう最低20秒の冷却待機を確保
-      const isActivityThrottle = msg.includes('通常とは異なるアクティビティ') || msg.includes('アクティビティ') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('RATE_LIMIT') || msg.includes('使用量の上限');
-      if (isActivityThrottle && baseDelay < 20000) {
-        baseDelay = 20000;
+
+      // レート制限（429、使用量上限、RESOURCE_EXHAUSTED）検知
+      const isActivityThrottle = msg.includes('通常とは異なるアクティビティ') || 
+        msg.includes('アクティビティ') || 
+        msg.includes('429') || 
+        msg.includes('RESOURCE_EXHAUSTED') || 
+        msg.includes('RATE_LIMIT') || 
+        msg.includes('使用量の上限');
+
+      // レート制限発生時は、短い連続叩きによるPushbackペナルティ（クールダウンタイマー巻き戻し）を防ぐため、
+      // 初回60秒（1分）、120秒（2分）、180秒（3分）、240秒（4分）、300秒（5分）の本格冷却待機スケジュールを強制適用
+      const throttleDelays = [60000, 120000, 180000, 240000, 300000];
+      if (isActivityThrottle) {
+        baseDelay = throttleDelays[Math.min(attempt, throttleDelays.length - 1)];
       }
 
       const isSuper = effectiveSuperBackoff && attempt >= standardDelays.length;
-      // ジッター加算（レート制限時はワーカー間の同時再発射を防ぐため 0〜6秒のランダム分散）
-      const jitter = isSuper ? Math.random() * 5000 : (isActivityThrottle ? Math.random() * 6000 : Math.random() * 1000);
+      // ジッター加算（レート制限時はワーカー間の同時再発射を防ぐため 0〜5秒のランダム分散）
+      const jitter = isSuper ? Math.random() * 5000 : (isActivityThrottle ? Math.random() * 5000 : Math.random() * 1000);
       const roundedDelay = Math.round(baseDelay + jitter);
       
       if (onRetry) {
