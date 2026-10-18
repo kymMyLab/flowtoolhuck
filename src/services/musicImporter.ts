@@ -779,31 +779,61 @@ export function convertTrackToEpisode(
       const lyric = cutData.lyrics_part || '';
       const duration = parseTimeRangeDuration(timeRange, 6.0);
 
-      // 人物不在・静物カットの自動判定
-      const actionText = `${cutData.character_action || ''} ${cutData.camera_composition || ''} ${cleanPrompt}`;
-      const isObjectOnly = /(人物はまだ|人物は消え|人物は不在|人物は完全に|誰もいない|無人|人物の姿はなく|静止ロングフィックス|empty (?:high school|room|stair|bench|street|vending)|deserted|still-life|no humans|no person)/i.test(actionText);
+      const promptLower = rawPrompt.toLowerCase();
+      const compLower = (cutData.camera_composition || '').toLowerCase();
+      const actionLower = (cutData.character_action || '').toLowerCase();
+      const fullText = `${promptLower} ${compLower} ${actionLower}`;
 
-      // カメラワーク・アングルの推測
+      // ── (A) 人物なし・静物・風景カットの厳密判定 ──
+      // コード・手すり・スニーカー・バッグ・自販機ボタン・窓枠・缶・カップ・無人風景など
+      const isObjectOnly = /(人物はまだ|人物は消え|人物は不在|人物は完全に|誰もいない|無人|人物の姿はなく|静止ロングフィックス|静止フィックス)/i.test(fullText) ||
+        /(thin white audio cable|audio cord|earphone wire|worn white sneakers|school bag resting|metal staircase handrail|wooden window frame|phone screen|railroad crossing|abandoned aluminum|ceramic mugs?|brass bell|solitary glowing vending machine|empty high school stair|empty wooden bench|solitary glowing|still wide shot|completely deserted)/i.test(promptLower);
+
+      // ── (B) 画角（shotScale）とカメラワークの精密分類（安易にClose-Upにして顔面化するのを完全防御） ──
       let shotScale = 'Medium Shot';
       let cameraWork = 'slow-push-in';
-      if (/ロング|全景|establishing|wide/i.test(cutData.camera_composition || '')) {
-        shotScale = 'Wide Shot';
-        cameraWork = 'wide-establishing';
-      } else if (/マクロ|極限|extreme macro|extreme close/i.test(cutData.camera_composition || '')) {
+
+      if (isObjectOnly || /cable|wire|handrail|shoes?|sneakers?|bag|can|mug|window frame|phone|bell|button/i.test(promptLower) || /手すり|コード|スニーカー|バッグ|缶|自販機|窓枠|スマホ|ボタン/i.test(compLower)) {
+        shotScale = 'Still-Life Object Macro';
+        cameraWork = 'macro-reveal';
+      } else if (/eye dilated|pupil|瞳|虹彩|見開/i.test(fullText)) {
+        // 瞳の極限マクロ（Cut 11等のキメカットのみ）
         shotScale = 'Extreme Close-Up';
         cameraWork = 'intimate-macro';
-      } else if (/クローズアップ|close-up|寄りの/i.test(cutData.camera_composition || '')) {
-        shotScale = 'Close-Up';
+      } else if (/lips|mouth|口元|唇|吐息/i.test(fullText)) {
+        shotScale = 'Macro Mouth & Breath';
         cameraWork = 'slow-push-in';
-      } else if (/バストアップ|bust shot|bust/i.test(cutData.camera_composition || '')) {
+      } else if (/ear |earbud|earpiece|earlobe|耳元|耳たぶ/i.test(fullText)) {
+        // 耳元は顔正面ではなく横顔・耳元マクロ
+        shotScale = 'Side Profile';
+        cameraWork = 'slow-push-in';
+      } else if (/hands?|fingers?|pocket|手元|指先|ポケット/i.test(fullText)) {
+        shotScale = 'Macro Hands';
+        cameraWork = 'macro-reveal';
+      } else if (/shoes?|sneakers?|boots?|foot|feet|footsteps|足元|靴/i.test(fullText)) {
+        shotScale = 'Low-Angle Footsteps';
+        cameraWork = 'tilt-up';
+      } else if (/behind|rear|back view|後ろ姿|背中|肩の隙間|narrow gap between.*blazer/i.test(fullText)) {
+        shotScale = 'Rear View';
+        cameraWork = 'slow-push-in';
+      } else if (/side profile|profile|横顔/i.test(fullText)) {
+        shotScale = 'Side Profile';
+        cameraWork = 'cinematic-orbit';
+      } else if (/bust shot|bust|バストアップ/i.test(fullText)) {
         shotScale = 'Medium Bust Shot';
         cameraWork = 'slow-push-in';
-      } else if (/俯瞰|真上|top-down|overhead|bird/i.test(cutData.camera_composition || '')) {
+      } else if (/overhead|bird|top-down|俯瞰|真上/i.test(fullText)) {
         shotScale = 'High-Angle Overhead';
         cameraWork = 'slow-pan';
-      } else if (/ローアングル|low angle/i.test(cutData.camera_composition || '')) {
+      } else if (/low angle|ローアングル/i.test(fullText)) {
         shotScale = 'Low Angle';
         cameraWork = 'tilt-up';
+      } else if (/wide|panoramic|ロング|全景/i.test(fullText)) {
+        shotScale = 'Wide Shot';
+        cameraWork = 'wide-establishing';
+      } else if (/close-up|クローズアップ/i.test(fullText)) {
+        shotScale = 'Medium Close-Up Profile';
+        cameraWork = 'slow-push-in';
       }
 
       // プロンプト構築（Masterpiece + スタイルプリセット + 絵コンテプロンプト + キャストDNA）
@@ -822,13 +852,33 @@ export function convertTrackToEpisode(
 
       const promptEn = promptEnComponents.join(' ');
 
-      // 直近カットの動的アンチネガティブ
+      // 🛡️ 【最重要】直前のカット（1〜2カット前）の構図・アングル・主要被写体を次のネガティブプロンプトへ完全バインド！
       const recentCuts = cuts.slice(Math.max(0, cuts.length - 2));
-      const dynamicAntiPrev = recentCuts.length > 0 ? buildDynamicAntiPreviousNegative(recentCuts.map(c => ({
+      let dynamicAntiPrev = recentCuts.length > 0 ? buildDynamicAntiPreviousNegative(recentCuts.map(c => ({
         scale: c.shotScale,
         angle: c.cinematicAngle || c.cameraWork,
-        prompt: c.promptEn
+        prompt: c.promptEn,
+        tag: c.cameraWork
       })), shotScale) : '';
+
+      // 直前カットが顔面アップ・瞳・ポートレートだった場合、今回が明示的な瞳マクロでない限り顔アップを強制粉砕！
+      const prevCut = recentCuts[recentCuts.length - 1];
+      if (prevCut) {
+        const prevPromptLower = (prevCut.promptEn || '').toLowerCase();
+        const prevScaleLower = (prevCut.shotScale || '').toLowerCase();
+        if (prevScaleLower.includes('close-up') || prevPromptLower.includes('face') || prevPromptLower.includes('eyes') || prevPromptLower.includes('portrait')) {
+          if (!shotScale.includes('Extreme Close-Up')) {
+            const faceNegatives = 'extreme close-up of eyes, macro eyes, huge face filling screen, cropped forehead, close-up face portrait, duplicate face, identical frontal face, front view portrait';
+            dynamicAntiPrev = dynamicAntiPrev ? `${dynamicAntiPrev}, ${faceNegatives}` : faceNegatives;
+          }
+        }
+        // 直前が静物マクロ・手元だった場合、今回は静物を除外
+        if (prevScaleLower.includes('object') || prevScaleLower.includes('hands')) {
+          if (!shotScale.includes('Object') && !shotScale.includes('Hands')) {
+            dynamicAntiPrev = dynamicAntiPrev ? `${dynamicAntiPrev}, static prop, inanimate object macro` : 'static prop, inanimate object macro';
+          }
+        }
+      }
 
       const hl = extractHighlights(lyric);
 

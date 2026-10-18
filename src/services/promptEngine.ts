@@ -592,8 +592,10 @@ export function buildFinalCinematicPromptAndNegative(
   const isBustShot = (rawScale.includes('bust') || rawAngle.includes('bust shot') || rawAngle.includes('chest-up') || rawAngle.includes('candid medium')) && !isProfileShot;
   const isWideShot = rawScale.includes('wide') || rawScale.includes('panorama') || rawAngle.includes('wide panorama') || rawAngle.includes('panoramic environmental tableau');
 
-  // 極限顔面ドアップ: 静物OBJや他の特化アングル（横顔・バスト・口元・手元・足元・引き）ではない、純粋な顔面クローズアップのみ
-  const isCloseUpShot = !isObjectStillLife && !isProfileShot && !isBustShot && !isHandsShot && !isFootstepsShot && !isMouthShot && !isWideShot && (
+  // 極限顔面ドアップ: 静物OBJや他の特化アングル（横顔・バスト・口元・手元・足元・引き・背後）ではない、純粋な顔面クローズアップのみ
+  // 【超重要】プロンプト内にコード、手すり、スニーカー、肩の隙間、ブレザー、耳元、静物等の明確な部位・物体指定がある場合は顔面ドアップ化を完全抑止！
+  const hasSpecificNonFaceSubject = /(cable|wire|handrail|shoes?|sneakers?|boots?|bag|can|mug|window frame|phone|bell|button|earbud|earpiece|earlobe|narrow gap|blazer)/i.test(fullPromptContext);
+  const isCloseUpShot = !isObjectStillLife && !isProfileShot && !isBustShot && !isHandsShot && !isFootstepsShot && !isMouthShot && !isWideShot && !isRearShot && !hasSpecificNonFaceSubject && (
     rawScale.includes('close-up') || rawAngle.includes('macro portrait') || rawAngle.includes('extreme macro close-up portrait') || rawScale.includes('extreme close-up')
   );
 
@@ -636,9 +638,12 @@ export function buildFinalCinematicPromptAndNegative(
       'standing pose', 'seated pose', 'sitting', 'sitting on bench', 'bench', 'vending machine', 'wide shot', 'medium shot', 'distant face',
       'normal portrait', 'waist-up crop', 'stiff standing posture'
     );
-    cleanActionPrompt = `[STRICT MACRO PORTRAIT: Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit, NO bench]. ${cleanActionPrompt
-      .replace(/\b(standing|standing upright|upright|standing by[^\,]+|leaning on[^\,]+|seated|sitting|chair|bench|vending machine)\b/gi, '')
-      .replace(/(立っている|佇んでいる|佇む|直立して|座っている|ベンチ|椅子|自販機)/g, '')}`;
+    // すでに詳細なプロンプトが存在している場合は重複・打ち消しを防ぐ
+    if (!cleanActionPrompt.includes('macro detail shot') && !cleanActionPrompt.includes('close-up shot focused on')) {
+      cleanActionPrompt = `[STRICT MACRO PORTRAIT: Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit, NO bench]. ${cleanActionPrompt
+        .replace(/\b(standing|standing upright|upright|standing by[^\,]+|leaning on[^\,]+|seated|sitting|chair|bench|vending machine)\b/gi, '')
+        .replace(/(立っている|佇んでいる|佇む|直立して|座っている|ベンチ|椅子|自販機)/g, '')}`;
+    }
   } else if (isLowAngle) {
     // 煽り: 地面スレスレからの極限見上げパースを強制
     cineShotSpecificNegatives.push(
