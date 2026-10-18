@@ -398,6 +398,73 @@ export interface SafeScriptResult {
  * 第1段階: タイトル、あらすじ、各Cutの歌詞・基本状況のみを超軽量プロンプトで即座に策定
  * （※各カットの詳細な作画演出・カメラワーク・直前対比は、画像描画直前に directShot がオンデマンドで生成）
  */
+
+export async function analyzeLyricVisualsWithGemini(
+  lyricLines: { cutId: number; lyric: string; section?: string }[],
+  theme: string,
+  characterContext: string
+): Promise<any[] | null> {
+  if (!lyricLines || lyricLines.length === 0) return null;
+
+  const prompt = `You are a master cinema/anime MV director.
+Analyze the following song lyrics and determine the optimal visual motifs, props, and staging directives for each cut.
+
+Theme: "${theme}"
+Protagonist context: "${characterContext}"
+
+Lyrics to analyze:
+${JSON.stringify(lyricLines, null, 2)}
+
+CRITICAL BALANCING RULE:
+A music video must center on human emotion, expressive faces, and kinetic drama.
+- Character-Driven Cuts (65%–75%): Protagonist's expressive eyes, bust shots, side profiles, singing postures, walking, looking up at the sky, contemplative glances.
+- Integrated Prop & Environment Cuts (15%–25%): Protagonist interacting within the environment where the lyric's props naturally appear.
+- Dedicated Still-Life Inserts (MAXIMUM 2–3 CUTS ACROSS THE ENTIRE SONG): Pure macro prop shots without humans for punchy dramatic cutaways (e.g., transition points).
+
+Output ONLY a JSON array of objects with the exact following keys:
+[
+  {
+    "cutId": 1,
+    "stagingType": "character_with_props" | "character_focused" | "scenic_prop_insert",
+    "propMotif": "string (e.g., two ceramic coffee mugs side by side with rising steam)",
+    "action": "string (e.g., sitting at table in contemplative stillness, looking out the window)",
+    "visualPromptEn": "string (detailed English visual prompt incorporating the motif, action, and cinematic lighting)"
+  }
+]`;
+
+  try {
+    const res = await callWithRetry<any>(
+      () => Flow.generate.text(prompt),
+      (attempt, max, delay) => {
+        console.warn(`[Gemini Lyric Analysis Retry ${attempt}/${max}]`);
+      },
+      { maxRetries: 2 }
+    );
+    if (!res || !res.text) return null;
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(res.text.replace(/^\s*```json\s*/i, '').replace(/\s*```\s*$/i, '').trim());
+    } catch(e) {
+      // attempt to find json array
+      const match = res.text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (match) {
+         parsed = JSON.parse(match[0]);
+      } else {
+         return null;
+      }
+    }
+
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Failed to analyze lyrics with Gemini:', err);
+    return null;
+  }
+}
+
 export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions): Promise<SafeScriptResult> {
   const {
     epId, currentPlan, country, theme, era, isMangaMode, isMvMode,

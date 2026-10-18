@@ -25,7 +25,8 @@ import {
   buildAdaptiveInfographicCoverPrompt,
   cleanEpisodeTitle,
   cleanEpisodeTitleEn,
-  PreviousShotInfo
+  PreviousShotInfo,
+  analyzeLyricVisualsWithGemini
 } from './directorService';
 import { useEpisodeState } from './useEpisodeState';
 
@@ -187,9 +188,15 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       const rawLyric = c.telop?.fullText || c.narrationJp || '';
       // MVモードで歌詞が存在し、かつpromptEnにまだ歌詞ビジュアル指示が反映されていない場合は動的に補完
       if (ep.isMvMode && rawLyric && !effectivePrompt.includes('embodying lyric')) {
-        const visualPlot = extractLyricVisualPlot(rawLyric, c.telop?.directorNote || '', ep.theme || ep.titleJp || '', c.id, !!c.isObjectOnly);
-        if (!effectivePrompt.includes(visualPlot)) {
-          effectivePrompt = `${effectivePrompt}, ${visualPlot}`;
+        if (c.geminiVisualPrompt) {
+          if (!effectivePrompt.includes(c.geminiVisualPrompt)) {
+            effectivePrompt = `${effectivePrompt}, ${c.geminiVisualPrompt}`;
+          }
+        } else {
+          const visualPlot = extractLyricVisualPlot(rawLyric, c.telop?.directorNote || '', ep.theme || ep.titleJp || '', c.id, !!c.isObjectOnly);
+          if (!effectivePrompt.includes(visualPlot)) {
+            effectivePrompt = `${effectivePrompt}, ${visualPlot}`;
+          }
         }
       }
 
@@ -222,6 +229,39 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     isAbortedRef.current = false;
     const ep = episodesRef.current.find(e => e.id === epId);
     if (!ep) return;
+
+
+    if (ep.isMvMode && !ep.isLyricAnalyzed) {
+      const lyricLines = ep.cuts
+        .filter(c => c.narrationJp || c.telop?.fullText)
+        .map(c => ({
+          cutId: c.id,
+          lyric: c.narrationJp || c.telop?.fullText || '',
+          section: 'chorus' // Dummy section or map properly if possible
+        }));
+
+      if (lyricLines.length > 0) {
+        addLog(`🧠 Ep.${epId}: 歌詞ビジュアルをGeminiで全体解析中...`, 'process');
+        const charCtx = ep.characterDna || activeReferenceRef.current?.characterDna || 'Protagonist';
+        const analysis = await analyzeLyricVisualsWithGemini(lyricLines, ep.theme || ep.titleJp || '', charCtx);
+        if (analysis && analysis.length > 0) {
+          const newCuts = [...ep.cuts];
+          for (const res of analysis) {
+            const cutIdx = newCuts.findIndex(c => c.id === res.cutId);
+            if (cutIdx >= 0) {
+              newCuts[cutIdx] = { ...newCuts[cutIdx], geminiVisualPrompt: res.visualPromptEn };
+              updateCut(epId, res.cutId, { geminiVisualPrompt: res.visualPromptEn });
+            }
+          }
+          ep.cuts = newCuts;
+          ep.isLyricAnalyzed = true;
+          updateEpisode(epId, { isLyricAnalyzed: true });
+          addLog(`✨ Ep.${epId}: 歌詞の映画的緩急バランス（Gemini自律判断）を反映しました！`, 'success');
+        } else {
+           addLog(`⚠️ Ep.${epId}: 歌詞解析をスキップしました (フォールバック使用)`, 'warning');
+        }
+      }
+    }
 
     // エピソードの三面図が未アップロードなら即座にFlowへ自動アップロード
     if (ep.characterTurnaroundBase64 && !ep.characterTurnaroundMediaId) {
