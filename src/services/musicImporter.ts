@@ -7,6 +7,40 @@ import { resolveTasteKey } from './tasteStorage';
 import { buildDynamicAntiPreviousNegative, isFaceMacroScale } from './promptEngine';
 import { UNIVERSAL_CINE_CYCLE, CineCameraRule } from '../config/studioDefinitions';
 
+export interface ImportedStoryboardCut {
+  cut_number: number;
+  time_range?: string;
+  lyrics_part?: string;
+  camera_composition?: string;
+  lighting_scene?: string;
+  character_action?: string;
+  image_prompt?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * タイムレンジ文字列（例: "0:00 - 0:06", "1:04 - 1:05"）からカットの秒数（duration）を算出
+ */
+export function parseTimeRangeDuration(timeRange?: string, fallbackDuration: number = 6.0): number {
+  if (!timeRange) return fallbackDuration;
+  const parts = timeRange.split(/\s*[-〜~]\s*/);
+  if (parts.length === 2) {
+    const parseSec = (t: string) => {
+      const segs = t.trim().split(':');
+      if (segs.length === 2) {
+        return parseInt(segs[0], 10) * 60 + parseFloat(segs[1]);
+      }
+      return parseFloat(t);
+    };
+    const s = parseSec(parts[0]);
+    const e = parseSec(parts[1]);
+    if (!isNaN(s) && !isNaN(e) && e > s) {
+      return parseFloat((e - s).toFixed(1));
+    }
+  }
+  return fallbackDuration;
+}
+
 export interface ImportedTrack {
   id: string;
   track_id?: string;
@@ -42,6 +76,7 @@ export interface ImportedTrack {
   audio_filename?: string;
   wav_url?: string;
   cover_url?: string;
+  storyboard?: ImportedStoryboardCut[];
   is_instrumental?: boolean;
   paired_vocal_track_id?: string;
   instrumental_track?: ImportedTrack;
@@ -277,13 +312,15 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
 
       const formatStr = strVal(item.format, '🎵 音楽MV (30カット)');
 
-      // フォーマットに応じたカット数の自動判定 (MV: 30, Shorts/雑学: 12, ドラマ/マンガ: 24)
-      let defaultCuts = 30;
+      // フォーマットに応じたカット数の自動判定 (storyboard内包ならそのカット数を最優先)
+      let defaultCuts = Array.isArray(item.storyboard) && item.storyboard.length > 0 ? item.storyboard.length : 30;
       const lowerFormat = formatStr.toLowerCase();
-      if (lowerFormat.includes('shorts') || lowerFormat.includes('ショート') || lowerFormat.includes('雑学') || lowerFormat.includes('trivia')) {
-        defaultCuts = 12;
-      } else if (lowerFormat.includes('drama') || lowerFormat.includes('ドラマ') || lowerFormat.includes('マンガ') || lowerFormat.includes('manga')) {
-        defaultCuts = 24;
+      if (!Array.isArray(item.storyboard) || item.storyboard.length === 0) {
+        if (lowerFormat.includes('shorts') || lowerFormat.includes('ショート') || lowerFormat.includes('雑学') || lowerFormat.includes('trivia')) {
+          defaultCuts = 12;
+        } else if (lowerFormat.includes('drama') || lowerFormat.includes('ドラマ') || lowerFormat.includes('マンガ') || lowerFormat.includes('manga')) {
+          defaultCuts = 24;
+        }
       }
 
       const totalCuts = numVal(item.total_cuts, defaultCuts);
@@ -322,7 +359,16 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
         lyrics_kanji: strVal(item.lyrics_kanji),
         audio_filename: strVal(item.audio_filename),
         wav_url: strVal(item.wav_url),
-        cover_url: strVal(item.cover_url)
+        cover_url: strVal(item.cover_url),
+        storyboard: Array.isArray(item.storyboard) ? item.storyboard.map((sb: any, sbIdx: number) => ({
+          cut_number: typeof sb.cut_number === 'number' ? sb.cut_number : sbIdx + 1,
+          time_range: strVal(sb.time_range),
+          lyrics_part: strVal(sb.lyrics_part),
+          camera_composition: strVal(sb.camera_composition),
+          lighting_scene: strVal(sb.lighting_scene),
+          character_action: strVal(sb.character_action),
+          image_prompt: strVal(sb.image_prompt)
+        })) : undefined
       };
     });
 
@@ -716,274 +762,369 @@ export function convertTrackToEpisode(
   let lastShotScale = '';
   let lastCinematicAngle = '';
 
-  for (let i = 1; i <= totalCuts; i++) {
-    const progress = (i - 0.5) / totalCuts;
+  // 🎬 JSON内に完全な絵コンテ(storyboard)が存在し、かつ要求カット数と一致する場合のみ絵コンテをダイレクト適用
+  const canUseStoryboard = Array.isArray(track.storyboard) && 
+    track.storyboard.length > 0 && 
+    track.storyboard.length === totalCuts;
 
-    // 比率ベースのセクション判定 (master_categories.json 準拠)
-    let section: 'intro' | 'verse_a' | 'verse_b' | 'chorus' | 'bridge' | 'outro' = 'verse_a';
-    if (progress < 0.13) {
-      section = 'intro';
-    } else if (progress < 0.33) {
-      section = 'verse_a';
-    } else if (progress < 0.53) {
-      section = 'verse_b';
-    } else if (progress < 0.80) {
-      section = 'chorus';
-    } else if (progress < 0.93) {
-      section = 'bridge';
-    } else {
-      section = 'outro';
-    }
+  if (canUseStoryboard && track.storyboard) {
+    console.log(`🎬 [MusicImporter] 楽曲「${track.title}」の同梱絵コンテ（${track.storyboard.length}カット）を高精度ダイレクト適用します！`);
 
-    const isChorus = section === 'chorus';
-    const hint = visualMap[i] || '';
+    for (let i = 1; i <= totalCuts; i++) {
+      const cutData = track.storyboard[i - 1];
+      const timeRange = cutData.time_range || '';
+      const rawPrompt = cutData.image_prompt || '';
+      // --ar 9:16 等のMidjourney用アスペクト比指定を除去
+      const cleanPrompt = rawPrompt.replace(/--ar\s+\d+:\d+/gi, '').replace(/\s{2,}/g, ' ').trim();
+      const lyric = cutData.lyrics_part || '';
+      const duration = parseTimeRangeDuration(timeRange, 6.0);
 
-    // 伏線・象徴小道具カット: 30カット構成では、Aメロ終わりの転換点(Cut 10)と、ブリッジ/落ちサビ(Cut 26)の2箇所に配置し、
-    // また演出ヒントに ★ がついているカットも完全自律で小道具・静物カットとして確立
-    const bridgeStart = Math.round(totalCuts * 0.80) + 1;
-    const hasStarInHint = (hint && hint.includes('★')) || ((track.visual_hints || '').match(new RegExp(`Cut\\s*${i}[^:\n]*:\\s*\\[?\\s*★`)) !== null);
-    const isPropCut = hasStarInHint || (totalCuts >= 20 ? (i === 10 || i === bridgeStart + 1) : (i === 10));
-    const isLastCut = i === totalCuts;
+      // 人物不在・静物カットの自動判定
+      const actionText = `${cutData.character_action || ''} ${cutData.camera_composition || ''} ${cleanPrompt}`;
+      const isObjectOnly = /(人物はまだ|人物は消え|人物は不在|人物は完全に|誰もいない|無人|人物の姿はなく|静止ロングフィックス|empty (?:high school|room|stair|bench|street|vending)|deserted|still-life|no humans|no person)/i.test(actionText);
 
-    // 動的歌詞配分（全カット均等ニアリー同期マッピング）
-    let lyric = '';
-    const allLines = lyricsSec._allLines || [];
-
-    if (section === 'intro') {
-      const idx = (i - 1) % Math.max(1, introLines.length);
-      lyric = introLines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (i === 1 ? '♪ (Intro Instrumental)' : '冷たい風が吹き抜ける'));
-    } else if (section === 'verse_a') {
-      const sectionOffset = i - Math.round(totalCuts * 0.13);
-      const idx = (sectionOffset - 1) % Math.max(1, verse1Lines.length);
-      lyric = verse1Lines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isPropCut ? '静かに残された記憶の欠片' : '冷たい床に伸びる影'));
-    } else if (section === 'verse_b') {
-      const bPool = prechorusLines.length > 0 ? prechorusLines : verse2Lines;
-      const sectionOffset = i - Math.round(totalCuts * 0.33);
-      const idx = (sectionOffset - 1) % Math.max(1, bPool.length);
-      lyric = bPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : '広くなった空間は');
-    } else if (section === 'chorus') {
-      const cPool = chorusLines.length > 0 ? chorusLines : (finalChorusLines.length > 0 ? finalChorusLines : []);
-      const sectionOffset = i - Math.round(totalCuts * 0.53);
-      const idx = (sectionOffset - 1) % Math.max(1, cPool.length);
-      lyric = cPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : '透き通る風が駆け抜けて');
-    } else if (section === 'bridge') {
-      const brPool = bridgeLines.length > 0 ? bridgeLines : (verse2Lines.length > 0 ? verse2Lines : prechorusLines);
-      const sectionOffset = i - Math.round(totalCuts * 0.80);
-      const idx = (sectionOffset - 1) % Math.max(1, brPool.length);
-      lyric = brPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isPropCut ? 'あの日置いてった銀の爪' : '隅に落ちてた銀の粒'));
-    } else {
-      // outro
-      const idx = (i - Math.round(totalCuts * 0.93) - 1) % Math.max(1, outroLines.length);
-      lyric = outroLines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isLastCut ? '♪ (Outro / Reverb Tail)' : '新しい明日へ歩き出す'));
-    }
-
-    // 映画的カメラアングル＆画角サイクルの解決
-    const cineRule = UNIVERSAL_CINE_CYCLE[(i - 1) % UNIVERSAL_CINE_CYCLE.length];
-    let shotScale = cineRule.scale;
-    let cameraWork = cineRule.cameraWork;
-    let cinematicAngle = cineRule.directive;
-    let isObjectOnly = false;
-    let telopStyle: any = 'mv-kinetic-pop';
-    let telopTransition: any = 'gsap-kinetic-stagger';
-    let telopPosition: any = 'bottom-center';
-
-    if (i === 1) {
-      // ★ 冒頭オープニング構図（ユーザー選定 案A: 曲ごとに表情・バスト・横顔・ドアップをローテーション）
-      const rawNum = explicitEpisodeId ?? track.track_no ?? 1;
-      const songIdx = Math.max(0, Number(rawNum) - 1);
-      const introStyle = songIdx % 4;
-
-      if (introStyle === 0) {
-        // パターン0: 王道バストアップ（美少女の可愛い顔＋風になびく髪＋夕暮れ/背景・衣装が映える黄金比ポートレート）
-        shotScale = 'Medium Bust Shot';
-        cameraWork = 'slow-push-in';
-        cinematicAngle = 'Cinematic upper-body bust shot portrait from the chest up, expressive captivating eyes with natural highlights, beautifully styled hair fluttering softly in the ambient breeze, authentic attire details clearly visible, atmospheric scenic background with gorgeous cinematic depth and soft bokeh, perfectly balanced golden-ratio composition, highly aesthetic music video intro';
-      } else if (introStyle === 1) {
-        // パターン1: 横顔・振り返り（情景と光のコントラスト、切ない余韻と輪郭が美しいシネマティック導入）
-        shotScale = 'Medium Close-Up Profile';
-        cameraWork = 'cinematic-orbit';
-        cinematicAngle = 'Artistic medium close-up profile and three-quarter view, gentle turn-back glance towards the camera, emotional silhouette and delicate facial contour, cinematic rim lighting against atmospheric scenic background, breeze blowing through hair, poetic and evocative storytelling frame';
-      } else if (introStyle === 2) {
-        // パターン2: 極限ドアップ・瞳（★偶に来ると刺さる圧倒的な目力・感情のインサート）
+      // カメラワーク・アングルの推測
+      let shotScale = 'Medium Shot';
+      let cameraWork = 'slow-push-in';
+      if (/ロング|全景|establishing|wide/i.test(cutData.camera_composition || '')) {
+        shotScale = 'Wide Shot';
+        cameraWork = 'wide-establishing';
+      } else if (/マクロ|極限|extreme macro|extreme close/i.test(cutData.camera_composition || '')) {
         shotScale = 'Extreme Close-Up';
         cameraWork = 'intimate-macro';
-        cinematicAngle = UNIVERSAL_CINE_CYCLE[0].directive;
+      } else if (/クローズアップ|close-up|寄りの/i.test(cutData.camera_composition || '')) {
+        shotScale = 'Close-Up';
+        cameraWork = 'slow-push-in';
+      } else if (/バストアップ|bust shot|bust/i.test(cutData.camera_composition || '')) {
+        shotScale = 'Medium Bust Shot';
+        cameraWork = 'slow-push-in';
+      } else if (/俯瞰|真上|top-down|overhead|bird/i.test(cutData.camera_composition || '')) {
+        shotScale = 'High-Angle Overhead';
+        cameraWork = 'slow-pan';
+      } else if (/ローアングル|low angle/i.test(cutData.camera_composition || '')) {
+        shotScale = 'Low Angle';
+        cameraWork = 'tilt-up';
+      }
+
+      // プロンプト構築（Masterpiece + スタイルプリセット + 絵コンテプロンプト + キャストDNA）
+      const promptEnComponents = [
+        `Masterpiece, high production music video, authentic ${masterCat.pool.visual_contract.style_preset}.`,
+        cleanPrompt
+      ];
+
+      // キャストDNA（人物カットかつキャスト固定が有効な場合）
+      if (selectedCharacter && !isObjectOnly) {
+        const cleanDna = selectedCharacter.dnaPromptEn ? selectedCharacter.dnaPromptEn.trim().replace(/\.+$/, '') : '';
+        if (cleanDna) {
+          promptEnComponents.push(`[PROTAGONIST DNA]: ${cleanDna}.`);
+        }
+      }
+
+      const promptEn = promptEnComponents.join(' ');
+
+      // 直近カットの動的アンチネガティブ
+      const recentCuts = cuts.slice(Math.max(0, cuts.length - 2));
+      const dynamicAntiPrev = recentCuts.length > 0 ? buildDynamicAntiPreviousNegative(recentCuts.map(c => ({
+        scale: c.shotScale,
+        angle: c.cinematicAngle || c.cameraWork,
+        prompt: c.promptEn
+      })), shotScale) : '';
+
+      const hl = extractHighlights(lyric);
+
+      cuts.push({
+        id: i,
+        promptEn: promptEn,
+        negativePrompt: dynamicAntiPrev,
+        narrationJp: lyric,
+        narrationEn: '',
+        shotScale: shotScale,
+        cameraWork: cameraWork,
+        cinematicAngle: cutData.camera_composition || shotScale,
+        isObjectOnly: isObjectOnly,
+        panelLayout: isObjectOnly ? 'single' : (i % 5 === 0 ? 'diagonal-slash' : 'single'),
+        focalPoint: isObjectOnly ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'scenic_prop' } : undefined,
+        duration: duration,
+        isSelectedForVideo: isCutSelectedForVideo(i - 1, videoRatio),
+        targetVideoModel: 'omni-flash',
+        isDirecting: false,
+        isGeneratingImage: false,
+        isGeneratingVideo: false,
+        isQueued: false,
+        telop: {
+          fullText: lyric,
+          highlights: hl,
+          style: isObjectOnly ? 'mv-neon-glow' : 'mv-kinetic-pop',
+          transition: 'gsap-kinetic-stagger',
+          position: 'bottom-center',
+          directorNote: `[Storyboard Cut ${i}] ${cutData.camera_composition || ''} ${cutData.lighting_scene ? `| ${cutData.lighting_scene}` : ''}`.trim()
+        }
+      });
+    }
+  } else {
+    // 🧠 【自律推論エンジン】storyboard が存在しないか、または指定カット数が変更された場合の高精度フォールバック
+    if (track.storyboard && track.storyboard.length > 0) {
+      console.log(`🧠 [MusicImporter] 指定カット数(${totalCuts})が同梱絵コンテ数(${track.storyboard.length})と異なるため、自律推論ディレクターに切り替えて錬成します。`);
+    }
+
+    for (let i = 1; i <= totalCuts; i++) {
+      const progress = (i - 0.5) / totalCuts;
+
+      // 比率ベースのセクション判定 (master_categories.json 準拠)
+      let section: 'intro' | 'verse_a' | 'verse_b' | 'chorus' | 'bridge' | 'outro' = 'verse_a';
+      if (progress < 0.13) {
+        section = 'intro';
+      } else if (progress < 0.33) {
+        section = 'verse_a';
+      } else if (progress < 0.53) {
+        section = 'verse_b';
+      } else if (progress < 0.80) {
+        section = 'chorus';
+      } else if (progress < 0.93) {
+        section = 'bridge';
       } else {
-        // パターン3: 情景と佇まい・ミディアム（世界観全体の空気感・背景に佇む少女）
-        shotScale = 'Medium Shot';
-        cameraWork = 'wide-establishing';
-        cinematicAngle = 'Atmospheric medium shot capturing the protagonist standing gracefully within the scenic environment, full upper body and environment in harmonious balance, ambient breeze, cinematic filmic lighting and natural depth of field, poetic introductory scene';
+        section = 'outro';
       }
-      telopPosition = 'bottom-center';
-    } else if (isLastCut) {
-      // ★ 不在の余韻 ＆ 無限ループ構図
-      shotScale = 'Extreme Wide Panorama';
-      cameraWork = 'wide-establishing';
-      cinematicAngle = UNIVERSAL_CINE_CYCLE[4].directive;
-      telopPosition = 'bottom-center';
-    } else if (isPropCut) {
-      // ★ 伏線・象徴小道具確定（人物除外・マクロ静物インサート）
-      shotScale = 'Still-Life Object Macro';
-      cameraWork = 'macro-reveal';
-      cinematicAngle = UNIVERSAL_CINE_CYCLE[9].directive;
-      isObjectOnly = true;
-      telopStyle = 'mv-neon-glow';
-      telopPosition = 'bottom-center';
-    } else if (isChorus) {
-      // ★ サビ演出: カメラワークに動的エナジーを付加
-      cameraWork = (i % 2 === 0) ? 'cinematic-orbit' : 'dynamic-pan-zoom';
-      telopPosition = 'center-stagger';
-    }
 
-    // 🛡️ [連続顔面アップ防止ガード] 直前と今回がともに顔面/瞳/口元マクロの場合、バストショットまたは全景へ自動シフト
-    if (i > 1 && lastShotScale && isFaceMacroScale(lastShotScale, lastCinematicAngle) && isFaceMacroScale(shotScale, cinematicAngle)) {
-      shotScale = 'Medium Bust Shot';
-      cameraWork = 'slow-push-in';
-      cinematicAngle = 'Cinematic upper-body bust shot portrait from the chest up, expressive captivating eyes with natural highlights, beautifully styled hair fluttering softly in the ambient breeze, authentic attire details clearly visible, atmospheric scenic background with gorgeous cinematic depth and soft bokeh, perfectly balanced golden-ratio composition';
-    }
+      const isChorus = section === 'chorus';
+      const hint = visualMap[i] || '';
 
-    lastShotScale = shotScale;
-    lastCinematicAngle = cinematicAngle;
+      // 伏線・象徴小道具カット: 30カット構成では、Aメロ終わりの転換点(Cut 10)と、ブリッジ/落ちサビ(Cut 26)の2箇所に配置し、
+      // また演出ヒントに ★ がついているカットも完全自律で小道具・静物カットとして確立
+      const bridgeStart = Math.round(totalCuts * 0.80) + 1;
+      const hasStarInHint = (hint && hint.includes('★')) || ((track.visual_hints || '').match(new RegExp(`Cut\\s*${i}[^:\n]*:\\s*\\[?\\s*★`)) !== null);
+      const isPropCut = hasStarInHint || (totalCuts >= 20 ? (i === 10 || i === bridgeStart + 1) : (i === 10));
+      const isLastCut = i === totalCuts;
 
-    const hl = extractHighlights(lyric);
-    const visualPlot = extractLyricVisualPlot(lyric, hint, track.surface_theme || track.title, i, isPropCut, section);
+      // 動的歌詞配分（全カット均等ニアリー同期マッピング）
+      let lyric = '';
+      const allLines = lyricsSec._allLines || [];
 
-    const promptEnComponents = [
-      `Masterpiece, high production music video, authentic ${masterCat.pool.visual_contract.style_preset}.`,
-      visualPlot,
-    ];
-
-    // キャストDNAおよび表情のインポート（キャスト固定が明示的にONのときのみ注入）
-    if (selectedCharacter && !isPropCut && !isLastCut) {
-      let expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
-      if (i === 1) {
-        expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+      if (section === 'intro') {
+        const idx = (i - 1) % Math.max(1, introLines.length);
+        lyric = introLines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (i === 1 ? '♪ (Intro Instrumental)' : '冷たい風が吹き抜ける'));
+      } else if (section === 'verse_a') {
+        const sectionOffset = i - Math.round(totalCuts * 0.13);
+        const idx = (sectionOffset - 1) % Math.max(1, verse1Lines.length);
+        lyric = verse1Lines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isPropCut ? '静かに残された記憶の欠片' : '冷たい床に伸びる影'));
       } else if (section === 'verse_b') {
-        expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
-      } else if (isChorus) {
-        expressionPrompt = selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+        const bPool = prechorusLines.length > 0 ? prechorusLines : verse2Lines;
+        const sectionOffset = i - Math.round(totalCuts * 0.33);
+        const idx = (sectionOffset - 1) % Math.max(1, bPool.length);
+        lyric = bPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : '広くなった空間は');
+      } else if (section === 'chorus') {
+        const cPool = chorusLines.length > 0 ? chorusLines : (finalChorusLines.length > 0 ? finalChorusLines : []);
+        const sectionOffset = i - Math.round(totalCuts * 0.53);
+        const idx = (sectionOffset - 1) % Math.max(1, cPool.length);
+        lyric = cPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : '透き通る風が駆け抜けて');
       } else if (section === 'bridge') {
-        expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || '';
+        const brPool = bridgeLines.length > 0 ? bridgeLines : (verse2Lines.length > 0 ? verse2Lines : prechorusLines);
+        const sectionOffset = i - Math.round(totalCuts * 0.80);
+        const idx = (sectionOffset - 1) % Math.max(1, brPool.length);
+        lyric = brPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isPropCut ? 'あの日置いてった銀の爪' : '隅に落ちてた銀の粒'));
+      } else {
+        // outro
+        const idx = (i - Math.round(totalCuts * 0.93) - 1) % Math.max(1, outroLines.length);
+        lyric = outroLines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isLastCut ? '♪ (Outro / Reverb Tail)' : '新しい明日へ歩き出す'));
       }
 
-      const cleanDna = selectedCharacter.dnaPromptEn ? selectedCharacter.dnaPromptEn.trim().replace(/\.+$/, '') : '';
-      const expressionPart = expressionPrompt ? ` [EXPRESSION]: ${expressionPrompt.replace(/\.+$/, '')}.` : '';
-      if (cleanDna) {
-        promptEnComponents.push(`[PROTAGONIST DNA]: ${cleanDna}.${expressionPart}`);
-      }
-    }
+      // 映画的カメラアングル＆画角サイクルの解決
+      const cineRule = UNIVERSAL_CINE_CYCLE[(i - 1) % UNIVERSAL_CINE_CYCLE.length];
+      let shotScale = cineRule.scale;
+      let cameraWork = cineRule.cameraWork;
+      let cinematicAngle = cineRule.directive;
+      let isObjectOnly = false;
+      let telopStyle: any = 'mv-kinetic-pop';
+      let telopTransition: any = 'gsap-kinetic-stagger';
+      let telopPosition: any = 'bottom-center';
 
-    // 情景コンテキスト（scene_context）の注入
-    // 【超重要】極限マクロ（瞳、口元、手元、足元）や静物には河川敷・街角などの全体風景を注入しない（構図の引き戻しを防止）
-    const isMacroOrDetailCut = isPropCut ||
-      shotScale.includes('Close-Up') ||
-      shotScale.includes('Mouth') ||
-      shotScale.includes('Hands') ||
-      shotScale.includes('Footsteps');
+      if (i === 1) {
+        // ★ 冒頭オープニング構図（ユーザー選定 案A: 曲ごとに表情・バスト・横顔・ドアップをローテーション）
+        const rawNum = explicitEpisodeId ?? track.track_no ?? 1;
+        const songIdx = Math.max(0, Number(rawNum) - 1);
+        const introStyle = songIdx % 4;
 
-    if (track.scene_context && !isMacroOrDetailCut) {
-      promptEnComponents.push(`[WORLD AMBIENCE]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
-    } else if (track.surface_theme && isMacroOrDetailCut && !isPropCut) {
-      promptEnComponents.push(`[AMBIENT ATMOSPHERE]: Atmospheric lighting and subtle environment reflecting the world of "${track.surface_theme}".`);
-    }
-
-    // 登場人物詳細（character_setting）の画角連動インテリジェント注入
-    // （画角がClose-UpやHigh-Angle、Hands、Footstepsの時に「立っている」という固定ポーズが構図を殺さないよう、FlowTool側でスマートに中和）
-    if (track.character_setting && !isPropCut && !isLastCut) {
-      let cleanSettingDna = track.character_setting
-        .replace(/\b(standing|standing upright|upright|seated|sitting|holding an? umbrella|holding umbrellas?|with an? umbrella|holding hands?|walking straight|facing camera)\b/gi, '')
-        .replace(/(傘を差して|傘を持ち|傘を持った|傘を差す|立っている|佇んでいる|佇む|直立して|正面を向いて)/g, '')
-        .replace(/\s{2,}/g, ' ')
-        .trim();
-
-      // ── 案A（明示的に男と指定されていない限り100%美少女・女子高生にする）規約 ──
-      const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${cleanSettingDna} ${track.track_name || ''} ${track.style || ''}`);
-      if (!hasExplicitMale) {
-        cleanSettingDna = cleanSettingDna
-          .replace(/(?<!女子)高校生/g, '女子高校生')
-          .replace(/(?<!女子)学生/g, '女子学生');
-        if (!/\b(female|girl|woman|美少女|女子)\b/i.test(cleanSettingDna)) {
-          cleanSettingDna = `delicate cute anime high school girl, ${cleanSettingDna}`;
-        }
-      }
-
-      if (cleanSettingDna) {
-        if (shotScale.includes('Hands')) {
-          // 手元マクロ: 顔・全身を完全排除し、手元・仕草・服装ディテールのみ
-          promptEnComponents.push(`[TACTILE DETAILS]: Focused on hands, fingers, and tactile gestures matching the character's attire and setting, absolutely NO face.`);
-        } else if (shotScale.includes('Footsteps')) {
-          // 足元ローアングル: 靴・足元・地面のみ
-          promptEnComponents.push(`[GROUND DETAILS]: Focused on footsteps, footwear, and terrain reflecting the setting, ground level only, absolutely NO face.`);
-        } else if (shotScale.includes('Close-Up') || shotScale.includes('Profile') || shotScale.includes('Mouth')) {
-          // 接写・横顔・口元: 全身立ちポーズを殺し、顔・髪・上半身の容姿特徴のみにフォーカス
-          cleanSettingDna = cleanSettingDna.replace(/\b(full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|bench|chair|seated)\b/gi, '').trim();
-          promptEnComponents.push(`[CHARACTER PORTRAIT DETAILS]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
-        } else if (shotScale.includes('Wide') || shotScale.includes('Panorama')) {
-          // 引き・全景: 人物が中央に立ちはだからないよう、風景に溶け込むシルエットとして注入
-          promptEnComponents.push(`[CHARACTER IN SCENERY]: Subtle atmospheric silhouette of female protagonist, ${cleanSettingDna.replace(/\.+$/, '')}, naturally placed in the expansive landscape.`);
+        if (introStyle === 0) {
+          shotScale = 'Medium Bust Shot';
+          cameraWork = 'slow-push-in';
+          cinematicAngle = 'Cinematic upper-body bust shot portrait from the chest up, expressive captivating eyes with natural highlights, beautifully styled hair fluttering softly in the ambient breeze, authentic attire details clearly visible, atmospheric scenic background with gorgeous cinematic depth and soft bokeh, perfectly balanced golden-ratio composition, highly aesthetic music video intro';
+        } else if (introStyle === 1) {
+          shotScale = 'Medium Close-Up Profile';
+          cameraWork = 'cinematic-orbit';
+          cinematicAngle = 'Artistic medium close-up profile and three-quarter view, gentle turn-back glance towards the camera, emotional silhouette and delicate facial contour, cinematic rim lighting against atmospheric scenic background, breeze blowing through hair, poetic and evocative storytelling frame';
+        } else if (introStyle === 2) {
+          shotScale = 'Extreme Close-Up';
+          cameraWork = 'intimate-macro';
+          cinematicAngle = UNIVERSAL_CINE_CYCLE[0].directive;
         } else {
-          promptEnComponents.push(`[CHARACTER SETTING]: Female protagonist, ${cleanSettingDna.replace(/\.+$/, '')}.`);
+          shotScale = 'Medium Shot';
+          cameraWork = 'wide-establishing';
+          cinematicAngle = 'Atmospheric medium shot capturing the protagonist standing gracefully within the scenic environment, full upper body and environment in harmonious balance, ambient breeze, cinematic filmic lighting and natural depth of field, poetic introductory scene';
+        }
+        telopPosition = 'bottom-center';
+      } else if (isLastCut) {
+        // ★ 不在の余韻 ＆ 無限ループ構図
+        shotScale = 'Extreme Wide Panorama';
+        cameraWork = 'wide-establishing';
+        cinematicAngle = UNIVERSAL_CINE_CYCLE[4].directive;
+        telopPosition = 'bottom-center';
+      } else if (isPropCut) {
+        // ★ 伏線・象徴小道具確定（人物除外・マクロ静物インサート）
+        shotScale = 'Still-Life Object Macro';
+        cameraWork = 'macro-reveal';
+        cinematicAngle = UNIVERSAL_CINE_CYCLE[9].directive;
+        isObjectOnly = true;
+        telopStyle = 'mv-neon-glow';
+        telopPosition = 'bottom-center';
+      } else if (isChorus) {
+        // ★ サビ演出: カメラワークに動的エナジーを付加
+        cameraWork = (i % 2 === 0) ? 'cinematic-orbit' : 'dynamic-pan-zoom';
+        telopPosition = 'center-stagger';
+      }
+
+      // 🛡️ [連続顔面アップ防止ガード] 直前と今回がともに顔面/瞳/口元マクロの場合、バストショットまたは全景へ自動シフト
+      if (i > 1 && lastShotScale && isFaceMacroScale(lastShotScale, lastCinematicAngle) && isFaceMacroScale(shotScale, cinematicAngle)) {
+        shotScale = 'Medium Bust Shot';
+        cameraWork = 'slow-push-in';
+        cinematicAngle = 'Cinematic upper-body bust shot portrait from the chest up, expressive captivating eyes with natural highlights, beautifully styled hair fluttering softly in the ambient breeze, authentic attire details clearly visible, atmospheric scenic background with gorgeous cinematic depth and soft bokeh, perfectly balanced golden-ratio composition';
+      }
+
+      lastShotScale = shotScale;
+      lastCinematicAngle = cinematicAngle;
+
+      const hl = extractHighlights(lyric);
+      const visualPlot = extractLyricVisualPlot(lyric, hint, track.surface_theme || track.title, i, isPropCut, section);
+
+      const promptEnComponents = [
+        `Masterpiece, high production music video, authentic ${masterCat.pool.visual_contract.style_preset}.`,
+        visualPlot,
+      ];
+
+      // キャストDNAおよび表情のインポート（キャスト固定が明示的にONのときのみ注入）
+      if (selectedCharacter && !isPropCut && !isLastCut) {
+        let expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+        if (i === 1) {
+          expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+        } else if (section === 'verse_b') {
+          expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+        } else if (isChorus) {
+          expressionPrompt = selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
+        } else if (section === 'bridge') {
+          expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || '';
+        }
+
+        const cleanDna = selectedCharacter.dnaPromptEn ? selectedCharacter.dnaPromptEn.trim().replace(/\.+$/, '') : '';
+        const expressionPart = expressionPrompt ? ` [EXPRESSION]: ${expressionPrompt.replace(/\.+$/, '')}.` : '';
+        if (cleanDna) {
+          promptEnComponents.push(`[PROTAGONIST DNA]: ${cleanDna}.${expressionPart}`);
         }
       }
-    }
 
-    // 五感・小道具ディテール（sensory_details）の注入: 静物または手元カットのみに限定（Cut 1の顔アップに缶の熱を注入して自販機化するのを防止）
-    if (track.sensory_details && (isPropCut || shotScale.includes('Hands'))) {
-      promptEnComponents.push(`[TACTILE DETAILS]: ${track.sensory_details.trim().replace(/\.+$/, '')}.`);
-    }
+      // 情景コンテキスト（scene_context）の注入
+      const isMacroOrDetailCut = isPropCut ||
+        shotScale.includes('Close-Up') ||
+        shotScale.includes('Mouth') ||
+        shotScale.includes('Hands') ||
+        shotScale.includes('Footsteps');
 
-    // 音楽スタイル（曲調・雰囲気）の作画プロンプト自動注入
-    if (track.style && track.style !== 'Audio effects') {
-      const moodMatches = track.style.match(/(?:intimate domestic atmosphere|bittersweet nostalgic mood|nostalgic|chill|sparkly|dreamy|melancholic|energetic)[^,]*/gi);
-      if (moodMatches && moodMatches.length > 0) {
-        promptEnComponents.push(`[AUDIO MOOD]: ${[...new Set(moodMatches)].join(', ')}.`);
+      if (track.scene_context && !isMacroOrDetailCut) {
+        promptEnComponents.push(`[WORLD AMBIENCE]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
+      } else if (track.surface_theme && isMacroOrDetailCut && !isPropCut) {
+        promptEnComponents.push(`[AMBIENT ATMOSPHERE]: Atmospheric lighting and subtle environment reflecting the world of "${track.surface_theme}".`);
       }
-    }
 
-    promptEnComponents.push(
-      isPropCut
-        ? `Shallow depth of field, dramatic dust motes in sunbeam, crisp macro reflections.`
-        : `Atmospheric cinematography, aesthetic lighting, beautifully detailed textures, clean edge-to-edge artwork.`
-    );
+      // 登場人物詳細（character_setting）の画角連動インテリジェント注入
+      if (track.character_setting && !isPropCut && !isLastCut) {
+        let cleanSettingDna = track.character_setting
+          .replace(/\b(standing|standing upright|upright|seated|sitting|holding an? umbrella|holding umbrellas?|with an? umbrella|holding hands?|walking straight|facing camera)\b/gi, '')
+          .replace(/(傘を差して|傘を持ち|傘を持った|傘を差す|立っている|佇んでいる|佇む|直立して|正面を向いて)/g, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
 
-    const promptEn = promptEnComponents.join(' ');
+        const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${cleanSettingDna} ${track.track_name || ''} ${track.style || ''}`);
+        if (!hasExplicitMale) {
+          cleanSettingDna = cleanSettingDna
+            .replace(/(?<!女子)高校生/g, '女子高校生')
+            .replace(/(?<!女子)学生/g, '女子学生');
+          if (!/\b(female|girl|woman|美少女|女子)\b/i.test(cleanSettingDna)) {
+            cleanSettingDna = `delicate cute anime high school girl, ${cleanSettingDna}`;
+          }
+        }
 
-    // 直近カットのポーズ・小道具・構図を次カットのネガティブプロンプトへ完全自動バインド
-    const recentCuts = cuts.slice(Math.max(0, cuts.length - 2));
-    const dynamicAntiPrev = recentCuts.length > 0 ? buildDynamicAntiPreviousNegative(recentCuts.map(c => ({
-      scale: c.shotScale,
-      angle: c.cinematicAngle || c.cameraWork,
-      prompt: c.promptEn
-    })), shotScale) : '';
-
-    cuts.push({
-      id: i,
-      promptEn: promptEn,
-      negativePrompt: dynamicAntiPrev,
-      narrationJp: lyric,
-      narrationEn: '',
-      shotScale: shotScale,
-      cameraWork: cameraWork,
-      cinematicAngle: cinematicAngle,
-      isObjectOnly: isObjectOnly,
-      panelLayout: isPropCut ? 'single' : (isChorus ? 'diagonal-slash' : 'single'),
-      focalPoint: isPropCut ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'key_prop' } : undefined,
-      duration: 6.0,
-      isSelectedForVideo: isCutSelectedForVideo(i - 1, videoRatio),
-      targetVideoModel: 'omni-flash',
-      isDirecting: false,
-      isGeneratingImage: false,
-      isGeneratingVideo: false,
-      isQueued: false,
-      telop: {
-        fullText: lyric,
-        highlights: hl,
-        style: telopStyle,
-        transition: telopTransition,
-        position: telopPosition,
-        directorNote: hint ? `[CT198 Direct] ${hint}` : (isPropCut ? `[Key Prop] ${lyric}` : `[Lyric Motif] ${lyric}`)
+        if (cleanSettingDna) {
+          if (shotScale.includes('Hands')) {
+            promptEnComponents.push(`[TACTILE DETAILS]: Focused on hands, fingers, and tactile gestures matching the character's attire and setting, absolutely NO face.`);
+          } else if (shotScale.includes('Footsteps')) {
+            promptEnComponents.push(`[GROUND DETAILS]: Focused on footsteps, footwear, and terrain reflecting the setting, ground level only, absolutely NO face.`);
+          } else if (shotScale.includes('Close-Up') || shotScale.includes('Profile') || shotScale.includes('Mouth')) {
+            cleanSettingDna = cleanSettingDna.replace(/\b(full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|bench|chair|seated)\b/gi, '').trim();
+            promptEnComponents.push(`[CHARACTER PORTRAIT DETAILS]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
+          } else if (shotScale.includes('Wide') || shotScale.includes('Panorama')) {
+            promptEnComponents.push(`[CHARACTER IN SCENERY]: Subtle atmospheric silhouette of female protagonist, ${cleanSettingDna.replace(/\.+$/, '')}, naturally placed in the expansive landscape.`);
+          } else {
+            promptEnComponents.push(`[CHARACTER SETTING]: Female protagonist, ${cleanSettingDna.replace(/\.+$/, '')}.`);
+          }
+        }
       }
-    });
+
+      // 五感・小道具ディテール（sensory_details）の注入
+      if (track.sensory_details && (isPropCut || shotScale.includes('Hands'))) {
+        promptEnComponents.push(`[TACTILE DETAILS]: ${track.sensory_details.trim().replace(/\.+$/, '')}.`);
+      }
+
+      // 音楽スタイル（曲調・雰囲気）の作画プロンプト自動注入
+      if (track.style && track.style !== 'Audio effects') {
+        const moodMatches = track.style.match(/(?:intimate domestic atmosphere|bittersweet nostalgic mood|nostalgic|chill|sparkly|dreamy|melancholic|energetic)[^,]*/gi);
+        if (moodMatches && moodMatches.length > 0) {
+          promptEnComponents.push(`[AUDIO MOOD]: ${[...new Set(moodMatches)].join(', ')}.`);
+        }
+      }
+
+      promptEnComponents.push(
+        isPropCut
+          ? `Shallow depth of field, dramatic dust motes in sunbeam, crisp macro reflections.`
+          : `Atmospheric cinematography, aesthetic lighting, beautifully detailed textures, clean edge-to-edge artwork.`
+      );
+
+      const promptEn = promptEnComponents.join(' ');
+
+      // 直近カットのポーズ・小道具・構図を次カットのネガティブプロンプトへ完全自動バインド
+      const recentCuts = cuts.slice(Math.max(0, cuts.length - 2));
+      const dynamicAntiPrev = recentCuts.length > 0 ? buildDynamicAntiPreviousNegative(recentCuts.map(c => ({
+        scale: c.shotScale,
+        angle: c.cinematicAngle || c.cameraWork,
+        prompt: c.promptEn
+      })), shotScale) : '';
+
+      cuts.push({
+        id: i,
+        promptEn: promptEn,
+        negativePrompt: dynamicAntiPrev,
+        narrationJp: lyric,
+        narrationEn: '',
+        shotScale: shotScale,
+        cameraWork: cameraWork,
+        cinematicAngle: cinematicAngle,
+        isObjectOnly: isObjectOnly,
+        panelLayout: isPropCut ? 'single' : (isChorus ? 'diagonal-slash' : 'single'),
+        focalPoint: isPropCut ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'key_prop' } : undefined,
+        duration: 6.0,
+        isSelectedForVideo: isCutSelectedForVideo(i - 1, videoRatio),
+        targetVideoModel: 'omni-flash',
+        isDirecting: false,
+        isGeneratingImage: false,
+        isGeneratingVideo: false,
+        isQueued: false,
+        telop: {
+          fullText: lyric,
+          highlights: hl,
+          style: telopStyle,
+          transition: telopTransition,
+          position: telopPosition,
+          directorNote: hint ? `[CT198 Direct] ${hint}` : (isPropCut ? `[Key Prop] ${lyric}` : `[Lyric Motif] ${lyric}`)
+        }
+      });
+    }
   }
 
   // トラック番号の自動判定（explicitEpisodeId > track_no > sound_prompt内のTrack-Number > 1）

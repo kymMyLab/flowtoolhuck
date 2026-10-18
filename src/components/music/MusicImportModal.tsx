@@ -598,6 +598,15 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                           <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30">
                             {t.total_cuts || 30}カット
                           </span>
+                          {Array.isArray(t.storyboard) && t.storyboard.length > 0 && (
+                            <span 
+                              className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/25 text-indigo-300 font-black border border-indigo-500/40 flex items-center gap-0.5 shadow-sm"
+                              title={`${t.storyboard.length}カットの完全絵コンテを内包しています`}
+                            >
+                              <span className="material-symbols-outlined text-[11px]">movie</span>
+                              絵コンテ同梱 ({t.storyboard.length})
+                            </span>
+                          )}
                           <span className="text-[9px] text-white/40 font-mono">
                             {t.bpm} BPM
                           </span>
