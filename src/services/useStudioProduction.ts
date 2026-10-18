@@ -65,6 +65,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
   const queueRef = useRef<GenerationTask[]>([]);
   const lastErrorRef = useRef<string>('');
+  const hasRateLimitedBanana2Ref = useRef<boolean>(false);
 
   const handleAbort = useCallback(() => {
     queueRef.current = [];
@@ -481,6 +482,21 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
             let currentNegative = finalNegative;
             let currentRefIds = referenceImageMediaIds;
 
+            // 👑 独立別枠クォータへの自動昇格:
+            // 既にBanana 2のレート上限を経験しているか、直前エラーが上限(429/RESOURCE_EXHAUSTED)の場合、
+            // 完全に独立した別枠クォータを持つ「🍌 Nano Banana Pro」へ自動フェイルオーバー！
+            const isRateLimitError = lastErrorRef.current && (
+              lastErrorRef.current.includes('使用量の上限') || 
+              lastErrorRef.current.includes('429') || 
+              lastErrorRef.current.includes('RESOURCE_EXHAUSTED') ||
+              lastErrorRef.current.includes('403')
+            );
+
+            if ((hasRateLimitedBanana2Ref.current || isRateLimitError) && !currentModelName.includes('Pro')) {
+              hasRateLimitedBanana2Ref.current = true;
+              currentModelName = '🍌 Nano Banana Pro';
+            }
+
             // ⚡ プロンプト軽量化はポリシー違反・セーフティ起因の時のみ発動させ、
             // 「使用量上限（429/レートリミット）」の時は元の高品質プロンプト・三面図・モデルを100%維持！
             const isPolicyIssue = lastErrorRef.current && (
@@ -521,12 +537,17 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
             const waitStr = formatDurationMs(delay);
             const errMsg = formatErrorMessage(err);
             lastErrorRef.current = errMsg;
-            const isRateLimit = errMsg.includes('使用量の上限') || errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED');
+            const isRateLimit = errMsg.includes('使用量の上限') || errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('403');
+
+            if (isRateLimit && !hasRateLimitedBanana2Ref.current) {
+              hasRateLimitedBanana2Ref.current = true;
+              addLog(`👑 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [別枠クォータ自動昇格] Banana 2の上限を検知！独立した別枠クォータを持つ「🍌 Nano Banana Pro」へ自動昇格して次回試行より続行します！`, 'success');
+            }
 
             if (isSuper) {
               addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/4] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
             } else if (isRateLimit) {
-              addLog(`⏳ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [APIレート制限回復待機] プロンプト品質を維持したまま ${waitStr}待機して再開 (${attempt}/${max})... (理由: ${errMsg})`, 'warning');
+              addLog(`⏳ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [クォータ回復＆Pro昇格待機] 品質を維持したまま ${waitStr}待機して再開 (${attempt}/${max})... (理由: ${errMsg})`, 'warning');
             } else if (attempt >= 2) {
               addLog(`⚡ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [セーフティ回避] プロンプト安全化モードで再試行 (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
             } else {
