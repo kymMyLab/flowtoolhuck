@@ -225,15 +225,15 @@ export async function callWithRetry<T>(
       if (attempt === totalMaxAttempts) throw err;
       
       let baseDelay = delays[attempt] ?? 80000;
-      // Googleのアクセス制限・アクティビティ検知時は、早すぎる再叩きで規制が長引かないよう最低20秒の冷却待機を確保
-      const isActivityThrottle = msg.includes('通常とは異なるアクティビティ') || msg.includes('アクティビティ') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('RATE_LIMIT');
+      // Googleのアクセス制限・アクティビティ検知・使用量上限時は、早すぎる再叩きで規制が長引かないよう最低20秒の冷却待機を確保
+      const isActivityThrottle = msg.includes('通常とは異なるアクティビティ') || msg.includes('アクティビティ') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('RATE_LIMIT') || msg.includes('使用量の上限');
       if (isActivityThrottle && baseDelay < 20000) {
         baseDelay = 20000;
       }
 
       const isSuper = effectiveSuperBackoff && attempt >= standardDelays.length;
-      // ジッター加算（通常は0〜1秒、超バックオフ時は0〜5秒）
-      const jitter = isSuper ? Math.random() * 5000 : Math.random() * 1000;
+      // ジッター加算（レート制限時はワーカー間の同時再発射を防ぐため 0〜6秒のランダム分散）
+      const jitter = isSuper ? Math.random() * 5000 : (isActivityThrottle ? Math.random() * 6000 : Math.random() * 1000);
       const roundedDelay = Math.round(baseDelay + jitter);
       
       if (onRetry) {

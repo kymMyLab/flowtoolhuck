@@ -64,6 +64,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
   } = useEpisodeState(addLog);
 
   const queueRef = useRef<GenerationTask[]>([]);
+  const lastErrorRef = useRef<string>('');
 
   const handleAbort = useCallback(() => {
     queueRef.current = [];
@@ -361,20 +362,21 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
     // ── Phase 2: 画像生成フェーズ（確定したプロンプト＆直前構図ネガティブで並列実行） ──
     queueRef.current = [...preparedTasks];
-    const concurrency = Math.min(4, Math.max(1, settings.parallelCount || 2));
+    // レートリミット（429: 使用量上限）を回避するため、並列数は最大2に制限
+    const concurrency = Math.min(2, Math.max(1, settings.parallelCount || 2));
     const workers = Array(concurrency).fill(null).map(async (_, workerIdx) => {
-      // ワーカー間で開始時間をスタッガー（時間差）させ、同時リクエスト集中による503拒絶を防止
+      // ワーカー間で開始時間をスタッガー（時間差3.5秒）させ、同時リクエスト集中による429/503を防止
       if (workerIdx > 0) {
-        await sleep(workerIdx * 1200);
+        await sleep(workerIdx * 3500);
       }
       while (queueRef.current.length > 0) {
         if (isAbortedRef.current) break;
         const task = queueRef.current.shift();
         if (!task) break;
         await generateImage(task);
-        // タスク完了後もクールダウンを挟んでAPIレートリミットを平滑化
+        // タスク完了後は 5秒 のクールダウンをしっかり挟んでAPIレートリミットを平滑化
         if (queueRef.current.length > 0 && !isAbortedRef.current) {
-          await sleep(1200);
+          await sleep(5000);
         }
       }
     });
@@ -477,27 +479,33 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
             let currentNegative = finalNegative;
             let currentRefIds = referenceImageMediaIds;
 
-            // ⚡ スマートフェイルオーバー（リトライ回数に応じて段階的に安全化）
-            if (attemptCount === 2) {
-              // 第2試行: プロンプトをスリム化し、参照メディアの誤検知を回避
-              currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
-                .slice(0, 1000)
-                .replace(/,[^,]*$/, '')
-                .trim();
-            } else if (attemptCount >= 3) {
-              // 第3試行〜: メインモデルが過負荷/一時停止の可能性に備え、超爆速・高可用性モデルへ自動フェイルオーバー！
-              currentModelName = '🍌 Nano Banana 2 Lite';
-              currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
-                .slice(0, 800)
-                .replace(/,[^,]*$/, '')
-                .trim();
-              // 非写真スタイルの場合は、実写写真の誤混入を防ぐ最小限ネガティブを死守
-              currentNegative = finalNegative.includes('photorealistic')
-                ? 'photorealistic, realistic photo, 35mm photograph, DSLR, raw photograph'
-                : '';
-              currentRefIds = undefined;
-            }
+            // ⚡ プロンプト軽量化はポリシー違反・セーフティ起因の時のみ発動させ、
+            // 「使用量上限（429/レートリミット）」の時は元の高品質プロンプト・三面図・モデルを100%維持！
+            const isPolicyIssue = lastErrorRef.current && (
+              lastErrorRef.current.includes('SAFETY') || 
+              lastErrorRef.current.includes('BLOCKED') || 
+              lastErrorRef.current.includes('ポリシー') || 
+              lastErrorRef.current.includes('POLICY')
+            );
 
+            if (isPolicyIssue) {
+              if (attemptCount === 2) {
+                currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
+                  .slice(0, 1000)
+                  .replace(/,[^,]*$/, '')
+                  .trim();
+              } else if (attemptCount >= 3) {
+                currentModelName = '🍌 Nano Banana 2 Lite';
+                currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
+                  .slice(0, 800)
+                  .replace(/,[^,]*$/, '')
+                  .trim();
+                currentNegative = finalNegative.includes('photorealistic')
+                  ? 'photorealistic, realistic photo, 35mm photograph, DSLR, raw photograph'
+                  : '';
+                currentRefIds = undefined;
+              }
+            }
 
             return await Flow.generate.image({ 
               prompt: currentPrompt,
@@ -510,10 +518,15 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           (attempt, max, delay, err, isSuper) => {
             const waitStr = formatDurationMs(delay);
             const errMsg = formatErrorMessage(err);
+            lastErrorRef.current = errMsg;
+            const isRateLimit = errMsg.includes('使用量の上限') || errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED');
+
             if (isSuper) {
               addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/4] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
+            } else if (isRateLimit) {
+              addLog(`⏳ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [APIレート制限回復待機] プロンプト品質を維持したまま ${waitStr}待機して再開 (${attempt}/${max})... (理由: ${errMsg})`, 'warning');
             } else if (attempt >= 2) {
-              addLog(`⚡ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [スマートフェイルオーバー] プロンプト軽量化＆高可用性モードで再試行 (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
+              addLog(`⚡ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [セーフティ回避] プロンプト安全化モードで再試行 (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
             } else {
               addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
             }
