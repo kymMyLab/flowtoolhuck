@@ -393,6 +393,73 @@ export interface SafeScriptResult {
   }>;
 }
 
+export interface LyricVisualDirective {
+  cutId: number;
+  stagingType: 'character_with_props' | 'character_focused' | 'scenic_prop_insert';
+  propMotif?: string;
+  action?: string;
+  visualPromptEn: string;
+}
+
+/**
+ * Geminiによる楽曲歌詞・ビジュアル自律判断＆映画的緩急バランスエンジン
+ * 30カット全体の歌詞コンテキストを俯瞰し、人物主導(65-75%) / 人物×環境小道具(15-25%) / 静物インサート(最大2-3カット)の
+ * 映画的緩急バランスを保ちながら、各カットの作画演出英文プロンプトを決定論的に導出
+ */
+export async function analyzeLyricVisualsWithGemini(
+  lyricLines: { cutId: number; lyric: string; section?: string }[],
+  theme: string,
+  characterContext: string
+): Promise<LyricVisualDirective[] | null> {
+  if (!lyricLines || lyricLines.length === 0) return null;
+
+  const prompt = `You are a master cinema/anime MV director.
+Analyze the following song lyrics and determine the optimal visual motifs, props, and staging directives for each cut.
+
+Theme: "${theme}"
+Protagonist context: "${characterContext}"
+
+Lyrics to analyze:
+${JSON.stringify(lyricLines, null, 2)}
+
+CRITICAL BALANCING RULE:
+A music video must center on human emotion, expressive faces, and kinetic drama.
+- Character-Driven Cuts (65%–75%): Protagonist's expressive eyes, bust shots, side profiles, singing postures, walking, looking up at the sky, contemplative glances.
+- Integrated Prop & Environment Cuts (15%–25%): Protagonist interacting within the environment where the lyric's props naturally appear (e.g., sitting at table with mugs, holding umbrella, riding bike).
+- Dedicated Still-Life Inserts (MAXIMUM 2–3 CUTS ACROSS THE ENTIRE SONG): Pure macro prop shots without humans for punchy dramatic cutaways (e.g., key emotional transition points).
+
+Output ONLY a JSON array of objects with the exact following keys:
+[
+  {
+    "cutId": 1,
+    "stagingType": "character_with_props" | "character_focused" | "scenic_prop_insert",
+    "propMotif": "string (e.g., two ceramic coffee mugs side by side with rising steam)",
+    "action": "string (e.g., sitting at table in contemplative stillness, looking out the window)",
+    "visualPromptEn": "string (detailed English visual prompt incorporating the motif, action, cinematic depth, and lighting)"
+  }
+]`;
+
+  try {
+    const res = await callWithRetry<any>(
+      () => Flow.generate.text(prompt),
+      (attempt, max, delay) => {
+        console.warn(`[Gemini Lyric Analysis Retry ${attempt}/${max}]`);
+      },
+      { maxRetries: 2 }
+    );
+    if (!res) return null;
+
+    const parsed = safeJsonParse<any[]>(res?.text || res, []);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed as LyricVisualDirective[];
+    }
+    return null;
+  } catch (err) {
+    console.warn('Failed to analyze lyrics with Gemini:', err);
+    return null;
+  }
+}
+
 /**
  * 全制作モード共通の鉄壁な脚本生成エンジン
  * 第1段階: タイトル、あらすじ、各Cutの歌詞・基本状況のみを超軽量プロンプトで即座に策定

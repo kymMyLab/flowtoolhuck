@@ -17,7 +17,7 @@ import { isCutSelectedForVideo } from '../utils';
  * ── 2. YouTube Shorts / 音楽MV（指定本数 × 各12カット）制作パイプライン ──
  */
 export async function runShortsBatchProduction(ctx: ProductionPipelineContext, curMode: string): Promise<void> {
-  const { settings, addLog, isAbortedRef, episodesRef, setEpisodes, updateEpisode, runTasks, buildCutTasks, handleBulkVideo } = ctx;
+  const { settings, addLog, isAbortedRef, episodesRef, setEpisodes, updateEpisode, runTasks, buildCutTasks, ensureLyricVisualAnalysis, handleBulkVideo } = ctx;
   const modeInfo = SHORTS_CONFIG_MAP[curMode] || { label: 'Shorts', unit: '本', icon: '🎬' };
   const totalEpCount = Math.max(1, settings.episodeCount || 1);
 
@@ -80,6 +80,9 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       const targetCutCount = Math.min(settings.previewCutCount || cutsCount, cutsCount);
       const pendingCuts = existingEp.cuts.slice(0, targetCutCount).filter(c => !(c.imageBase64 || c.imageMediaId));
       if (pendingCuts.length > 0) {
+        if (existingEp.isMvMode && !existingEp.isLyricAnalyzed && ensureLyricVisualAnalysis) {
+          await ensureLyricVisualAnalysis(existingEp);
+        }
         await runTasks(buildCutTasks(existingEp, pendingCuts));
       }
 
@@ -178,6 +181,9 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     episodesRef.current = [...episodesRef.current.filter(e => e.id !== epIndex), newEpisode];
     addLog(`✨ 第${epIndex}${modeInfo.unit}のお題決定！『${newEpisode.titleJp}』全${cutsCount}カットの情景演出が確定！描画を開始します...`, 'success');
 
+    if (newEpisode.isMvMode && !newEpisode.isLyricAnalyzed && ensureLyricVisualAnalysis) {
+      await ensureLyricVisualAnalysis(newEpisode);
+    }
     const targetCutCount = Math.min(settings.previewCutCount, cutsCount);
     await runTasks(buildCutTasks(newEpisode, newEpisode.cuts.slice(0, targetCutCount)));
 

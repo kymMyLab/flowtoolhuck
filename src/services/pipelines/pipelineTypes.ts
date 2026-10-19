@@ -12,6 +12,7 @@ export interface ProductionPipelineContext {
   updateEpisode: (epId: number, data: Partial<Episode>) => void;
   runTasks: (tasks: GenerationTask[]) => Promise<void>;
   buildCutTasks: (ep: Episode, cuts: Cut[], styleKey?: string) => GenerationTask[];
+  ensureLyricVisualAnalysis?: (ep: Episode) => Promise<void>;
   generateVideo: (epId: number, cutId: number, modelType: VideoModelType) => Promise<void>;
   handleBulkVideo: (epId: number) => Promise<void>;
   seriesManifestRef: MutableRefObject<SeriesManifest | null>;

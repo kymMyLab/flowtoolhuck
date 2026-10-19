@@ -11,7 +11,7 @@ import {
   resolveRecommendedTelopStaging
 } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId } from './utils';
-import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate } from './promptEngine';
+import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate, isMvChorusCut } from './promptEngine';
 import { getAllReferenceAssets } from './db';
 import { renderFullEpisodeMovie, renderKenBurnsVideo } from './browserVideoService';
 import { renderCoverBase64 } from './exportService';
@@ -25,7 +25,8 @@ import {
   buildAdaptiveInfographicCoverPrompt,
   cleanEpisodeTitle,
   cleanEpisodeTitleEn,
-  PreviousShotInfo
+  PreviousShotInfo,
+  analyzeLyricVisualsWithGemini
 } from './directorService';
 import { useEpisodeState } from './useEpisodeState';
 
@@ -185,11 +186,21 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
       let effectivePrompt = c.promptEn || '';
       const rawLyric = c.telop?.fullText || c.narrationJp || '';
-      // MVモードで歌詞が存在し、かつpromptEnにまだ歌詞ビジュアル指示が反映されていない場合は動的に補完
-      if (ep.isMvMode && rawLyric && !effectivePrompt.includes('embodying lyric')) {
-        const visualPlot = extractLyricVisualPlot(rawLyric, c.telop?.directorNote || '', ep.theme || ep.titleJp || '', c.id, !!c.isObjectOnly);
-        if (!effectivePrompt.includes(visualPlot)) {
-          effectivePrompt = `${effectivePrompt}, ${visualPlot}`;
+      // MVモードで歌詞が存在する場合のプロンプト補完・置換
+      if (ep.isMvMode && rawLyric) {
+        if (c.geminiVisualPrompt) {
+          if (!effectivePrompt.includes(c.geminiVisualPrompt)) {
+            if (effectivePrompt.includes('embodying lyric')) {
+              effectivePrompt = effectivePrompt.replace(/Scene visually embodying lyric "[^"]*", set within the world of "[^"]*"\.?/g, c.geminiVisualPrompt);
+            } else {
+              effectivePrompt = `${effectivePrompt}, ${c.geminiVisualPrompt}`;
+            }
+          }
+        } else if (!effectivePrompt.includes('embodying lyric')) {
+          const visualPlot = extractLyricVisualPlot(rawLyric, c.telop?.directorNote || '', ep.theme || ep.titleJp || '', c.id, !!c.isObjectOnly);
+          if (!effectivePrompt.includes(visualPlot)) {
+            effectivePrompt = `${effectivePrompt}, ${visualPlot}`;
+          }
         }
       }
 
@@ -218,10 +229,71 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     });
   };
 
+  const ensureLyricVisualAnalysis = async (ep: Episode): Promise<void> => {
+    if (!ep.isMvMode || ep.isLyricAnalyzed) return;
+
+    const lyricLines = ep.cuts
+      .filter(c => c.narrationJp || c.telop?.fullText)
+      .map(c => ({
+        cutId: c.id,
+        lyric: c.narrationJp || c.telop?.fullText || '',
+        section: (c.telop?.directorNote?.toLowerCase().includes('chorus') || isMvChorusCut(c.id)) ? 'chorus' : 'verse'
+      }));
+
+    if (lyricLines.length === 0) return;
+
+    addLog(`🧠 Ep.${ep.id}: 歌詞ビジュアルをGeminiで全体解析中（映画的緩急バランス判定）...`, 'process');
+    const charCtx = ep.characterDna || activeReferenceRef.current?.characterDna || 'Protagonist';
+    const analysis = await analyzeLyricVisualsWithGemini(lyricLines, ep.theme || ep.titleJp || '', charCtx);
+
+    if (analysis && analysis.length > 0) {
+      const newCuts = ep.cuts.map(c => {
+        const res = analysis.find(a => a.cutId === c.id);
+        if (!res) return c;
+
+        const isScenicProp = res.stagingType === 'scenic_prop_insert';
+        let updatedPromptEn = c.promptEn || '';
+        if (res.visualPromptEn) {
+          if (updatedPromptEn.includes('embodying lyric')) {
+            updatedPromptEn = updatedPromptEn.replace(/Scene visually embodying lyric "[^"]*", set within the world of "[^"]*"\.?/g, res.visualPromptEn);
+          } else if (!updatedPromptEn.includes(res.visualPromptEn)) {
+            updatedPromptEn = updatedPromptEn ? `${updatedPromptEn}, ${res.visualPromptEn}` : res.visualPromptEn;
+          }
+        }
+
+        const updatedCut: Cut = {
+          ...c,
+          geminiVisualPrompt: res.visualPromptEn,
+          stagingType: res.stagingType,
+          isObjectOnly: isScenicProp,
+          promptEn: updatedPromptEn
+        };
+        updateCut(ep.id, c.id, {
+          geminiVisualPrompt: res.visualPromptEn,
+          stagingType: res.stagingType,
+          isObjectOnly: isScenicProp,
+          promptEn: updatedPromptEn
+        });
+        return updatedCut;
+      });
+      ep.cuts = newCuts;
+      ep.isLyricAnalyzed = true;
+      updateEpisode(ep.id, { isLyricAnalyzed: true });
+      addLog(`✨ Ep.${ep.id}: 歌詞の映画的緩急バランス（Gemini自律判断）を反映しました！ [人物主導/静物インサート最適化]`, 'success');
+    } else {
+      addLog(`⚠️ Ep.${ep.id}: 歌詞解析をスキップしました (決定論的フォールバックを使用)`, 'warning');
+    }
+  };
+
   const handleGenerateRemaining = async (epId: number) => {
     isAbortedRef.current = false;
     const ep = episodesRef.current.find(e => e.id === epId);
     if (!ep) return;
+
+    // MVモード未解析ならバッチ画像生成前にGeminiで全体解析（映画的緩急バランス判定）
+    if (ep.isMvMode && !ep.isLyricAnalyzed) {
+      await ensureLyricVisualAnalysis(ep);
+    }
 
     // エピソードの三面図が未アップロードなら即座にFlowへ自動アップロード
     if (ep.characterTurnaroundBase64 && !ep.characterTurnaroundMediaId) {
@@ -772,6 +844,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       updateEpisode,
       runTasks,
       buildCutTasks,
+      ensureLyricVisualAnalysis,
       generateVideo,
       handleBulkVideo,
       seriesManifestRef,
@@ -904,6 +977,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       updateEpisode,
       runTasks,
       buildCutTasks,
+      ensureLyricVisualAnalysis,
       generateVideo,
       handleBulkVideo,
       seriesManifestRef,

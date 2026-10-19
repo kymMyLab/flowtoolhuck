@@ -103,6 +103,8 @@ export interface Cut {
   isMvMode?: boolean;
   finalPromptUsed?: string;
   finalNegativeUsed?: string;
+  geminiVisualPrompt?: string;
+  stagingType?: 'character_with_props' | 'character_focused' | 'scenic_prop_insert';
   styleKeyUsed?: string;
   imageModelUsed?: string;
 }
@@ -138,6 +140,7 @@ export interface Episode {
   cuts: Cut[];
   isGenerating: boolean;
   isGeneratingRemainingImages: boolean;
+  isLyricAnalyzed?: boolean;
   isBatchGeneratingVideos: boolean;
   isExportingMovie?: boolean; 
   fullMovieBase64?: string;   
