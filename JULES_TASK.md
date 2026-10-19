@@ -1,71 +1,55 @@
-# 🚀 Jules Mission: AI-Driven Lyric Visual Director (Gemini Integration & Cinematic Pacing)
-## (Geminiによる歌詞ビジュアル自律判断＆映画的緩急バランスエンジンの実装)
+# 🚀 Jules Mission: Universal Style Consistency & Ambient Veo Directing
+## (全ジャンル共通 画風維持・三面図独立生成・Veo動画鎮静化＆画風保護の実装)
 
-## 📌 Mission Background & Critical User Directives
-The user provided creative and architectural guidance for music video cut generation:
+## 📌 Mission Background & Critical User Issues
+The user identified 4 critical bugs and behavioral defects during multi-episode batch generation and Veo video creation:
 
-1. **Avoid Hardcoded Regex Dictionaries (1億通りの歌詞に対応する根本解決)**:
-   - Hardcoding keyword patterns (mugs, umbrellas, bicycles, etc.) cannot scale to infinite variations of song lyrics.
-   - Instead, integrate a **Gemini inference step** (`Flow.generate.text`) that reads the lyrics, understands poetic context, metaphors, quantities, and emotional nuance, and autonomously determines the optimal visual motifs, props, and staging directives.
+1. **Style Consistency Breakdown (30枚中1枚が超リアル・実写化してしまう)**:
+   - When generating 30 cuts in an anime or stylized theme, 1 cut suddenly turned photorealistic.
+   - **Root Cause**: In `src/services/useStudioProduction.ts`, retry/safety rescue logic (`slice(0, 500)`, `currentNegative = ''`, `currentRefIds = undefined`, adding `cinematic masterpiece`) strips out the master style anchor, drops negative prompts (photorealistic exclusions), and discards reference images (turnaround sheets).
 
-2. **Cinematic Balance & Dynamic Pacing (30カット全部が物だと涙目！適宜判断する緩急の黄金比)**:
-   > **User Directive:**
-   > 「すべてのシーンがそれでも面白くないから適宜判断する感じでね。物があって30Cut全部物だと涙目だからね(笑) いい感じに処理するように伝えておいて」
-   - **CRITICAL ANTI-PATTERN**: Do NOT turn all cuts into inanimate still-life object shots! A music video must center on human emotion, expressive faces, and kinetic drama.
-   - **Balanced MV Composition (映画的緩急)**:
-     - **Character-Driven Cuts (65%–75%)**: Protagonist's expressive eyes, bust shots, side profiles, singing postures, walking, looking up at the sky, contemplative glances.
-     - **Integrated Prop & Environment Cuts (15%–25%)**: Protagonist interacting within the environment where the lyric's props naturally appear (e.g., *protagonist sitting pensively at a low table, with two ceramic mugs placed side by side in the foreground, delicate steam rising*).
-     - **Dedicated Still-Life Inserts (5%–10% max, e.g., 2–3 cuts per 30 cuts)**: Only for punchy, dramatic cutaways (like Cut 10 / bridge transition) where a pure macro prop shot creates maximum poetic impact.
+2. **Veo Style Mutated in the Middle (8秒Veo動画の真ん中4秒だけリアル化・画風崩壊)**:
+   - In an 8-second Veo video, seconds 0–3 retained the start frame's anime style, but seconds 3–7 mutated into photorealistic CG because the prompt had no style constraint and the `Midway` prompt directive contained realistic cinematic keywords ("ambient reflections", "specular highlights", "fluid parallax").
 
----
+3. **Character Turnaround Duplication Across Batch (5本制作して5本とも全く同じ三面図)**:
+   - In batch production of 5 independent episodes, all 5 episodes used the exact same character turnaround sheet.
+   - **Root Cause**: In `src/services/pipelines/pipelineAssetFactory.ts`, `activeReferenceRef.current?.mediaId` was carried over from episode 1, causing `ensureCharacterTurnaround` to skip generating new sheets for episodes 2–5.
 
-### 🎯 Directives for Jules (Full Autonomy - End-to-End Implementation):
-
-#### 1. Implement `analyzeLyricVisualsWithGemini` in `src/services/directorService.ts`
-Create an async helper function that calls `Flow.generate.text` with a dedicated prompt:
-- **Input**:
-  - `lyricLines`: Array of `{ cutId: number, lyric: string, section?: string }`
-  - `theme`: Song theme or title
-  - `characterContext`: Protagonist profile/attire summary
-- **Prompt Design**:
-  - Instruct Gemini as a master cinema/anime MV director.
-  - Require Gemini to output structured JSON:
-    ```json
-    [
-      {
-        "cutId": 1,
-        "stagingType": "character_with_props" | "character_focused" | "scenic_prop_insert",
-        "propMotif": "two ceramic coffee mugs side by side with rising steam",
-        "action": "sitting at table in contemplative stillness, looking out the window",
-        "visualPromptEn": "protagonist sitting at a cozy low wooden table, two ceramic coffee mugs placed side by side in foreground with gentle rising steam, soft morning light streaming through curtains"
-      }
-    ]
-    ```
-  - Enforce the **Pacing Rule**: Keep pure `scenic_prop_insert` to no more than 2–3 cuts across the entire song. Emphasize `character_with_props` or `character_focused` for the rest, so the human story remains front and center!
-- **Resilience & Fallback**:
-  - Wrap in `callWithRetry` with proper error handling and JSON parsing fallback.
-  - If API call fails, seamlessly fall back to existing `UNIVERSAL_CINE_CYCLE` and `extractLyricVisualPlot` so execution never crashes.
-
-#### 2. Pipeline Integration (`src/services/useStudioProduction.ts` / Batch Generation)
-- Before batch image generation begins (or when preparing prompts in `useStudioProduction.ts` / `convertTrackToEpisode`), check if the episode has unanalyzed MV lyrics.
-- Trigger `analyzeLyricVisualsWithGemini` in a single batch call (efficient, fast, 1 API call for 30 cuts) and cache/map the enriched `visualPromptEn` onto each cut's prompt.
-- For single-cut on-demand regeneration (`handleGenerateSingleImage`), if a cut has not been analyzed yet, allow lightweight on-the-fly resolution or use the cached plot.
-
-#### 3. Verification & Safety
-- Verify that `extractLyricVisualPlot` in `src/services/musicImporter.ts` still functions gracefully as a deterministic fallback.
-- Ensure the protagonist's DNA, character expressions, and style presets blend harmoniously with the Gemini-generated lyric prompt components.
-- Run `npm run build` and ensure `dist/bundle.js` compiles cleanly with **0 errors and 0 warnings**.
-
-#### 4. Automated PR Submission (CRITICAL)
-- **DO NOT STOP OR PAUSE FOR USER CONFIRMATION**. Complete the entire mission end-to-end.
-- Open an automated Pull Request against `main` explaining:
-  - How Gemini was integrated into the MV lyric visual pipeline.
-  - How the pacing rule prevents "monotonous object-only cuts" while nailing exact lyric motifs (like the two steaming mugs).
-  - Confirmation of clean `npm run build`.
+4. **Veo Camera & Scene Motions Overly Violent/Busy (8秒の中でカメラやシーンが動きすぎる・変わりすぎる)**:
+   - Current `veoMotionPrompt` presets in `src/services/directorPrompts.ts` and `src/services/directorService.ts` try to do too much in 8 seconds (180-degree camera orbits, steep crane ascents, abrupt zoom-ins).
+   - In 8-second short clips (especially Anime MVs and Edo/Historical dramas), subtle ambient motion (gentle wind swaying hair/fabric, slow breathing, subtle gaze shift, slow elegant micro-pan) looks far more aesthetic and prevents AI morphing deformities.
 
 ---
 
-### 🛡️ Constraints:
-- Single client-side bundle execution (`inlineDynamicImports: true`).
-- Keep existing character presets, taste showroom, and 10 universal cinematic cycles intact.
-- High error tolerance: Any Gemini JSON parse error or rate limit must cleanly fall back without breaking the batch pipeline.
+## 🎯 Directives for Jules (Full Autonomy - End-to-End Implementation):
+
+### 1. Style Anchor Preservation in `src/services/useStudioProduction.ts`
+- **Rule**: Never strip the artistic style anchor, photorealistic negative prompts, or character turnaround reference images during retries or safety rescue.
+- Ensure that even in `isPolicyIssue` retries and the final fallback rescue mode:
+  1. The **Master Art Style Anchor** (e.g. `[MASTER ART STYLE: ...]`) from Layer 1 is **always preserved** at the front of the prompt.
+  2. The **Negative Prompt** keeps essential exclusions (e.g. if the style is non-photo, `photorealistic, realistic photo, 35mm photograph, DSLR, raw photograph` must NOT be cleared).
+  3. The `referenceImageMediaIds` (turnaround sheet / character anchor) must NOT be set to `undefined` unless explicitly instructed for pure inanimate object cuts.
+
+### 2. Veo Video Style Protection & Prompt Sanitization in `src/services/useVideoGeneration.ts`
+- When constructing `finalVideoPrompt` for `Flow.generate.video`:
+  1. Inject a strong **Style Preservation Directive** based on the episode/cut's style at the very beginning of the prompt:
+     `[MASTER ART STYLE MANDATE]: Strictly maintain the identical rendering medium, visual aesthetic, and artistic art style of the first frame image throughout the entire duration. Zero drift into photorealism or 3D CG textures.`
+  2. Prevent prompt text from introducing photorealistic keywords ("photoreal", "hyper-detailed reflections", "35mm DSLR") when the source cut is stylized (anime, manga, ukiyo-e, pixel art, watercolor).
+
+### 3. Reset Character Reference Across Independent Batch Episodes
+- In `src/services/pipelines/shortsBatchPipeline.ts` and `src/services/pipelines/pipelineAssetFactory.ts`:
+  - When starting a new episode in a batch (unless explicitly marked as a continuous multi-part story sharing the exact same protagonist), **reset `activeReferenceRef.current`** so that `ensureCharacterTurnaround` generates a fresh, unique character model sheet tailored to the new episode's theme and DNA.
+  - Verify that each generated episode maintains its own unique character turnaround mediaId and base64.
+
+### 4. Ambient & Calmed Veo Motion Directives
+- Update `veoMotionPrompt` presets and templates in `src/services/directorPrompts.ts` and `src/services/directorService.ts`:
+  - Replace violent multi-step acrobatics (180-degree orbits, high crane flyaways) with **subtle, high-fidelity ambient motions**:
+    - *Example*: Gentle ambient wind swaying clothing and hair, subtle micro-push/drift, quiet contemplation, peaceful gaze shift, soft atmospheric dust particles or lighting play.
+  - Ensure these calmed motions apply universally to MV, historical/Edo drama, and standard YouTube Shorts modes.
+
+---
+
+## 🛡️ Verification & Safety Constraints
+1. **Build Integrity**: Ensure `npm run build` succeeds without TypeScript or Vite compilation errors.
+2. **Zero Regressions**: Preserve existing features (Media Vault prompt rules, lyric analysis, fallback retries, multi-panel support).
+3. **Automated PR**: Once verified, commit and create a Pull Request on GitHub.
