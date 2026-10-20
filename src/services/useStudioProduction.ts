@@ -590,21 +590,31 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
             );
 
             if (isPolicyIssue) {
+              const masterStyleMatch = safePrompt.match(/\[MASTER ART STYLE:[^\]]+\]/i);
+              const masterStyleStr = masterStyleMatch ? masterStyleMatch[0] + ' ' : '';
+
               if (attemptCount === 2) {
-                currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
+                currentPrompt = masterStyleStr + sanitizePromptForGoogleSafety(safePrompt.replace(/\[MASTER ART STYLE:[^\]]+\]/i, ''))
                   .slice(0, 1000)
                   .replace(/,[^,]*$/, '')
                   .trim();
               } else if (attemptCount >= 3) {
                 currentModelName = '🍌 Nano Banana 2 Lite';
-                currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
+                currentPrompt = masterStyleStr + sanitizePromptForGoogleSafety(safePrompt.replace(/\[MASTER ART STYLE:[^\]]+\]/i, ''))
                   .slice(0, 800)
                   .replace(/,[^,]*$/, '')
                   .trim();
-                currentNegative = finalNegative.includes('photorealistic')
-                  ? 'photorealistic, realistic photo, 35mm photograph, DSLR, raw photograph'
-                  : '';
-                currentRefIds = undefined;
+
+                // Keep negative prompt if it includes exclusions
+                if (finalNegative.includes('photorealistic')) {
+                  currentNegative = 'photorealistic, realistic photo, 35mm photograph, DSLR, raw photograph';
+                } else if (finalNegative) {
+                   // Instead of blanking it out, at least keep finalNegative or essential exclusions
+                   currentNegative = finalNegative;
+                }
+
+                // Do NOT set currentRefIds = undefined unless it's strictly an object-only cut.
+                currentRefIds = task.isObjectOnly ? undefined : referenceImageMediaIds;
               }
             }
 
@@ -653,7 +663,10 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: サーバー過負荷・セーフティ保護をバイパスするため、極小救済プロンプト＆超軽量モデルで最終生成を実行します...`, 'warning');
           
           // 骨子のみの最小安全プロンプトで最終救済
-          const rescuePrompt = sanitizePromptForGoogleSafety(safePrompt)
+          const masterStyleMatch = safePrompt.match(/\[MASTER ART STYLE:[^\]]+\]/i);
+          const masterStyleStr = masterStyleMatch ? masterStyleMatch[0] + ' ' : '';
+
+          const rescuePrompt = masterStyleStr + sanitizePromptForGoogleSafety(safePrompt.replace(/\[MASTER ART STYLE:[^\]]+\]/i, ''))
             .replace(/\b(seductive|seductively|adult|intimate|childlike|sensual|erotic|provocative|naked|nude)\b/gi, 'artistic')
             .slice(0, 500)
             .replace(/,[^,]*$/, '')
@@ -663,9 +676,10 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
             res = await callWithRetry<any>(
               () => Flow.generate.image({ 
                 prompt: rescuePrompt,
-                negativePrompt: '',
+                negativePrompt: finalNegative,
                 modelDisplayName: '🍌 Nano Banana 2 Lite',
-                aspectRatio: safeAspectRatio as any
+                aspectRatio: safeAspectRatio as any,
+                referenceImageMediaIds: task.isObjectOnly ? undefined : referenceImageMediaIds
               }),
               (attempt, max, delay, err) => {
                 addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 救済モード再試行中 (${attempt}/${max})...`, 'warning');

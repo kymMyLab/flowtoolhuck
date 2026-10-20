@@ -121,15 +121,15 @@ export function resolveCinematicEndFrameAndMotion(options: {
   // 【Beginning（初めに） ➔ Midway（途中で） ➔ Finally（最後に）】の3段時系列で中間の情景推移を明示
   // どんな世界観・人物でも100%通用し、空間歪み・溶け・ダブル人物を完全防止
   const universalDroneMotions: CinematicEvolution[] = [
-    // Pattern 1: 180度リバースクレーンプルアウト（映画的切り返しショット）
+    // Pattern 1: 静かな風と光の環境揺らぎ（アンビエント・ブリーズ）
     {
-      endFramePlot: `Relative to the start frame: camera elevates and pulls back into a grand 180-degree reverse wide crane perspective, capturing the subject from the opposite angle within the expansive ambient environment, revealing the previously unseen opposite space while keeping identical character appearance, clothing, and atmosphere.`,
-      veoMotionPrompt: 'Continuous 8-second reverse crane pullout: [Beginning] camera starts on the subject and begins rising while pivoting 180 degrees, [Midway] smoothly gliding backward high into the surrounding air revealing the lateral environment in continuous fluid parallax, [Finally] settling into a grand, cinematic wide counter-shot composition while keeping the subject and environment in perfect, coherent focus throughout.'
+      endFramePlot: `Relative to the start frame: gentle ambient wind sways the character's hair and clothing subtly, soft particles or dust floating in the atmosphere, creating a peaceful, breathtaking living portrait without changing the camera framing.`,
+      veoMotionPrompt: 'Continuous 8-second subtle ambient breeze: [Beginning] scene starts entirely still, [Midway] a very gentle invisible wind causes subtle swaying of hair, fabric, and atmospheric dust motes while lighting remains perfectly stable, [Finally] settling into a highly aesthetic, peaceful, and organic living portrait. Absolutely no aggressive camera sweeps or morphing.'
     },
-    // Pattern 2: 俯瞰クレーン上昇（フロアと空間の幾何学）
+    // Pattern 2: 平穏な視線の推移（ピースフル・ゲイズシフト）
     {
-      endFramePlot: `Relative to the start frame: camera ascends into an overhead bird's-eye high angle looking down, revealing floor space and surroundings while keeping the same subject and relaxed posture.`,
-      veoMotionPrompt: 'Continuous 8-second smooth crane ascent: [Beginning] camera starts at eye level with the subject, [Midway] ascends smoothly upward in a vertical arc, passing overhead ambient light fixtures and revealing the geometry of the surrounding floor, [Finally] gently settling into a breathtaking high-angle bird\'s-eye view looking down on the subject in perfect tranquil continuity.'
+      endFramePlot: `Relative to the start frame: holding the exact same framing and lighting, the subject shifts their gaze peacefully, conveying quiet, contemplative emotion with micro-expressions and zero deformation.`,
+      veoMotionPrompt: 'Continuous 8-second peaceful gaze shift: [Beginning] character looks in initial direction, [Midway] very slow, subtle, and natural turning of the eyes or slight head tilt, maintaining perfect facial structure and lighting, [Finally] resting in a thoughtful, serene expression. The camera itself remains completely stationary to prevent distortion.'
     },
     // Pattern 3: ドローン広角プルバック（引きの画角）
     {
@@ -176,10 +176,10 @@ export function resolveCinematicEndFrameAndMotion(options: {
       endFramePlot: `Relative to the start frame: camera floats gently upward and tilts downward in a cozy high angle, capturing a quiet, peaceful view of the same scene.`,
       veoMotionPrompt: 'Continuous 8-second floating crane ascent: [Beginning] camera hovers comfortably near eye level, [Midway] gently floats upward like a balloon while tilting downward at a soft 30-degree angle, sweeping warm ambient lighting across the setting, [Finally] easing into a cozy, comforting high perspective that embraces the entire quiet scene.'
     },
-    // Pattern 12: フィナーレ・スカイハイプルアップ
+    // Pattern 12: 微かな空気感の漂いと光の移ろい（アトモスフェリック・ダスト）
     {
-      endFramePlot: `Relative to the start frame: camera glides upward and backward in an expansive finale vista shot, opening up the entire cinematic atmosphere in majestic resolution.`,
-      veoMotionPrompt: 'Continuous 8-second majestic skyward pullout: [Beginning] camera centers on the protagonist during their final beat, [Midway] ascends backward into the sky on a high crane sweep, revealing the full horizon, distant lights, and expansive atmospheric grandeur, [Finally] settling into an epic, breathtaking final tableau with the character gracefully integrated into the boundless world.'
+      endFramePlot: `Relative to the start frame: soft atmospheric dust particles float slowly across the depth of field, with very subtle, gentle lighting shifts warming the scene naturally.`,
+      veoMotionPrompt: 'Continuous 8-second atmospheric dust drift: [Beginning] character is perfectly still in the initial lighting, [Midway] extremely slow, cinematic dust motes float through the shallow depth of field with a micro-push drift forward (less than 5%), [Finally] settling into a profoundly atmospheric, emotionally quiet finale. Absolutely no fast tracking or sweeping arcs.'
     }
   ];
 

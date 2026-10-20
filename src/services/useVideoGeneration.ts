@@ -76,6 +76,10 @@ export function useVideoGeneration({
         finalVideoPrompt = 'Cinematic moving shot, high quality';
       }
 
+      const styleMandate = '[MASTER ART STYLE MANDATE]: Strictly maintain the identical rendering medium, visual aesthetic, and artistic art style of the first frame image throughout the entire duration. Zero drift into photorealism or 3D CG textures.';
+      let safeVideoPrompt = finalVideoPrompt.replace(/photoreal(?:istic)?|hyper-detailed reflections|35mm DSLR|realistic photo/gi, '').replace(/,\s*,/g, ',').trim();
+      finalVideoPrompt = `${styleMandate} ${safeVideoPrompt}`;
+
       // ユーザー絶対方針: 動画は横動画(16:9)を基本とする（横→縦のクロップは容易だが、縦→横は困難なため）
       const targetAspectRatio: "16:9" | "9:16" = settings.aspectRatio === '9:16' ? '9:16' : '16:9';
       const safeVideoModelName = modelDef.name || 'Veo 3.1 - Fast';

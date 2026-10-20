@@ -40,6 +40,11 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
   const defaultEnTitle = 'Cinematic Story';
 
   for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
+    // Reset the character turnaround reference for each independent episode to ensure unique generation
+    if (ctx.activeReferenceRef) {
+      ctx.activeReferenceRef.current = null;
+    }
+
     const currentBatchStep = epIndex - startEpIndex + 1;
     if (isAbortedRef.current) {
       addLog(`🛑 制作が中断されました（今回作成: ${currentBatchStep - 1}/${totalEpCount}${modeInfo.unit}完了）`, 'warning');
