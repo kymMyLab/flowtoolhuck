@@ -70,10 +70,20 @@ export function useVideoGeneration({
       const endDestinationText = isEndFrameValid ? ` [Destination Finale Scene]: ${cut.endFramePromptEn}` : '';
 
       // Start絵の構図 ＋ 三段時系列カメラ＆情景推移 ＋ 最終到達点（After）の情景プロンプト
-      let finalVideoPrompt = `[Initial Starting Scene]: ${cut?.promptEn || ''} ${motionText}${endDestinationText}`.trim();
+      const stylePreservationMandate = '[MASTER ART STYLE MANDATE]: Strictly maintain the identical rendering medium, visual aesthetic, and artistic art style of the first frame image throughout the entire duration. Zero drift into photorealism or 3D CG textures.';
+      let finalVideoPrompt = `${stylePreservationMandate} [Initial Starting Scene]: ${cut?.promptEn || ''} ${motionText}${endDestinationText}`.trim();
 
       if (finalVideoPrompt.includes('undefined') || !/[a-zA-Z0-9]/.test(finalVideoPrompt)) {
-        finalVideoPrompt = 'Cinematic moving shot, high quality';
+        finalVideoPrompt = `${stylePreservationMandate} Cinematic moving shot, high quality`;
+      }
+
+      // Filter out photorealistic keywords if the cut is not photorealistic (check prompt or style)
+      // Since we don't have direct access to isPhotoStyle here without importing, we check if the image prompt explicitly requested a stylized medium.
+      const isStylized = finalVideoPrompt.match(/anime|manga|illustration|cel|pixel|8-bit|16-bit|watercolor|oil painting|ukiyo-e|woodblock|art nouveau|chibi|ligne claire|drawing|sketch|vector|lo-fi/i)
+                        || (cut?.styleKeyUsed && !cut.styleKeyUsed.match(/photo|実写|dslr/i));
+
+      if (isStylized) {
+        finalVideoPrompt = finalVideoPrompt.replace(/\b(photoreal|photorealistic|hyper-detailed reflections|35mm DSLR|35mm photograph|live-action|raw photograph|realistic human photo|western live-action film)\b/gi, '');
       }
 
       // ユーザー絶対方針: 動画は横動画(16:9)を基本とする（横→縦のクロップは容易だが、縦→横は困難なため）

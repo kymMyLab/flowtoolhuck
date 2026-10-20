@@ -590,21 +590,32 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
             );
 
             if (isPolicyIssue) {
+              // 抽出: マスターアートスタイルアンカーを維持
+              const masterStyleMatch = safePrompt.match(/\[MASTER ART STYLE:[^\]]+\]/);
+              const masterStylePrefix = masterStyleMatch ? masterStyleMatch[0] + ' ' : '';
+
               if (attemptCount === 2) {
-                currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
-                  .slice(0, 1000)
-                  .replace(/,[^,]*$/, '')
-                  .trim();
+                const sanitized = sanitizePromptForGoogleSafety(safePrompt);
+                let trimmed = sanitized.slice(0, 1000).replace(/,[^,]*$/, '').trim();
+                if (masterStyleMatch && !trimmed.includes('[MASTER ART STYLE')) {
+                  trimmed = masterStylePrefix + trimmed;
+                }
+                currentPrompt = trimmed;
               } else if (attemptCount >= 3) {
                 currentModelName = '🍌 Nano Banana 2 Lite';
-                currentPrompt = sanitizePromptForGoogleSafety(safePrompt)
-                  .slice(0, 800)
-                  .replace(/,[^,]*$/, '')
-                  .trim();
-                currentNegative = finalNegative.includes('photorealistic')
-                  ? 'photorealistic, realistic photo, 35mm photograph, DSLR, raw photograph'
-                  : '';
-                currentRefIds = undefined;
+                const sanitized = sanitizePromptForGoogleSafety(safePrompt);
+                let trimmed = sanitized.slice(0, 800).replace(/,[^,]*$/, '').trim();
+                if (masterStyleMatch && !trimmed.includes('[MASTER ART STYLE')) {
+                  trimmed = masterStylePrefix + trimmed;
+                }
+                currentPrompt = trimmed;
+
+                // Keep negative prompt strong if it includes photo exclusion
+                if (finalNegative.includes('photorealistic')) {
+                  // Keep essential exclusions
+                  currentNegative = 'photorealistic, realistic photo, 35mm photograph, DSLR, raw photograph, 3d render, cgi';
+                }
+                // Do NOT set currentRefIds to undefined here to preserve turnaround sheet
               }
             }
 
@@ -653,11 +664,18 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: サーバー過負荷・セーフティ保護をバイパスするため、極小救済プロンプト＆超軽量モデルで最終生成を実行します...`, 'warning');
           
           // 骨子のみの最小安全プロンプトで最終救済
-          const rescuePrompt = sanitizePromptForGoogleSafety(safePrompt)
+          const masterStyleMatch = safePrompt.match(/\[MASTER ART STYLE:[^\]]+\]/);
+          const masterStylePrefix = masterStyleMatch ? masterStyleMatch[0] + ' ' : '';
+
+          let rescuePrompt = sanitizePromptForGoogleSafety(safePrompt)
             .replace(/\b(seductive|seductively|adult|intimate|childlike|sensual|erotic|provocative|naked|nude)\b/gi, 'artistic')
             .slice(0, 500)
             .replace(/,[^,]*$/, '')
             .trim() + ', cinematic masterpiece, aesthetic';
+
+          if (masterStyleMatch && !rescuePrompt.includes('[MASTER ART STYLE')) {
+            rescuePrompt = masterStylePrefix + rescuePrompt;
+          }
 
           try {
             res = await callWithRetry<any>(

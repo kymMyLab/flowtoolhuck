@@ -170,6 +170,11 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       isMvMode: curMode === 'mv', productionMode: curMode as any
     };
 
+    // Reset character reference for independent episodes so each gets a unique character
+    if (!newEpisode.isMvMode && !settings.isMvMode) {
+       ctx.activeReferenceRef.current = undefined;
+    }
+
     // 三面図マスターシートの自動生成（360度キャラ崩れ完全防止）
     const turnaround = await ensureCharacterTurnaround(ctx, newEpisode);
     if (turnaround.mediaId) {
