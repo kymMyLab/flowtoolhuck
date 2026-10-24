@@ -567,6 +567,20 @@ export function buildFinalCinematicPromptAndNegative(
   const isObjectCut = isObjectStillLife;
   const effectiveDna = !isObjectCut ? (task.characterDna || activeReference?.characterDna) : '';
 
+  // 🛡️ 静物・小道具カット（isObjectCut）特化: 画風プロンプトから人物解剖・体型・顔・ガチャ演出トークンを完全除去
+  if (isObjectCut) {
+    const sanitizeStyleForObject = (styleStr: string) => {
+      return styleStr
+        .replace(/\b(gacha splash art style|gacha splash art|refined mature young-adult anime aesthetic|mature young-adult|young-adult|elegant mature proportions|sleek jawline|alluring expressive almond-shaped eyes|almond-shaped eyes|sophisticated beauty|soft cinematic rim light on silhouette|portrait|jawline|lips|face|eyes|chin|silhouette|full body)\b/gi, '')
+        .replace(/,\s*,/g, ',')
+        .replace(/^\s*,\s*/, '')
+        .replace(/,\s*$/, '')
+        .trim();
+    };
+    effectiveMasterPrefix = sanitizeStyleForObject(effectiveMasterPrefix);
+    effectiveMasterPrompt = sanitizeStyleForObject(effectiveMasterPrompt);
+  }
+
   // 重要: もし prompt 内にすでに [PROTAGONIST DNA]: が含まれている場合、二重注入・長大化を防ぐためにアクションプロンプトから分離
   let cleanActionPrompt = effectivePrompt || '';
   if (cleanActionPrompt.includes('[PROTAGONIST DNA]:')) {
@@ -688,8 +702,11 @@ export function buildFinalCinematicPromptAndNegative(
 
   let characterPromptLayer = '';
   if (isObjectCut) {
-    characterPromptLayer = '[STRICT STILL-LIFE OBJECT MACRO: completely deserted scene, strictly NO humans, NO person, NO face, pure cinematic macro shot of symbolic keepsake prop item and atmospheric environment]. ';
-    negativeLayers.push('human, person, girl, boy, man, woman, child, face, eye, eyes, pupils, mouth, lips, cheeks, hands, fingers, legs, feet, body silhouette, crowd, portrait');
+    characterPromptLayer = '[STRICT STILL-LIFE OBJECT MACRO: completely deserted scene, strictly NO humans, NO person, NO face, pure cinematic macro shot of symbolic keepsake prop item in atmospheric modern setting]. ';
+    negativeLayers.push(
+      'human, person, girl, boy, man, woman, child, face, eye, eyes, pupils, mouth, lips, cheeks, hands, fingers, legs, feet, body silhouette, crowd, portrait',
+      'warrior, soldier, swordsman, knight, martial arts, magic, magic circle, fantasy, armor, weapons, sword, blade, ancient costume, hanfu, kimono, standing character, sitting character, anime character'
+    );
   } else {
     // ── 案A（明示的に男と指定されていない限り100%美少女・女子高生にする）規約 ──
     const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${effectiveDna || ''} ${cleanActionPrompt}`);
@@ -784,10 +801,13 @@ export function buildFinalCinematicPromptAndNegative(
     if (antiPoseNegative) sanitizedNegativeLayers.push(antiPoseNegative);
     if (eraNegative) sanitizedNegativeLayers.push(eraNegative);
 
+    const effectiveAttire = isObjectCut ? '' : dynamicAttire;
+    const attirePromptPart = effectiveAttire ? ` ${effectiveAttire}.` : '';
+
     const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}]. ${dynamicAttire}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}].${attirePromptPart} [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}].${attirePromptPart} [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
@@ -795,10 +815,13 @@ export function buildFinalCinematicPromptAndNegative(
       referenceImageMediaIds: targetMediaIds.length > 0 ? targetMediaIds : undefined
     };
   } else {
+    const effectiveAttire = isObjectCut ? '' : dynamicAttire;
+    const attirePromptPart = effectiveAttire ? ` ${effectiveAttire}.` : '';
+
     const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${remainingAction}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}. ${dynamicAttire}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${remainingAction}.${attirePromptPart} ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
+      : `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}.${attirePromptPart} ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),

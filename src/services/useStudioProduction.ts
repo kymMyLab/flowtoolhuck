@@ -446,6 +446,21 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎬 全 ${preparedTasks.length} カットの対比構図演出を確定（並列画像生成を開始します）`, 'process');
 
     // ── Phase 2: 画像生成フェーズ（確定したプロンプト＆直前構図ネガティブで並列実行） ──
+    // 👑 マスターアンカー先行確定ガード:
+    // Cut 1 が未生成（masterAnchorMediaId未確定）の場合、まず Cut 1 を単独で先行生成する。
+    // Cut 1 の決定版ポートレートが完成・アンカーロックされてから Cut 2 以降を並列ワーカーで一斉稼働させることで、
+    // Cut 2 が Cut 1 より先に走ってキャラがブレる事故を物理的に完全根絶！
+    const epId = preparedTasks[0]?.epId;
+    const currentEp = episodesRef.current.find(e => e.id === epId);
+    const cut1Index = preparedTasks.findIndex(t => t.cutId === 1);
+
+    if (cut1Index !== -1 && !currentEp?.masterAnchorMediaId) {
+      const cut1Task = preparedTasks.splice(cut1Index, 1)[0];
+      addLog(`👑 Ep.${epId}: まず Cut 1（マスターアンカー）を単独先行生成してキャラクター基準を確立します...`, 'process');
+      await generateImage(cut1Task);
+      if (isAbortedRef.current) return;
+    }
+
     queueRef.current = [...preparedTasks];
     // 並列度はユーザー設定（デフォルト2）を尊重し、ユーザーの意思で増減可能
     const concurrency = Math.max(1, settings.parallelCount || 2);
