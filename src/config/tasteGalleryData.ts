@@ -17,6 +17,18 @@ const CDN_BASE = 'https://raw.githubusercontent.com/kymMyLab/flowtoolhuck/main/a
 
 export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
   {
+    id: 'european_classical_manor',
+    tasteKey: '🏰 欧風クラシカル・黒髪ノスタルジー (Nostalgic European Manor & Black Hair Academy)',
+    displayName: '🏰 欧風クラシカル・黒髪ノスタルジー',
+    category: 'anime',
+    descriptionJp: '歴史ある欧風洋館の大階段・アーチ窓の夕暮れに佇む黒髪の制服少女。京都アニメーション・新海誠作品を思わせる情緒豊かな劇場版アニメ調。',
+    samples: {
+      students: `${CDN_BASE}/european_classical_manor/students.jpg`,
+      edo: `${CDN_BASE}/european_classical_manor/edo.jpg`,
+      adult: `${CDN_BASE}/european_classical_manor/adult.jpg`,
+    }
+  },
+  {
     id: 'retro_witch',
     tasteKey: '🌙 ノスタルジック魔女ファンタジー・極細線画 (Retro Fantasy Whisper-Line)',
     displayName: '🌙 ノスタルジック魔女ファンタジー・極細線画',
@@ -50,18 +62,6 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
       students: `${CDN_BASE}/hokusai_ukiyoe/students.jpg`,
       edo: `${CDN_BASE}/hokusai_ukiyoe/edo.jpg`,
       adult: `${CDN_BASE}/hokusai_ukiyoe/adult.jpg`,
-    }
-  },
-  {
-    id: 'european_classical_manor',
-    tasteKey: '🏰 欧風クラシカル・黒髪ノスタルジー (Nostalgic European Manor & Black Hair Academy)',
-    displayName: '🏰 欧風クラシカル・黒髪ノスタルジー',
-    category: 'anime',
-    descriptionJp: '歴史ある欧風洋館の大階段・アーチ窓の夕暮れに佇む黒髪の制服少女。京都アニメーション・新海誠作品を思わせる情緒豊かな劇場版アニメ調。',
-    samples: {
-      students: `${CDN_BASE}/european_classical_manor/students.jpg`,
-      edo: `${CDN_BASE}/european_classical_manor/edo.jpg`,
-      adult: `${CDN_BASE}/european_classical_manor/adult.jpg`,
     }
   },
   {
