@@ -2,20 +2,47 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Episode, Cut, SeriesManifest } from '../types';
 
 export function useEpisodeState(addLog: (msg: string, type?: any) => void) {
-  const [episodes, setEpisodes] = useState<Episode[]>([]);
-  const episodesRef = useRef<Episode[]>([]);
+  const [episodes, setEpisodes] = useState<Episode[]>(() => {
+    if (typeof window !== 'undefined') {
+      const existing = (window as any).__STUDIO_EPISODES__ || (window as any).__STUDIO_EPISODES_BACKUP__;
+      if (Array.isArray(existing) && existing.length > 0) {
+        return existing;
+      }
+    }
+    return [];
+  });
+  const episodesRef = useRef<Episode[]>(episodes);
   const [isProducing, setIsProducing] = useState(false);
   const isAbortedRef = useRef(false);
-  const [activeSeriesManifest, setActiveSeriesManifest] = useState<SeriesManifest | null>(null);
-  const seriesManifestRef = useRef<SeriesManifest | null>(null);
+  const [activeSeriesManifest, setActiveSeriesManifest] = useState<SeriesManifest | null>(() => {
+    if (typeof window !== 'undefined') {
+      return (window as any).__STUDIO_SERIES_MANIFEST__ || null;
+    }
+    return null;
+  });
+  const seriesManifestRef = useRef<SeriesManifest | null>(activeSeriesManifest);
 
   useEffect(() => {
     seriesManifestRef.current = activeSeriesManifest;
+    if (typeof window !== 'undefined' && activeSeriesManifest) {
+      (window as any).__STUDIO_SERIES_MANIFEST__ = activeSeriesManifest;
+    }
   }, [activeSeriesManifest]);
 
   useEffect(() => {
     episodesRef.current = episodes;
+    if (typeof window !== 'undefined' && episodes.length > 0) {
+      (window as any).__STUDIO_EPISODES__ = episodes;
+      (window as any).__STUDIO_EPISODES_BACKUP__ = episodes;
+    }
   }, [episodes]);
+
+  // 初回マウント時に既存セッションから復元された場合はログに通知
+  useEffect(() => {
+    if (episodes.length > 0) {
+      addLog(`🔄 前回の制作セッションから全${episodes.length}話（生成済み動画・画像含む）を自動復元・維持しました！`, 'success');
+    }
+  }, []);
 
   const updateCut = useCallback((epId: number, cutId: number, updates: Partial<Cut>) => {
     const targetEpId = Number(epId);
