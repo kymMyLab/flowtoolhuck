@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@30923d1/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版（完全自律・普遍的歌詞セマンティック演出エンジン版）マウント完了！'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@785cee1/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版（Veoセーフティ即時救済＆超指数バックオフ最適化版）マウント完了！'); });
