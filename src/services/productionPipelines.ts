@@ -10,3 +10,4 @@ export * from './pipelines/pipelineAssetFactory';
 export * from './pipelines/styleMatrixPipeline';
 export * from './pipelines/shortsBatchPipeline';
 export * from './pipelines/seriesProductionPipeline';
+export * from './pipelines/episodeCompletionModule';

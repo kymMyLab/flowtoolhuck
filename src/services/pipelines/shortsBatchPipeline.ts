@@ -1,7 +1,5 @@
 import { Episode } from '../../types';
 import { CUTS_PER_EPISODE } from '../../constants';
-import { saveStory } from '../db';
-import { downloadZip } from '../exportService';
 import { 
   generateSafeEpisodeScript, 
   cleanEpisodeTitle, 
@@ -11,7 +9,7 @@ import {
 import { ProductionPipelineContext, SHORTS_CONFIG_MAP, cleanupEpisodeMemory } from './pipelineTypes';
 import { createPipelineCut } from './pipelineCutFactory';
 import { ensureCharacterTurnaround, ensureInfographicCover } from './pipelineAssetFactory';
-import { isCutSelectedForVideo } from '../utils';
+import { finalizeAndProcessEpisode } from './episodeCompletionModule';
 
 /**
  * ── 2. YouTube Shorts / 音楽MV（指定本数 × 各12カット）制作パイプライン ──
@@ -111,8 +109,14 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
         addLog(`⚠️ 第${epIndex}${modeInfo.unit}『${existingEp.titleJp}』画像生成が一部未完了（${completedCutsCount}/${targetCutCount}カット）です。右側の「未生成カットを生成」から再開できます。`, 'warning');
       }
 
-      cleanupEpisodeMemory();
-      continue; // インポート済みエピソードの作画完了、次の曲へ
+      // ── 1話完結ライフサイクル共通モジュールを実行 ──
+      // （キメカット動画化 ➔ 完了確定 ➔ 即時自動ダウンロードZIP ➔ 履歴保存＆メモリ解放）
+      await finalizeAndProcessEpisode(ctx, epIndex, {
+        unitLabel: modeInfo.unit,
+        title: existingEp.titleJp
+      });
+
+      continue; // インポート済みエピソードの全工程（画像＋動画＋DL）完了、次の曲へ
     }
 
     addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit} / 今回制作: ${currentBatchStep}${modeInfo.unit}目（全${totalEpCount}${modeInfo.unit}）】「${baseRawTitle}」第${epIndex}弾のお題＆脚本（12カット）をAIが考案中...`, 'process');
@@ -216,61 +220,13 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       addLog(`⚠️ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』画像生成が一部未完了（${completedCount}/${targetCutCount}カット）です。右側の「未生成カットを生成」から再開できます。`, 'warning');
     }
 
-    await saveStory({ titleJp: newEpisode.titleJp, titleEn: newEpisode.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: newEpisode.summary || '', createdAt: new Date().toISOString() });
-    cleanupEpisodeMemory();
-  }
-
-  // ── Phase 2: 自動動画化フェーズ（全エピソードの画像生成が完了した後に4多重で安全に並列実行） ──
-  if (settings.autoVideo && !isAbortedRef.current) {
-    addLog(`🎬 【自動動画化フェーズ】全${modeInfo.unit}の画像作画が完了しました。キメカットの並列動画化を開始します...`, 'process');
-    for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
-      if (isAbortedRef.current) break;
-      const currentEpForVideo = episodesRef.current.find(e => Number(e.id) === Number(epIndex));
-      if (!currentEpForVideo) continue;
-
-      const cutsCount = currentEpForVideo.cuts.length;
-      const targetCutCount = Math.min(settings.previewCutCount || cutsCount, cutsCount);
-      let selectedCuts = currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo);
-
-      // セーフティネット: autoVideoがONなのに全カット未選択の場合、videoRatioに基づき自動救済選定
-      if (selectedCuts.length === 0 && settings.videoRatio !== 'none') {
-        addLog(`💡 [動画化自動救済] 第${epIndex}${modeInfo.unit}のカット選択が0枚のため、設定割合「${settings.videoRatio || '30%'}」に基づきキメカットを自動選定します`, 'info');
-        currentEpForVideo.cuts.forEach((c, idx) => {
-          if (isCutSelectedForVideo(idx, settings.videoRatio || '30%')) {
-            c.isSelectedForVideo = true;
-          }
-        });
-        setEpisodes(prev => prev.map(e => Number(e.id) === Number(epIndex) ? { ...e, cuts: currentEpForVideo.cuts } : e));
-        selectedCuts = currentEpForVideo.cuts.slice(0, targetCutCount).filter(c => c.isSelectedForVideo);
-      }
-
-      if (selectedCuts.length > 0) {
-        addLog(`🎬 第${epIndex}${modeInfo.unit}『${currentEpForVideo.titleJp}』の並列動画化を開始（対象: ${selectedCuts.length}カット）...`, 'process');
-        await handleBulkVideo(epIndex);
-      }
-    }
-  }
-
-  // ── Phase 3: 自動ダウンロードフェーズ ──
-  if (settings.autoDownload && !isAbortedRef.current) {
-    for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
-      if (isAbortedRef.current) break;
-      const freshEp = episodesRef.current.find(e => Number(e.id) === Number(epIndex));
-      if (!freshEp) continue;
-      addLog(`📦 第${epIndex}${modeInfo.unit}『${freshEp.titleJp}』の完了時自動ダウンロードを開始します...`, 'process');
-      const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
-      const res = await downloadZip(freshEp, addLog, undefined, currentLogs);
-      if (res) {
-        if (freshEp.packageZipBlobUrl) {
-          try { URL.revokeObjectURL(freshEp.packageZipBlobUrl); } catch (_) {}
-        }
-        updateEpisode(epIndex, {
-          packageZipBlobUrl: res.blobUrl,
-          packageZipFilename: res.filename,
-          packageZipSizeStr: res.sizeStr
-        });
-      }
-    }
+    // ── 1話完結ライフサイクル共通モジュールを実行 ──
+    // （キメカット動画化 ➔ 完了確定 ➔ 即時自動ダウンロードZIP ➔ 履歴保存＆メモリ解放）
+    // 次話の画像生成時間がVeo APIのクールダウンになり、動画化後のZIPも即座にPCへ保存！
+    await finalizeAndProcessEpisode(ctx, epIndex, {
+      unitLabel: modeInfo.unit,
+      title: newEpisode.titleJp
+    });
   }
 
   if (!isAbortedRef.current) {

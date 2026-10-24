@@ -1,9 +1,7 @@
 import { Flow } from 'flow-sdk';
 import { Episode, Cut, SeriesEpisodePlan, VideoModelType } from '../../types';
 import { CUTS_PER_EPISODE, resolveVideoModel } from '../../constants';
-import { createDefaultCut, safeJsonParse, callWithRetry, formatErrorMessage, isCutSelectedForVideo } from '../utils';
-import { saveStory } from '../db';
-import { downloadZip, downloadManifestFile } from '../exportService';
+import { createDefaultCut, safeJsonParse, callWithRetry, formatErrorMessage } from '../utils';
 import { 
   generateSafeEpisodeScript, 
   checkIsHistorical, 
@@ -15,6 +13,7 @@ import {
 import { ProductionPipelineContext, cleanupEpisodeMemory } from './pipelineTypes';
 import { createPipelineCut } from './pipelineCutFactory';
 import { ensureCharacterTurnaround, ensureInfographicCover } from './pipelineAssetFactory';
+import { finalizeAndProcessEpisode } from './episodeCompletionModule';
 
 /**
  * ── 3. 連続ドラマ・漫画シリーズ（グランドデザイン＆全話プロット展開）制作パイプライン ──
@@ -282,71 +281,13 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       // ★インフォグラフィック扉絵（9:16特大ポスター）を全自動生成！
       await ensureInfographicCover(ctx, episodesRef.current.find(e => e.id === epId) || currentEp);
 
-      const currentEpForVideo = episodesRef.current.find(e => e.id === epId);
-      let cutsToAnimate = currentEpForVideo ? currentEpForVideo.cuts.filter(c => c.isSelectedForVideo) : [];
-
-      // ★ セーフティネット: autoVideoがONなのに全カット未選択の場合、videoRatioに基づき自動救済選定
-      if (settings.autoVideo && cutsToAnimate.length === 0 && settings.videoRatio !== 'none' && currentEpForVideo) {
-        addLog(`💡 [動画化自動救済] カット選択が0枚のため、設定割合「${settings.videoRatio || '30%'}」に基づきキメカットを自動選定して動画化を開始します`, 'info');
-        currentEpForVideo.cuts.forEach((c, idx) => {
-          if (isCutSelectedForVideo(idx, settings.videoRatio || '30%')) {
-            c.isSelectedForVideo = true;
-          }
-        });
-        setEpisodes(prev => prev.map(e => e.id === epId ? { ...e, cuts: currentEpForVideo.cuts } : e));
-        cutsToAnimate = currentEpForVideo.cuts.filter(c => c.isSelectedForVideo);
-      }
-
-      if (settings.autoVideo && cutsToAnimate.length > 0 && !isAbortedRef.current) {
-        await handleBulkVideo(epId);
-      }
-
-      // 確実に全カットの isGeneratingVideo を解除し、先行プレビュー完了フラグをセット
-      episodesRef.current = episodesRef.current.map(e => e.id === epId ? {
-        ...e,
-        isGenerating: false,
-        isBatchGeneratingVideos: false,
-        isPreviewDone: true,
-        isDone: true,
-        cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
-      } : e);
-      setEpisodes(prev => prev.map(e => e.id === epId ? {
-        ...e,
-        isGenerating: false,
-        isBatchGeneratingVideos: false,
-        isPreviewDone: true,
-        isDone: true,
-        cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
-      } : e));
-
-      manifest.completedEpisodeIds = Array.from(new Set([...manifest.completedEpisodeIds, epId]));
-      manifest.currentEpisodeId = epId + 1;
-      setActiveSeriesManifest({ ...manifest });
-
-      // ★ 確実にレジューム可能にするため、1話完了ごとに自動で manifest をバックアップ保存
-      if (settings.autoDownload && !isAbortedRef.current) {
-        try {
-          await downloadManifestFile(manifest, addLog);
-        } catch (_) {}
-      }
-
-      const freshEp = episodesRef.current.find(e => e.id === epId) || currentEp;
-      if (settings.autoDownload && !isAbortedRef.current) {
-        const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
-        const res = await downloadZip(freshEp, addLog, manifest, currentLogs);
-        if (res) {
-          if (freshEp.packageZipBlobUrl) {
-            try { URL.revokeObjectURL(freshEp.packageZipBlobUrl); } catch (_) {}
-          }
-          updateEpisode(epId, {
-            packageZipBlobUrl: res.blobUrl,
-            packageZipFilename: res.filename,
-            packageZipSizeStr: res.sizeStr
-          });
-        }
-      }
-      await saveStory({ titleJp: freshEp.titleJp, titleEn: freshEp.titleEn, country: settings.country, era: settings.era, theme: settings.theme, protagonistSummary: freshEp.summary || '', createdAt: new Date().toISOString() });
-      cleanupEpisodeMemory();
+      // ── 1話完結ライフサイクル共通モジュールを実行 ──
+      // （キメカット動画化 ➔ 完了確定 ➔ 即時自動ダウンロードZIP ➔ 履歴保存＆メモリ解放）
+      await finalizeAndProcessEpisode(ctx, epId, {
+        unitLabel,
+        title: currentPlan.titleJp,
+        manifest
+      });
     } catch (epErr: any) {
       addLog(`⚠️ 第 ${epId} 話の生成中にエラーが発生しました。スキップして次へ進みます: ${formatErrorMessage(epErr)}`, 'warning');
       episodesRef.current = episodesRef.current.map(e => e.id === epId ? {
