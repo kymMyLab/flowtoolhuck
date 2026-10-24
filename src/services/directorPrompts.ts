@@ -37,12 +37,22 @@ export function buildCharacterTurnaroundPrompt(
     .replace(/[^\w\s,\.\-]/g, ' ')
     .trim() || 'Japanese school youth';
 
+  let cleanStyle = rawStyle;
+  if (!isHist && cleanStyle) {
+    cleanStyle = cleanStyle
+      .replace(/\b(edo period|feudal japan|ancient japan|ancient japanese)\b/gi, '')
+      .replace(/,\s*,/g, ',')
+      .replace(/^\s*,\s*/, '')
+      .replace(/,\s*$/, '')
+      .trim();
+  }
+
   return `Master character model sheet, three-view turnaround:
 front view, side profile view, back view of the same single protagonist standing in a neutral pose side-by-side.
 Full body from head to toe, perfectly consistent face, hairstyle, facial features, and attire.
 ${protagonistProfile} (Setting inspired by: ${safeThemeDesc})
 Clean plain pure white background, professional animation concept art, character turnaround sheet, model sheet, masterpiece, highly detailed, 8k resolution.
-${rawStyle ? `Art style: ${rawStyle}.` : ''}
+${cleanStyle ? `Art style: ${cleanStyle}.` : ''}
 CRITICAL MANDATE: EXACTLY THREE VIEWS (front, side, back) of ONE SINGLE INDIVIDUAL aligned on a single sheet. Absolutely NO multiple different people, NO cluttered props, NO extra poses!`;
 }
 

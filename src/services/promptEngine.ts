@@ -537,6 +537,29 @@ export function buildFinalCinematicPromptAndNegative(
     styleSpecificNegatives.push('detailed shading, heavy gradient, 3d render, complex shading');
   }
 
+  // 4. 浮世絵・伝統和風画風特化: 現代設定時の時代劇逆流防止ガード（画風と時代・舞台の明確分離）
+  // 画風（和紙・墨線・鉱物顔料の質感）は100%維持したまま、江戸時代の茅葺屋根・宿場町・通行人（蓑笠、着物、侍）の補完を徹底排除
+  const isTraditionalJapaneseMedium = lowerStyleFull.includes('hokusai') || 
+                                     lowerStyleFull.includes('ukiyoe') || 
+                                     lowerStyleFull.includes('ukiyo-e') || 
+                                     lowerStyleFull.includes('浮世絵') || 
+                                     lowerStyleFull.includes('北斎') || 
+                                     lowerStyleFull.includes('japonisme') || 
+                                     lowerStyleFull.includes('ジャポニスム') || 
+                                     lowerStyleFull.includes('絵巻') || 
+                                     lowerStyleFull.includes('戯画');
+
+  const combinedContextText = `${task.eraAnalysis || ''} ${task.storyContext || ''} ${settings.era || ''} ${settings.theme || ''} ${task.characterDna || ''} ${task.prompt || ''} ${effectivePrompt || ''}`.toLowerCase();
+  const isExplicitHistoricalEra = /\b(edo period|feudal japan|samurai era|sengoku|heian|meiji period|taisho|kamakura|時代劇|江戸時代|戦国|平安|明治時代|侍|大名|武士)\b/i.test(combinedContextText);
+  const hasModernMarkers = /\b(student|school|blazer|uniform|asphalt|modern|contemporary|bus stop|sneakers|loafers|headphones|smartphone|train station|高校生|学生|制服|現代|アスファルト|駅|ブレザー|ローファー)\b/i.test(combinedContextText);
+  const isModernJapaneseContext = isMv || (!isExplicitHistoricalEra) || hasModernMarkers;
+
+  if (isTraditionalJapaneseMedium && isModernJapaneseContext) {
+    styleSpecificNegatives.push(
+      'edo period, ancient feudal japan, ancient historical setting, historical period crowd, ancient travelers, peasants, samurai, ronin, straw raincoat, mino, conical straw hat, kasa, sugegasa, thatched roof, thatched cottages, old wooden shacks, traditional japanese peasant clothing, topknot, chonmage, period drama mob, historical costumes on passersby, old dirt village road, pre-modern village'
+    );
+  }
+
   const styleSpecificNegative = styleSpecificNegatives.join(', ');
 
   const negativeLayers: string[] = [
@@ -585,6 +608,23 @@ export function buildFinalCinematicPromptAndNegative(
   let cleanActionPrompt = effectivePrompt || '';
   if (cleanActionPrompt.includes('[PROTAGONIST DNA]:')) {
     cleanActionPrompt = cleanActionPrompt.replace(/,?\s*\[PROTAGONIST DNA\]:[^,\]]*/gi, '').trim();
+  }
+
+  // 🛡️ 伝統和風画風（北斎肉筆浮世絵等）× 現代劇: 画風（Medium）と時代・舞台（Setting）の完全分離
+  // 画風（和紙・墨線・顔料）の質感は維持したまま、舞台を現代日本の舗装道路・現代学生街に固定
+  if (isTraditionalJapaneseMedium && isModernJapaneseContext) {
+    const stripHistoricalEraFromMedium = (str: string) => {
+      return str
+        .replace(/\b(edo period|feudal japan|ancient japan|ancient japanese)\b/gi, '')
+        .replace(/,\s*,/g, ',')
+        .replace(/^\s*,\s*/, '')
+        .replace(/,\s*$/, '')
+        .trim();
+    };
+    effectiveMasterPrefix = stripHistoricalEraFromMedium(effectiveMasterPrefix);
+    effectiveMasterPrompt = stripHistoricalEraFromMedium(effectiveMasterPrompt);
+
+    cleanActionPrompt = `[CONTEMPORARY URBAN SETTING IN AUTHENTIC UKIYO-E TECHNIQUE]: Set in modern-day contemporary Japan, paved asphalt road, modern townscape, contemporary Japanese high school atmosphere, rendered purely through the authentic artistic medium of traditional Ukiyo-e washi paper texture, mineral pigments, and elegant woodblock/nikuhitsu brushwork. Absolutely NO Edo period thatched cottages or feudal village scenery. ${cleanActionPrompt}`;
   }
 
   // ── 映画的画角＆アングル連動インテリジェント制御（立ち姿の呪縛解放＆視点防衛） ──
