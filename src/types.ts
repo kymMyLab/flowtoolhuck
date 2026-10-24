@@ -61,6 +61,10 @@ export interface Cut {
   cinematicAngle?: string;
   cameraWork?: string;
   scenePlot?: string;
+  cleanAction?: string;
+  cleanImagePrompt?: string;
+  cleanLighting?: string;
+  cleanComposition?: string;
   panelLayout?: 'single' | 'split-2' | 'split-3' | 'diagonal-slash' | 'l-shaped' | 'panoramic-split' | 'inset-reaction' | 'vertical-split' | 'dynamic-multi' | string;
   comicPanel?: ComicPanelMeta;
 

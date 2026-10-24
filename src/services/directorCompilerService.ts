@@ -41,12 +41,13 @@ export async function extractSongDnaWithGemini(
 - Sensory Details: ${sensoryDetails}
 
 ### Extraction Mandate:
+Extract character traits faithfully based on the song setting (gender, age, build, attire):
 Output strictly a JSON object matching this schema:
 {
-  "protagonistDna": "Full visual traits of the female lead (hair, eyes, exact uniform/outfit, shoes). NO fantasy/paladin words unless explicitly stated.",
-  "protagonistPartialWardrobeDna": "ONLY sleeve cuffs, skirt hem, coat fabric, and footwear. Strictly EXCLUDE face, hair, eyes, or head tokens.",
-  "partnerDna": "Male partner traits (height, short hair, coat/outfit, masculine hands). If no partner mentioned, describe male peer fitting the theme.",
-  "keyPropsDna": "Key physical items mentioned in theme or sensory details (e.g. thick plaid wool scarf, single stainless steel spoon, canned coffee)."
+  "protagonistDna": "Full visual traits of the protagonist (hair, eyes, age, build, exact attire, shoes) faithfully matching Character Setting. Do NOT force a female schoolgirl if the setting describes someone else.",
+  "protagonistPartialWardrobeDna": "ONLY sleeve cuffs, pants/skirt hem, coat/jacket fabric, and footwear. Strictly EXCLUDE face, hair, eyes, or head tokens.",
+  "partnerDna": "Visual traits of a second character or partner if one is mentioned or implied. If the song is strictly solo or has NO second character, output strictly an empty string \"\".",
+  "keyPropsDna": "Key physical items mentioned in theme or sensory details (e.g. scarf, headphones, cup, umbrella, spoon)."
 }`;
 
   try {

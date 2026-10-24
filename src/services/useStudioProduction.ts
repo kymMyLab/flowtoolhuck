@@ -188,8 +188,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
       let effectivePrompt = c.promptEn || '';
       const rawLyric = c.telop?.fullText || c.narrationJp || '';
-      // MVモードで歌詞が存在する場合のプロンプト補完・置換
-      if (ep.isMvMode && rawLyric) {
+      // MVモードで歌詞が存在する場合のプロンプト補完・置換（コンパイル済みのときは重複追加しない）
+      if (ep.isMvMode && rawLyric && !ep.isLyricAnalyzed && !c.characterPresence) {
         if (c.geminiVisualPrompt) {
           if (!effectivePrompt.includes(c.geminiVisualPrompt)) {
             if (effectivePrompt.includes('embodying lyric')) {
@@ -224,6 +224,9 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         referenceImageMediaId: refMediaId,
         characterDna: ep.characterDna,
         isObjectOnly: c.isObjectOnly,
+        characterPresence: c.characterPresence,
+        extractedSongDna: ep.extractedSongDna,
+        focalSubject: c.focalPoint?.focalSubject,
         shotScale: c.shotScale,
         cinematicAngle: c.cinematicAngle,
         camera: c.cameraWork
@@ -254,10 +257,10 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     const rawStoryboard = ep.cuts.map(c => ({
       cut_number: c.id,
       lyrics_part: c.narrationJp || c.telop?.fullText || '',
-      camera_composition: c.cinematicAngle || c.cameraWork || '',
-      character_action: c.promptEn || '',
-      lighting_scene: c.telop?.directorNote || '',
-      image_prompt: c.promptEn || ''
+      camera_composition: c.cleanComposition || c.cinematicAngle || c.cameraWork || '',
+      character_action: c.cleanAction || c.scenePlot || c.promptEn || '',
+      lighting_scene: c.cleanLighting || c.telop?.directorNote || '',
+      image_prompt: c.cleanImagePrompt || c.promptEn || ''
     }));
 
     const compiledCuts = await compileStoryboardWithGemini(
@@ -479,19 +482,42 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       const task = tasks[i];
       const existingCut = episodesRef.current.find(e => e.id === task.epId)?.cuts.find(c => c.id === task.cutId);
       
-      // オンデマンド演出（directShot）で直前カットとの対比・構図・詳細プロンプトを即座に生成
-      const directResult = await directShot(
-        task,
-        settings,
-        activeReferenceRef.current,
-        previousShotInfo,
-        addLog
-      );
+      const isCompiledMv = !!(task.isMvMode && (existingCut?.characterPresence || task.characterPresence));
 
-      let shotScale = directResult.shotScale || existingCut?.shotScale || 'Wide';
-      let cinematicAngle = directResult.cinematicAngle || existingCut?.cinematicAngle || 'Cinematic perspective';
-      let promptEn = directResult.promptEn || existingCut?.promptEn || task.prompt;
-      let antiPreviousNegative = directResult.negativePrompt || '';
+      let shotScale = existingCut?.shotScale || task.shotScale || 'Wide';
+      let cinematicAngle = existingCut?.cinematicAngle || task.cinematicAngle || 'Cinematic perspective';
+      let promptEn = existingCut?.promptEn || task.prompt;
+      let antiPreviousNegative = existingCut?.negativePrompt || task.negativePrompt || '';
+      let cameraWork = existingCut?.cameraWork || task.camera;
+      let cameraMotion = existingCut?.cameraMotion;
+      let kenBurnsPreset = existingCut?.kenBurnsPreset;
+      let telop = existingCut?.telop;
+
+      if (!isCompiledMv) {
+        // 未コンパイルカットのみオンデマンド演出（directShot）を実行
+        const directResult = await directShot(
+          task,
+          settings,
+          activeReferenceRef.current,
+          previousShotInfo,
+          addLog
+        );
+
+        shotScale = directResult.shotScale || shotScale;
+        cinematicAngle = directResult.cinematicAngle || cinematicAngle;
+        promptEn = directResult.promptEn || promptEn;
+        antiPreviousNegative = directResult.negativePrompt || antiPreviousNegative;
+        cameraWork = directResult.cameraWork || cameraWork;
+        cameraMotion = directResult.cameraMotion || cameraMotion;
+        kenBurnsPreset = directResult.kenBurnsPreset || kenBurnsPreset;
+        telop = directResult.telop ? { ...existingCut?.telop, ...directResult.telop } : existingCut?.telop;
+      } else if (previousShotInfo) {
+        // コンパイル済みMVカット: directShotでの演出破壊をスキップし、直前対比ネガティブのみを動的注入
+        const dynamicAnti = buildDynamicAntiPreviousNegative(previousShotInfo, shotScale);
+        if (dynamicAnti) {
+          antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${dynamicAnti}` : dynamicAnti;
+        }
+      }
 
       // 🛡️ [Tier 2 構図被り防止ガード: フェイスアップ連続の絶対遮断]
       if (previousShotInfo && isFaceMacroScale(previousShotInfo.scale, previousShotInfo.angle) && isFaceMacroScale(shotScale, cinematicAngle)) {
@@ -504,10 +530,10 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         promptEn,
         shotScale,
         cinematicAngle,
-        cameraWork: directResult.cameraWork || existingCut?.cameraWork,
-        cameraMotion: directResult.cameraMotion || existingCut?.cameraMotion,
-        kenBurnsPreset: directResult.kenBurnsPreset || existingCut?.kenBurnsPreset,
-        telop: directResult.telop ? { ...existingCut?.telop, ...directResult.telop } : existingCut?.telop,
+        cameraWork,
+        cameraMotion,
+        kenBurnsPreset,
+        telop,
         negativePrompt: antiPreviousNegative
       });
 
@@ -515,8 +541,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         scale: shotScale,
         angle: cinematicAngle,
         prompt: promptEn,
-        tag: directResult.cameraWork || existingCut?.cameraWork,
-        telop: existingCut?.telop
+        tag: cameraWork,
+        telop
       };
 
       preparedTasks.push({
@@ -525,7 +551,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         negativePrompt: antiPreviousNegative,
         shotScale,
         cinematicAngle,
-        camera: directResult.cameraWork || existingCut?.cameraWork
+        camera: cameraWork
       });
     }
 
@@ -1236,7 +1262,15 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     };
 
     try {
-      // 2. 新画風での三面図マスター生成
+      // 1. 先に歌詞ビジュアル解析（楽曲DNA抽出＆Step 3絵コンテコンパイル）を完了させて主人公DNAを確定
+      if (updatedEp.isMvMode && !updatedEp.isLyricAnalyzed && ensureLyricVisualAnalysis) {
+        addLog(`🧬 第${epId}話: 楽曲DNAの抽出と絵コンテの事前コンパイルを実行中...`, 'process');
+        await ensureLyricVisualAnalysis(updatedEp);
+      }
+
+      if (isAbortedRef.current) return;
+
+      // 2. 確定した主人公DNAを用いて、新画風での三面図マスター生成
       if (settings.enableTurnaroundSheet !== false) {
         addLog(`🎨 第${epId}話: 新画風「${shortName}」での主人公三面図マスターを設計中...`, 'process');
         const turnaround = await ensureCharacterTurnaround(pipelineCtx as any, updatedEp);
@@ -1255,10 +1289,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       // 3. 先行カット（targetCutCount枚）の画像生成
       const pendingCuts = updatedEp.cuts.slice(0, targetCutCount);
       addLog(`🎨 第${epId}話: 新画風「${shortName}」で先行${targetCutCount}カットの作画を開始...`, 'process');
-
-      if (updatedEp.isMvMode && !updatedEp.isLyricAnalyzed && ensureLyricVisualAnalysis) {
-        await ensureLyricVisualAnalysis(updatedEp);
-      }
 
       await runTasks(buildCutTasks(updatedEp, pendingCuts, newTaste));
 

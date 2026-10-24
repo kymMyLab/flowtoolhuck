@@ -368,8 +368,8 @@ export function buildFinalCinematicPromptAndNegative(
     ? '2D anime illustration, anime aesthetic, '
     : '';
 
-  const masterStylePrefix = `Masterpiece, authentic ${animeAnchor}${rawStyle}. Consistent visual art style in ${rawStyle}.`;
-  const masterStylePrompt = `[MASTER ART STYLE: ${animeAnchor}${rawStyle}, strictly maintain identical visual medium and rendering consistency across scenes]`;
+  const masterStylePrefix = 'Masterpiece';
+  const masterStylePrompt = `[ART STYLE: ${animeAnchor}${rawStyle}]`;
 
   // Layer 2 & 3: Camera Context & Action
   const isAllowedEyeContact = isMv && isMvChorusCut(task.cutId || 1);
@@ -615,7 +615,7 @@ export function buildFinalCinematicPromptAndNegative(
   if (isTraditionalJapaneseMedium && isModernJapaneseContext) {
     const stripHistoricalEraFromMedium = (str: string) => {
       return str
-        .replace(/\b(edo period|feudal japan|ancient japan|ancient japanese)\b/gi, '')
+        .replace(/\b(katsushika hokusai|hokusai|ukiyo-e|ukiyoe|edo period|feudal japan|ancient japan|ancient japanese|heian|kamakura|showa|edo)\b/gi, '')
         .replace(/,\s*,/g, ',')
         .replace(/^\s*,\s*/, '')
         .replace(/,\s*$/, '')
@@ -624,7 +624,7 @@ export function buildFinalCinematicPromptAndNegative(
     effectiveMasterPrefix = stripHistoricalEraFromMedium(effectiveMasterPrefix);
     effectiveMasterPrompt = stripHistoricalEraFromMedium(effectiveMasterPrompt);
 
-    cleanActionPrompt = `[CONTEMPORARY URBAN SETTING IN AUTHENTIC UKIYO-E TECHNIQUE]: Set in modern-day contemporary Japan, paved asphalt road, modern townscape, contemporary Japanese high school atmosphere, rendered purely through the authentic artistic medium of traditional Ukiyo-e washi paper texture, mineral pigments, and elegant woodblock/nikuhitsu brushwork. Absolutely NO Edo period thatched cottages or feudal village scenery. ${cleanActionPrompt}`;
+    cleanActionPrompt = `[CONTEMPORARY MODERN JAPAN SETTING: modern paved asphalt road, contemporary Japanese architecture and modern lifestyle, rendered with traditional hand-painted washi paper texture, mineral pigments, and sumi ink brush lines]. ${cleanActionPrompt}`;
   }
 
   // ── 映画的画角＆アングル連動インテリジェント制御（立ち姿の呪縛解放＆視点防衛） ──
@@ -875,8 +875,8 @@ export function buildFinalCinematicPromptAndNegative(
 
     const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}].${attirePromptPart} [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}].${attirePromptPart} [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${leadingDirective}${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}]. ${cameraContext}.${attirePromptPart} ${effectiveMasterPrompt}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`
+      : `${leadingDirective}${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}].${attirePromptPart} ${effectiveMasterPrompt}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
@@ -889,8 +889,8 @@ export function buildFinalCinematicPromptAndNegative(
 
     const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
     const rawFinalPrompt = task.isEndFrame
-      ? `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${cameraContext}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${remainingAction}.${attirePromptPart} ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`
-      : `${leadingDirective}${contrastDirective}${effectiveMasterPrefix}. ${effectiveMasterPrompt}. ${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}.${attirePromptPart} ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}`;
+      ? `${leadingDirective}${panelDirective}${characterPromptLayer}${remainingAction}. ${cameraContext}.${attirePromptPart} ${effectiveMasterPrompt}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`
+      : `${leadingDirective}${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}.${attirePromptPart} ${effectiveMasterPrompt}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
 
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
@@ -933,9 +933,9 @@ export function sanitizePromptForGoogleSafety(prompt: string): string {
     .replace(/^[,.\s]+|[,.\s]+$/g, '')
     .trim();
 
-  // Google Imagen の安全長制限 (1300文字以内に抑制)
-  if (cleaned.length > 1300) {
-    cleaned = cleaned.slice(0, 1290).replace(/,[^,]*$/, '').trim() + ', masterpiece';
+  // Google Imagen の安全長制限 (2500文字以内に抑制)
+  if (cleaned.length > 2500) {
+    cleaned = cleaned.slice(0, 2480).replace(/,[^,]*$/, '').trim() + ', masterpiece';
   }
 
   return cleaned;

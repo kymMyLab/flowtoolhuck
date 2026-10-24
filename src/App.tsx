@@ -174,20 +174,8 @@ export default function App() {
     const ep = episodes.find(e => e.id === epId);
     if (!ep) return;
     const targetTaste = settings.taste;
-    const shortName = targetTaste.split(' (')[0].split('（')[0];
-    const cutCount = Math.min(settings.previewCutCount || 5, ep.cuts.length);
-
-    const confirmed = window.confirm(
-      `🎨 【画風切り替え再作成】\n\n` +
-      `画風を「${shortName}」に変更し、先行${cutCount}カット（および3面図・扉絵）を再作成します。\n\n` +
-      `・歌詞、カメラワーク、演出指示、小道具設定はすべて維持されます。\n` +
-      `・既存の画像（${cutCount}枚）は新画風で再生成されます。\n\n` +
-      `実行しますか？`
-    );
-    if (confirmed) {
-      handleRerollTasteProduction(epId, targetTaste);
-    }
-  }, [episodes, settings.taste, settings.previewCutCount, handleRerollTasteProduction]);
+    handleRerollTasteProduction(epId, targetTaste);
+  }, [episodes, settings.taste, handleRerollTasteProduction]);
 
   const handleDeployMusicEpisode = useCallback((ep: Episode) => {
     clearEpisodes();

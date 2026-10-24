@@ -1128,16 +1128,6 @@ export function convertTrackToEpisode(
           .replace(/\s{2,}/g, ' ')
           .trim();
 
-        const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${cleanSettingDna} ${track.track_name || ''} ${track.style || ''}`);
-        if (!hasExplicitMale) {
-          cleanSettingDna = cleanSettingDna
-            .replace(/(?<!女子)高校生/g, '女子高校生')
-            .replace(/(?<!女子)学生/g, '女子学生');
-          if (!/\b(female|girl|woman|美少女|女子)\b/i.test(cleanSettingDna)) {
-            cleanSettingDna = `delicate cute anime high school girl, ${cleanSettingDna}`;
-          }
-        }
-
         if (cleanSettingDna) {
           if (shotScale.includes('Hands')) {
             promptEnComponents.push(`[TACTILE DETAILS]: Focused on hands, fingers, and tactile gestures matching the character's attire and setting, absolutely NO face.`);
@@ -1147,9 +1137,9 @@ export function convertTrackToEpisode(
             cleanSettingDna = cleanSettingDna.replace(/\b(full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|bench|chair|seated)\b/gi, '').trim();
             promptEnComponents.push(`[CHARACTER PORTRAIT DETAILS]: ${cleanSettingDna.replace(/\.+$/, '')}.`);
           } else if (shotScale.includes('Wide') || shotScale.includes('Panorama')) {
-            promptEnComponents.push(`[CHARACTER IN SCENERY]: Subtle atmospheric silhouette of female protagonist, ${cleanSettingDna.replace(/\.+$/, '')}, naturally placed in the expansive landscape.`);
+            promptEnComponents.push(`[CHARACTER IN SCENERY]: Subtle atmospheric silhouette of protagonist, ${cleanSettingDna.replace(/\.+$/, '')}, naturally placed in the expansive landscape.`);
           } else {
-            promptEnComponents.push(`[CHARACTER SETTING]: Female protagonist, ${cleanSettingDna.replace(/\.+$/, '')}.`);
+            promptEnComponents.push(`[CHARACTER SETTING]: Protagonist, ${cleanSettingDna.replace(/\.+$/, '')}.`);
           }
         }
       }
@@ -1183,9 +1173,19 @@ export function convertTrackToEpisode(
         prompt: c.promptEn
       })), shotScale) : '';
 
+      // クリーンな絵コンテフィールド（Step 3コンパイラ用）
+      const cleanAction = visualPlot;
+      const cleanImagePrompt = visualPlot;
+      const cleanLighting = hint || track.scene_context || '';
+      const cleanComposition = `${shotScale}, ${cinematicAngle}`;
+
       cuts.push({
         id: i,
         promptEn: promptEn,
+        cleanAction,
+        cleanImagePrompt,
+        cleanLighting,
+        cleanComposition,
         negativePrompt: dynamicAntiPrev,
         narrationJp: lyric,
         narrationEn: '',
@@ -1242,16 +1242,9 @@ export function convertTrackToEpisode(
     coverCatchphraseJp: track.title,
     coverCatchphraseEn: track.title,
     characterDna: track.character_setting 
-      ? `delicate Japanese anime high school girl, ${track.character_setting}`
+      ? track.character_setting
       : (selectedCharacter ? selectedCharacter.dnaPromptEn : undefined),
-    extractedSongDna: {
-      protagonistDna: track.character_setting
-        ? `delicate Japanese anime high school girl, ${track.character_setting}`
-        : 'delicate Japanese anime high school girl, dark navy blue blazer uniform, pleated skirt, black loafers, expressive eyes',
-      protagonistPartialWardrobeDna: 'navy school blazer sleeves and cuffs, pleated skirt hem, black school loafers on pavement',
-      partnerDna: 'tall high school boy, short neat black hair, beige duffle coat over uniform, masculine posture',
-      keyPropsDna: 'thick red and gray plaid wool woven scarf, single stainless steel spoon'
-    },
+    extractedSongDna: undefined,
     characterTurnaroundBase64: selectedCharacter ? (selectedCharacter.turnaroundBase64 || selectedCharacter.avatarBase64) : undefined,
     characterTurnaroundMediaId: selectedCharacter ? selectedCharacter.turnaroundMediaId : undefined,
     characterTurnaroundPrompt: selectedCharacter ? selectedCharacter.turnaroundPromptEn : undefined,
