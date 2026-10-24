@@ -920,6 +920,10 @@ export function convertTrackToEpisode(
       cuts.push({
         id: i,
         promptEn: promptEn,
+        cleanAction: cutData.character_action || '',
+        cleanImagePrompt: cleanPrompt,
+        cleanLighting: cutData.lighting_scene || '',
+        cleanComposition: cutData.camera_composition || '',
         negativePrompt: dynamicAntiPrev,
         narrationJp: lyric,
         narrationEn: '',

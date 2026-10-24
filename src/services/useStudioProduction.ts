@@ -278,6 +278,22 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         const isScenicProp = res.character_presence === '5_scenic_or_still_life';
         const isSelectedForVideo = isCutSelectedForVideo(c.id - 1, settings.videoRatio, res.veo_priority_rank, ep.cuts.length);
 
+        const lowerPrompt = (res.compiled_prompt_en || '').toLowerCase();
+        let derivedShotScale = c.shotScale || 'Medium Shot';
+        if (res.character_presence === '1_protagonist_solo_focus') {
+          derivedShotScale = (lowerPrompt.includes('extreme close') || lowerPrompt.includes('macro') || lowerPrompt.includes('eyes'))
+            ? 'Extreme Close-Up'
+            : 'Medium Bust Shot';
+        } else if (res.character_presence === '2_protagonist_or_pair_wide') {
+          derivedShotScale = 'Wide Shot';
+        } else if (res.character_presence === '3_two_characters_asymmetric') {
+          derivedShotScale = 'Medium Shot';
+        } else if (res.character_presence === '4_hands_or_feet_detail') {
+          derivedShotScale = lowerPrompt.includes('foot') || lowerPrompt.includes('shoes') || lowerPrompt.includes('footsteps') ? 'Low-Angle Footsteps' : 'Macro Hands';
+        } else if (res.character_presence === '5_scenic_or_still_life') {
+          derivedShotScale = 'Still-Life Object Macro';
+        }
+
         const updatedCut: Cut = {
           ...c,
           characterPresence: res.character_presence,
@@ -285,6 +301,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           veoPriorityRank: res.veo_priority_rank,
           cameraWork: res.camera_work,
           cinematicAngle: res.camera_work,
+          shotScale: derivedShotScale,
           panelLayout: res.panel_layout,
           veoMotionPrompt: res.veo_motion_and_end_frame_prompt,
           promptEn: res.compiled_prompt_en,
@@ -303,6 +320,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           veoPriorityRank: res.veo_priority_rank,
           cameraWork: res.camera_work,
           cinematicAngle: res.camera_work,
+          shotScale: derivedShotScale,
           panelLayout: res.panel_layout,
           veoMotionPrompt: res.veo_motion_and_end_frame_prompt,
           promptEn: res.compiled_prompt_en,

@@ -71,7 +71,7 @@ Output strictly a JSON object matching this schema:
         return {
           protagonistDna: parsed.protagonistDna || fallbackDna.protagonistDna,
           protagonistPartialWardrobeDna: parsed.protagonistPartialWardrobeDna || fallbackDna.protagonistPartialWardrobeDna,
-          partnerDna: parsed.partnerDna || fallbackDna.partnerDna,
+          partnerDna: typeof parsed.partnerDna === 'string' ? parsed.partnerDna : fallbackDna.partnerDna,
           keyPropsDna: parsed.keyPropsDna || fallbackDna.keyPropsDna
         };
       }
