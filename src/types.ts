@@ -105,8 +105,36 @@ export interface Cut {
   finalNegativeUsed?: string;
   geminiVisualPrompt?: string;
   stagingType?: 'character_with_props' | 'character_focused' | 'scenic_prop_insert';
+  characterPresence?: CharacterPresenceType;
+  veoPriorityRank?: number; // 1 (highest) to 30 (lowest) for dynamic ratio scaling
   styleKeyUsed?: string;
   imageModelUsed?: string;
+}
+
+export type CharacterPresenceType =
+  | '1_protagonist_solo_focus'
+  | '2_protagonist_or_pair_wide'
+  | '3_two_characters_asymmetric'
+  | '4_hands_or_feet_detail'
+  | '5_scenic_or_still_life';
+
+export interface ExtractedSongDna {
+  protagonistDna: string;
+  protagonistPartialWardrobeDna: string;
+  partnerDna: string;
+  keyPropsDna: string;
+}
+
+export interface CompiledStoryboardCut {
+  cutId: number;
+  character_presence: CharacterPresenceType;
+  focal_subject: string;
+  compiled_prompt_en: string;
+  camera_work: 'slow-push-in' | 'slow-pull-back' | 'tilt-up' | 'macro-reveal' | 'cinematic-orbit' | 'handheld' | 'wide-establishing' | 'freeze-frame';
+  panel_layout: 'single' | 'diagonal-slash';
+  telop_neon_color: '#FFE600' | '#FF2A85' | '#00F0FF' | '#FFFFFF';
+  veo_priority_rank: number; // 1 (最高優先) 〜 30 (最低優先)
+  veo_motion_and_end_frame_prompt: string; // どの割合でも即Veo化できるよう全カットに付与
 }
 
 export interface Episode {
@@ -129,8 +157,9 @@ export interface Episode {
   coverThemeVariant?: string;
   isGeneratingCover?: boolean;
 
-  // 三面図マスター ＆ Cut 1 マスターアンカー画像 ＆ 主人公DNA
+  // 三面図マスター ＆ 主人公DNA ＆ 動的抽出DNA
   characterDna?: string;
+  extractedSongDna?: ExtractedSongDna;
   characterTurnaroundMediaId?: string;
   characterTurnaroundBase64?: string;
   characterTurnaroundPrompt?: string;
@@ -219,6 +248,9 @@ export interface GenerationTask {
   storyContext?: string;
   characterDna?: string;
   isObjectOnly?: boolean;
+  characterPresence?: CharacterPresenceType;
+  extractedSongDna?: ExtractedSongDna;
+  focalSubject?: string;
   isEndFrame?: boolean;
   endFrameCameraDirective?: string;
   shotScale?: string;

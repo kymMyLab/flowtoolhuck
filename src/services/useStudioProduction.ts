@@ -28,6 +28,8 @@ import {
   PreviousShotInfo,
   analyzeLyricVisualsWithGemini
 } from './directorService';
+import { extractSongDnaWithGemini, compileStoryboardWithGemini } from './directorCompilerService';
+import { isCutSelectedForVideo } from './utils';
 import { useEpisodeState } from './useEpisodeState';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -232,6 +234,92 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
   const ensureLyricVisualAnalysis = async (ep: Episode): Promise<void> => {
     if (!ep.isMvMode || ep.isLyricAnalyzed) return;
 
+    // ── Step 2.5: 楽曲DNAの抽出とキャッシュパージ ──
+    let extractedDna = ep.extractedSongDna;
+    if (!extractedDna) {
+      extractedDna = await extractSongDnaWithGemini({
+        character_setting: ep.characterDna || ep.summary,
+        surface_theme: ep.theme || ep.titleJp,
+        sensory_details: ep.summary
+      }, addLog);
+      ep.extractedSongDna = extractedDna;
+      ep.characterDna = extractedDna.protagonistDna;
+      updateEpisode(ep.id, {
+        extractedSongDna: extractedDna,
+        characterDna: extractedDna.protagonistDna
+      });
+    }
+
+    // ── Step 3: 映像総監督Geminiによる30カット絵コンテ一括コンパイル ──
+    const rawStoryboard = ep.cuts.map(c => ({
+      cut_number: c.id,
+      lyrics_part: c.narrationJp || c.telop?.fullText || '',
+      camera_composition: c.cinematicAngle || c.cameraWork || '',
+      character_action: c.promptEn || '',
+      lighting_scene: c.telop?.directorNote || '',
+      image_prompt: c.promptEn || ''
+    }));
+
+    const compiledCuts = await compileStoryboardWithGemini(
+      rawStoryboard,
+      extractedDna,
+      ep.theme || ep.titleJp || '',
+      addLog
+    );
+
+    if (compiledCuts && compiledCuts.length > 0) {
+      const newCuts = ep.cuts.map(c => {
+        const res = compiledCuts.find(a => a.cutId === c.id);
+        if (!res) return c;
+
+        const isScenicProp = res.character_presence === '5_scenic_or_still_life';
+        const isSelectedForVideo = isCutSelectedForVideo(c.id - 1, settings.videoRatio, res.veo_priority_rank, ep.cuts.length);
+
+        const updatedCut: Cut = {
+          ...c,
+          characterPresence: res.character_presence,
+          focalPoint: { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: res.focal_subject },
+          veoPriorityRank: res.veo_priority_rank,
+          cameraWork: res.camera_work,
+          cinematicAngle: res.camera_work,
+          panelLayout: res.panel_layout,
+          veoMotionPrompt: res.veo_motion_and_end_frame_prompt,
+          promptEn: res.compiled_prompt_en,
+          isObjectOnly: isScenicProp,
+          isSelectedForVideo: isSelectedForVideo,
+          targetVideoModel: isSelectedForVideo ? 'veo-fast' : c.targetVideoModel,
+          telop: c.telop ? {
+            ...c.telop,
+            highlights: [{ word: c.telop.fullText, color: res.telop_neon_color, sizeScale: 1.1 }]
+          } : undefined
+        };
+
+        updateCut(ep.id, c.id, {
+          characterPresence: res.character_presence,
+          focalPoint: updatedCut.focalPoint,
+          veoPriorityRank: res.veo_priority_rank,
+          cameraWork: res.camera_work,
+          cinematicAngle: res.camera_work,
+          panelLayout: res.panel_layout,
+          veoMotionPrompt: res.veo_motion_and_end_frame_prompt,
+          promptEn: res.compiled_prompt_en,
+          isObjectOnly: isScenicProp,
+          isSelectedForVideo: isSelectedForVideo,
+          targetVideoModel: updatedCut.targetVideoModel,
+          telop: updatedCut.telop
+        });
+
+        return updatedCut;
+      });
+
+      ep.cuts = newCuts;
+      ep.isLyricAnalyzed = true;
+      updateEpisode(ep.id, { isLyricAnalyzed: true });
+      addLog(`✨ Ep.${ep.id}: 映画的緩急＆5段階ルーティング（映像総監督Gemini）を全カットに適用しました！`, 'success');
+      return;
+    }
+
+    // ── フォールバック: 既存歌詞解析 ──
     const lyricLines = ep.cuts
       .filter(c => c.narrationJp || c.telop?.fullText)
       .map(c => ({
@@ -454,7 +542,9 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     const currentEp = episodesRef.current.find(e => e.id === epId);
     const cut1Index = preparedTasks.findIndex(t => t.cutId === 1);
 
-    if (cut1Index !== -1 && !currentEp?.masterAnchorMediaId) {
+    // MVモード（または三面図が存在する場合）は、純白背景の三面図が唯一の絶対アンカーとなるため、Cut 1のアンカー先行待機は不要
+    const needsCut1Anchor = !currentEp?.isMvMode && !currentEp?.characterTurnaroundMediaId && !currentEp?.masterAnchorMediaId;
+    if (cut1Index !== -1 && needsCut1Anchor) {
       const cut1Task = preparedTasks.splice(cut1Index, 1)[0];
       addLog(`👑 Ep.${epId}: まず Cut 1（マスターアンカー）を単独先行生成してキャラクター基準を確立します...`, 'process');
       await generateImage(cut1Task);
@@ -514,9 +604,15 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         }
       }
 
-      // 三面図が利用可能なら人物カットで確実にバインド
+      // 三面図が利用可能なら人物カットで確実にバインド（純白背景の三面図のみを渡し、Cut 01の夕暮れ汚染を物理排除）
+      const currentCutObj = ep?.cuts.find(c => c.id === cutId);
+      const isAnchorExcluded = task.isObjectOnly || 
+        currentCutObj?.characterPresence === '4_hands_or_feet_detail' || 
+        currentCutObj?.characterPresence === '5_scenic_or_still_life';
+
       const turnaroundMediaId = ep?.characterTurnaroundMediaId || (ep?.isMvMode ? undefined : activeReferenceRef.current?.mediaId);
-      const refMediaId = task.isObjectOnly ? undefined : (turnaroundMediaId || task.referenceImageMediaId || ep?.masterAnchorMediaId);
+      const fallbackAnchor = ep?.isMvMode ? undefined : ep?.masterAnchorMediaId;
+      const refMediaId = isAnchorExcluded ? undefined : (turnaroundMediaId || task.referenceImageMediaId || fallbackAnchor);
 
       // ★ ユーザー設計規範: 直近カット（直前1〜2カット）のプロンプト・構図を動的ネガティブプロンプトとして完全バインド
       let effectiveNegative = task.negativePrompt || '';
@@ -542,6 +638,9 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
       const taskWithAntiPrevious: GenerationTask = {
         ...task,
+        characterPresence: currentCutObj?.characterPresence,
+        extractedSongDna: ep?.extractedSongDna,
+        focalSubject: currentCutObj?.focalPoint?.focalSubject,
         referenceImageMediaId: refMediaId,
         negativePrompt: effectiveNegative,
         antiPreviousMandate: positiveMandate
@@ -732,13 +831,14 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         error: undefined
       });
 
-      // Cut 1 の画像が完成したら、以降のカットのキャラ崩れを完全防止するためマスターアンカーとして固定！
-      if (cutId === 1) {
+      // Cut 1 の画像が完成した場合:
+      // MVモードでは背景（夕暮れ空・坂道）の引きずり・金太郎飴化を防止するため、Cut 1 をマスターアンカーに設定せず三面図のみを信託する！
+      if (cutId === 1 && !ep?.isMvMode && !ep?.characterTurnaroundMediaId) {
         updateEpisode(epId, {
           masterAnchorMediaId: finalMediaId,
           masterAnchorBase64: finalBase64
         });
-        addLog(`👑 Ep.${epId}: Cut 1 の決定版ポートレートを【全カット共通マスターアンカー】としてロックしました！`, 'success');
+        addLog(`👑 Ep.${epId}: Cut 1 の決定版ポートレートをマスターアンカーとして固定しました`, 'success');
       }
 
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');

@@ -1,4 +1,4 @@
-import { Episode, Cut, ProductionMode, CastCharacter, TelopStyle, TelopTransition, TelopPosition } from '../types';
+import { Episode, Cut, ProductionMode, CastCharacter, TelopStyle, TelopTransition, TelopPosition, CharacterPresenceType, ExtractedSongDna } from '../types';
 import { extractHighlights } from './directorService';
 import { resolveMasterCategory } from '../config/masterCategories';
 import { CAMERA_WORK_REGISTRY } from '../constants';
@@ -843,10 +843,16 @@ export function convertTrackToEpisode(
       ];
 
       // キャストDNA（人物カットかつキャスト固定が有効な場合）
-      if (selectedCharacter && !isObjectOnly) {
-        const cleanDna = selectedCharacter.dnaPromptEn ? selectedCharacter.dnaPromptEn.trim().replace(/\.+$/, '') : '';
-        if (cleanDna) {
-          promptEnComponents.push(`[PROTAGONIST DNA]: ${cleanDna}.`);
+      // ※ 古いファンタジー騎士等のDNAが残留しないよう、track.character_setting を最優先
+      const effectiveTrackSetting = track.character_setting ? track.character_setting.trim() : '';
+      if (!isObjectOnly) {
+        if (effectiveTrackSetting) {
+          promptEnComponents.push(`[CHARACTER SETTING]: ${effectiveTrackSetting}.`);
+        } else if (selectedCharacter) {
+          const cleanDna = selectedCharacter.dnaPromptEn ? selectedCharacter.dnaPromptEn.trim().replace(/\.+$/, '') : '';
+          if (cleanDna) {
+            promptEnComponents.push(`[PROTAGONIST DNA]: ${cleanDna}.`);
+          }
         }
       }
 
@@ -880,6 +886,35 @@ export function convertTrackToEpisode(
         }
       }
 
+      // 5-way presence の初期アサイン
+      let presence: CharacterPresenceType = '1_protagonist_solo_focus';
+      let focalSubject = 'heroine_face';
+      if (i === 1) {
+        presence = '1_protagonist_solo_focus';
+        focalSubject = 'heroine_expressive_eyes_cold_open';
+      } else if (i === 2 || /establishing|wide|全景|引き構図/i.test(fullText)) {
+        presence = '2_protagonist_or_pair_wide';
+        focalSubject = 'environment_with_distant_figures';
+      } else if (isObjectOnly || i === 25 || /スプーン|誰もいない|無人/i.test(fullText)) {
+        presence = '5_scenic_or_still_life';
+        focalSubject = 'symbolic_keepsake_still_life';
+      } else if (shotScale.includes('Macro Hands') || shotScale.includes('Footsteps') || /手元|足元|カイロ|ポケット|マフラーの編み目/i.test(fullText)) {
+        presence = '4_hands_or_feet_detail';
+        focalSubject = /かいろ|ポケット/i.test(fullText) ? 'pocket_heat_pack' : 'keepsake_prop_texture';
+      } else if (/two|ふたり|二人の|並んで|男子生徒|boy|肩が触れ/i.test(fullText)) {
+        presence = '3_two_characters_asymmetric';
+        focalSubject = 'heroine_with_partner_in_foreground';
+      }
+
+      // 黄金Veo順位定義マップ (Cut ID -> Rank)
+      const goldenVeoRanks: Record<number, number> = {
+        1: 1, 13: 2, 26: 3, 10: 4, 11: 5, 18: 6, 22: 7, 25: 8, 29: 9, 4: 10
+      };
+      const veoRank = goldenVeoRanks[i] || (10 + ((i * 7) % 20) + 1);
+
+      const isBeatDrop = /stop|beat drop|無音/i.test(fullText) || i === 12;
+      const isSelected = isCutSelectedForVideo(i - 1, videoRatio, veoRank, totalCuts);
+
       const hl = extractHighlights(lyric);
 
       cuts.push({
@@ -889,14 +924,16 @@ export function convertTrackToEpisode(
         narrationJp: lyric,
         narrationEn: '',
         shotScale: shotScale,
-        cameraWork: cameraWork,
+        cameraWork: isBeatDrop ? 'freeze-frame' : cameraWork,
         cinematicAngle: cutData.camera_composition || shotScale,
-        isObjectOnly: isObjectOnly,
-        panelLayout: isObjectOnly ? 'single' : (i % 5 === 0 ? 'diagonal-slash' : 'single'),
-        focalPoint: isObjectOnly ? { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: 'scenic_prop' } : undefined,
+        isObjectOnly: presence === '5_scenic_or_still_life',
+        characterPresence: presence,
+        veoPriorityRank: veoRank,
+        panelLayout: isBeatDrop ? 'diagonal-slash' : 'single',
+        focalPoint: { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: focalSubject },
         duration: duration,
-        isSelectedForVideo: isCutSelectedForVideo(i - 1, videoRatio),
-        targetVideoModel: 'omni-flash',
+        isSelectedForVideo: isSelected,
+        targetVideoModel: isSelected ? 'veo-fast' : 'none',
         isDirecting: false,
         isGeneratingImage: false,
         isGeneratingVideo: false,
@@ -1204,7 +1241,17 @@ export function convertTrackToEpisode(
     isDone: false,
     coverCatchphraseJp: track.title,
     coverCatchphraseEn: track.title,
-    characterDna: selectedCharacter ? selectedCharacter.dnaPromptEn : undefined,
+    characterDna: track.character_setting 
+      ? `delicate Japanese anime high school girl, ${track.character_setting}`
+      : (selectedCharacter ? selectedCharacter.dnaPromptEn : undefined),
+    extractedSongDna: {
+      protagonistDna: track.character_setting
+        ? `delicate Japanese anime high school girl, ${track.character_setting}`
+        : 'delicate Japanese anime high school girl, dark navy blue blazer uniform, pleated skirt, black loafers, expressive eyes',
+      protagonistPartialWardrobeDna: 'navy school blazer sleeves and cuffs, pleated skirt hem, black school loafers on pavement',
+      partnerDna: 'tall high school boy, short neat black hair, beige duffle coat over uniform, masculine posture',
+      keyPropsDna: 'thick red and gray plaid wool woven scarf, single stainless steel spoon'
+    },
     characterTurnaroundBase64: selectedCharacter ? (selectedCharacter.turnaroundBase64 || selectedCharacter.avatarBase64) : undefined,
     characterTurnaroundMediaId: selectedCharacter ? selectedCharacter.turnaroundMediaId : undefined,
     characterTurnaroundPrompt: selectedCharacter ? selectedCharacter.turnaroundPromptEn : undefined,

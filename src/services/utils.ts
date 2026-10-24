@@ -266,11 +266,32 @@ export function createLogMessage(message: string): string {
   return `[${time}] ${message}`;
 }
 
-export function isCutSelectedForVideo(idx: number, ratio?: string): boolean {
+export function isCutSelectedForVideo(
+  idx: number, 
+  ratio?: string, 
+  priorityRank?: number, 
+  totalCuts: number = 30
+): boolean {
+  if (ratio === 'none' || ratio === '0%') return false;
   if (ratio === 'cut2') return idx === 1; // 2話目（Cut 02）のみ
+  if (ratio === '100%') return true;
+
+  // 動的優先度ランク (veo_priority_rank: 1〜totalCuts) による判定
+  if (typeof priorityRank === 'number' && priorityRank > 0) {
+    let ratioNum = 0.3;
+    if (ratio === '10%') ratioNum = 0.1;
+    else if (ratio === '30%') ratioNum = 0.3;
+    else if (ratio === '50%') ratioNum = 0.5;
+    else if (ratio && ratio.endsWith('%')) {
+      const parsed = parseFloat(ratio) / 100;
+      if (!isNaN(parsed)) ratioNum = parsed;
+    }
+    const maxRank = Math.max(1, Math.ceil(totalCuts * ratioNum));
+    return priorityRank <= maxRank;
+  }
+
   if (ratio === '30%') return [0, 4, 8, 11].includes(idx);
   if (ratio === '50%') return [0, 2, 4, 6, 8, 10].includes(idx);
-  if (ratio === '100%') return true;
   return false;
 }
 

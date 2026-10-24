@@ -701,30 +701,59 @@ export function buildFinalCinematicPromptAndNegative(
   }
 
   let characterPromptLayer = '';
-  if (isObjectCut) {
-    characterPromptLayer = '[STRICT STILL-LIFE OBJECT MACRO: completely deserted scene, strictly NO humans, NO person, NO face, pure cinematic macro shot of symbolic keepsake prop item in atmospheric modern setting]. ';
+  const presence = task.characterPresence;
+  const songDna = task.extractedSongDna;
+
+  if (presence === '5_scenic_or_still_life' || isObjectCut) {
+    // ── 5. 完全無人・静物・風景カット ──
+    const propDna = songDna?.keyPropsDna || '';
+    const focal = task.focalSubject || 'symbolic scene';
+    characterPromptLayer = `[UNINHABITED STILL LIFE / SCENERY: ${focal}]: ${propDna ? `${propDna}, ` : ''}completely deserted scene, strictly NO humans, NO person, NO face, pure atmospheric cinematic environment. `;
     negativeLayers.push(
       'human, person, girl, boy, man, woman, child, face, eye, eyes, pupils, mouth, lips, cheeks, hands, fingers, legs, feet, body silhouette, crowd, portrait',
       'warrior, soldier, swordsman, knight, martial arts, magic, magic circle, fantasy, armor, weapons, sword, blade, ancient costume, hanfu, kimono, standing character, sitting character, anime character'
     );
+  } else if (presence === '4_hands_or_feet_detail') {
+    // ── 4. 手元・足元・小道具マクロ（顔面化を物理遮断） ──
+    const partialDna = songDna?.protagonistPartialWardrobeDna || 'navy school blazer cuffs and sleeves, pleated skirt hem, black school loafers on pavement';
+    const propDna = songDna?.keyPropsDna || '';
+    const focal = task.focalSubject || 'focal prop detail';
+    characterPromptLayer = `[EXTREME MACRO ON ${focal}]: ${partialDna}${propDna ? `, ${propDna}` : ''}, rich fabric and tactile texture, highly focused detail. `;
+    negativeLayers.push(
+      'face, eyes, eye, head, portrait, smile, gaze, lips, mouth, headshot, upper body, torso, bust shot, full body, dress, gown, armor, sword, warrior'
+    );
+  } else if (presence === '3_two_characters_asymmetric') {
+    // ── 3. 男女2人・非対称フレーミング（ヒロイン三面図アンカーON＋男子ナメ/後ろ姿） ──
+    const heroDna = songDna?.protagonistDna || effectiveDna || 'delicate Japanese anime high school girl, dark navy blazer uniform, expressive eyes';
+    const partnerDna = songDna?.partnerDna || 'tall high school boy with short neat black hair, wearing beige duffle coat over uniform, masculine silhouette';
+    characterPromptLayer = `[PRIMARY FOCAL HEROINE (FROM TURNAROUND)]: ${heroDna}, sharp cinematic focus on female protagonist's face, expressive eyes and emotional gaze, matching turnaround sheet. [ASYMMETRIC PARTNER]: ${partnerDna}, strictly framed over-the-shoulder / from behind / chin-down foreground silhouette, tall height difference, masculine posture, NO second female face visible. `;
+    // 男子・複数人を認めるため、ネガティブから male / multiple people を排除し、クローン女子化防止ネガティブを追加
+    negativeLayers.push('twin girls, two girls, yuri, identical faces, clone faces, duplicate female face, multiple girls');
+  } else if (presence === '2_protagonist_or_pair_wide') {
+    // ── 2. 風景メインの引き・全景・後ろ姿（白背景三面図アンカーONで顔アップ化を阻止） ──
+    const heroDna = songDna?.protagonistDna || effectiveDna || 'delicate Japanese anime high school girl, dark navy blazer uniform';
+    const partnerPart = songDna?.partnerDna ? ` [PARTNER]: ${songDna.partnerDna}` : '';
+    characterPromptLayer = `[STRICT WIDE ESTABLISHING SHOT: tiny full figures in expansive cinematic environment, majestic panoramic scale] [PROTAGONIST]: ${heroDna}.${partnerPart} `;
+    negativeLayers.push('close-up, extreme close-up, macro, portrait, face filling screen, huge head, cropped forehead');
+  } else if (presence === '1_protagonist_solo_focus') {
+    // ── 1. ヒロイン単身・表情・バストアップ（三面図アンカー100%適合） ──
+    const heroDna = songDna?.protagonistDna || effectiveDna || 'delicate Japanese anime high school girl, dark navy blazer uniform, expressive eyes, beautiful feminine features';
+    characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${heroDna}, strictly maintain identical facial appearance, hairstyle, and uniform matching turnaround sheet]. `;
+    negativeLayers.push('male, boy, man, masculine, multiple people, extra person, duplicate characters, changing appearance');
   } else {
-    // ── 案A（明示的に男と指定されていない限り100%美少女・女子高生にする）規約 ──
+    // ── 既存フォールバック（presence未指定時） ──
     const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${effectiveDna || ''} ${cleanActionPrompt}`);
-    
-    // 明示的な男指定がない限り、デフォルトを「透明感のある女子高生・美少女」に強制固定
     let baseDna = effectiveDna || '';
     if (!hasExplicitMale) {
       if (!baseDna) {
         baseDna = 'delicate cute anime high school girl, beautiful female protagonist, soft feminine features';
       } else {
-        // 日本語「高校生」「学生」等の曖昧な表現を「女子高校生」に強化
         baseDna = baseDna.replace(/(?<!女子)高校生/g, '女子高校生')
           .replace(/(?<!女子)学生/g, '女子学生');
         if (!/\b(female|girl|woman|美少女|女子)\b/i.test(baseDna)) {
           baseDna = `delicate anime girl, ${baseDna}`;
         }
       }
-      // 全人物カット共通で男性・少年化を100%完全除外！
       negativeLayers.push('male, boy, man, masculine, male character, young boy, guy, muscular, broad shoulders, facial hair, stubble');
     }
 
@@ -756,7 +785,6 @@ export function buildFinalCinematicPromptAndNegative(
         .trim();
       characterPromptLayer = `[PROTAGONIST REAR: ${sanitizedDna}, back silhouette, hair and outfit matching turnaround sheet]. `;
     } else if (task.isEndFrame) {
-      // 到達点フレーム: 顔正面の縛りを解き、髪型・衣装の一貫性を維持したまま大胆なアングル変更を許容
       characterPromptLayer = `[PROTAGONIST CONTINUITY: ${sanitizedDna}, strictly maintain identical hairstyle, hair color, and clothing from this transformed perspective]. `;
       negativeLayers.push('different character, change of clothes, multiple people, extra person, duplicate characters');
     } else {
@@ -766,10 +794,11 @@ export function buildFinalCinematicPromptAndNegative(
   }
 
   // 参照画像（Reference Images / Turnaround / Master Anchor）
-  // 物体専用カット（isObjectCut）のみ人物参照を除外し、
-  // キャラクターが登場する全カット（ドアップ、横顔、手元、足元、俯瞰、斜め等）には三面図を100%完全バインド！
+  // 物体専用カット（isObjectCut）、手元・足元（4）、無人風景（5）は人物参照を物理遮断して顔面化・首発生を完全防御！
+  // キャラクターが登場するカット（1, 2, 3）には白背景三面図を100%完全バインド！
   const targetMediaIds: string[] = [];
-  if (!isObjectCut) {
+  const isAnchorExcluded = isObjectCut || presence === '4_hands_or_feet_detail' || presence === '5_scenic_or_still_life';
+  if (!isAnchorExcluded) {
     if (task.referenceImageMediaId) {
       targetMediaIds.push(task.referenceImageMediaId);
     } else if (!task.isMvMode && activeReference?.mediaId) {

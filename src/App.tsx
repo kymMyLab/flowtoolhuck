@@ -237,7 +237,7 @@ export default function App() {
         const nextCuts = ep.cuts.map((c, idx) => {
           // すでに動画生成済み(videoBase64やvideoMediaIdがある)のカットは維持
           if (c.videoBase64 || c.videoMediaId) return c;
-          const expected = isCutSelectedForVideo(idx, settings.videoRatio);
+          const expected = isCutSelectedForVideo(idx, settings.videoRatio, c.veoPriorityRank, ep.cuts.length);
           if (c.isSelectedForVideo !== expected) {
             changed = true;
             return { ...c, isSelectedForVideo: expected };
