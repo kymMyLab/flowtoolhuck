@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@e13b792/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版（画風サムネイル一覧＆画風変更・全再生成ボタン搭載）マウント完了！'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@c2582de/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版（北斎浮世絵画風維持×現代通学路分離・時代劇逆流防止ガード搭載）マウント完了！'); });
