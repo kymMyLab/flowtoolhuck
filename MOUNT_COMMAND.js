@@ -1,1 +1,1 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@9b394d6/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版（ブラウザ動画化バグ完全修正版）マウント完了！'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@382ac20/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版（画風再作成エラー表示完全クリア版）マウント完了！'); });
