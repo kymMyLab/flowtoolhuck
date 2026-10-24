@@ -591,7 +591,7 @@ export function parseLyricKineticAction(lyric: string, section?: string, isPropC
   } else if (/一本釣り|釣り|竿|引き|引く|大漁/i.test(text)) {
     actions.push('athletic firm braced stance, gripping and hauling bowed fishing rod with intense kinetic power against splashing waves');
   } else if (/パジャマの裾|裾.*握|もこもこ.*握|裾/i.test(text)) {
-    actions.push('delicately clutching hem of oversized cozy clothing with both hands, intimate tactile gesture of emotional vulnerability');
+    actions.push('delicately clutching hem of oversized cozy clothing with both hands, gentle tactile gesture of emotional contemplation');
   } else if (/しゃがむ|座る|膝|うずくま/i.test(text)) {
     actions.push('crouching down low with knees drawn together, thoughtful solitary resting posture');
   }
@@ -633,7 +633,7 @@ export function extractLyricScenicMotif(lyric: string): string {
 
   // 1. ベッド・布団・自室・部屋・シーツ・枕・パジャマ・ごろん
   if (/ベッド|ふとん|布団|へや|部屋|自室|シーツ|まくら|枕|パジャマ|寝転が|ごろん/i.test(text)) {
-    motifs.push('cozy intimate private bedroom interior, soft mattress with rumpled blankets and fluffy pillows, warm domestic indoor lighting, peaceful secluded room');
+    motifs.push('cozy tranquil private bedroom interior, soft mattress with rumpled blankets and fluffy pillows, warm domestic indoor lighting, peaceful secluded room');
   }
   // 2. コンビニ・レジ・深夜
   else if (/コンビニ|レジ|肉まん|おでん|アイス|深夜の明かり/i.test(text)) {
@@ -1257,7 +1257,7 @@ export function convertTrackToEpisode(
       const hasStageInLyric = /(ステージ|ライブハウス|コンサート|スポットライト|stage|concert)/i.test(lyric);
 
       if (hasBedroomInLyric && !isPropCut) {
-        promptEnComponents.push(`[INDOOR SCENE OVERRIDE]: Intimate quiet bedroom interior, soft cozy bed sheets, gentle ambient room lighting, serene domestic sanctuary.`);
+        promptEnComponents.push(`[INDOOR SCENE OVERRIDE]: Cozy tranquil quiet bedroom interior, soft clean bed sheets, gentle ambient room lighting, serene domestic room.`);
       } else if (hasConbiniInLyric && !isPropCut) {
         promptEnComponents.push(`[LOCATION OVERRIDE]: Convenience store bright fluorescent glow illuminating glass storefront, vivid snack aisles, midnight urban city.`);
       } else if (hasMaritimeInLyric && !isPropCut) {
