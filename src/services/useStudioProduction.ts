@@ -244,7 +244,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
     addLog(`🧠 Ep.${ep.id}: 歌詞ビジュアルをGeminiで全体解析中（映画的緩急バランス判定）...`, 'process');
     const charCtx = ep.characterDna || activeReferenceRef.current?.characterDna || 'Protagonist';
-    const analysis = await analyzeLyricVisualsWithGemini(lyricLines, ep.theme || ep.titleJp || '', charCtx);
+    const analysis = await analyzeLyricVisualsWithGemini(lyricLines, ep.theme || ep.titleJp || '', charCtx, addLog);
 
     if (analysis && analysis.length > 0) {
       const newCuts = ep.cuts.map(c => {

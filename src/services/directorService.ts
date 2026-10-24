@@ -409,62 +409,70 @@ export interface LyricVisualDirective {
 export async function analyzeLyricVisualsWithGemini(
   lyricLines: { cutId: number; lyric: string; section?: string }[],
   theme: string,
-  characterContext: string
+  characterContext: string,
+  addLog?: (msg: string, type: 'process' | 'success' | 'warning' | 'error' | 'info') => void
 ): Promise<LyricVisualDirective[] | null> {
   if (!lyricLines || lyricLines.length === 0) return null;
 
-  const prompt = `You are a master cinema/anime MV director.
-Analyze the following song lyrics and determine the optimal visual motifs, props, and staging directives for each cut.
+  // 歌詞リストをトークン効率の良いコンパクトテキストに整形（JSONではなくテキスト行にすることで負荷激減）
+  const formattedLines = lyricLines
+    .map(l => `Cut ${l.cutId} (${l.section || 'verse'}): ${l.lyric}`)
+    .join('\n');
+
+  const prompt = `You are a master anime/cinema MV director.
+Analyze the following song lyrics and determine the optimal visual motifs, props, and staging directives for each cut:
+- Character-Driven Cuts (65%-75%): Expressive face, eyes, bust, profile, singing, walking.
+- Integrated Prop & Environment Cuts (15%-25%): Interacting with objects (mugs, umbrella, scarf, bike, window).
+- Dedicated Still-Life Inserts (MAX 2-3 CUTS across entire song): Pure macro prop cutaway without humans (key emotional transition, e.g. single spoon, quiet table).
 
 Theme: "${theme}"
-Protagonist context: "${characterContext}"
+Protagonist: "${characterContext}"
 
-Lyrics to analyze:
-${JSON.stringify(lyricLines, null, 2)}
-
-CRITICAL BALANCING RULE:
-A music video must center on human emotion, expressive faces, and kinetic drama.
-- Character-Driven Cuts (65%–75%): Protagonist's expressive eyes, bust shots, side profiles, singing postures, walking, looking up at the sky, contemplative glances.
-- Integrated Prop & Environment Cuts (15%–25%): Protagonist interacting within the environment where the lyric's props naturally appear (e.g., sitting at table with mugs, holding umbrella, riding bike).
-- Dedicated Still-Life Inserts (MAXIMUM 2–3 CUTS ACROSS THE ENTIRE SONG): Pure macro prop shots without humans for punchy dramatic cutaways (e.g., key emotional transition points).
+Lyrics:
+${formattedLines}
 
 Output ONLY a JSON array of objects with the exact following keys:
 [
   {
     "cutId": 1,
-    "stagingType": "character_with_props" | "character_focused" | "scenic_prop_insert",
-    "propMotif": "string (e.g., two ceramic coffee mugs side by side with rising steam)",
-    "action": "string (e.g., sitting at table in contemplative stillness, looking out the window)",
-    "visualPromptEn": "string (detailed English visual prompt incorporating the motif, action, cinematic depth, and lighting)"
+    "stagingType": "character_focused",
+    "propMotif": "none",
+    "action": "standing at bus stop gazing at sunset",
+    "visualPromptEn": "Protagonist in navy blazer at suburban bus stop, cold air and twilight sky"
   }
 ]`;
 
   try {
     const res = await callWithRetry<any>(
-      () => Flow.generate.text(prompt),
-      (attempt, max, delay) => {
-        console.warn(`[Gemini Lyric Analysis Retry ${attempt}/${max}]`);
+      () => Flow.generate.text(prompt, { systemInstruction: "You are an elite cinema MV visual director. Output strictly valid JSON only." }),
+      (attempt, max, delay, err) => {
+        const errMsg = err?.message || String(err);
+        console.warn(`[Gemini Lyric Analysis Retry ${attempt}/${max}]`, err);
+        if (addLog) {
+          addLog(`⚠️ 歌詞解析リトライ (${attempt}/${max}): ${errMsg.slice(0, 80)}`, 'warning');
+        }
       },
-      { maxRetries: 2 }
+      { maxRetries: 3, timeoutMs: 30000 }
     );
     if (!res) return null;
 
-    const parsed = safeJsonParse<any[]>(res?.text || res, []);
+    const rawOutput = typeof res === 'string' ? res : (res?.text || JSON.stringify(res));
+    const parsed = safeJsonParse<any[]>(rawOutput, []);
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed as LyricVisualDirective[];
     }
+    console.warn('[Gemini Lyric Analysis] Output could not be parsed as valid JSON array:', rawOutput.slice(0, 200));
     return null;
   } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
     console.warn('Failed to analyze lyrics with Gemini:', err);
+    if (addLog) {
+      addLog(`⚠️ Gemini歌詞解析エラー: ${errMsg.slice(0, 100)}`, 'warning');
+    }
     return null;
   }
 }
 
-/**
- * 全制作モード共通の鉄壁な脚本生成エンジン
- * 第1段階: タイトル、あらすじ、各Cutの歌詞・基本状況のみを超軽量プロンプトで即座に策定
- * （※各カットの詳細な作画演出・カメラワーク・直前対比は、画像描画直前に directShot がオンデマンドで生成）
- */
 export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions): Promise<SafeScriptResult> {
   const {
     epId, currentPlan, country, theme, era, isMangaMode, isMvMode,
