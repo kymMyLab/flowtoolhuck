@@ -384,7 +384,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                   options={tasteOptions} 
                   onChange={v => setSettings(s => ({ ...s, taste: v }))} 
                   disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId} 
-                  className="w-[210px]"
+                  className="w-[250px]"
                 />
               );
             })()}
@@ -392,7 +392,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               type="button"
               onClick={onOpenTasteShowroom}
               disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId}
-              className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all hover:scale-102 cursor-pointer shrink-0"
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all hover:scale-102 cursor-pointer shrink-0 border border-emerald-500"
               title="作例画像（学生・江戸町人・社会人）を見ながら画風を選択"
             >
               <span className="material-symbols-outlined text-[16px]">gallery_thumbnail</span>

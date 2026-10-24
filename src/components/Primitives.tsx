@@ -111,12 +111,12 @@ export const FieldDropdown: React.FC<{
       >
         {label && <p className="text-[10px] font-bold text-slate-500 leading-tight">{label}</p>}
         <div className="flex items-center justify-between w-full gap-1.5">
-          <div className="flex items-center gap-1.5 min-w-0 pr-1 flex-1">
+          <div className="flex items-center gap-2 min-w-0 pr-1 flex-1">
             {selectedImage && (
               <img 
                 src={selectedImage} 
                 alt="" 
-                className="w-5 h-5 object-cover rounded-md border border-slate-200 shrink-0 shadow-2xs bg-slate-100" 
+                className="w-7 h-7 object-cover rounded-lg border border-slate-200 shrink-0 shadow-2xs bg-slate-100" 
               />
             )}
             <span className="text-xs font-bold text-slate-900 leading-snug break-words truncate">
@@ -129,7 +129,7 @@ export const FieldDropdown: React.FC<{
         </div>
       </button>
       {isOpen && !disabled && (
-        <div className="absolute z-50 top-[calc(100%+6px)] left-0 w-max min-w-[280px] max-w-[440px] bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl animate-dropdown origin-top max-h-[460px] overflow-y-auto dark-scrollbar">
+        <div className="absolute z-50 top-[calc(100%+6px)] left-0 w-max min-w-[340px] max-w-[560px] bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xl animate-dropdown origin-top max-h-[520px] overflow-y-auto dark-scrollbar">
           {groups ? (
             groups.map((grp) => (
               <div key={grp.label} className="border-b border-slate-100 last:border-b-0 pb-1">
@@ -164,32 +164,36 @@ export const FieldDropdown: React.FC<{
                 <button 
                   key={optVal} 
                   type="button"
-                  className={`w-full text-left px-3 py-2 text-xs font-semibold transition-colors flex items-center justify-between gap-3 border-b border-slate-100 last:border-b-0 cursor-pointer ${
+                  className={`w-full text-left px-3.5 py-2.5 transition-all flex items-center justify-between gap-3.5 border-b border-slate-100 last:border-b-0 cursor-pointer group ${
                     value === optVal 
-                      ? 'bg-indigo-50 text-indigo-700 font-bold' 
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'bg-indigo-50/80 text-indigo-700 font-bold' 
+                      : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                   onClick={() => { onChange(optVal); setIsOpen(false); }}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     {optImg ? (
-                      <img 
-                        src={optImg} 
-                        alt="" 
-                        className="w-11 h-11 object-cover rounded-lg border border-slate-200 shrink-0 shadow-2xs bg-slate-100" 
-                        loading="lazy"
-                      />
+                      <div className="w-[88px] h-[88px] sm:w-[96px] sm:h-[96px] rounded-xl overflow-hidden border border-slate-200 shrink-0 shadow-sm bg-slate-100 relative">
+                        <img 
+                          src={optImg} 
+                          alt="" 
+                          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" 
+                          loading="lazy"
+                        />
+                      </div>
                     ) : null}
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="break-words leading-tight line-clamp-1">{optLabel}</span>
+                    <div className="flex flex-col justify-center min-w-0 flex-1 py-0.5">
+                      <span className="text-[13px] font-bold text-slate-900 break-words leading-snug group-hover:text-indigo-600 transition-colors">
+                        {optLabel}
+                      </span>
                       {optSub && (
-                        <span className="text-[10px] text-slate-500 font-normal leading-tight line-clamp-1 mt-0.5">
+                        <p className="text-xs text-slate-500 font-normal leading-relaxed line-clamp-2 mt-1">
                           {optSub}
-                        </span>
+                        </p>
                       )}
                     </div>
                   </div>
-                  {value === optVal && <span className="material-symbols-outlined text-[18px] text-indigo-600 shrink-0 ml-1">check_circle</span>}
+                  {value === optVal && <span className="material-symbols-outlined text-[20px] text-indigo-600 shrink-0 ml-1">check_circle</span>}
                 </button>
               );
             })
