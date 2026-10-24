@@ -639,9 +639,9 @@ export function extractLyricScenicMotif(lyric: string): string {
   else if (/コンビニ|レジ|肉まん|おでん|アイス|深夜の明かり/i.test(text)) {
     motifs.push('brightly illuminated 24-hour Japanese convenience store storefront glowing in the dark, warm light spilling through large glass windows, quiet late-night street');
   }
-  // 3. 漁船・海・カツオ・一本釣り・釣り・甲板・荒波
-  else if (/漁船|釣り|つり|カツオ|一本釣り|荒波|波しぶき|甲板|港|大漁/i.test(text)) {
-    motifs.push('rugged wooden fishing boat deck pitching violently on surging ocean waves, dramatic white sea spray mist, deep churning seawater, dramatic maritime atmosphere');
+  // 3. 船・海・甲板・航海・港・荒波
+  else if (/漁船|船|ボート|甲板|デッキ|航海|港|港町|荒波|波しぶき|水平線|沖合|大漁/i.test(text)) {
+    motifs.push('rugged wooden ship deck pitching on surging ocean waves, dramatic white sea spray mist, deep churning seawater, dramatic maritime atmosphere');
   }
   // 4. 駅・改札・電車・ホーム・始発・終電
   else if (/改札|かいさつ|電車|でんしゃ|ホーム|始発|終電|地下鉄/i.test(text)) {
@@ -1152,19 +1152,28 @@ export function convertTrackToEpisode(
         telopPosition = 'center-stagger';
       }
 
-      // 🎯 [歌詞動的シチュエーション解析: 構図・ロケーション・衣装の連動]
-      const isBedPose = /(ベッド|布団|シーツ|寝転が|ごろん|寝そべ|横たわ|まどろ|毛布|パジャマ|roomwear|bed|futon)/i.test(lyric);
-      const isFishingPose = /(釣り|一本釣り|漁師|大漁|波しぶき|船上|甲板|カツオ|bonito|fisherman|fishing)/i.test(lyric);
-
+      // 🎯 [歌詞動的シチュエーション解析: 構図・カメラワーク連動]
       if (!isPropCut) {
-        if (isBedPose) {
+        if (/(ベッド|布団|シーツ|寝転が|ごろん|寝そべ|横たわ|まどろ|毛布|パジャマ|roomwear|bed|futon)/i.test(lyric)) {
           shotScale = 'Overhead Top-Down Bed Shot';
           cameraWork = 'slow-push-in';
           cinematicAngle = 'Top-down overhead perspective looking down from above at the cozy bed, soft wrinkled cotton sheets and plush blankets, subject lounging comfortably with loose hair spreading naturally across the pillows, cinematic warm ambient light';
-        } else if (isFishingPose) {
+        } else if (/(船|ボート|甲板|デッキ|航海|波しぶき|大漁|海原|vessel|ocean boat)/i.test(lyric)) {
           shotScale = 'Dynamic Low-Angle Maritime';
           cameraWork = 'handheld-sway';
-          cinematicAngle = 'Dynamic low-angle medium shot on a swaying fishing boat deck, high-octane ocean spray catching sunlight, muscular grip on the fishing gear, raw authentic maritime momentum and kinetic energy';
+          cinematicAngle = 'Dynamic low-angle medium shot on a swaying boat deck, high-octane ocean spray catching sunlight, authentic maritime momentum and kinetic energy';
+        } else if (/(走る|ダッシュ|疾走|駆け抜け|スプリント|sprint|running)/i.test(lyric)) {
+          shotScale = 'Dynamic Tracking Low-Angle';
+          cameraWork = 'dynamic-pan-zoom';
+          cinematicAngle = 'Dynamic low-angle tracking shot capturing full kinetic forward momentum, athletic motion, wind whipping through hair, dramatic motion blur in peripheral background';
+        } else if (/(車|ドライブ|運転|ハンドル|高速道路|夜のハイウェイ|drive|highway)/i.test(lyric)) {
+          shotScale = 'Cockpit Medium Shot';
+          cameraWork = 'slow-push-in';
+          cinematicAngle = 'Cinematic interior car cockpit shot, illuminated dashboard glow, neon city night lights streaking across the windshield, focused hands on steering wheel';
+        } else if (/(ステージ|ライブ|マイク|ギター|演奏|スポットライト|stage|spotlight)/i.test(lyric)) {
+          shotScale = 'Dynamic Medium Low-Angle';
+          cameraWork = 'cinematic-orbit';
+          cinematicAngle = 'Dramatic low-angle stage performance shot, brilliant piercing spotlights cutting through atmospheric haze, intense passionate musical energy';
         }
       }
 
@@ -1186,21 +1195,22 @@ export function convertTrackToEpisode(
         visualPlot,
       ];
 
-      // 👘 歌詞連動衣装ダイナミック適応（パジャマ・漁師カッパ・水着・浴衣など）
-      const hasPajamasInLyric = /(パジャマ|ルームウェア|もこもこ|部屋着|寝間着|pajama|roomwear|sleepwear)/i.test(lyric);
-      const hasFishermanInLyric = /(漁師|一本釣り|カツオ|カッパ|雨具|slicker|fisherman gear|fisherman)/i.test(lyric);
-      const hasSwimwearInLyric = /(水着|ビキニ|海水浴|プール|swimwear|bikini)/i.test(lyric);
-      const hasYukataInLyric = /(浴衣|着物|夏祭り|yukata|kimono)/i.test(lyric);
-
+      // 👘 歌詞連動衣装ダイナミック適応（パジャマ・スポーツウェア・作業着・水着・浴衣・冬服など）
       let dynamicWardrobeDirective = '';
-      if (hasPajamasInLyric) {
+      if (/(パジャマ|ルームウェア|もこもこ|部屋着|寝間着|pajama|roomwear|sleepwear)/i.test(lyric)) {
         dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing cozy oversized fluffy pastel roomwear pajamas]';
-      } else if (hasFishermanInLyric) {
-        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing rugged waterproof oilskin slicker jacket and maritime sea boots]';
-      } else if (hasSwimwearInLyric) {
+      } else if (/(合羽|カッパ|雨具|作業着|slicker|waterproof gear|protective gear)/i.test(lyric)) {
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing rugged waterproof oilskin slicker jacket and boots]';
+      } else if (/(水着|ビキニ|海水浴|プール|swimwear|bikini)/i.test(lyric)) {
         dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing stylish summer beach swimwear]';
-      } else if (hasYukataInLyric) {
+      } else if (/(浴衣|着物|夏祭り|yukata|kimono)/i.test(lyric)) {
         dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing elegant traditional Japanese cotton yukata with decorative obi sash]';
+      } else if (/(ジャージ|ユニフォーム|スポーツウェア|ランニングウェア|sportswear|jersey|gym wear)/i.test(lyric)) {
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing sleek athletic performance sportswear]';
+      } else if (/(エプロン|割烹着|料理|apron)/i.test(lyric)) {
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing casual domestic clothes with a stylish fabric apron]';
+      } else if (/(コート|ダウン|マフラー|手袋|防寒|winter coat|down jacket|muffler)/i.test(lyric)) {
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing thick warm stylish winter coat with wrapped woolen muffler]';
       }
 
       // キャストDNAおよび表情のインポート（キャスト固定が明示的にONのときのみ注入）
@@ -1241,17 +1251,23 @@ export function convertTrackToEpisode(
 
       const hasBedroomInLyric = /(ベッド|布団|寝室|部屋の中|パジャマ|シーツ|枕|まどろみ|bedroom|bed)/i.test(lyric);
       const hasConbiniInLyric = /(コンビニ|レジ袋|深夜の明かり|24時間|conbini|convenience store)/i.test(lyric);
-      const hasOceanFishingInLyric = /(船|甲板|海の上|漁港|波しぶき|一本釣り|大漁|カツオ|fishing vessel|ocean boat)/i.test(lyric);
+      const hasMaritimeInLyric = /(船|甲板|海の上|漁港|波しぶき|大漁|航海|デッキ|vessel|ocean boat|deck)/i.test(lyric);
       const hasKitchenInLyric = /(キッチン|台所|冷蔵庫|フライパン|湯気|kitchen)/i.test(lyric);
+      const hasDrivingInLyric = /(車内|高速道路|ハイウェイ|ドライブ|ハンドル|運転席|cockpit|highway)/i.test(lyric);
+      const hasStageInLyric = /(ステージ|ライブハウス|コンサート|スポットライト|stage|concert)/i.test(lyric);
 
       if (hasBedroomInLyric && !isPropCut) {
         promptEnComponents.push(`[INDOOR SCENE OVERRIDE]: Intimate quiet bedroom interior, soft cozy bed sheets, gentle ambient room lighting, serene domestic sanctuary.`);
       } else if (hasConbiniInLyric && !isPropCut) {
         promptEnComponents.push(`[LOCATION OVERRIDE]: Convenience store bright fluorescent glow illuminating glass storefront, vivid snack aisles, midnight urban city.`);
-      } else if (hasOceanFishingInLyric && !isPropCut) {
-        promptEnComponents.push(`[MARITIME SCENE OVERRIDE]: Open ocean waters aboard a weathered fishing vessel deck, crashing saltwater spray and churning sea.`);
+      } else if (hasMaritimeInLyric && !isPropCut) {
+        promptEnComponents.push(`[MARITIME SCENE OVERRIDE]: Open ocean waters aboard a weathered ship deck, crashing saltwater spray and churning sea.`);
       } else if (hasKitchenInLyric && !isPropCut) {
-        promptEnComponents.push(`[LOCATION OVERRIDE]: Warm domestic kitchen interior, soft condensation and gentle morning steam.`);
+        promptEnComponents.push(`[LOCATION OVERRIDE]: Warm domestic kitchen interior, soft condensation and gentle cooking steam.`);
+      } else if (hasDrivingInLyric && !isPropCut) {
+        promptEnComponents.push(`[LOCATION OVERRIDE]: Night highway illuminated by amber streetlights and trailing neon city reflections.`);
+      } else if (hasStageInLyric && !isPropCut) {
+        promptEnComponents.push(`[LOCATION OVERRIDE]: Vibrant concert stage illuminated by piercing colorful spotlights and atmospheric haze.`);
       } else if (track.scene_context && !isMacroOrDetailCut) {
         promptEnComponents.push(`[WORLD AMBIENCE]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
       } else if (track.surface_theme && isMacroOrDetailCut && !isPropCut) {
