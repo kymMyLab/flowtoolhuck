@@ -461,7 +461,7 @@ Output ONLY a JSON array of objects with the exact following keys (keep visualPr
           addLog(`⚠️ 歌詞解析リトライ (${attempt}/${max}): ${errMsg.slice(0, 80)}`, 'warning');
         }
       },
-      { maxRetries: 3, timeoutMs: 90000, timeoutLabel: 'Gemini歌詞解析' }
+      { maxRetries: 3, timeoutMs: 100000, timeoutLabel: 'Gemini歌詞解析' }
     );
     if (!res) return null;
 
