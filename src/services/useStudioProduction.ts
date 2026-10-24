@@ -1077,13 +1077,36 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
   const handleBulkBrowserVideo = async (epId: number) => {
     const ep = episodesRef.current.find(e => e.id === epId);
-    if (!ep) return;
-    const targets = ep.cuts.filter(c => !c.videoBase64);
+    if (!ep) {
+      addLog(`⚠️ エピソードが見つかりません`, 'warning');
+      return;
+    }
+    const availableCuts = ep.cuts.filter(c => !!(c.imageBase64 || (c as any)?.image));
+    if (availableCuts.length === 0) {
+      addLog(`⚠️ 動画化できる静止画がまだ生成されていません。「③ 作成開始」で画像を生成してください`, 'warning');
+      return;
+    }
+    const targets = availableCuts.filter(c => !c.videoBase64);
+    if (targets.length === 0) {
+      addLog(`ℹ️ 全${availableCuts.length}カットがすでに動画化済みです`, 'info');
+      return;
+    }
+    addLog(`⚡ 全${targets.length}カットのブラウザ動画化（0pt Ken Burns＆字幕焼き込み）を開始します...`, 'process');
     setIsProducing(true);
+    isAbortedRef.current = false;
     updateEpisode(epId, { isBatchGeneratingVideos: true });
-    for (const cut of targets) await generateBrowserVideo(epId, cut.id);
-    updateEpisode(epId, { isBatchGeneratingVideos: false });
-    setIsProducing(false);
+    try {
+      for (const cut of targets) {
+        if (isAbortedRef.current) {
+          addLog(`🛑 ブラウザ動画化を一括中止しました`, 'warning');
+          break;
+        }
+        await generateBrowserVideo(epId, cut.id);
+      }
+    } finally {
+      updateEpisode(epId, { isBatchGeneratingVideos: false });
+      setIsProducing(false);
+    }
   };
 
   const startProduction = async (overrideSettings?: Partial<GeneratorSettings>) => {

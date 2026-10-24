@@ -1,6 +1,7 @@
 import { Cut, Episode, KenBurnsPreset } from '../types';
 import { Output, Mp4OutputFormat, BufferTarget, CanvasSource } from 'mediabunny';
 import { renderCoverCanvas } from './exportService';
+import { formatDataUri } from './utils';
 import { normalizeKenBurnsPreset, drawKenBurnsFrame } from './renderers/kenBurns';
 import { 
   drawBakedSubtitles, 
@@ -134,12 +135,15 @@ export async function renderFullEpisodeMovie(
           video.parentNode.removeChild(video);
         }
       }
-    } else if (cut.imageBase64) {
+    } else if (cut.imageBase64 || (cut as any)?.image) {
+      const rawImg = cut.imageBase64 || (cut as any)?.image;
+      const imgSrc = formatDataUri(rawImg);
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
         const imgObj = new Image();
+        imgObj.crossOrigin = 'anonymous';
         imgObj.onload = () => resolve(imgObj);
-        imgObj.onerror = reject;
-        imgObj.src = `data:image/png;base64,${cut.imageBase64}`;
+        imgObj.onerror = (e) => reject(new Error(`静止画の読み込みに失敗しました: ${e}`));
+        imgObj.src = imgSrc;
       });
 
       const duration = defaultCutDuration;
@@ -190,22 +194,25 @@ export async function renderKenBurnsVideo(
   isHorizontal: boolean = true
 ): Promise<string> {
   await document.fonts.ready;
-  if (!cut.imageBase64) throw new Error('Image data missing');
+  const rawImage = cut.imageBase64 || (cut as any)?.image;
+  if (!rawImage) throw new Error('カットの画像データが見つかりません');
 
   const width = isHorizontal ? 1280 : 720;
   const height = isHorizontal ? 720 : 1280;
   const fps = 30;
-  const totalFrames = durationSec * fps;
+  const totalFrames = Math.max(1, Math.round(durationSec * fps));
 
   const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Failed to create offscreen context');
+  if (!ctx) throw new Error('OffscreenCanvas の作成に失敗しました');
   
+  const imgSrc = formatDataUri(rawImage);
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const i = new Image();
+    i.crossOrigin = 'anonymous';
     i.onload = () => resolve(i);
-    i.onerror = reject;
-    i.src = `data:image/png;base64,${cut.imageBase64}`;
+    i.onerror = () => reject(new Error('静止画のロードに失敗しました (形式不正またはCORS)'));
+    i.src = imgSrc;
   });
 
   const output = new Output({
