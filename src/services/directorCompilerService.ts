@@ -23,10 +23,10 @@ export async function extractSongDnaWithGemini(
   const sensoryDetails = metadata.sensory_details || '';
 
   const fallbackDna: ExtractedSongDna = {
-    protagonistDna: 'delicate Japanese anime high school girl, dark navy blue blazer uniform, pleated skirt, black loafers, expressive eyes, neat bangs and shoulder-length dark hair',
-    protagonistPartialWardrobeDna: 'navy school blazer sleeves and cuffs, pleated skirt hem, black school loafers on pavement',
-    partnerDna: 'tall high school boy, short neat black hair, beige duffle coat over school uniform, masculine hands',
-    keyPropsDna: 'thick red and gray plaid wool woven scarf, single stainless steel spoon'
+    protagonistDna: 'expressive Japanese anime protagonist, natural stylish hair, expressive emotive eyes, authentic attire matching the song world',
+    protagonistPartialWardrobeDna: 'attire sleeve cuffs, hem, and footwear matching the setting',
+    partnerDna: '',
+    keyPropsDna: 'atmospheric keepsake prop imbued with emotional significance'
   };
 
   if (!charSetting && !surfaceTheme) {
@@ -111,35 +111,45 @@ export async function compileStoryboardWithGemini(
   const systemInstruction = `You are an Elite Anime MV Director & Storyboard Compiler. Transform the input ${totalCuts}-cut storyboard and ExtractedSongDna into a JSON array of ${totalCuts} CompiledStoryboardCut objects.
 
 ### MANDATORY COMPILATION RULES:
-1. **COLD OPEN HOOK (Cut 1 & 2 Swap)**: Force Cut 1 to be '1_protagonist_solo_focus' with 'slow-push-in' (extreme close-up of heroine's expressive eyes, visible white breath, looking directly at camera to prevent drop-off). Move the establishing wide scenery to Cut 2 ('2_protagonist_or_pair_wide').
-2. **ZERO EMPTY PROMPTS**: If image_prompt is empty (""), synthesize a detailed English prompt from camera_composition, lighting_scene, and character_action, strictly removing any '--ar' tags.
-3. **5-WAY PRESENCE ROUTING**:
-   - '1_protagonist_solo_focus': Heroine bust/close-up/eyes.
-   - '2_protagonist_or_pair_wide': Wide scenic shot with small/distant figures.
-   - '3_two_characters_asymmetric': Medium/close couple shot. Focus on heroine's face; frame the boy strictly from behind, over-the-shoulder, silhouette, or chin-down so only ONE full face is visible.
-   - '4_hands_or_feet_detail': Macro of hands/feet/props. Make the physical prop (focal_subject) the grammatical subject.
-   - '5_scenic_or_still_life': 100% NO humans (e.g., lonely spoon in dark kitchen, traffic lights, footprints).
-4. **ANTI-MODE-COLLAPSE & 4-STAGE LIGHTING**: Never allow the same angle (profile, hands) for 2 consecutive cuts. Shift lighting across 4 acts: Cut 1-7 (Dusk/Station Fluorescent), Cut 8-19 (Red Traffic Light/Amber Streetlamp/City Bokeh), Cut 20-25 (Deep Blue Night/Vending Machine Cyan/Moonlit Dark Kitchen), Cut 26-30 (Golden Backlight Climax -> Starry Silence).
-5. **0.4s BEAT DROP & COLOR INVERSION**:
-   - On [Stop / Beat Drop] cuts (e.g. Cut 11/12) and Cut 25->26 transition, set panel_layout: 'diagonal-slash' and camera_work: 'freeze-frame'.
-   - Set telop_neon_color to '#FFE600' or '#FF2A85' for normal/chorus cuts, '#00F0FF' (Cold Cyan) for Bridge/dark room cuts (Cut 24-25), and '#FFFFFF' for Outro.
-6. **DYNAMIC VEO PRIORITY RANKING (1 to 30)**: Assign a unique integer veo_priority_rank (1 to 30, no duplicates) to every cut:
-   - Rank 1-3 (Top 10%): Cut 1 (Cold Open eye hook), Cut 13 (Chorus 1 explosion), Cut 26 (Final Chorus climax).
-   - Rank 4-9 (Top 30%): Cut 10/11 (Scarf wrapping), Cut 18 (Instrumental drop spin), Cut 22 (Ear whisper blush), Cut 25 (Lonely spoon still life), Cut 29 (Unwrapping scarf), Cut 4 (Walking into wind).
-   - Rank 10-30: Remaining cuts ranked by kinetic impact. Provide a vivid veo_motion_and_end_frame_prompt for ALL cuts.
+1. **LYRIC-CENTRIC SITUATIONAL DIRECTING & SCENE SHIFTS (CRITICAL RULE #1)**:
+   - Deeply inspect the Japanese 'lyric' of EACH cut. The visual scene in 'compiled_prompt_en' MUST vividly depict what the lyrics are singing about!
+   - **Dynamic Location & Setting**:
+     - If the lyric describes a bed, bedroom, waking up, or night in room -> place the scene in an intimate cozy bedroom on soft bed sheets and pillows with warm indoor lamp lighting.
+     - If it describes a convenience store / conbini / midnight snack -> illuminated 24h Japanese convenience store storefront, glass reflections, or snack aisles.
+     - If it sings of ocean, boat, or fishing (e.g. bonito pole-fishing) -> rough open sea, rugged fishing vessel deck pitching amidst crashing saltwater spray.
+     - If it describes a classroom, train station, rooftop, street, or forest -> shift the location immediately to match the lyric!
+   - **Dynamic Wardrobe & Pose Adaptation**:
+     - While preserving the protagonist's core identity (hair, face, age), adapt their clothing to the setting when called for (e.g. cozy fluffy oversized pajamas in bed, waterproof yellow raincoat & storm boots for fishing or heavy rain, casual loungewear at home, swimwear at the beach). Never force a formal school blazer or suit while they are rolling on a bed or fishing on an ocean boat!
+     - **Kinetic Pose & Action**: Visually mirror the specific physical action mentioned in the lyrics (e.g. "rolling on bed / clutching pajamas" -> top-down bird's-eye view of character sprawled across bed sheets clutching pajamas; "bonito pole fishing" -> dynamic low-angle shot pulling a bowed fishing rod as water splashes; "drinking warm can" -> tactile macro of hands gripping can).
+2. **COLD OPEN HOOK (Cut 1 & 2 Swap)**: Force Cut 1 to be '1_protagonist_solo_focus' with 'slow-push-in' (intimate close-up of protagonist's captivating expressive eyes and face, looking directly toward camera to grip viewer attention). Move the establishing wide scenery to Cut 2 ('2_protagonist_or_pair_wide').
+3. **ZERO EMPTY PROMPTS**: If image_prompt is empty (""), synthesize a detailed English prompt from camera_composition, lighting_scene, and character_action, strictly removing any '--ar' tags.
+4. **5-WAY PRESENCE ROUTING**:
+   - '1_protagonist_solo_focus': Protagonist bust/close-up/eyes.
+   - '2_protagonist_or_pair_wide': Wide scenic shot establishing the protagonist within the environment.
+   - '3_two_characters_asymmetric': Couple/pair shot. Focus on the main character's face; frame the partner strictly from behind, silhouette, or over-the-shoulder so only ONE face dominates.
+   - '4_hands_or_feet_detail': Macro of hands/feet/props (e.g. clutching pajama hem, holding fishing pole, footsteps on wet ground). Make the physical detail the focal subject.
+   - '5_scenic_or_still_life': 100% NO humans (e.g. atmospheric still life, empty room, rolling sea waves, rain on window).
+5. **ANTI-MODE-COLLAPSE & NATURAL LIGHTING ARC**:
+   - Never allow the same shot scale or camera angle for 2 consecutive cuts.
+   - Evolve the visual atmosphere and lighting across the song's emotional arc (Opening atmosphere -> Rising tension -> Chorus emotional explosion & rim lighting -> Outro resolution).
+6. **0.4s BEAT DROP & COLOR INVERSION**:
+   - On peak beat drops or transition cuts (e.g. Cut 11/12, bridge transition), set panel_layout: 'diagonal-slash' and camera_work: 'freeze-frame'.
+   - Assign appropriate vibrant accent neon colors for telop highlights based on the emotional mood of each section.
+7. **DYNAMIC VEO PRIORITY RANKING (1 to 30)**: Assign a unique integer veo_priority_rank (1 to 30, no duplicates) based on kinetic energy and storytelling significance.
+   - Provide a vivid, high-motion veo_motion_and_end_frame_prompt for ALL cuts that brings the lyric's action to life.
 
 Output strictly valid JSON array only:
 [
   {
     "cutId": 1,
     "character_presence": "1_protagonist_solo_focus",
-    "focal_subject": "heroine_expressive_eyes",
-    "compiled_prompt_en": "Extreme close up, female protagonist with deep violet eyes, cold red cheeks...",
+    "focal_subject": "protagonist_expressive_eyes",
+    "compiled_prompt_en": "Extreme close up, protagonist with deep captivating eyes looking into camera...",
     "camera_work": "slow-push-in",
     "panel_layout": "single",
     "telop_neon_color": "#FFE600",
     "veo_priority_rank": 1,
-    "veo_motion_and_end_frame_prompt": "Start frame eyes downcast, camera pushes in as she looks up into lens with subtle smile, visible steam breath curls"
+    "veo_motion_and_end_frame_prompt": "Start frame eyes downcast, camera pushes in as protagonist looks up into lens with subtle emotion"
   }
 ]`;
 

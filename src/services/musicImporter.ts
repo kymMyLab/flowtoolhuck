@@ -586,6 +586,12 @@ export function parseLyricKineticAction(lyric: string, section?: string, isPropC
     actions.push('dynamic forward athletic momentum, hair and clothes whipping back in kinetic sprint');
   } else if (/歩く|歩き出|足音|踏み出|一歩/i.test(text)) {
     actions.push('taking a resolute brisk step forward, dynamic leg stride, clothes swishing with kinetic purpose');
+  } else if (/寝転が|ごろん|ベッドの上|シーツ|横たわ|まくら/i.test(text)) {
+    actions.push('lying down comfortably on soft bed, rolling over lazily across rumpled sheets and pillows, relaxed candid bedroom posture');
+  } else if (/一本釣り|釣り|竿|引き|引く|大漁/i.test(text)) {
+    actions.push('athletic firm braced stance, gripping and hauling bowed fishing rod with intense kinetic power against splashing waves');
+  } else if (/パジャマの裾|裾.*握|もこもこ.*握|裾/i.test(text)) {
+    actions.push('delicately clutching hem of oversized cozy clothing with both hands, intimate tactile gesture of emotional vulnerability');
   } else if (/しゃがむ|座る|膝|うずくま/i.test(text)) {
     actions.push('crouching down low with knees drawn together, thoughtful solitary resting posture');
   }
@@ -625,37 +631,61 @@ export function extractLyricScenicMotif(lyric: string): string {
 
   const motifs: string[] = [];
 
-  // 1. 海・ビーチ・波・砂浜・夏
-  if (/うみ|海|なみ|波|しぶき|飛沫|砂浜|すなはま|海岸|かいがん|ビーチ|beach|shore|ocean|wave|サンダル|水着|みずぎ/i.test(text)) {
+  // 1. ベッド・布団・自室・部屋・シーツ・枕・パジャマ・ごろん
+  if (/ベッド|ふとん|布団|へや|部屋|自室|シーツ|まくら|枕|パジャマ|寝転が|ごろん/i.test(text)) {
+    motifs.push('cozy intimate private bedroom interior, soft mattress with rumpled blankets and fluffy pillows, warm domestic indoor lighting, peaceful secluded room');
+  }
+  // 2. コンビニ・レジ・深夜
+  else if (/コンビニ|レジ|肉まん|おでん|アイス|深夜の明かり/i.test(text)) {
+    motifs.push('brightly illuminated 24-hour Japanese convenience store storefront glowing in the dark, warm light spilling through large glass windows, quiet late-night street');
+  }
+  // 3. 漁船・海・カツオ・一本釣り・釣り・甲板・荒波
+  else if (/漁船|釣り|つり|カツオ|一本釣り|荒波|波しぶき|甲板|港|大漁/i.test(text)) {
+    motifs.push('rugged wooden fishing boat deck pitching violently on surging ocean waves, dramatic white sea spray mist, deep churning seawater, dramatic maritime atmosphere');
+  }
+  // 4. 駅・改札・電車・ホーム・始発・終電
+  else if (/改札|かいさつ|電車|でんしゃ|ホーム|始発|終電|地下鉄/i.test(text)) {
+    motifs.push('train station ticket turnstiles and suburban transit platform, atmospheric commuter ambiance');
+  }
+  // 5. 台所・キッチン・朝食・料理
+  else if (/台所|キッチン|料理|フライパン|湯気|トースター|朝食/i.test(text)) {
+    motifs.push('warm home kitchen, countertop with steam rising, warm morning sunlight streaming in');
+  }
+  // 6. 洗面所・お風呂・鏡
+  else if (/お風呂|洗面台|鏡|ドライヤー|湯気/i.test(text)) {
+    motifs.push('steamy bathroom mirror, warm domestic atmosphere, soft morning light');
+  }
+  // 7. 海・ビーチ・波・砂浜・夏
+  else if (/うみ|海|なみ|波|しぶき|飛沫|砂浜|すなはま|海岸|かいがん|ビーチ|beach|shore|ocean|wave|サンダル|水着|みずぎ/i.test(text)) {
     motifs.push('crystal clear emerald ocean shallows, sparkling turquoise ripples, wet white sand shoreline under bright radiant sunlight');
   }
-  // 2. 雪・冬・粉雪・吹雪・氷
+  // 8. 雪・冬・粉雪・吹雪・氷
   else if (/ゆき|雪|こおり|氷|ふぶき|吹雪|粉雪|こゆき|初雪|冬景色|winter|snow|blizzard/i.test(text)) {
     motifs.push('pristine untouched powdery snow covering the tranquil ground, delicate floating snowflakes in crisp silent winter morning air');
   }
-  // 3. 自販機・缶ジュース
+  // 9. 自販機・缶ジュース
   else if (/自販機|じはんき|自動販売機|ベンダー/i.test(text)) {
     motifs.push('standing by a glowing illuminated drink vending machine on the corner, warm red light glowing in twilight, warm canned beverage dropping into slot');
   } else if (/アルミ缶|缶コーヒー|缶ジュース|空き缶|缶の底|プルタブ/i.test(text)) {
     motifs.push('holding an aluminum drink can between both hands, tactile metal reflections and condensation');
   }
-  // 4. 階段・河川敷・堤防
+  // 10. 階段・河川敷・堤防
   else if (/階段|かいだん|河川敷|かわべり|川沿い|堤防|土手/i.test(text)) {
     motifs.push('concrete riverside embankment overlooking calm water, sitting on the steps in natural relaxed posture');
   }
-  // 5. 自転車
+  // 11. 自転車
   else if (/じてんしゃ|自転車/i.test(text)) {
     motifs.push('dramatic cinematic headlight glare from a passing commuter bicycle, intense luminous lens flare slashing across scene');
   }
-  // 6. 歩道橋・欄干
+  // 12. 歩道橋・欄干
   else if (/歩道橋|ほどうきょう|橋の上|はしのうえ|手すり|てすり|欄干/i.test(text)) {
     motifs.push('solitary pedestrian footbridge railing, weathered metallic texture in atmospheric daylight');
   }
-  // 7. 教室・黒板・放課後
+  // 13. 教室・黒板・放課後
   else if (/きょうしつ|教室|こくばん|黒板|放課後|下校/i.test(text)) {
     motifs.push('empty nostalgic classroom with wooden desks and fluttering curtains catching warm slant sunlight');
   }
-  // 8. 影・夕暮れ・西日
+  // 14. 影・夕暮れ・西日
   else if (/にしび|西日|夕暮れ|夕日|夕陽|sunset|golden-hour/i.test(text)) {
     motifs.push('long elongated sharp shadow cast across the textured ground under low slant golden-hour sunlight');
   }
@@ -1122,6 +1152,22 @@ export function convertTrackToEpisode(
         telopPosition = 'center-stagger';
       }
 
+      // 🎯 [歌詞動的シチュエーション解析: 構図・ロケーション・衣装の連動]
+      const isBedPose = /(ベッド|布団|シーツ|寝転が|ごろん|寝そべ|横たわ|まどろ|毛布|パジャマ|roomwear|bed|futon)/i.test(lyric);
+      const isFishingPose = /(釣り|一本釣り|漁師|大漁|波しぶき|船上|甲板|カツオ|bonito|fisherman|fishing)/i.test(lyric);
+
+      if (!isPropCut) {
+        if (isBedPose) {
+          shotScale = 'Overhead Top-Down Bed Shot';
+          cameraWork = 'slow-push-in';
+          cinematicAngle = 'Top-down overhead perspective looking down from above at the cozy bed, soft wrinkled cotton sheets and plush blankets, subject lounging comfortably with loose hair spreading naturally across the pillows, cinematic warm ambient light';
+        } else if (isFishingPose) {
+          shotScale = 'Dynamic Low-Angle Maritime';
+          cameraWork = 'handheld-sway';
+          cinematicAngle = 'Dynamic low-angle medium shot on a swaying fishing boat deck, high-octane ocean spray catching sunlight, muscular grip on the fishing gear, raw authentic maritime momentum and kinetic energy';
+        }
+      }
+
       // 🛡️ [連続顔面アップ防止ガード] 直前と今回がともに顔面/瞳/口元マクロの場合、バストショットまたは全景へ自動シフト
       if (i > 1 && lastShotScale && isFaceMacroScale(lastShotScale, lastCinematicAngle) && isFaceMacroScale(shotScale, cinematicAngle)) {
         shotScale = 'Medium Bust Shot';
@@ -1140,6 +1186,23 @@ export function convertTrackToEpisode(
         visualPlot,
       ];
 
+      // 👘 歌詞連動衣装ダイナミック適応（パジャマ・漁師カッパ・水着・浴衣など）
+      const hasPajamasInLyric = /(パジャマ|ルームウェア|もこもこ|部屋着|寝間着|pajama|roomwear|sleepwear)/i.test(lyric);
+      const hasFishermanInLyric = /(漁師|一本釣り|カツオ|カッパ|雨具|slicker|fisherman gear|fisherman)/i.test(lyric);
+      const hasSwimwearInLyric = /(水着|ビキニ|海水浴|プール|swimwear|bikini)/i.test(lyric);
+      const hasYukataInLyric = /(浴衣|着物|夏祭り|yukata|kimono)/i.test(lyric);
+
+      let dynamicWardrobeDirective = '';
+      if (hasPajamasInLyric) {
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing cozy oversized fluffy pastel roomwear pajamas]';
+      } else if (hasFishermanInLyric) {
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing rugged waterproof oilskin slicker jacket and maritime sea boots]';
+      } else if (hasSwimwearInLyric) {
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing stylish summer beach swimwear]';
+      } else if (hasYukataInLyric) {
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing elegant traditional Japanese cotton yukata with decorative obi sash]';
+      }
+
       // キャストDNAおよび表情のインポート（キャスト固定が明示的にONのときのみ注入）
       if (selectedCharacter && !isPropCut && !isLastCut) {
         let expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
@@ -1153,21 +1216,43 @@ export function convertTrackToEpisode(
           expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || '';
         }
 
-        const cleanDna = selectedCharacter.dnaPromptEn ? selectedCharacter.dnaPromptEn.trim().replace(/\.+$/, '') : '';
+        let cleanDna = selectedCharacter.dnaPromptEn ? selectedCharacter.dnaPromptEn.trim().replace(/\.+$/, '') : '';
+        if (dynamicWardrobeDirective) {
+          // 衣装指定が歌詞にある場合、高校制服やスーツ等の硬直衣装をストリップしてダイナミック衣装で上書き
+          cleanDna = cleanDna
+            .replace(/\b(navy blue blazer uniform|blazer uniform|school uniform|blazer|pleated skirt|white collared shirt|loafers?|school bag|backpack)\b/gi, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+          cleanDna = `${cleanDna}${dynamicWardrobeDirective}`;
+        }
+
         const expressionPart = expressionPrompt ? ` [EXPRESSION]: ${expressionPrompt.replace(/\.+$/, '')}.` : '';
         if (cleanDna) {
           promptEnComponents.push(`[PROTAGONIST DNA]: ${cleanDna}.${expressionPart}`);
         }
       }
 
-      // 情景コンテキスト（scene_context）の注入
+      // 🏠 情景・ロケーションコンテキスト（歌詞キーワードによる動的ロケーション上書き）
       const isMacroOrDetailCut = isPropCut ||
         shotScale.includes('Close-Up') ||
         shotScale.includes('Mouth') ||
         shotScale.includes('Hands') ||
         shotScale.includes('Footsteps');
 
-      if (track.scene_context && !isMacroOrDetailCut) {
+      const hasBedroomInLyric = /(ベッド|布団|寝室|部屋の中|パジャマ|シーツ|枕|まどろみ|bedroom|bed)/i.test(lyric);
+      const hasConbiniInLyric = /(コンビニ|レジ袋|深夜の明かり|24時間|conbini|convenience store)/i.test(lyric);
+      const hasOceanFishingInLyric = /(船|甲板|海の上|漁港|波しぶき|一本釣り|大漁|カツオ|fishing vessel|ocean boat)/i.test(lyric);
+      const hasKitchenInLyric = /(キッチン|台所|冷蔵庫|フライパン|湯気|kitchen)/i.test(lyric);
+
+      if (hasBedroomInLyric && !isPropCut) {
+        promptEnComponents.push(`[INDOOR SCENE OVERRIDE]: Intimate quiet bedroom interior, soft cozy bed sheets, gentle ambient room lighting, serene domestic sanctuary.`);
+      } else if (hasConbiniInLyric && !isPropCut) {
+        promptEnComponents.push(`[LOCATION OVERRIDE]: Convenience store bright fluorescent glow illuminating glass storefront, vivid snack aisles, midnight urban city.`);
+      } else if (hasOceanFishingInLyric && !isPropCut) {
+        promptEnComponents.push(`[MARITIME SCENE OVERRIDE]: Open ocean waters aboard a weathered fishing vessel deck, crashing saltwater spray and churning sea.`);
+      } else if (hasKitchenInLyric && !isPropCut) {
+        promptEnComponents.push(`[LOCATION OVERRIDE]: Warm domestic kitchen interior, soft condensation and gentle morning steam.`);
+      } else if (track.scene_context && !isMacroOrDetailCut) {
         promptEnComponents.push(`[WORLD AMBIENCE]: ${track.scene_context.trim().replace(/\.+$/, '')}.`);
       } else if (track.surface_theme && isMacroOrDetailCut && !isPropCut) {
         promptEnComponents.push(`[AMBIENT ATMOSPHERE]: Atmospheric lighting and subtle environment reflecting the world of "${track.surface_theme}".`);
@@ -1180,6 +1265,13 @@ export function convertTrackToEpisode(
           .replace(/(傘を差して|傘を持ち|傘を持った|傘を差す|立っている|佇んでいる|佇む|直立して|正面を向いて)/g, '')
           .replace(/\s{2,}/g, ' ')
           .trim();
+
+        if (dynamicWardrobeDirective) {
+          cleanSettingDna = cleanSettingDna
+            .replace(/\b(navy blue blazer uniform|blazer uniform|school uniform|blazer|pleated skirt|white collared shirt|loafers?|school bag|backpack)\b/gi, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+        }
 
         if (cleanSettingDna) {
           if (shotScale.includes('Hands')) {
