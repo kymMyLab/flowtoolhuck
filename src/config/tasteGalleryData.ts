@@ -23,9 +23,9 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     category: 'anime',
     descriptionJp: '歴史ある欧風洋館の大階段・アーチ窓の夕暮れに佇む黒髪の制服少女。京都アニメーション・新海誠作品を思わせる情緒豊かな劇場版アニメ調。',
     samples: {
-      students: `${CDN_BASE}/european_classical_manor/students.jpg`,
-      edo: `${CDN_BASE}/european_classical_manor/edo.jpg`,
-      adult: `${CDN_BASE}/european_classical_manor/adult.jpg`,
+      students: `${CDN_BASE}/european_classical_manor/students.jpg?v=7866717`,
+      edo: `${CDN_BASE}/european_classical_manor/edo.jpg?v=7866717`,
+      adult: `${CDN_BASE}/european_classical_manor/adult.jpg?v=7866717`,
     }
   },
   {
