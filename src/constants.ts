@@ -155,17 +155,32 @@ export const THEME_CATEGORIES: ThemeCategory[] = [
       '🕵️ 都市伝説対策特務課・深夜の怪異案件ファイル（現代都市に現れる怪異と対峙）',
       '🏚️ 事故物件の住み込み清掃人（壁のシミが語りかけてくる部屋の秘密）'
     ]
+  },
+  {
+    category: '🏰 欧風洋館・名門寄宿学園・クラシカル浪漫 (夕暮れの時計塔と黒髪の軌跡)',
+    items: [
+      '🏰 欧風古城の全寮制学園・夕暮れの大階段と黒髪の少女（歴史ある洋館・アーチ窓の斜光）',
+      '📚 琥珀色の古書図書館・吹き抜けの螺旋階段と夕陽の読書（巨大な書架・革装丁・舞う埃）',
+      '🕰️ 時計塔の回廊と黄昏の鐘（石造りのアーチ・赤レンガの中庭・風になびくリボン）',
+      '🎻 音楽堂の夕暮れ・ステンドグラスと消えゆく旋律（木製チェロ・譜面台・静寂の放課後）',
+      '🌿 温室と冬薔薇のサンルーム（ガラスドーム・白アイアン・夕霧と角砂糖）',
+      '🛤️ 霧のプラットホームと寄宿学校専用列車（レンガ造りの駅舎・真鍮のランプ・旅立ち）',
+      '🔭 天文観測室と夜想曲（真鍮の天球儀・アンティーク望遠鏡・静かな星空）',
+      '🕯️ 礼拝堂の夕べ・沈黙の祈りとパイプオルガン（色鮮やかな光の影・木製ベンチ）',
+      '☕ 旧館サロンの放課後・銀のティーポットと暖炉（アンティークソファ・スコーンの香り）',
+      '🍁 黄昏の並木道と石造りの正門（舞い散る落ち葉・冷たい風・帰路の足音）'
+    ]
   }
 ];
 
 export const THEMES: string[] = THEME_CATEGORIES.flatMap(c => c.items);
 
 export const TASTES: Record<string, string> = {
+  "🏰 欧風クラシカル・黒髪ノスタルジー (Nostalgic European Manor & Black Hair Academy)":
+    "Masterpiece 2D anime illustration, authentic theatrical anime film still, high-end Kyoto Animation and Makoto Shinkai quality atmospheric cinematography, grand classical European manor interior, monumental cathedral-like tall arched multipane leaded windows, majestic polished dark walnut grand staircase with ornate balustrade, antique European architecture, glorious warm golden hour sunset light streaming dramatically through massive windows, soft god rays, glowing airborne dust motes floating in warm light, rich amber and warm mahogany wood tones, deep cinematic dusk atmosphere, featuring a graceful student girl with lustrous natural raven black hair, silky high black ponytail tied with an elegant deep burgundy wine-red ribbon, expressive intelligent violet-dark eyes, gentle quiet contemplative gaze, classic tailored deep navy blue academy blazer uniform, tailored pleated skirt, ribbon tie, leather school bag, soft golden rim lighting tracing her silhouette and hair strands, quiet poetic cinematic ambiance, emotional depth of field, absolutely NO flashy magic circles, NO fantasy weapons, NO armor, NO glowing magical symbols, NO gacha card borders, NO saturated mobile game splash art, NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
+
   "🌙 ノスタルジック魔女ファンタジー・極細線画 (Retro Fantasy Whisper-Line)":
     "Authentic 2D anime illustration, retro fantasy anime style, detailed flat coloring, extremely fine whisper-thin pencil-like outline, ultra-delicate and intricate line art, paper-thin faded subtle linework blending softly with coloring, nostalgic grainy textured flat anime aesthetic, vintage film grain, textured digital painting quality, muted and desaturated color palette, warm floating ember-like particles, soft round glowing bokeh lights, cozy magical atmospheric cinematic lighting, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, NO watermark, clean edge-to-edge artwork",
-
-  "🍸 ラグジュアリー・ソシャゲ美麗キービジュアル (High-End Gacha Splash Art)":
-    "Authentic 2D anime illustration, high-end Japanese anime key visual, refined mature young-adult anime aesthetic, gacha splash art style, elegant mature proportions, sleek jawline, alluring expressive almond-shaped eyes, sophisticated beauty, not overly cartoonish, polished digital illustration with fine tinted lines, deep layered gradient shadows, fine fabric texture, shimmering highlights and jewelry, rich ambient lighting with warm amber glow, soft cinematic rim light on silhouette, high-fidelity luxury anime key frame finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
 
   "🍷 青年誌カバー・艶麗アイライン＆ソリッドセル (Modern Seinen Manga Cover Art)":
     "Masterpiece 2D anime illustration in modern seinen manga cover style, high-end anime aesthetic, refined mature and charismatic charm, elegant modern graphic novel aesthetic, prominent face with sharp delicate V-shaped chin and slender jawline, mesmerizing eyes with thick heavy dark upper eyeliner and dense eyelashes, sharp-edged two-tone cel shading with lineless internal shapes carved purely by contrasting color planes without internal lines, saturated warm amber fringe at shadow borders, dramatic cinematic moody lighting, warm dim ambient bokeh, polished high-contrast modern comic cover illustration finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO cover titles, NO logos, NO speech bubbles, clean edge-to-edge artwork",

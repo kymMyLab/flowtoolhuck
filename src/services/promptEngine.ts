@@ -571,7 +571,7 @@ export function buildFinalCinematicPromptAndNegative(
   if (isObjectCut) {
     const sanitizeStyleForObject = (styleStr: string) => {
       return styleStr
-        .replace(/\b(gacha splash art style|gacha splash art|refined mature young-adult anime aesthetic|mature young-adult|young-adult|elegant mature proportions|sleek jawline|alluring expressive almond-shaped eyes|almond-shaped eyes|sophisticated beauty|soft cinematic rim light on silhouette|portrait|jawline|lips|face|eyes|chin|silhouette|full body)\b/gi, '')
+        .replace(/\b(gacha splash art style|gacha splash art|refined mature young-adult anime aesthetic|mature young-adult|young-adult|elegant mature proportions|sleek jawline|alluring expressive almond-shaped eyes|almond-shaped eyes|sophisticated beauty|soft cinematic rim light on silhouette|portrait|jawline|lips|face|eyes|chin|silhouette|full body|featuring a graceful student girl|student girl|raven black hair|black ponytail|burgundy wine-red ribbon|violet-dark eyes|contemplative gaze|academy blazer uniform|pleated skirt|ribbon tie|school bag|hair strands)\b/gi, '')
         .replace(/,\s*,/g, ',')
         .replace(/^\s*,\s*/, '')
         .replace(/,\s*$/, '')

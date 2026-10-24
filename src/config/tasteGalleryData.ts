@@ -53,15 +53,15 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     }
   },
   {
-    id: 'luxury_gacha',
-    tasteKey: '🍸 ラグジュアリー・ソシャゲ美麗キービジュアル (High-End Gacha Splash Art)',
-    displayName: '🍸 ラグジュアリー・ソシャゲ美麗キービジュアル',
+    id: 'european_classical_manor',
+    tasteKey: '🏰 欧風クラシカル・黒髪ノスタルジー (Nostalgic European Manor & Black Hair Academy)',
+    displayName: '🏰 欧風クラシカル・黒髪ノスタルジー',
     category: 'anime',
-    descriptionJp: '高級感あふれるハイエンドゲームのキービジュアル調。深いグラデーション陰影と金装飾の輝き。',
+    descriptionJp: '歴史ある欧風洋館の大階段・アーチ窓の夕暮れに佇む黒髪の制服少女。京都アニメーション・新海誠作品を思わせる情緒豊かな劇場版アニメ調。',
     samples: {
-      students: `${CDN_BASE}/luxury_gacha/students.jpg`,
-      edo: `${CDN_BASE}/luxury_gacha/edo.jpg`,
-      adult: `${CDN_BASE}/luxury_gacha/adult.jpg`,
+      students: `${CDN_BASE}/european_classical_manor/students.jpg`,
+      edo: `${CDN_BASE}/european_classical_manor/edo.jpg`,
+      adult: `${CDN_BASE}/european_classical_manor/adult.jpg`,
     }
   },
   {

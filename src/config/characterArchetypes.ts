@@ -226,7 +226,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#30代女性', '#パンツスーツ', '#ハイヒール', '#凛とした強気'],
     summaryJa: '完璧に仕立てられたハイブランドスーツとピンヒール、妥協を許さない鋭い眼差しと圧倒的なカリスマの若き女社長。',
     dnaPromptEn: 'A sharp authoritative 35-year-old Japanese female CEO with sleek chin-length black bob hairstyle, piercing commanding dark eyes with subtle red lipstick, wearing an immaculate tailored charcoal pantsuit with silk blouse, pointed high heels, luxury wristwatch, aura of ruthless confidence',
-    recommendedTastes: ['ラグジュアリー・ソシャゲ美麗キービジュアル', 'ダーク・ノワール', 'シネマティック']
+    recommendedTastes: ['欧風クラシカル・黒髪ノスタルジー', 'ダーク・ノワール', 'シネマティック']
   },
   {
     id: 'arch_office_lady_new',
@@ -369,7 +369,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#デザイナー', '#アシンメトリー黒服', '#首かけメジャー', '#芸術家'],
     summaryJa: '首にテーラーメジャーをかけ、アシンメトリーな黒いモード服を着こなす妥協なき前衛クリエイター。',
     dnaPromptEn: 'An avant-garde 31-year-old Japanese fashion designer with striking asymmetrical haircut, sharp visionary gaze, wearing draped sculptural black designer garments, fabric measuring tape hung around neck, tailor shears in pocket, haute couture atelier ambiance',
-    recommendedTastes: ['ラグジュアリー・ソシャゲ美麗キービジュアル', 'ダーク・ノワール']
+    recommendedTastes: ['欧風クラシカル・黒髪ノスタルジー', 'ダーク・ノワール']
   },
   {
     id: 'arch_kindergarten_teacher',
@@ -615,7 +615,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#ホスト', '#美形流し目', '#派手スーツ', '#シャンパン'],
     summaryJa: '計算された華やかな銀髪アシメヘアにデザイナーズスーツ、女性の心を惑わす甘く冷たい流し目の夜の帝王。',
     dnaPromptEn: 'A glamorous seductive 25-year-old Japanese top Kabukicho host with sculpted silver-ash highlighted hairstyle, mesmerizing almond-shaped eyes with alluring confident gaze, wearing an ornate slim-fit designer suit with satin lapels and sparkling diamond brooch, nightclub neon bokeh',
-    recommendedTastes: ['ラグジュアリー・ソシャゲ美麗キービジュアル', 'ネオンサイバー']
+    recommendedTastes: ['欧風クラシカル・黒髪ノスタルジー', 'ネオンサイバー']
   },
   {
     id: 'arch_cabaret_girl_lonely',
@@ -804,7 +804,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#黒幕', '#威厳ある老人', '#高級ガウン', '#深淵の眼光'],
     summaryJa: '重厚な革張りソファーに腰掛け、ワイングラスを傾けながら街の命運を指先一つで動かす冷酷な巨頭。',
     dnaPromptEn: 'An imposing sinister 70-year-old Japanese underworld syndicate boss with immaculate swept-back silver hair, piercing ruthless eyes surrounded by weathered authority wrinkles, wearing a luxurious velvet dressing gown with gold embroidery, holding crystal wine glass, opulent dark manor study',
-    recommendedTastes: ['ダーク・ノワール', 'ラグジュアリー・ソシャゲ美麗キービジュアル']
+    recommendedTastes: ['ダーク・ノワール', '欧風クラシカル・黒髪ノスタルジー']
   },
   {
     id: 'arch_hardboiled_pi',
@@ -870,7 +870,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#結婚詐欺師', '#完璧な笑顔', '#高級スーツ', '#裏の冷酷さ'],
     summaryJa: '誰もが信頼してしまう誠実そうな笑顔と高級スーツを纏いながら、心の中では標的の財産を冷酷に計算する詐欺師。',
     dnaPromptEn: 'A handsome impeccably groomed 32-year-old Japanese con artist with charming persuasive smile, refined polished dark hair, warm approachable eyes masking cold psychopathic calculation, wearing tailored navy luxury suit, holding champagne flute, opulent high-society gala background',
-    recommendedTastes: ['ラグジュアリー・ソシャゲ美麗キービジュアル', 'ダーク・ノワール']
+    recommendedTastes: ['欧風クラシカル・黒髪ノスタルジー', 'ダーク・ノワール']
   },
   {
     id: 'arch_paranormal_streamer',
@@ -938,7 +938,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#黒猫耳', '#黒猫の尻尾', '#ゴシックメイド', '#小悪魔'],
     summaryJa: 'ぴんと立った黒猫の耳にしなやかな尻尾、クラシカルなゴシックメイド服にいたずらっぽい笑みを浮かべる少女。',
     dnaPromptEn: 'A mischievous gothic Japanese anime girl with fluffy black cat ears and flexible sleek black cat tail, emerald-green feline eyes, wearing a dark Victorian maid dress with white lace apron, choker with tiny brass bell, playful teasing smirk, charming kemonomimi aesthetic',
-    recommendedTastes: ['ノスタルジック魔女ファンタジー', 'ラグジュアリー・ソシャゲ美麗キービジュアル']
+    recommendedTastes: ['ノスタルジック魔女ファンタジー', '欧風クラシカル・黒髪ノスタルジー']
   },
   {
     id: 'arch_bunny_nurse_clumsy',
@@ -960,7 +960,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#銀狼耳', '#狼の尻尾', '#軽鎧', '#大剣'],
     summaryJa: '銀色に輝く狼の耳とふさふさの尾、冷たい北風の中で巨大なグレートソードを背負う孤高の女戦士。',
     dnaPromptEn: 'A proud noble anime female warrior with sharp silver wolf ears and majestic bushy wolf tail, long flowing silver hair, piercing icy-blue predatory eyes, wearing lightweight engraved leather-and-steel battle armor, carrying massive claymore sword, snow-covered mountain cliff backdrop',
-    recommendedTastes: ['ラグジュアリー・ソシャゲ美麗キービジュアル', '白黒劇画・超絶インクマンガ']
+    recommendedTastes: ['欧風クラシカル・黒髪ノスタルジー', '白黒劇画・超絶インクマンガ']
   },
   {
     id: 'arch_elf_archer_noble',
@@ -971,7 +971,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#エルフ', '#尖り耳', '#長弓', '#神秘の森'],
     summaryJa: '透き通る長い尖り耳に黄金の長い髪、深緑のマントを翻して風を読む神秘的な森の守護者。',
     dnaPromptEn: 'An ethereal high-elf archer with slender pointed ears, cascading spun-gold hair, luminous celestial green eyes, wearing forest-green and bronze leather scout attire, drawing an ornate elven recurve longbow, mystical ancient forest glade with floating sunbeams',
-    recommendedTastes: ['ノスタルジック魔女ファンタジー', 'ラグジュアリー・ソシャゲ美麗キービジュアル']
+    recommendedTastes: ['ノスタルジック魔女ファンタジー', '欧風クラシカル・黒髪ノスタルジー']
   },
   {
     id: 'arch_apprentice_witch',
@@ -993,7 +993,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#白銀騎士', '#フルプレート鎧', '#聖剣', '#凛とした美しさ'],
     summaryJa: '磨き上げられた純白の甲冑に青いマント、聖剣を胸元に構えて静かに祈りを捧げる気高き女騎士。',
     dnaPromptEn: 'A valiant beautiful female paladin knight with braided blonde hair, resolute sapphire eyes, clad in polished mirror-like silver plate armor with royal blue tabard and cape, resting both hands on the hilt of a glowing holy broadsword, cathedral stained glass lighting',
-    recommendedTastes: ['ラグジュアリー・ソシャゲ美麗キービジュアル', '白黒劇画・超絶インクマンガ']
+    recommendedTastes: ['欧風クラシカル・黒髪ノスタルジー', '白黒劇画・超絶インクマンガ']
   },
   {
     id: 'arch_pixie_fairy_mischief',
@@ -1015,7 +1015,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#竜角', '#ドラゴンの尾', '#鱗', '#豪快な戦士'],
     summaryJa: '側頭部から伸びる漆黒の竜の角と力強いドラゴンの尾、頬に走る鱗が野生の風格を漂わせる戦士。',
     dnaPromptEn: 'A formidable dragonewt anime warrior youth with obsidian dragon horns curving from temples, powerful reptilian armored tail, subtle crimson dragon scales on cheeks and forearms, fierce molten gold slit-pupil eyes, wearing barbarian leather battle vest, crackling flame aura',
-    recommendedTastes: ['ラグジュアリー・ソシャゲ美麗キービジュアル', '白黒劇画・超絶インクマンガ']
+    recommendedTastes: ['欧風クラシカル・黒髪ノスタルジー', '白黒劇画・超絶インクマンガ']
   },
   {
     id: 'arch_mermaid_singer',
@@ -1072,7 +1072,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#花魁', '#豪華打掛', '#かんざし', '#八文字道中'],
     summaryJa: '幾重にも挿した鼈甲のかんざしに金糸の豪華絢爛な打掛、三枚歯の高下駄で悠然と歩く吉原の華。',
     dnaPromptEn: 'A magnificent Edo period tayuu oiran courtesan with towering sculpted chignon adorned with glowing tortoiseshell hairpins and gold ornaments, porcelain white makeup with crimson lips, wearing heavy lavish silk uchikake kimono embroidered with golden phoenixes, regal commanding allure',
-    recommendedTastes: ['葛飾北斎・超写実肉筆浮世絵', 'ラグジュアリー・ソシャゲ美麗キービジュアル']
+    recommendedTastes: ['葛飾北斎・超写実肉筆浮世絵', '欧風クラシカル・黒髪ノスタルジー']
   },
   {
     id: 'arch_shinsengumi_swordsman',
@@ -1230,7 +1230,7 @@ export const CHARACTER_ARCHETYPES: CharacterArchetype[] = [
     tags: ['#ガチ江戸', '#吉原花魁', '#豪華簪', '#絢爛重厚打掛'],
     summaryJa: '無数の鼈甲簪を挿した立兵庫髷に、金糸銀糸で刺繍された極彩色の重厚な打掛。冷徹なまでの美貌と品格で君臨する吉原の最高峰太夫。',
     dnaPromptEn: 'An exquisite high-ranking Edo Yoshiwara oiran tayu court lady with extravagant tatehyogo hair adorned with dozens of tortoiseshell kanzashi hairpins, immaculate porcelain makeup with crimson lip tint, wearing heavy multi-layered silk uchikake kimono embroidered with gold dragons and chrysanthemums, dignified cold beauty, candlelit tatami chamber',
-    recommendedTastes: ['葛飾北斎・超写実肉筆浮世絵', 'レトロモダン・ネオ・ジャポニスム', 'ラグジュアリー・ソシャゲ美麗キービジュアル']
+    recommendedTastes: ['葛飾北斎・超写実肉筆浮世絵', 'レトロモダン・ネオ・ジャポニスム', '欧風クラシカル・黒髪ノスタルジー']
   },
   {
     id: 'arch_edo_kawaraban_reporter',
