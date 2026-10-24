@@ -29,6 +29,18 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
     }
   },
   {
+    id: 'prismatic_luminous',
+    tasteKey: '💎 エターナル・プリズムルミナス (Ethereal Prismatic Lineless)',
+    displayName: '💎 エターナル・プリズムルミナス',
+    category: 'anime',
+    descriptionJp: '万華鏡のようなプリズム屈折光・クリスタル・浮遊粒子が輝く、主線のない幻想的なルミナスアニメ調。アオハル青春からファンタジーまで、圧倒的な透明感と光の階調美を描き出す。',
+    samples: {
+      students: `https://raw.githubusercontent.com/kymMyLab/flowtoolhuck/082a3be/assets/tastes/prismatic_luminous/students.jpg`,
+      edo: `https://raw.githubusercontent.com/kymMyLab/flowtoolhuck/082a3be/assets/tastes/prismatic_luminous/edo.jpg`,
+      adult: `https://raw.githubusercontent.com/kymMyLab/flowtoolhuck/082a3be/assets/tastes/prismatic_luminous/adult.jpg`,
+    }
+  },
+  {
     id: 'retro_witch',
     tasteKey: '🌙 ノスタルジック魔女ファンタジー・極細線画 (Retro Fantasy Whisper-Line)',
     displayName: '🌙 ノスタルジック魔女ファンタジー・極細線画',
