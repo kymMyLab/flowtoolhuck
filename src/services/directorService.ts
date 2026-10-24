@@ -414,12 +414,12 @@ export async function analyzeLyricVisualsWithGemini(
 ): Promise<LyricVisualDirective[] | null> {
   if (!lyricLines || lyricLines.length === 0) return null;
 
-  // 歌詞リストをトークン効率の良いコンパクトテキストに整形（JSONではなくテキスト行にすることで負荷激減）
+  // 歌詞リストをトークン効率の良いコンパクトテキストに整形
   const formattedLines = lyricLines
     .map(l => `Cut ${l.cutId} (${l.section || 'verse'}): ${l.lyric}`)
     .join('\n');
 
-  const prompt = `You are a master anime/cinema MV director.
+  const prompt = `You are an elite anime/cinema MV director.
 Analyze the following song lyrics and determine the optimal visual motifs, props, and staging directives for each cut:
 - Character-Driven Cuts (65%-75%): Expressive face, eyes, bust, profile, singing, walking.
 - Integrated Prop & Environment Cuts (15%-25%): Interacting with objects (mugs, umbrella, scarf, bike, window).
@@ -431,7 +431,7 @@ Protagonist: "${characterContext}"
 Lyrics:
 ${formattedLines}
 
-Output ONLY a JSON array of objects with the exact following keys:
+Output ONLY a JSON array of objects with the exact following keys (keep visualPromptEn concise, max 15 words per cut):
 [
   {
     "cutId": 1,
@@ -442,9 +442,18 @@ Output ONLY a JSON array of objects with the exact following keys:
   }
 ]`;
 
+  const startTime = Date.now();
+  let heartbeat: any = null;
+  if (addLog) {
+    heartbeat = setInterval(() => {
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      addLog(`⏳ 歌詞ビジュアルをGeminiで全体解析中...（${elapsed}秒経過: 映画的緩急バランスを計算中）`, 'process');
+    }, 5000);
+  }
+
   try {
     const res = await callWithRetry<any>(
-      () => Flow.generate.text(prompt, { systemInstruction: "You are an elite cinema MV visual director. Output strictly valid JSON only." }),
+      () => Flow.generate.text(prompt, { systemInstruction: "You are an elite cinema MV visual director. Output strictly valid JSON array only, without markdown or extra commentary." }),
       (attempt, max, delay, err) => {
         const errMsg = err?.message || String(err);
         console.warn(`[Gemini Lyric Analysis Retry ${attempt}/${max}]`, err);
@@ -452,13 +461,20 @@ Output ONLY a JSON array of objects with the exact following keys:
           addLog(`⚠️ 歌詞解析リトライ (${attempt}/${max}): ${errMsg.slice(0, 80)}`, 'warning');
         }
       },
-      { maxRetries: 3, timeoutMs: 30000 }
+      { maxRetries: 3, timeoutMs: 90000, timeoutLabel: 'Gemini歌詞解析' }
     );
     if (!res) return null;
 
     const rawOutput = typeof res === 'string' ? res : (res?.text || JSON.stringify(res));
     const parsed = safeJsonParse<any[]>(rawOutput, []);
     if (Array.isArray(parsed) && parsed.length > 0) {
+      if (addLog) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        const scenicCount = parsed.filter(p => p.stagingType === 'scenic_prop_insert').length;
+        const charCount = parsed.filter(p => p.stagingType === 'character_focused').length;
+        const propCount = parsed.filter(p => p.stagingType === 'character_with_props').length;
+        addLog(`📥 歌詞解析完了！（応答時間: ${elapsed}秒 / 人物主導:${charCount} 小道具:${propCount} 静物インサート:${scenicCount}）`, 'process');
+      }
       return parsed as LyricVisualDirective[];
     }
     console.warn('[Gemini Lyric Analysis] Output could not be parsed as valid JSON array:', rawOutput.slice(0, 200));
@@ -470,6 +486,8 @@ Output ONLY a JSON array of objects with the exact following keys:
       addLog(`⚠️ Gemini歌詞解析エラー: ${errMsg.slice(0, 100)}`, 'warning');
     }
     return null;
+  } finally {
+    if (heartbeat) clearInterval(heartbeat);
   }
 }
 
