@@ -1252,16 +1252,19 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎨 第${epId}話: 画風を「${shortName}」に変更し、先行${targetCutCount}カットの再作成を開始します！`, 'process');
     setIsProducing(true);
 
-    // 1. 各カットの画像データをクリア（歌詞・画角・カメラワーク・演出指示・小道具設定は100%保持）
+    // 1. 各カットの画像・動画・過去エラーデータを完全払拭（歌詞・画角・カメラワーク・演出指示・小道具設定は100%保持）
     const resetCuts: Cut[] = ep.cuts.map(c => ({
       ...c,
       imageBase64: undefined,
       imageMediaId: undefined,
+      videoBase64: undefined,
+      videoMediaId: undefined,
       styleKeyUsed: undefined,
       finalPromptUsed: undefined,
       finalNegativeUsed: undefined,
       isGeneratingImage: false,
-      isGeneratingVideo: false
+      isGeneratingVideo: false,
+      error: undefined
     }));
 
     const updatedEp: Episode = {
@@ -1282,6 +1285,19 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     updateEpisode(epId, updatedEp);
     setEpisodes(prev => prev.map(e => e.id === epId ? updatedEp : e));
     episodesRef.current = episodesRef.current.map(e => e.id === epId ? updatedEp : e);
+
+    // 各カットのステータスとエラーを個別に完全クリア（UIの「FAILED 失敗」バッジを即時払拭）
+    resetCuts.forEach(c => {
+      updateCut(epId, c.id, {
+        imageBase64: undefined,
+        imageMediaId: undefined,
+        videoBase64: undefined,
+        videoMediaId: undefined,
+        isGeneratingImage: false,
+        isGeneratingVideo: false,
+        error: undefined
+      });
+    });
 
     const pipelineCtx = {
       settings: { ...settings, taste: newTaste },
