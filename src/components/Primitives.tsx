@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex items-center px-1">
@@ -66,10 +66,17 @@ export const StepperField: React.FC<{
   );
 };
 
+export interface FieldDropdownOption {
+  label: string;
+  value: string;
+  image?: string;
+  sublabel?: string;
+}
+
 export const FieldDropdown: React.FC<{
   label: string; 
   value: string; 
-  options?: (string | { label: string; value: string })[];
+  options?: (string | FieldDropdownOption)[];
   groups?: { label: string; items: string[] }[];
   onChange: (val: string) => void; 
   className?: string;
@@ -87,24 +94,42 @@ export const FieldDropdown: React.FC<{
     return () => document.removeEventListener('mousedown', listener);
   }, []);
 
+  const selectedOpt = useMemo(() => {
+    return options.find(o => (typeof o === 'string' ? o : o.value) === value) as FieldDropdownOption | string | undefined;
+  }, [options, value]);
+
+  const selectedImage = typeof selectedOpt === 'object' ? selectedOpt?.image : undefined;
+  const selectedLabel = typeof selectedOpt === 'object' ? selectedOpt?.label : value;
+
   return (
     <div ref={ref} className={`relative ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
       <button 
         type="button" 
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className="w-full text-left bg-white border border-slate-300 hover:border-indigo-400 focus:border-indigo-500 transition-all rounded-xl flex flex-col gap-0.5 justify-center py-2 px-3 select-none focus:outline-none shadow-sm cursor-pointer"
+        className="w-full text-left bg-white border border-slate-300 hover:border-indigo-400 focus:border-indigo-500 transition-all rounded-xl flex flex-col gap-0.5 justify-center py-1.5 px-2.5 select-none focus:outline-none shadow-sm cursor-pointer"
         disabled={disabled}
       >
-        {label && <p className="text-[11px] font-bold text-slate-600 leading-tight">{label}</p>}
-        <div className="flex items-center justify-between w-full">
-          <span className="text-xs font-semibold text-slate-900 leading-snug break-words pr-2 line-clamp-1">{value}</span>
+        {label && <p className="text-[10px] font-bold text-slate-500 leading-tight">{label}</p>}
+        <div className="flex items-center justify-between w-full gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0 pr-1 flex-1">
+            {selectedImage && (
+              <img 
+                src={selectedImage} 
+                alt="" 
+                className="w-5 h-5 object-cover rounded-md border border-slate-200 shrink-0 shadow-2xs bg-slate-100" 
+              />
+            )}
+            <span className="text-xs font-bold text-slate-900 leading-snug break-words truncate">
+              {selectedLabel || value}
+            </span>
+          </div>
           {!disabled && (
             <span className={`material-symbols-outlined text-[18px] text-slate-500 shrink-0 transition-transform ${isOpen ? 'rotate-180 text-indigo-600' : ''}`}>keyboard_arrow_down</span>
           )}
         </div>
       </button>
       {isOpen && !disabled && (
-        <div className="absolute z-50 top-[calc(100%+6px)] left-0 w-full min-w-[240px] bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl animate-dropdown origin-top max-h-[460px] overflow-y-auto dark-scrollbar">
+        <div className="absolute z-50 top-[calc(100%+6px)] left-0 w-max min-w-[280px] max-w-[440px] bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl animate-dropdown origin-top max-h-[460px] overflow-y-auto dark-scrollbar">
           {groups ? (
             groups.map((grp) => (
               <div key={grp.label} className="border-b border-slate-100 last:border-b-0 pb-1">
@@ -133,19 +158,38 @@ export const FieldDropdown: React.FC<{
             options.map((opt) => {
               const optVal = typeof opt === 'string' ? opt : opt.value;
               const optLabel = typeof opt === 'string' ? opt : opt.label;
+              const optImg = typeof opt === 'object' ? opt.image : undefined;
+              const optSub = typeof opt === 'object' ? opt.sublabel : undefined;
               return (
                 <button 
                   key={optVal} 
                   type="button"
-                  className={`w-full text-left px-3 py-2.5 text-xs font-semibold transition-colors flex items-center justify-between gap-2 border-b border-slate-100 last:border-b-0 cursor-pointer ${
+                  className={`w-full text-left px-3 py-2 text-xs font-semibold transition-colors flex items-center justify-between gap-3 border-b border-slate-100 last:border-b-0 cursor-pointer ${
                     value === optVal 
                       ? 'bg-indigo-50 text-indigo-700 font-bold' 
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                   onClick={() => { onChange(optVal); setIsOpen(false); }}
                 >
-                  <span className="break-words leading-relaxed">{optLabel}</span>
-                  {value === optVal && <span className="material-symbols-outlined text-[16px] text-indigo-600 shrink-0 ml-1">check</span>}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    {optImg ? (
+                      <img 
+                        src={optImg} 
+                        alt="" 
+                        className="w-11 h-11 object-cover rounded-lg border border-slate-200 shrink-0 shadow-2xs bg-slate-100" 
+                        loading="lazy"
+                      />
+                    ) : null}
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="break-words leading-tight line-clamp-1">{optLabel}</span>
+                      {optSub && (
+                        <span className="text-[10px] text-slate-500 font-normal leading-tight line-clamp-1 mt-0.5">
+                          {optSub}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {value === optVal && <span className="material-symbols-outlined text-[18px] text-indigo-600 shrink-0 ml-1">check_circle</span>}
                 </button>
               );
             })

@@ -408,11 +408,12 @@ interface EpisodeSectionProps {
   onUpdateCut: (epId: number, cutId: number, updates: Partial<Cut>) => void;
   onBulkRerollTelop?: (epId: number) => void;
   onGenerateCover?: (epId: number) => void;
+  onRerollTaste?: (epId: number) => void;
   onRetry?: (type: 'image' | 'video', epId: number, cutId: number) => void;
 }
 
 export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
-  ep, aspectRatio = '1:1', onGenerateRemaining, onBulkVideo, onBulkBrowserVideo, onExportFullMovie, onDownloadZip, onAnimateRequest, onPreviewCut, onUpdateCut, onBulkRerollTelop, onGenerateCover, onRetry
+  ep, aspectRatio = '1:1', onGenerateRemaining, onBulkVideo, onBulkBrowserVideo, onExportFullMovie, onDownloadZip, onAnimateRequest, onPreviewCut, onUpdateCut, onBulkRerollTelop, onGenerateCover, onRerollTaste, onRetry
 }) => {
   // 先行プレビュー完了(isPreviewDone)または全体完了(isDone)していれば操作可能
   const isPending = !ep.isGenerating && !ep.isDone && !ep.isPreviewDone;
@@ -461,6 +462,18 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
                 title="世界観・時代・ジャンルに完全適応した9:16インフォグラフィック扉絵（ポスター）を生成"
               >
                 {ep.coverBase64 ? '扉絵再生成' : '扉絵生成 (インフォ)'}
+              </PillButton>
+            )}
+            {onRerollTaste && (
+              <PillButton 
+                variant="outline" 
+                className="h-8 px-3 border-emerald-500/40 text-emerald-400 hover:text-emerald-200 hover:border-emerald-400 hover:bg-emerald-950/30 font-black text-xs whitespace-nowrap shrink-0 transition-colors shadow-2xs" 
+                disabled={ep.isGenerating || isPending} 
+                onClick={() => onRerollTaste(ep.id)} 
+                icon={<span className="material-symbols-outlined text-emerald-400 text-sm">palette</span>}
+                title="ヘッダーで選択中の画風を適用し、3面図・先行カット・扉絵を最初から再作成（歌詞や構図設定は保持）"
+              >
+                画風を変えて全再生成
               </PillButton>
             )}
             <PillButton 

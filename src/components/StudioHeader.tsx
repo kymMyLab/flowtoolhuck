@@ -1,9 +1,10 @@
 import React, { useRef } from 'react';
-import { FieldDropdown, PillButton } from './Primitives';
+import { FieldDropdown, PillButton, FieldDropdownOption } from './Primitives';
 import { GeneratorSettings, ProductionMode } from '../types';
 import { PRODUCTION_MODES, THEMES, MV_THEMES, TRIVIA_THEMES, QUOTES_THEMES, CRAFT_THEMES, THEME_CATEGORIES, TASTES } from '../constants';
 import { CustomThemeMap } from '../services/themeStorage';
 import { exportProjectJson, importProjectJson, loadMangaProject, saveMangaProject } from '../services/castStorage';
+import { getTasteSampleCut, TASTE_GALLERY_DATA } from '../config/tasteGalleryData';
 
 interface StudioHeaderProps {
   settings: GeneratorSettings;
@@ -288,7 +289,17 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         <div className="flex items-center gap-1">
           {(() => {
             const tasteKeys = Object.keys(customTastes || {});
-            const tasteOptions = tasteKeys.length > 0 ? tasteKeys : Object.keys(TASTES);
+            const rawKeys = tasteKeys.length > 0 ? tasteKeys : Object.keys(TASTES);
+            const tasteOptions: FieldDropdownOption[] = rawKeys.map(k => {
+              const sampleImg = getTasteSampleCut(k);
+              const galleryItem = TASTE_GALLERY_DATA.find(g => g.tasteKey === k || g.displayName === k || k.includes(g.id));
+              return {
+                value: k,
+                label: galleryItem?.displayName || k.split(' (')[0],
+                image: sampleImg,
+                sublabel: galleryItem?.descriptionJp ? galleryItem.descriptionJp.slice(0, 38) + '...' : undefined
+              };
+            });
             return (
               <FieldDropdown 
                 label="" 
@@ -296,7 +307,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                 options={tasteOptions} 
                 onChange={v => setSettings(s => ({ ...s, taste: v }))} 
                 disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId} 
-                className="w-[170px]"
+                className="w-[200px]"
               />
             );
           })()}

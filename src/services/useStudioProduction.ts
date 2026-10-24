@@ -1,4 +1,4 @@
-import { runStyleMatrixProduction, runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensureInfographicCover } from './productionPipelines';
+import { runStyleMatrixProduction, runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensureInfographicCover, ensureCharacterTurnaround } from './productionPipelines';
 import { useRef, useCallback } from 'react';
 import { Flow } from 'flow-sdk';
 import { Episode, Cut, GeneratorSettings, VideoModelType, GenerationTask, SeriesManifest } from '../types';
@@ -1172,5 +1172,119 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     addLog(`🎲 第 ${epId} 話: 全12カットのテロップ演出（動き・配置）を一括再抽選しました！（画像は保持）`, 'success');
   }, [addLog]);
 
-  return { episodes, setEpisodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes: handleClearEpisodes };
-}
+  const handleRerollTasteProduction = async (epId: number, targetTaste?: string) => {
+    isAbortedRef.current = false;
+    const ep = episodesRef.current.find(e => e.id === epId);
+    if (!ep) return;
+    const newTaste = targetTaste || settings.taste;
+    if (!newTaste) return;
+
+    const shortName = newTaste.split(' (')[0].split('（')[0];
+    const targetCutCount = Math.min(settings.previewCutCount || 5, ep.cuts.length);
+
+    addLog(`🎨 第${epId}話: 画風を「${shortName}」に変更し、先行${targetCutCount}カットの再作成を開始します！`, 'process');
+    setIsProducing(true);
+
+    // 1. 各カットの画像データをクリア（歌詞・画角・カメラワーク・演出指示・小道具設定は100%保持）
+    const resetCuts: Cut[] = ep.cuts.map(c => ({
+      ...c,
+      imageBase64: undefined,
+      imageMediaId: undefined,
+      styleKeyUsed: undefined,
+      finalPromptUsed: undefined,
+      finalNegativeUsed: undefined,
+      isGeneratingImage: false,
+      isGeneratingVideo: false
+    }));
+
+    const updatedEp: Episode = {
+      ...ep,
+      taste: newTaste,
+      characterTurnaroundBase64: undefined,
+      characterTurnaroundMediaId: undefined,
+      masterAnchorBase64: undefined,
+      masterAnchorMediaId: undefined,
+      coverBase64: undefined,
+      coverMediaId: undefined,
+      cuts: resetCuts,
+      isGenerating: true,
+      isPreviewDone: false,
+      isDone: false
+    };
+
+    updateEpisode(epId, updatedEp);
+    setEpisodes(prev => prev.map(e => e.id === epId ? updatedEp : e));
+    episodesRef.current = episodesRef.current.map(e => e.id === epId ? updatedEp : e);
+
+    const pipelineCtx = {
+      settings: { ...settings, taste: newTaste },
+      addLog,
+      logsRef,
+      isAbortedRef,
+      episodesRef,
+      setEpisodes,
+      updateEpisode,
+      runTasks,
+      buildCutTasks: (e: Episode, cuts: Cut[], styleKey?: string) => buildCutTasks(e, cuts, styleKey || newTaste),
+      ensureLyricVisualAnalysis,
+      generateVideo,
+      handleBulkVideo,
+      seriesManifestRef,
+      setActiveSeriesManifest,
+      activeReferenceRef,
+      currentAssetRef
+    };
+
+    try {
+      // 2. 新画風での三面図マスター生成
+      if (settings.enableTurnaroundSheet !== false) {
+        addLog(`🎨 第${epId}話: 新画風「${shortName}」での主人公三面図マスターを設計中...`, 'process');
+        const turnaround = await ensureCharacterTurnaround(pipelineCtx as any, updatedEp);
+        if (turnaround.mediaId) {
+          updatedEp.characterTurnaroundMediaId = turnaround.mediaId;
+          updatedEp.characterTurnaroundBase64 = turnaround.base64;
+          updateEpisode(epId, {
+            characterTurnaroundMediaId: turnaround.mediaId,
+            characterTurnaroundBase64: turnaround.base64
+          });
+        }
+      }
+
+      if (isAbortedRef.current) return;
+
+      // 3. 先行カット（targetCutCount枚）の画像生成
+      const pendingCuts = updatedEp.cuts.slice(0, targetCutCount);
+      addLog(`🎨 第${epId}話: 新画風「${shortName}」で先行${targetCutCount}カットの作画を開始...`, 'process');
+
+      if (updatedEp.isMvMode && !updatedEp.isLyricAnalyzed && ensureLyricVisualAnalysis) {
+        await ensureLyricVisualAnalysis(updatedEp);
+      }
+
+      await runTasks(buildCutTasks(updatedEp, pendingCuts, newTaste));
+
+      if (isAbortedRef.current) return;
+
+      // 4. 新画風でのインフォグラフィック特大扉絵（ポスター）生成
+      const freshEp = episodesRef.current.find(e => e.id === epId) || updatedEp;
+      await ensureInfographicCover(pipelineCtx as any, freshEp);
+
+      const completedCount = freshEp.cuts.slice(0, targetCutCount).filter(c => c.imageBase64 || c.imageMediaId).length;
+      const isAllDone = completedCount >= updatedEp.cuts.length;
+
+      updateEpisode(epId, {
+        isGenerating: false,
+        isPreviewDone: completedCount >= targetCutCount,
+        isDone: isAllDone
+      });
+
+      addLog(`✨ 第${epId}話: 画風「${shortName}」への切り替え＆先行${targetCutCount}カット再作成が完了しました！`, 'success');
+    } catch (err: any) {
+      addLog(`❌ 画風切り替え再作成エラー: ${formatErrorMessage(err)}`, 'error');
+    } finally {
+      setIsProducing(false);
+      refreshStories();
+    }
+  };
+
+  return { episodes, setEpisodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, handleRerollTasteProduction, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes: handleClearEpisodes };
+}
