@@ -172,8 +172,12 @@ export function parseTextTracksFormat(rawText: string): ImportedTrack[] {
 
   const poolCode = Number(trackData['pool_code']) || 20;
   const styleCode = Number(trackData['style_code']) || (poolCode + 1);
-  const cStart = Number(trackData['chorus_start_sec']) || 65;
-  const cEnd = Number(trackData['chorus_end_sec']) || (cStart + 30);
+  const cStart = trackData['chorus_start_sec'] !== undefined && trackData['chorus_start_sec'] !== ''
+    ? Number(trackData['chorus_start_sec'])
+    : 60;
+  const cEnd = trackData['chorus_end_sec'] !== undefined && trackData['chorus_end_sec'] !== ''
+    ? Number(trackData['chorus_end_sec'])
+    : (cStart + 30);
   const allLyrics = lyricsLines.join('\n');
 
   return [{
@@ -229,11 +233,11 @@ function salvageTracksFromCorruptedText(text: string): ImportedTrack[] {
         style_code: 21,
         taste: 'youth_pop',
         bpm: 125,
-        chorus_start_sec: 65,
-        chorus_end_sec: 95,
+        chorus_start_sec: 60,
+        chorus_end_sec: 90,
         chorus_duration_sec: 30,
-        chorus_start_ms: 65000,
-        chorus_end_ms: 95000,
+        chorus_start_ms: 60000,
+        chorus_end_ms: 90000,
         input_lyrics: text.slice(0, 1000)
       });
     }
@@ -292,6 +296,7 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
       const item: Record<string, unknown> = (rawItem && typeof rawItem === 'object') ? (rawItem as Record<string, unknown>) : {};
 
       const numVal = (v: unknown, fallback: number): number => {
+        if (v === undefined || v === null || v === '') return fallback;
         const n = Number(v);
         return Number.isFinite(n) ? n : fallback;
       };
@@ -303,7 +308,7 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
 
       const poolCode = numVal(item.pool_code, 20);
       const styleCode = numVal(item.style_code, poolCode + 1);
-      const cStart = numVal(item.chorus_start_sec, 65);
+      const cStart = numVal(item.chorus_start_sec, 60);
       const cEnd = numVal(item.chorus_end_sec, cStart + 30);
       const cDur = numVal(item.chorus_duration_sec, Math.max(1, cEnd - cStart));
 
@@ -444,11 +449,11 @@ export function parseMusicTracksJson(rawText: string): ImportedTrack[] {
         style_code: 21,
         taste: 'youth_pop',
         bpm: 125,
-        chorus_start_sec: 65,
-        chorus_end_sec: 95,
+        chorus_start_sec: 60,
+        chorus_end_sec: 90,
         chorus_duration_sec: 30,
-        chorus_start_ms: 65000,
-        chorus_end_ms: 95000,
+        chorus_start_ms: 60000,
+        chorus_end_ms: 90000,
         input_lyrics: cleanText,
         lyrics_kanji: cleanText
       }];
@@ -507,6 +512,7 @@ export function parseLyricsSections(lyricsText: string): Record<string, string[]
       if (tagContent.includes('intro')) currentSection = 'intro';
       else if (tagContent.includes('verse 1') || tagContent.includes('verse1')) currentSection = 'verse1';
       else if (tagContent.includes('pre-chorus') || tagContent.includes('prechorus')) currentSection = 'prechorus';
+      else if (tagContent.includes('post-chorus') || tagContent.includes('postchorus') || tagContent.includes('interlude') || tagContent.includes('drop')) currentSection = 'post_chorus';
       else if (tagContent.includes('final chorus') || tagContent.includes('climax')) currentSection = 'final_chorus';
       else if (tagContent.includes('chorus')) currentSection = 'chorus';
       else if (tagContent.includes('verse 2') || tagContent.includes('verse2')) currentSection = 'verse2';
@@ -518,6 +524,7 @@ export function parseLyricsSections(lyricsText: string): Record<string, string[]
     } else {
       // 歌詞本文（英語のト書き行や単なる(gasp)以外の歌唱行を収集）
       if (!line.startsWith('[') && !/^\((?:gasp|silence|end|tu-tu-tu|yeah|la-la-la|ooh)\)$/i.test(line)) {
+        if (/^\s*[\(（]?※Cut\s*\d+/i.test(line)) continue;
         if (!sections[currentSection]) sections[currentSection] = [];
         sections[currentSection].push(line);
         sections._allLines.push(line);
@@ -596,8 +603,10 @@ export function parseLyricKineticAction(lyric: string, section?: string, isPropC
   }
 
   // 5. フォールバック（セクションに応じた自律アクション）
-  if (section === 'chorus') {
+  if (section === 'chorus' || section === 'final_chorus') {
     return 'passionate singing posture, chin lifted with resonant emotion, dynamic kinetic hair motion';
+  } else if (section === 'post_chorus') {
+    return 'rhythmic swaying to the instrumental beat, immersed in the musical interlude';
   } else if (section === 'bridge') {
     return 'stillness charged with anticipation, subtle chest rise on a deep breath, intense introspective focus';
   } else {
@@ -750,6 +759,7 @@ export function convertTrackToEpisode(
   const introLines = lyricsSec['intro'] || [];
   const verse1Lines = lyricsSec['verse1'] || [];
   const prechorusLines = lyricsSec['prechorus'] || [];
+  const postChorusLines = lyricsSec['post_chorus'] || [];
   const verse2Lines = lyricsSec['verse2'] || [];
   const bridgeLines = lyricsSec['bridge'] || [];
   const finalChorusLines = lyricsSec['final_chorus'] || [];
@@ -961,30 +971,48 @@ export function convertTrackToEpisode(
     for (let i = 1; i <= totalCuts; i++) {
       const progress = (i - 0.5) / totalCuts;
 
-      // 比率ベースのセクション判定 (master_categories.json 準拠)
-      let section: 'intro' | 'verse_a' | 'verse_b' | 'chorus' | 'bridge' | 'outro' = 'verse_a';
-      if (progress < 0.13) {
-        section = 'intro';
-      } else if (progress < 0.33) {
-        section = 'verse_a';
-      } else if (progress < 0.53) {
-        section = 'verse_b';
-      } else if (progress < 0.80) {
-        section = 'chorus';
-      } else if (progress < 0.93) {
-        section = 'bridge';
+      // セクション判定（30カット時はCT198小節ロック規格に完全同期、それ以外は比率フォールバック）
+      let section: 'intro' | 'verse_a' | 'verse_b' | 'chorus' | 'post_chorus' | 'verse_2' | 'bridge' | 'final_chorus' | 'outro' = 'verse_a';
+      if (totalCuts === 30) {
+        if (i <= 3) section = 'intro';              // Cut 1-3: intro (0:00-0:15)
+        else if (i <= 9) section = 'verse_a';      // Cut 4-9: verse_a (0:15-0:45)
+        else if (i <= 12) section = 'verse_b';     // Cut 10-12: verse_b / Pre-Chorus (0:45-1:00)
+        else if (i <= 18) section = 'chorus';      // Cut 13-18: chorus (1:00-1:30 ★1番サビ30秒)
+        else if (i <= 21) section = 'post_chorus'; // Cut 19-21: post_chorus (1:30-1:45 ★間奏・スキャットのみ)
+        else if (i <= 25) section = 'verse_2';     // Cut 22-25: verse_2 (1:45-2:15)
+        else if (i <= 27) section = 'bridge';      // Cut 26-27: bridge (2:15-2:30)
+        else if (i <= 29) section = 'final_chorus';// Cut 28-29: final_chorus (2:30-2:48)
+        else section = 'outro';                     // Cut 30: outro (2:48-3:00)
       } else {
-        section = 'outro';
+        if (progress < 0.10) {
+          section = 'intro';
+        } else if (progress < 0.30) {
+          section = 'verse_a';
+        } else if (progress < 0.40) {
+          section = 'verse_b';
+        } else if (progress < 0.60) {
+          section = 'chorus';
+        } else if (progress < 0.70) {
+          section = 'post_chorus';
+        } else if (progress < 0.83) {
+          section = 'verse_2';
+        } else if (progress < 0.90) {
+          section = 'bridge';
+        } else if (progress < 0.97) {
+          section = 'final_chorus';
+        } else {
+          section = 'outro';
+        }
       }
 
-      const isChorus = section === 'chorus';
+      const isChorus = section === 'chorus' || section === 'final_chorus';
       const hint = visualMap[i] || '';
 
       // 伏線・象徴小道具カット: 30カット構成では、Aメロ終わりの転換点(Cut 10)と、ブリッジ/落ちサビ(Cut 26)の2箇所に配置し、
       // また演出ヒントに ★ がついているカットも完全自律で小道具・静物カットとして確立
-      const bridgeStart = Math.round(totalCuts * 0.80) + 1;
+      const bridgeStart = totalCuts === 30 ? 26 : Math.round(totalCuts * 0.80) + 1;
       const hasStarInHint = (hint && hint.includes('★')) || ((track.visual_hints || '').match(new RegExp(`Cut\\s*${i}[^:\n]*:\\s*\\[?\\s*★`)) !== null);
-      const isPropCut = hasStarInHint || (totalCuts >= 20 ? (i === 10 || i === bridgeStart + 1) : (i === 10));
+      const isPropCut = hasStarInHint || (totalCuts === 30 ? (i === 10 || i === 26) : (totalCuts >= 20 ? (i === 10 || i === bridgeStart) : (i === 10)));
       const isLastCut = i === totalCuts;
 
       // 動的歌詞配分（全カット均等ニアリー同期マッピング）
@@ -995,27 +1023,48 @@ export function convertTrackToEpisode(
         const idx = (i - 1) % Math.max(1, introLines.length);
         lyric = introLines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (i === 1 ? '♪ (Intro Instrumental)' : '冷たい風が吹き抜ける'));
       } else if (section === 'verse_a') {
-        const sectionOffset = i - Math.round(totalCuts * 0.13);
-        const idx = (sectionOffset - 1) % Math.max(1, verse1Lines.length);
+        const sectionOffset = totalCuts === 30 ? (i - 3) : (i - Math.round(totalCuts * 0.10));
+        const idx = Math.max(0, sectionOffset - 1) % Math.max(1, verse1Lines.length);
         lyric = verse1Lines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isPropCut ? '静かに残された記憶の欠片' : '冷たい床に伸びる影'));
       } else if (section === 'verse_b') {
         const bPool = prechorusLines.length > 0 ? prechorusLines : verse2Lines;
-        const sectionOffset = i - Math.round(totalCuts * 0.33);
-        const idx = (sectionOffset - 1) % Math.max(1, bPool.length);
+        const sectionOffset = totalCuts === 30 ? (i - 9) : (i - Math.round(totalCuts * 0.30));
+        const idx = Math.max(0, sectionOffset - 1) % Math.max(1, bPool.length);
         lyric = bPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : '広くなった空間は');
       } else if (section === 'chorus') {
         const cPool = chorusLines.length > 0 ? chorusLines : (finalChorusLines.length > 0 ? finalChorusLines : []);
-        const sectionOffset = i - Math.round(totalCuts * 0.53);
-        const idx = (sectionOffset - 1) % Math.max(1, cPool.length);
+        const sectionOffset = totalCuts === 30 ? (i - 12) : (i - Math.round(totalCuts * 0.40));
+        const idx = Math.max(0, sectionOffset - 1) % Math.max(1, cPool.length);
         lyric = cPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : '透き通る風が駆け抜けて');
+      } else if (section === 'post_chorus') {
+        // ★ 間奏（Post-Chorus）: スキャット行があれば表示、無ければ空文字 ''（テロップ非表示で映像に集中）
+        // ※ 本編歌詞（allLines）へのフォールバックは物理的に遮断！
+        if (postChorusLines.length > 0) {
+          const sectionOffset = totalCuts === 30 ? (i - 18) : (i - Math.round(totalCuts * 0.60));
+          const idx = Math.max(0, sectionOffset - 1) % postChorusLines.length;
+          lyric = postChorusLines[idx] || '';
+        } else {
+          lyric = '';
+        }
+      } else if (section === 'verse_2') {
+        const v2Pool = verse2Lines.length > 0 ? verse2Lines : (verse1Lines.length > 0 ? verse1Lines : []);
+        const sectionOffset = totalCuts === 30 ? (i - 21) : (i - Math.round(totalCuts * 0.70));
+        const idx = Math.max(0, sectionOffset - 1) % Math.max(1, v2Pool.length);
+        lyric = v2Pool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : '街の明かりが遠ざかる');
       } else if (section === 'bridge') {
         const brPool = bridgeLines.length > 0 ? bridgeLines : (verse2Lines.length > 0 ? verse2Lines : prechorusLines);
-        const sectionOffset = i - Math.round(totalCuts * 0.80);
-        const idx = (sectionOffset - 1) % Math.max(1, brPool.length);
+        const sectionOffset = totalCuts === 30 ? (i - 25) : (i - Math.round(totalCuts * 0.83));
+        const idx = Math.max(0, sectionOffset - 1) % Math.max(1, brPool.length);
         lyric = brPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isPropCut ? 'あの日置いてった銀の爪' : '隅に落ちてた銀の粒'));
+      } else if (section === 'final_chorus') {
+        const fcPool = finalChorusLines.length > 0 ? finalChorusLines : (chorusLines.length > 0 ? chorusLines : []);
+        const sectionOffset = totalCuts === 30 ? (i - 27) : (i - Math.round(totalCuts * 0.90));
+        const idx = Math.max(0, sectionOffset - 1) % Math.max(1, fcPool.length);
+        lyric = fcPool[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : 'もう一度あの空の向こうへ');
       } else {
         // outro
-        const idx = (i - Math.round(totalCuts * 0.93) - 1) % Math.max(1, outroLines.length);
+        const sectionOffset = totalCuts === 30 ? (i - 29) : (i - Math.round(totalCuts * 0.97));
+        const idx = Math.max(0, sectionOffset - 1) % Math.max(1, outroLines.length);
         lyric = outroLines[idx] || (allLines.length > 0 ? allLines[Math.min(allLines.length - 1, Math.floor(progress * allLines.length))] : (isLastCut ? '♪ (Outro / Reverb Tail)' : '新しい明日へ歩き出す'));
       }
 
