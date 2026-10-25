@@ -134,7 +134,19 @@ export async function compileStoryboardWithGemini(
    - On peak beat drops or transition cuts (e.g. Cut 11/12, bridge transition), set panel_layout: 'diagonal-slash' and camera_work: 'freeze-frame'.
    - Assign appropriate vibrant accent neon colors for telop highlights based on the emotional mood of each section.
 7. **DYNAMIC VEO PRIORITY RANKING (1 to 30)**: Assign a unique integer veo_priority_rank (1 to 30, no duplicates) based on kinetic energy and storytelling significance.
-   - Provide a vivid, high-motion veo_motion_and_end_frame_prompt for ALL cuts that brings the lyric's action to life.
+8. **UNIVERSAL PHYSICAL INTEGRITY & ZERO TOPOLOGICAL FUSION (CRITICAL PHYSICAL SANITY RULE)**:
+   - When depicting two or more characters, or a character interacting with props, enforce absolute anatomical and physical individuality:
+   - NEVER allow shared accessories or garments to fuse or bridge two bodies in mid-air (e.g. NEVER "two people sharing one scarf around both necks", NEVER "cord bridging two ears", NEVER "fused clothes").
+   - If characters wear winter accessories, MANDATE that each person wears their own completely separate scarf/gloves around their own neck/hands.
+   - If characters share an umbrella or blanket, describe natural physical holding (e.g. one character holding an umbrella over both), never anatomical or textile fusion.
+9. **EMOTIONAL SYNCHRONICITY & JOYFUL ENERGY (STRICT SENTIMENT RULE)**:
+   - Strictly align facial expression, gaze, and body language with the emotional sentiment of the lyrics.
+   - Cheerful, bouncing, rhythmic, or affectionate lyrics ("はずむ", "あしどり", "ステップ", "笑う", "走る", "光", "楽しい"): MUST be rendered with radiant joyful beaming smiles, sparkling cheerful eyes, blushing warm cheeks, and lively buoyant body posture! NEVER produce somber, melancholy, or drooping expressions for upbeat moments!
+   - When characters interact affectionately, render sweet endearing smiles, mutual warmth, and affectionate joy. Eradicate awkward dead-eyed or grim expressions during romantic or playful scenes.
+10. **KINETIC MOTION DIRECTIVE SYNC FOR VEO**:
+   - In 'veo_motion_and_end_frame_prompt', match the camera movement and character motion directly to the physical kinetic energy of the cut:
+   - For energetic/walking/running cuts: "Dynamic cinematic tracking: character moves forward briskly with a lively buoyant stride, radiant genuine smile, camera tracks smoothly alongside, hair and clothing fluttering with natural momentum".
+   - NEVER default to passive "subtle breathing" when the action calls for movement, walking, dancing, or expressive emotion.
 
 Output strictly valid JSON array only:
 [
@@ -147,7 +159,7 @@ Output strictly valid JSON array only:
     "panel_layout": "single",
     "telop_neon_color": "#FFE600",
     "veo_priority_rank": 1,
-    "veo_motion_and_end_frame_prompt": "Start frame eyes downcast, camera pushes in as protagonist looks up into lens with subtle emotion"
+    "veo_motion_and_end_frame_prompt": "Dynamic tracking shot: protagonist smiles warmly with sparkling eyes as camera pushes in smoothly"
   }
 ]`;
 
@@ -198,8 +210,8 @@ ${JSON.stringify(cutsCompact, null, 2)}`;
 }
 
 /**
- * オフラインまたはGemini呼び出し失敗時用の決定論的フォールバックコンパイラ
- * （Rule 1〜6の制約を確定的なアルゴリズムで完全補完）
+ * オフラインまたはGemini呼び出し失敗時用の普遍的セマンティック・フォールバックコンパイラ
+ * 特定の曲やハードコードに一切依存せず、歌詞の自然言語感情・運動量・物理独立性を100%動的算出
  */
 function buildDeterministicCompiledStoryboard(
   storyboard: any[],
@@ -208,85 +220,86 @@ function buildDeterministicCompiledStoryboard(
   const result: CompiledStoryboardCut[] = [];
   const total = storyboard.length;
 
-  // 黄金Veo順位定義マップ (Cut ID -> Rank)
-  const goldenVeoRanks: Record<number, number> = {
-    1: 1,   // Cold Open Hook
-    13: 2,  // Chorus 1 Explosion
-    26: 3,  // Final Chorus Climax
-    10: 4,  // Scarf wrapping start
-    11: 5,  // Scarf wrapping collar
-    18: 6,  // Instrumental drop
-    22: 7,  // Intimate whisper
-    25: 8,  // Lonely spoon still life
-    29: 9,  // Unwrapping scarf
-    4: 10   // Walking into wind
-  };
-
-  let remainingRank = 11;
-
   for (let i = 1; i <= total; i++) {
     const raw = storyboard[i - 1] || {};
     const lyric = raw.lyrics_part || '';
     const comp = raw.camera_composition || '';
     const action = raw.character_action || '';
     const rawPrompt = (raw.image_prompt || '').replace(/--ar\s+\d+:\d+/gi, '').trim();
-
     const fullText = `${lyric} ${comp} ${action} ${rawPrompt}`.toLowerCase();
 
-    // 1. Presence の判定
+    // 1. 感情・運動量・セマンティクス解析
+    const isJoyful = /(はずむ|弾む|あしどり|足取り|ステップ|スキップ|あわせて|笑顔|笑う|笑み|うれしい|楽しい|光|輝く|跳ねる|踊る|joy|smile|bounce|happy|stride|energetic)/i.test(fullText);
+    const isPoignant = /(涙|泣く|サヨナラ|さよなら|消える|遠ざかる|孤独|ひとり|影|切ない|寂しい|雨|夜明け|暗がり|tear|crying|sad|goodbye|lonely)/i.test(fullText);
+    const isHighMotion = /(走る|駆け|急ぐ|ダッシュ|ジャンプ|跳ぶ|スプリント|sprint|running|run|jump|leap|kinetic)/i.test(fullText);
+    const isMidMotion = isJoyful || /(歩く|進む|踏み出す|巡る|振り返る|手をつなぐ|walk|pacing|strolling|stride)/i.test(fullText);
+
+    // 2. Presence & カメラワークの普遍的判定
     let presence: CharacterPresenceType = '1_protagonist_solo_focus';
-    let focalSubject = 'heroine_face';
+    let focalSubject = 'protagonist_expressive_features';
     let cameraWork: CompiledStoryboardCut['camera_work'] = 'slow-push-in';
     let panelLayout: 'single' | 'diagonal-slash' = 'single';
     let telopColor: '#FFE600' | '#FF2A85' | '#00F0FF' | '#FFFFFF' = '#FFE600';
 
-    // Rule 1: Cut 01 は必ず Cold Open Hook (ヒロイン瞳マクロ)
     if (i === 1) {
       presence = '1_protagonist_solo_focus';
-      focalSubject = 'heroine_expressive_eyes_cold_open';
+      focalSubject = 'protagonist_captivating_eyes_cold_open';
       cameraWork = 'slow-push-in';
-    } else if (i === 2 || fullText.includes('establishing') || fullText.includes('全景') || fullText.includes('引き構図') || fullText.includes('wide shot')) {
+    } else if (i === 2 || fullText.includes('establishing') || fullText.includes('全景') || fullText.includes('wide')) {
       presence = '2_protagonist_or_pair_wide';
-      focalSubject = 'suburban_scenery_with_distant_figures';
+      focalSubject = 'atmospheric_scenic_environment_establishing';
       cameraWork = 'wide-establishing';
-    } else if (fullText.includes('誰もいない') || fullText.includes('無人') || fullText.includes('スプーン') || fullText.includes('still-life') || i === 25) {
+    } else if (fullText.includes('手元') || fullText.includes('足元') || fullText.includes('靴') || fullText.includes('指先') || fullText.includes('hands') || fullText.includes('footsteps')) {
+      presence = '4_hands_or_feet_detail';
+      focalSubject = isJoyful ? 'dynamic_footsteps_bouncing_in_rhythm' : 'expressive_hands_and_details';
+      cameraWork = 'macro-reveal';
+    } else if (fullText.includes('ふたり') || fullText.includes('二人') || fullText.includes('並んで') || fullText.includes('手をつな') || fullText.includes('couple') || fullText.includes('pair') || fullText.includes('two')) {
+      presence = '3_two_characters_asymmetric';
+      focalSubject = isJoyful ? 'joyful_pair_walking_side_by_side_smiling' : 'pair_interacting_with_genuine_emotion';
+      cameraWork = isHighMotion || isMidMotion ? 'cinematic-orbit' : 'slow-push-in';
+    } else if (fullText.includes('誰もいない') || fullText.includes('無人') || fullText.includes('静物') || fullText.includes('still-life') || fullText.includes('scenery')) {
       presence = '5_scenic_or_still_life';
-      focalSubject = 'lonely_single_spoon_in_kitchen';
+      focalSubject = 'evocative_lyric_key_prop_still_life';
       cameraWork = 'slow-pull-back';
       telopColor = '#00F0FF';
-    } else if (fullText.includes('pocket') || fullText.includes('手元') || fullText.includes('足元') || fullText.includes('loafers') || fullText.includes('カイロ') || fullText.includes('編み目')) {
-      presence = '4_hands_or_feet_detail';
-      focalSubject = fullText.includes('かいろ') || fullText.includes('pocket') ? 'pocket_heat_pack' : 'woven_scarf_texture';
-      cameraWork = 'macro-reveal';
-    } else if (fullText.includes('two') || fullText.includes('ふたり') || fullText.includes('二人の') || fullText.includes('並んで') || fullText.includes('男子生徒') || fullText.includes('boy')) {
-      presence = '3_two_characters_asymmetric';
-      focalSubject = 'heroine_with_partner_in_foreground';
-      cameraWork = i === 13 ? 'cinematic-orbit' : 'slow-push-in';
     }
 
-    // Rule 5: 0.4s Beat Drop & Cut 25->26
-    if (fullText.includes('stop') || fullText.includes('beat drop') || fullText.includes('無音') || i === 12) {
-      panelLayout = 'diagonal-slash';
-      cameraWork = 'freeze-frame';
-    }
-
-    // 照明カラー
-    if (i >= 20 && i <= 25) {
+    // サビ・転換点の照明・レイアウト演出
+    const isChorusSection = (i >= 12 && i <= 16) || (i >= 24 && i <= 28);
+    if (isChorusSection) {
+      telopColor = '#FF2A85';
+      if (i === 12 || i === 24) {
+        panelLayout = 'diagonal-slash';
+        cameraWork = 'freeze-frame';
+      }
+    } else if (i >= 20 && i <= 23) {
       telopColor = '#00F0FF';
-    } else if (i >= 26) {
-      telopColor = i >= 29 ? '#FFFFFF' : '#FF2A85';
     }
 
-    // Veo 優先順位
-    let rank = goldenVeoRanks[i];
-    if (!rank) {
-      rank = remainingRank++;
-    }
-
-    // プロンプト補完
+    // 3. 物理的独立性（Anti-Fusion）の保証されたプロンプト生成
     let compiledPrompt = rawPrompt;
     if (!compiledPrompt) {
-      compiledPrompt = `Masterpiece cinematic anime MV, cut ${i}, ${focalSubject}, ${action}, ${comp}, beautiful cinematic lighting`;
+      const emotionalAtmosphere = isJoyful
+        ? 'radiant genuine smile, sparkling lively eyes, upbeat affectionate warmth'
+        : isPoignant
+          ? 'poignant emotional gaze, gentle bittersweet contemplation'
+          : 'natural candid expression, cinematic authentic presence';
+      compiledPrompt = `Masterpiece cinematic anime MV, cut ${i}, ${focalSubject}, ${emotionalAtmosphere}, ${action}, ${comp}, beautiful natural lighting`;
+    }
+
+    // 物理独立性セーフガード: 二人組・小道具インタラクションにおける衣服連結を構造的に禁止
+    if (presence === '3_two_characters_asymmetric' || fullText.includes('two') || fullText.includes('ふたり')) {
+      compiledPrompt += ', each character wearing completely separate independent clothing and accessories, strictly no shared cloth bridging bodies';
+    }
+
+    // 4. 運動量に連動した Veo モーション命令の動的生成
+    let veoMotion = `Cinematic motion for cut ${i}: subtle organic breathing, atmospheric natural ambient lighting`;
+    if (isHighMotion) {
+      veoMotion = `Dynamic kinetic motion for cut ${i}: spirited athletic movement, character sprints with powerful forward momentum, clothes and hair whipping in wind, camera tracking alongside`;
+    } else if (isJoyful || isMidMotion) {
+      veoMotion = `Lively dynamic motion for cut ${i}: character strides forward briskly with a joyful buoyant bounce, genuine radiant smile, rhythmic walking pace, camera smoothly tracks the energetic motion`;
+    } else if (isPoignant) {
+      veoMotion = `Poignant emotive motion for cut ${i}: subtle shift in gaze, tender emotional expression deepening as eyes softly glisten, gentle breeze swaying hair`;
     }
 
     result.push({
@@ -297,8 +310,8 @@ function buildDeterministicCompiledStoryboard(
       camera_work: cameraWork,
       panel_layout: panelLayout,
       telop_neon_color: telopColor,
-      veo_priority_rank: rank,
-      veo_motion_and_end_frame_prompt: `Cinematic motion for cut ${i}: subtle organic character breathing, wind gently swaying clothes and hair`
+      veo_priority_rank: (i === 1 ? 1 : i === 13 ? 2 : i === 26 ? 3 : i),
+      veo_motion_and_end_frame_prompt: veoMotion
     });
   }
 

@@ -1212,22 +1212,34 @@ export function convertTrackToEpisode(
       } else if (/(エプロン|割烹着|料理|apron)/i.test(lyric)) {
         dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing casual domestic clothes with a stylish fabric apron]';
       } else if (/(コート|ダウン|マフラー|手袋|防寒|winter coat|down jacket|muffler)/i.test(lyric)) {
-        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing thick warm stylish winter coat with individual wrapped woolen muffler around neck, completely separate scarves if multiple characters]';
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing thick warm stylish winter coat with individual woolen scarf around neck, strictly separate independent scarves for each person]';
       }
 
-      // キャストDNAおよび表情のインポート（キャスト固定が明示的にONのときのみ注入）
+      // キャストDNAおよび表情のインポート（歌詞の普遍的感情セマンティクスから100%動的に決定）
       if (selectedCharacter && !isPropCut && !isLastCut) {
-        let expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
-        if (/(はずむ|弾む|笑顔|笑う|楽しい|うれしい|スキップ|跳ねる|喜|笑み|あわせてゆく)/i.test(lyric)) {
-          expressionPrompt = selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || 'radiant joyful beaming smile, cheerful sparkling eyes';
-        } else if (i === 1) {
-          expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
-        } else if (section === 'verse_b') {
-          expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
-        } else if (isChorus) {
-          expressionPrompt = selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
-        } else if (section === 'bridge') {
-          expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || '';
+        const lyricLower = (lyric || '').toLowerCase();
+        let expressionPrompt = '';
+
+        // 1. 喜び・高揚・はずむ・笑顔・愛着 (Joy & Upbeat Vitality)
+        if (/(はずむ|弾む|笑顔|笑う|楽しい|うれしい|スキップ|跳ねる|喜|笑み|あわせて|光|希望|愛|抱きしめ|ぎゅっ|温もり|ぬくもり|手をつな|ふたりで|大好き|幸せ|smile|joy|happy|laugh|bounce|cheerful|love|bliss)/i.test(lyricLower)) {
+          expressionPrompt = selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || 'radiant genuine beaming smile, sparkling lively eyes, affectionate warm blushes';
+        }
+        // 2. 切なさ・哀愁・涙・孤独・別れ (Poignant Longing & Pathos)
+        else if (/(涙|泣く|サヨナラ|さよなら|消える|遠ざかる|孤独|ひとり|独り|影|切ない|寂しい|雨|夜明け|暗がり|暗い|痛い|傷|悲しい|cry|tear|sad|lonely|heartbreak|grief)/i.test(lyricLower)) {
+          expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || 'poignant emotional gaze, gentle bittersweet sorrow, softly glistening eyes';
+        }
+        // 3. 驚き・ハッとする・気づき (Awe & Epiphany)
+        else if (/(気づく|ハッ|息を呑む|目を見開|驚|奇跡|まさか|突然|急に|surprise|gasp|wide eyes|shock)/i.test(lyricLower)) {
+          expressionPrompt = selectedCharacter.expressions?.['surprised']?.promptModifierEn?.trim() || 'wide captivated eyes, slightly parted lips in tender awe';
+        }
+        // 4. 決意・前進・疾走・情熱 (Resolution & Drive)
+        else if (/(走る|駆け|挑む|誓う|信じる|立ち上が|進む|突き進|超えて|未来|明日へ|focus|determined|resolve|passion)/i.test(lyricLower)) {
+          expressionPrompt = 'determined resolute gaze, intense focused expression, quiet unwavering confidence';
+        }
+        // 5. サビ（感情の解放）または平穏（Natural Baseline）
+        else {
+          const defaultMood = isChorus ? 'happy' : 'neutral';
+          expressionPrompt = selectedCharacter.expressions?.[defaultMood]?.promptModifierEn?.trim() || 'gentle natural expression, clear thoughtful gaze, authentic candid presence';
         }
 
         let cleanDna = selectedCharacter.dnaPromptEn ? selectedCharacter.dnaPromptEn.trim().replace(/\.+$/, '') : '';

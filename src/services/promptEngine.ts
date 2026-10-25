@@ -55,6 +55,11 @@ export function isMvChorusCut(cutId: number = 1, totalCuts: number = 30): boolea
 export const MV_ANTI_CAMERA_LOOK_NEGATIVE = 'looking at camera, eye contact, looking at viewer, staring into lens, frontal eye contact, breaking fourth wall, posed portrait, mugshot, mugshot gaze, smiling at camera';
 
 /**
+ * 普遍的物理・解剖学的破綻（人体融合・衣服連結・首連結）を永久追放する絶対ネガティブトークン
+ */
+export const UNIVERSAL_PHYSICAL_SANITY_NEGATIVE = 'fused clothing, connected accessories, conjoined bodies, merged fabric, stretched cloth bridge between people, physically impossible shared clothing, anatomical fusion, mutated limbs, single scarf around two heads, cloth linking necks';
+
+/**
  * 顔面・瞳・口元の極限接写（フェイスアップ系マクロ）であるかを厳密に判定
  */
 export function isFaceMacroScale(scale?: string, angle?: string): boolean {
@@ -846,8 +851,9 @@ export function buildFinalCinematicPromptAndNegative(
     }
   }
 
-  // ネガティブレイヤーの結合（前カットからの対比ネガティブは絶対に消さない）
+  // ネガティブレイヤーの結合（前カットからの対比ネガティブは絶対に消さない＋普遍的物理独立性ネガティブ常時付加）
   let sanitizedNegativeLayers = negativeLayers.filter(Boolean);
+  sanitizedNegativeLayers.push(UNIVERSAL_PHYSICAL_SANITY_NEGATIVE);
 
   // 【プロンプト先頭配置ガード】マクロ接写・極限画角の場合、AIが最初に見る位置にカメラディレクティブを直接配置して最優先解釈させる
   let leadingDirective = '';
