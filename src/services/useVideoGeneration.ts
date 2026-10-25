@@ -67,14 +67,17 @@ export function useVideoGeneration({
         ? `[Temporal Scene Transition]: ${cut.veoMotionPrompt}`
         : (cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : ''));
 
-      // 🏃 歌詞連動モーション昇格: 「はずむあしどり」「ステップ」「走る」等なのに静止呼吸命令の場合は、軽快なウォーキングモーションへ自動昇格！
-      if (/(はずむ|弾む|あしどり|足取り|ステップ|スキップ|あわせてゆく|あわせて|はずみ)/i.test(rawLyric)) {
-        if (!isMotionValid || cut?.veoMotionPrompt?.includes('subtle organic character breathing')) {
-          motionText = '[Temporal Scene Transition]: Lively energetic walking motion, character walks with a joyful buoyant bounce in their stride, bright beaming smile, matching footsteps in a cheerful rhythmic pace';
-        }
-      } else if (/(走る|駆け|急ぐ|ダッシュ)/i.test(rawLyric)) {
-        if (!isMotionValid || cut?.veoMotionPrompt?.includes('subtle organic character breathing')) {
-          motionText = '[Temporal Scene Transition]: Dynamic forward running momentum, hair and clothes fluttering in the wind, joyful energetic sprint';
+      // 🌿 普遍的マイクロモーション規約（原画の神作画を100%維持し、突拍子もない奇行・手足の崩壊を完全根絶）
+      if (!isMotionValid || cut?.veoMotionPrompt?.includes('subtle organic character breathing') || cut?.veoMotionPrompt?.includes('walking motion') || cut?.veoMotionPrompt?.includes('sprints')) {
+        const isJoyfulLyric = /(はずむ|弾む|あしどり|足取り|ステップ|スキップ|あわせて|笑顔|笑う|楽しい|うれしい|光|smile|joy|happy|bounce)/i.test(rawLyric);
+        const isPoignantLyric = /(涙|泣く|サヨナラ|さよなら|消える|遠ざかる|孤独|ひとり|切ない|寂しい|雨|tear|crying|sad)/i.test(rawLyric);
+
+        if (isJoyfulLyric) {
+          motionText = '[Temporal Scene Transition]: Stable cinematic micro-motion: character pose firmly preserved, radiant genuine smile gently deepening, sparkling eyes blinking naturally, hair strands fluttering softly in the breeze, subtle cinematic camera push-in';
+        } else if (isPoignantLyric) {
+          motionText = '[Temporal Scene Transition]: Stable cinematic micro-motion: character pose firmly preserved, subtle emotional shift in gaze, eyes glistening softly with natural blinking, parted lips catching breath, gentle ambient breeze swaying hair';
+        } else {
+          motionText = '[Temporal Scene Transition]: Stable cinematic micro-motion: character pose stably preserved, natural gentle blinking, soft breeze gently swaying hair strands and clothing fabric, subtle organic ambient breathing, smooth cinematic camera drift';
         }
       }
       

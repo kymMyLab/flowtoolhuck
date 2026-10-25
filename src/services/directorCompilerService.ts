@@ -143,10 +143,13 @@ export async function compileStoryboardWithGemini(
    - Strictly align facial expression, gaze, and body language with the emotional sentiment of the lyrics.
    - Cheerful, bouncing, rhythmic, or affectionate lyrics ("はずむ", "あしどり", "ステップ", "笑う", "走る", "光", "楽しい"): MUST be rendered with radiant joyful beaming smiles, sparkling cheerful eyes, blushing warm cheeks, and lively buoyant body posture! NEVER produce somber, melancholy, or drooping expressions for upbeat moments!
    - When characters interact affectionately, render sweet endearing smiles, mutual warmth, and affectionate joy. Eradicate awkward dead-eyed or grim expressions during romantic or playful scenes.
-10. **KINETIC MOTION DIRECTIVE SYNC FOR VEO**:
-   - In 'veo_motion_and_end_frame_prompt', match the camera movement and character motion directly to the physical kinetic energy of the cut:
-   - For energetic/walking/running cuts: "Dynamic cinematic tracking: character moves forward briskly with a lively buoyant stride, radiant genuine smile, camera tracks smoothly alongside, hair and clothing fluttering with natural momentum".
-   - NEVER default to passive "subtle breathing" when the action calls for movement, walking, dancing, or expressive emotion.
+10. **UNIVERSAL STABLE MICRO-MOTION MANDATE FOR VEO (ZERO RAPID LIMB MOVEMENT / PRESERVE ARTWORK)**:
+    - CRITICAL DIRECTING LAW: Rapid macro physical movements (such as walking, running, swinging limbs, jumping) cause grotesque anatomical morphing and AI hallucinations in video models.
+    - FOR EVERY SINGLE CUT across ALL genres, the 'veo_motion_and_end_frame_prompt' MUST focus EXCLUSIVELY on subtle, elegant, highly-stable MICRO-MOTIONS that breathe organic life into the still frame while preserving 100% of the original artwork's perfection:
+      ① **Facial Life & Emotion Shift**: Natural blinking, subtle shifting gaze, tender soft smile deepening, parted lips catching breath, micro-facial expressions reflecting the lyric's emotion.
+      ② **Atmospheric & Textile Flutter**: Soft breeze gently swaying hair strands and clothing hem, rising breath in cold air, drifting light particles, flickering lens flare or soft bokeh.
+      ③ **Cinematic Camera Breathing**: Slow cinematic push-in, subtle floating camera parallax drift, delicate handheld stabilization.
+      - STRICTLY FORBIDDEN: NEVER command full-body locomotion like "walking forward", "running", or "jumping". The character's core body pose MUST remain stable and grounded while the micro-motions and camera bring the scene to life!
 
 Output strictly valid JSON array only:
 [
@@ -292,14 +295,14 @@ function buildDeterministicCompiledStoryboard(
       compiledPrompt += ', each character wearing completely separate independent clothing and accessories, strictly no shared cloth bridging bodies';
     }
 
-    // 4. 運動量に連動した Veo モーション命令の動的生成
-    let veoMotion = `Cinematic motion for cut ${i}: subtle organic breathing, atmospheric natural ambient lighting`;
+    // 4. 原画の神作画を100%維持する普遍的マイクロモーション（微動・生体反応・環境ゆらぎ）の動的生成
+    let veoMotion = `Cinematic micro-motion for cut ${i}: character pose stably preserved, natural gentle blinking, soft breeze gently swaying hair strands and clothing hem, atmospheric ambient lighting, slow cinematic camera drift`;
     if (isHighMotion) {
-      veoMotion = `Dynamic kinetic motion for cut ${i}: spirited athletic movement, character sprints with powerful forward momentum, clothes and hair whipping in wind, camera tracking alongside`;
+      veoMotion = `High-impact cinematic micro-motion for cut ${i}: character grounded pose firmly preserved, fierce wind whipping hair strands and clothing fabric, intense focused gaze blinking naturally, dynamic cinematic camera movement`;
     } else if (isJoyful || isMidMotion) {
-      veoMotion = `Lively dynamic motion for cut ${i}: character strides forward briskly with a joyful buoyant bounce, genuine radiant smile, rhythmic walking pace, camera smoothly tracks the energetic motion`;
+      veoMotion = `Lively cinematic micro-motion for cut ${i}: character pose stably preserved, radiant genuine smile gently deepening, sparkling eyes blinking naturally, hair strands fluttering softly in the breeze, slow elegant camera push-in`;
     } else if (isPoignant) {
-      veoMotion = `Poignant emotive motion for cut ${i}: subtle shift in gaze, tender emotional expression deepening as eyes softly glisten, gentle breeze swaying hair`;
+      veoMotion = `Poignant cinematic micro-motion for cut ${i}: character pose stably preserved, subtle tender shift in gaze, eyes glistening softly with natural blinking, parted lips catching breath, gentle air swaying hair, slow camera pull-back`;
     }
 
     result.push({
