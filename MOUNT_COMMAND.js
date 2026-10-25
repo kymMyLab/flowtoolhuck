@@ -1,1 +1,5 @@
-import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@15468d1/dist/bundle.js').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 最新版（1話完結ライフサイクル共通モジュール搭載版）マウント完了！'); });
+import('https://cdn.jsdelivr.net/gh/kymMyLab/flowtoolhuck@489ee22/dist/bundle.js').then(m => {
+    const root = document.getElementById('root') || document.body;
+    root.innerHTML = '';
+    m.mount(root);
+});
