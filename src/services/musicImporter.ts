@@ -580,7 +580,9 @@ export function parseLyricKineticAction(lyric: string, section?: string, isPropC
   }
 
   // 3. 移動・歩行・振り返り（ドラマの推進・時間の進行）
-  if (/振り返|背中|振り向|立ち止ま|去る/i.test(text)) {
+  if (/はずむ|弾む|あしどり|足取り|ステップ|スキップ|あわせてゆく|あわせて|はずみ/i.test(text)) {
+    actions.push('walking energetically with a joyful lively bounce in their stride, bright beaming smile, matching footsteps in an upbeat cheerful rhythmic pace');
+  } else if (/振り返|背中|振り向|立ち止ま|去る/i.test(text)) {
     actions.push('halting mid-stride and glancing back over shoulder with a bittersweet searching gaze');
   } else if (/走る|駆け|急ぐ|追いかけ/i.test(text)) {
     actions.push('dynamic forward athletic momentum, hair and clothes whipping back in kinetic sprint');
@@ -1210,13 +1212,15 @@ export function convertTrackToEpisode(
       } else if (/(エプロン|割烹着|料理|apron)/i.test(lyric)) {
         dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing casual domestic clothes with a stylish fabric apron]';
       } else if (/(コート|ダウン|マフラー|手袋|防寒|winter coat|down jacket|muffler)/i.test(lyric)) {
-        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing thick warm stylish winter coat with wrapped woolen muffler]';
+        dynamicWardrobeDirective = ' [WARDROBE OVERRIDE: wearing thick warm stylish winter coat with individual wrapped woolen muffler around neck, completely separate scarves if multiple characters]';
       }
 
       // キャストDNAおよび表情のインポート（キャスト固定が明示的にONのときのみ注入）
       if (selectedCharacter && !isPropCut && !isLastCut) {
         let expressionPrompt = selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
-        if (i === 1) {
+        if (/(はずむ|弾む|笑顔|笑う|楽しい|うれしい|スキップ|跳ねる|喜|笑み|あわせてゆく)/i.test(lyric)) {
+          expressionPrompt = selectedCharacter.expressions?.['happy']?.promptModifierEn?.trim() || 'radiant joyful beaming smile, cheerful sparkling eyes';
+        } else if (i === 1) {
           expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';
         } else if (section === 'verse_b') {
           expressionPrompt = selectedCharacter.expressions?.['sad']?.promptModifierEn?.trim() || selectedCharacter.expressions?.['neutral']?.promptModifierEn?.trim() || '';

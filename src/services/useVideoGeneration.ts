@@ -61,10 +61,22 @@ export function useVideoGeneration({
     try {
       // ユーザー指示: After絵の画像参照はモーフィング崩壊の害悪となるため無効化！
       // Start絵（画像1枚）のみを参照し、プロンプトだけで「初めに●●、次に■■、最後にAfterの状態」へと自然に進化させる
-      const isMotionValid = cut?.veoMotionPrompt && /[a-zA-Z0-9]/.test(cut.veoMotionPrompt);
-      const motionText = isMotionValid
+      const rawLyric = `${cut?.narrationJp || ''} ${cut?.telop?.fullText || ''}`;
+      const isMotionValid = Boolean(cut?.veoMotionPrompt && /[a-zA-Z0-9]/.test(cut.veoMotionPrompt));
+      let motionText = isMotionValid
         ? `[Temporal Scene Transition]: ${cut.veoMotionPrompt}`
         : (cut?.cameraMotion || (cut?.cameraWork ? resolveCameraWork(cut.cameraWork).motionPrompt : ''));
+
+      // 🏃 歌詞連動モーション昇格: 「はずむあしどり」「ステップ」「走る」等なのに静止呼吸命令の場合は、軽快なウォーキングモーションへ自動昇格！
+      if (/(はずむ|弾む|あしどり|足取り|ステップ|スキップ|あわせてゆく|あわせて|はずみ)/i.test(rawLyric)) {
+        if (!isMotionValid || cut?.veoMotionPrompt?.includes('subtle organic character breathing')) {
+          motionText = '[Temporal Scene Transition]: Lively energetic walking motion, character walks with a joyful buoyant bounce in their stride, bright beaming smile, matching footsteps in a cheerful rhythmic pace';
+        }
+      } else if (/(走る|駆け|急ぐ|ダッシュ)/i.test(rawLyric)) {
+        if (!isMotionValid || cut?.veoMotionPrompt?.includes('subtle organic character breathing')) {
+          motionText = '[Temporal Scene Transition]: Dynamic forward running momentum, hair and clothes fluttering in the wind, joyful energetic sprint';
+        }
+      }
       
       const isEndFrameValid = cut?.endFramePromptEn && /[a-zA-Z0-9]/.test(cut.endFramePromptEn);
       const endDestinationText = isEndFrameValid ? ` [Destination Finale Scene]: ${cut.endFramePromptEn}` : '';
@@ -84,6 +96,14 @@ export function useVideoGeneration({
 
       if (isStylized) {
         finalVideoPrompt = finalVideoPrompt.replace(/\b(photoreal|photorealistic|hyper-detailed reflections|35mm DSLR|35mm photograph|live-action|raw photograph|realistic human photo|western live-action film)\b/gi, '');
+      }
+
+      // 🧣 物理破綻防止: 「二人羽織マフラー（首と首が一本の布で連結されるバグ）」を動画プロンプトから完全除去＆分離強制
+      finalVideoPrompt = finalVideoPrompt
+        .replace(/sharing\s+(a\s+)?(scarf|muffler)/gi, 'each wearing an independent $2')
+        .replace(/one\s+(scarf|muffler)\s+wrapped\s+around\s+both/gi, 'each wearing their own separate $1');
+      if (/(two characters|couple|pair|two people|boy and girl)/i.test(finalVideoPrompt) && /(scarf|muffler)/i.test(finalVideoPrompt)) {
+        finalVideoPrompt += ', each character wearing their own completely separate scarf around neck, two physically independent scarves, strictly no cloth connecting two necks';
       }
 
       // Google Veoセーフティ保護: VeoでNGワードになりやすい過剰検閲単語を事前中和

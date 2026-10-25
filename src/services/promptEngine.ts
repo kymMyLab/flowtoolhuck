@@ -924,6 +924,10 @@ export function sanitizePromptForGoogleSafety(prompt: string): string {
     // 空のブラケットや括弧を除去
     .replace(/\[\s*\]/g, '')
     .replace(/\(\s*\)/g, '')
+    // 🧣 物理破綻防止: 「二人羽織マフラー（首と首が一本の布で連結されるバグ）」を完全解体
+    .replace(/sharing\s+(a\s+)?(scarf|muffler)/gi, 'each wearing an independent $2')
+    .replace(/one\s+(scarf|muffler)\s+wrapped\s+around\s+both/gi, 'each wearing their own separate $1')
+    .replace(/single\s+(scarf|muffler)\s+connecting\s+two/gi, 'physically separate scarves for each')
     // 連続するカンマやピリオド、空白の整理
     .replace(/,\s*,+/g, ',')
     .replace(/\.\s*\.+/g, '.')
@@ -932,6 +936,11 @@ export function sanitizePromptForGoogleSafety(prompt: string): string {
     .replace(/\s{2,}/g, ' ')
     .replace(/^[,.\s]+|[,.\s]+$/g, '')
     .trim();
+
+  // 二人組でマフラーがある場合、独立した別々のマフラーを自分の首に巻くよう厳格指示
+  if (/(two characters|couple|pair|two people|boy and girl|standing together)/i.test(cleaned) && /(scarf|muffler)/i.test(cleaned)) {
+    cleaned += ', each person wearing their own completely separate scarf around neck, two physically independent scarves, strictly no cloth connecting two necks';
+  }
 
   // Google Imagen の安全長制限 (2500文字以内に抑制)
   if (cleaned.length > 2500) {
