@@ -263,10 +263,14 @@ Assign "panelLayout" dynamically for each cut from:
 - "single" (impactful 1-panel splash cut)
 Do NOT output identical layouts sequentially. Create visual drama and rhythm!
 ` : ''}
-CRITICAL: NARRATIVE EMOTIONAL ARC & VEO MOTION (START -> END INTERPOLATION):
-Derive motion pacing from the story's emotional flow (Intro -> Struggle -> Chorus Climax -> Settled Afterglow):
-- "veoMotionPrompt": Natural fluid progression using transition adverbs (First ..., then ..., next ..., finally ... smoothly settles). NEVER use exact second numbers like "0-3s"!
-- "endFramePlot": The visual state at the end of the camera/character motion (used as End Frame input).
+CRITICAL: UNIVERSAL STABLE MICRO-MOTION MANDATE FOR VEO (START -> END INTERPOLATION):
+To eliminate AI video morphing and grotesque anatomical hallucinations across ALL themes, STRICTLY FORBID rapid macro locomotion (NEVER command walking forward, running, jumping, or sharp turns).
+Focus EXCLUSIVELY on organic, lifelike MICRO-MOTIONS that breathe soul into the still illustration while preserving 100% of the artwork's integrity:
+- "veoMotionPrompt": Fluid progression of micro-motions using transition adverbs (First ..., then ..., finally ... smoothly settles). Mandate:
+  ① Natural gentle blinking and subtle shifting gaze or tender smile deepening.
+  ② Soft breeze gently fluttering loose hair strands and clothing hem.
+  ③ Slow cinematic camera breathing (slow push-in or delicate parallax drift).
+- "endFramePlot": The visual state at the end of the camera/micro-motion, perfectly maintaining character pose and identity with subtly evolved serene expression.
 
 ${isMvMode ? 'ATMOSPHERIC & VISUAL HARMONY:' : (isHistorical ? 'STRICT HISTORICAL ACCURACY:' : 'AUTHENTIC SETTING & CULTURAL ACCURACY:')}
 Dynamically analyze the period, setting, and atmosphere implied by "${worldSetting}". Determine authentic aesthetic attire and identify elements that would break the mood and must NEVER appear (NEVER forbid elements of the chosen Visual Art Style).
@@ -296,9 +300,9 @@ Output ONLY valid JSON matching this exact structure:
         "focalSubject": "character_face"
       },
       "compositionPrompt": "Subject framed at upper-third, face centered at top-center, rule of thirds",
-      "basicPlot": "Concise scene concept and situation in English (1-2 sentences, e.g. Walking alone along country path under glowing dusk sky)", 
-      "veoMotionPrompt": "First walking steadily forward with hair swaying in the breeze, then slowly turning head towards the sunset sky, finally smoothly settling into a calm reflective pause",
-      "endFramePlot": "Side profile of protagonist bathed in golden sunset glow, gazing quietly at the distant horizon",
+      "basicPlot": "Concise scene concept and situation in English (1-2 sentences, e.g. Protagonist standing quietly by the countryside road under glowing dusk sky)", 
+      "veoMotionPrompt": "First character standing stably with hair gently swaying in the breeze, then naturally blinking and softly shifting gaze towards the sunset glow, finally smoothly settling into a serene reflective pause as camera pushes in slightly",
+      "endFramePlot": "Side profile of protagonist bathed in golden sunset glow, gazing quietly at the distant horizon with tranquil expression",
       "narrationJp": "${isMvMode ? '楽曲の歌詞・リリック（1曲の歌として繋がるエモい歌詞20文字前後）' : '重厚なナレーション（日本語）'}",
       "highlights": ["ナレーション内の重要語1", "ナレーション内の重要語2"]
     }
@@ -347,11 +351,11 @@ RULES:
 ${titleRule}
 2. Protagonist: Define "characterDna" in English (consistent single protagonist: age, gender, hair, signature attire). All character cuts MUST feature this exact protagonist.
 3. Object Cut: Cut 6 should be an iconic object without humans ("isObjectOnly": true).
-4. 8-Second Dynamic Cinematic Progression (180° Drone Orbit & Camera Angle Shift):
-Every cut is an 8-second video!
-- "basicPlot": Start frame initial situation and camera angle in English.
-- "endFramePlot": The reached visual state 8 seconds later from a completely different angle.
-- "veoMotionPrompt": Natural continuous 8-second motion directive for Veo 3.1 interpolation.
+4. 8-Second Universal Stable Micro-Motion Progression:
+Every cut is an 8-second video! Character pose and grounded anatomy MUST remain 100% stable without morphing:
+- "basicPlot": Start frame initial situation and camera framing in English.
+- "endFramePlot": The reached visual state 8 seconds later with subtly shifted gaze and emotional expression.
+- "veoMotionPrompt": Natural continuous 8-second micro-motion directive for Veo 3.1 interpolation (blinking, hair flutter, subtle smile/expression shift, gentle camera breathing).
 ${isMultiPanel ? '5. Dynamic Manga Panel Layouts: Assign diverse and dynamic comic panel shapes matching the scene rhythm and emotion! Choose from: "diagonal-slash" (kinetic sharp angled slash), "l-shaped" (asymmetric hero panel + 2 stacked sub-panels), "panoramic-split" (wide top establishing shot + 2 vertical sub-panels), "inset-reaction" (splash scene with smaller inset reaction frame), "vertical-split" (side-by-side vertical panels), "split-2" (asymmetric 2-panel), or "single" (full-bleed single splash). VARY the layout dynamically between cuts!' : ''}
 
 Output ONLY valid JSON:
@@ -367,8 +371,8 @@ Output ONLY valid JSON:
       ${isMultiPanel ? '"panelLayout": "diagonal-slash", ' : ''}
       "isObjectOnly": false,
       "basicPlot": "Front-three-quarters view of protagonist sitting focused at glowing desk in dark room", 
-      "endFramePlot": "180-degree reverse drone angle of the same protagonist, seen from behind and side looking across the room illuminated by rim light",
-      "veoMotionPrompt": "Continuous 8-second cinematic drone orbit: camera smoothly circles 180 degrees around the character from front to side-back angle, dynamic lighting sweep across surfaces, seamless cinematic movement",
+      "endFramePlot": "Close-up of protagonist smiling softly at the monitor, eyes glistening warmly in the soft light",
+      "veoMotionPrompt": "Continuous 8-second cinematic micro-motion: protagonist pose firmly maintained, natural gentle blinking, warm radiant smile softly deepening, subtle breeze fluttering hair strands, slow cinematic camera push-in",
       "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}"
     }
   ]

@@ -436,10 +436,41 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
               <textarea
                 value={cut.veoMotionPrompt || ''}
                 onChange={e => onUpdateCut({ veoMotionPrompt: e.target.value })}
-                placeholder="例: First looking downward, then slowly raising gaze and smiling, smoothly settles..."
+                placeholder="例: Continuous cinematic micro-motion: character pose firmly preserved, natural gentle blinking, hair flutter..."
                 rows={2}
                 className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 text-xs text-white/90 font-mono outline-none focus:border-amber-400 leading-relaxed resize-none"
               />
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[9px] text-amber-300/70 font-bold shrink-0">微動プリセット:</span>
+                <button
+                  type="button"
+                  onClick={() => onUpdateCut({ veoMotionPrompt: 'Continuous cinematic micro-motion: character pose firmly maintained, gentle breeze softly fluttering hair strands and clothing hem, natural gentle blinking, slow cinematic camera push-in' })}
+                  className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-500/20 text-white/70 hover:text-amber-200 border border-white/10 hover:border-amber-500/30 transition-colors"
+                >
+                  🌬️ 髪そよぎ・風
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdateCut({ veoMotionPrompt: 'Continuous cinematic micro-motion: character grounded pose stably preserved, radiant genuine smile softly deepening, eyes glistening warmly with natural blinking, slow subtle camera drift' })}
+                  className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-500/20 text-white/70 hover:text-amber-200 border border-white/10 hover:border-amber-500/30 transition-colors"
+                >
+                  😊 微笑み・表情
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdateCut({ veoMotionPrompt: 'Continuous cinematic micro-motion: character pose stably preserved, natural gentle blinking as gaze softly shifts toward distant light, quiet contemplative expression, slow subtle parallax' })}
+                  className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-500/20 text-white/70 hover:text-amber-200 border border-white/10 hover:border-amber-500/30 transition-colors"
+                >
+                  👀 視線の移ろい
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdateCut({ veoMotionPrompt: 'Continuous cinematic micro-motion: character pose firmly preserved, subtle natural breathing and relaxed presence, soft ambient lighting shifts, gentle cinematic camera breathing' })}
+                  className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-500/20 text-white/70 hover:text-amber-200 border border-white/10 hover:border-amber-500/30 transition-colors"
+                >
+                  🍃 呼吸・光ゆらぎ
+                </button>
+              </div>
             </div>
 
             {/* 到達点プロンプト（endFramePromptEn） */}

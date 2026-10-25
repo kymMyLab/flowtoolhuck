@@ -162,7 +162,7 @@ Output strictly valid JSON array only:
     "panel_layout": "single",
     "telop_neon_color": "#FFE600",
     "veo_priority_rank": 1,
-    "veo_motion_and_end_frame_prompt": "Dynamic tracking shot: protagonist smiles warmly with sparkling eyes as camera pushes in smoothly"
+    "veo_motion_and_end_frame_prompt": "Cinematic micro-motion: protagonist's pose firmly preserved, natural gentle blinking, warm radiant smile softly deepening, subtle breeze fluttering hair strands, slow cinematic camera push-in"
   }
 ]`;
 
