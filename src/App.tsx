@@ -23,11 +23,13 @@ import { CastManagerModal } from './components/CastManagerModal';
 import { ComicCreationWizardModal } from './components/ComicCreationWizardModal';
 import { MusicImportModal } from './components/music/MusicImportModal';
 import { TasteShowroomModal } from './components/TasteShowroomModal';
+import { StoryFactoryView } from './components/StoryFactoryView';
 import { loadMangaProject, saveMangaProject } from './services/castStorage';
 import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset, SeriesManifest } from './types';
 import { saveReferenceAsset } from './services/db';
 
 export default function App() {
+  const [studioViewMode, setStudioViewMode] = useState<'studio' | 'factory'>('factory');
   const [settings, setSettings] = useState<GeneratorSettings>({
     productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: '30%', episodeCount: 1, previewCutCount: 30, parallelCount: 2, autoVideo: false, autoDownload: false, superBackoff: false, isMvMode: false, isMultiPanel: false, aspectRatio: '1:1',
     enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: true
@@ -581,6 +583,14 @@ export default function App() {
   });
   // 待機中（光る状態）＝ 現在制作中ではなく、かつ未生成のカットが存在すること
   const isWaitingForStart = !isProducing && hasPendingCuts;
+
+  if (studioViewMode === 'factory') {
+    return (
+      <ErrorBoundary>
+        <StoryFactoryView onBackToStudio={() => setStudioViewMode('studio')} addLog={addLog} />
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <ErrorBoundary>

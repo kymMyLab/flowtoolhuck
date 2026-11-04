@@ -1,0 +1,3176 @@
+{
+  "schema_version": "2.0.0",
+  "genre": "music_mv",
+  "title": "🎵 音楽MV マスターConfig（黄金15種 ⇄ 全140種テーマ 完全双方向マッピング）",
+  "visual_generation_policy": {
+    "mode": "theme_first",
+    "inject_golden_foley_props_by_default": false,
+    "inject_golden_foley_props_when_gimmick_chip_active": true,
+    "inject_golden_aesthetic_lighting": true,
+    "description": "作画(Step 20/30)および歌詞の状況・小道具は140種テーマ(theme_prompt)を100%最優先とし、黄金15種側のfoley_visual_props(シャーペン・屋上フェンス・クレープ等)はギミックチップ明示選択時または一致テーマ時のみ注入する。"
+  },
+  "kawaii_big_bases": {
+    "kawaii_bedroom_trap": {
+      "key": "kawaii_bedroom_trap",
+      "label": "① 【Chill Bedroom】 ベッドルーム・夜チル・日常系",
+      "bpm_range": "123〜126 BPM",
+      "base_ids": [
+        1,
+        2,
+        3,
+        7,
+        8,
+        10,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "description": "フェルトピアノ、マイルドラップ、生活音Foleyが中心の親密で切ない日常系サウンド（全11種）"
+    },
+    "kawaii_future_bass": {
+      "key": "kawaii_future_bass",
+      "label": "② 【Future Bass】 アオハル・疾走感・エモクライマックス",
+      "bpm_range": "130〜136 BPM",
+      "base_ids": [
+        4,
+        5,
+        6,
+        9,
+        18,
+        20
+      ],
+      "description": "Supersaw、キラキラPluck、高速ラップが弾ける青春アンセム・エモーショナルサウンド（全6種）"
+    },
+    "kawaii_electro_pop": {
+      "key": "kawaii_electro_pop",
+      "label": "③ 【Electro Pop】 渋谷系ピコピコ・雨のクラブ・夜疾走",
+      "bpm_range": "128〜130 BPM",
+      "base_ids": [
+        11,
+        12,
+        19
+      ],
+      "description": "8-bitチップチューン、オートチューン声、四つ打ちハウス、湾岸ハイウェイトラップ（全3種）"
+    },
+    "kawaii_all_mix": {
+      "key": "kawaii_all_mix",
+      "label": "🌟 【全4大ベース自動MIX】 黄金20種フル活用",
+      "bpm_range": "123〜136 BPM",
+      "base_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "description": "エピソードごとにA/B/C/D/Eベースを波形ローテーションし、アルバム全体の起承転結を最大化（全20種）"
+    }
+  },
+  "golden_15_prompts": [
+    {
+      "id": 1,
+      "bpm": 123,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#01 [🍰Bedroom / 123 BPM] 深夜電話・フェルトピアノ・シャーペン音",
+      "short_label": "123 BPM / 深夜電話・フェルトピアノ・シャーペン音",
+      "adlib_hooks": [
+        "(カチカチ ならす)",
+        "(もしもし きこえる)",
+        "(ふわぁ ねむたいな)"
+      ],
+      "foley_visual_props": "holding a mechanical pencil in delicate hands, open notebook on midnight study desk, smartphone glowing on bed",
+      "sound_aesthetic_tag": "cozy midnight bedroom ambiance, warm desk lamp lighting, quiet intimate late-night mood",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy midnight phone call lo-fi trap beat. Warm felt piano chords, quiet bedroom ambiance, deep lazy 808 sub-bass, snappy acoustic snare, crisp stereo hi-hat rolls, mechanical pencil click textures. Soft, sleepy, cute Japanese female vocals with smooth relaxed rhythmic rap phrasing and catchy bittersweet melodic hook, 123 bpm",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy midnight phone call lo-fi trap beat",
+        "S3_Chords": "Warm felt piano chords",
+        "S4_Foley": "quiet bedroom ambiance, mechanical pencil click textures",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp stereo hi-hat rolls",
+        "S7_Aesthetic": "cozy midnight bedroom aesthetic",
+        "S8_Vocal": "Soft, sleepy, cute Japanese female vocals",
+        "S9_Rap": "smooth relaxed rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 123
+      }
+    },
+    {
+      "id": 2,
+      "bpm": 125,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_B_Rainy_Nostalgic_Dusk",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#02 [🍰Bedroom / 125 BPM] 王道ウィスパー・スポークンラップ・Bouncy 808",
+      "short_label": "125 BPM / 王道ウィスパー・スポークンラップ",
+      "adlib_hooks": [
+        "(ないしょの はなし)",
+        "(ねぇ きいて)",
+        "(ドキドキ しちゃう)"
+      ],
+      "foley_visual_props": "leaning close to camera, earphones dangling, soft curtain fluttering by window",
+      "sound_aesthetic_tag": "intimate bittersweet youth tone, soft pastel afternoon light, shallow depth of field",
+      "raw_native_prompt": "Kawaii bedroom pop, lo-fi trap, bouncy 808 sub-bass, crisp hi-hats, snappy claps, bright synth plucks, soft breathy female vocals, cute Japanese voice, whispered spoken rap section, 125 bpm, playful, intimate, bittersweet youth tone",
+      "cluster_name": "🌧️ Cluster B: 雨音・帰り道・ノスタルジー (125-126 BPM)",
+      "slots": {
+        "S1_Genre": "Kawaii bedroom pop",
+        "S2_Beat": "playful intimate lo-fi trap beat",
+        "S3_Chords": "Bright synth plucks",
+        "S4_Foley": "intimate room air texture",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hats",
+        "S7_Aesthetic": "playful, intimate, bittersweet youth tone",
+        "S8_Vocal": "Soft breathy cute Japanese female vocals",
+        "S9_Rap": "whispered spoken rap section",
+        "S10_Hook": "bittersweet youth melodic hook",
+        "S11_BPM": 125
+      }
+    },
+    {
+      "id": 3,
+      "bpm": 125,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_B_Rainy_Nostalgic_Dusk",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#03 [🍰Bedroom / 125 BPM] レコード質感・プレイフルスキャット・高速ラップ",
+      "short_label": "125 BPM / レコード質感・プレイフルスキャット",
+      "adlib_hooks": [
+        "(パチパチ はじける)",
+        "(Tu-tu-ru)",
+        "(くるくる まわる)"
+      ],
+      "foley_visual_props": "spinning vinyl record on retro turntable, cassette tapes, headphones around neck",
+      "sound_aesthetic_tag": "warm vinyl nostalgic mood, retro film grain texture, golden amber lighting",
+      "raw_native_prompt": "Japanese Kawaii Bedroom Pop, Lo-Fi Trap, 125 BPM, bouncy 808 sub-bass, bright sparkly synth plucks, snappy claps, crisp rhythmic hi-hats, soft cute female Japanese vocals, energetic playful scatting, fast rhythmic rap, bittersweet nostalgic mood, warm vinyl texture",
+      "cluster_name": "🌧️ Cluster B: 雨音・帰り道・ノスタルジー (125-126 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Bedroom Pop",
+        "S2_Beat": "Lo-Fi Trap beat",
+        "S3_Chords": "Bright sparkly synth plucks",
+        "S4_Foley": "warm vinyl texture",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp rhythmic hi-hats",
+        "S7_Aesthetic": "bittersweet nostalgic mood",
+        "S8_Vocal": "Soft cute female Japanese vocals",
+        "S9_Rap": "energetic playful scatting and fast rhythmic rap",
+        "S10_Hook": "bittersweet nostalgic melodic hook",
+        "S11_BPM": 125
+      }
+    },
+    {
+      "id": 4,
+      "bpm": 130,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌸 FuturePop②",
+      "label": "#04 [🌸FuturePop / 130 BPM] スイートアニメ・キラキラPluck・高速ラップ",
+      "short_label": "130 BPM / スイートアニメ・高速ラップ",
+      "adlib_hooks": [
+        "(キラキラ ひかる)",
+        "(ジャンプ して)",
+        "(せーのっ)"
+      ],
+      "foley_visual_props": "school bag with cute keychain plushie, fluttering ribbon, cheerful hand gesture",
+      "sound_aesthetic_tag": "cheerful sweet anime aesthetic, bright sunlight lens flare, vivid pastel colors",
+      "raw_native_prompt": "Cute Japanese kawaii bedroom pop, playful bouncy lo-fi trap beat, sparkly pluck synths, snappy claps, crisp hi-hats, bouncy 808 sub-bass, cheerful sweet anime aesthetic, soft cute female vocals, rapid rhythmic rap phrasing, catchy melodic chorus, 130 bpm",
+      "cluster_name": "🌇 Cluster A: 放課後・夕暮れ・青春キラメキ (130-136 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese kawaii bedroom pop",
+        "S2_Beat": "playful bouncy lo-fi trap beat",
+        "S3_Chords": "Sparkly pluck synths",
+        "S4_Foley": "sparkling anime chime accents",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hats",
+        "S7_Aesthetic": "cheerful sweet anime aesthetic",
+        "S8_Vocal": "Soft cute Japanese female vocals",
+        "S9_Rap": "rapid rhythmic rap phrasing",
+        "S10_Hook": "catchy melodic chorus",
+        "S11_BPM": 130
+      }
+    },
+    {
+      "id": 5,
+      "bpm": 130,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌸 FuturePop②",
+      "label": "#05 [🌸FuturePop / 130 BPM] 弾ける思春期・シンガロング・3分フル尺構成",
+      "short_label": "130 BPM / 弾ける思春期・シンガロング",
+      "adlib_hooks": [
+        "(ふわふわ はずむ)",
+        "(La-la-la)",
+        "(いっしょに うたお)"
+      ],
+      "foley_visual_props": "holding a sweet strawberry crepe wrapped in pink ribbon, after-school rooftop fence, smiling side profile",
+      "sound_aesthetic_tag": "bubbly adolescent anime aesthetic, sparkling bokeh particles, refreshing sky blue and pink palette",
+      "raw_native_prompt": "Cute Japanese kawaii bedroom pop, playful bouncy lo-fi trap beat, sparkly bright pluck synths, snappy claps and crisp hi-hats, bouncy 808 sub-bass, light and bubbly adolescent vibe, cheerful and sweet anime aesthetic, soft cute whispered female vocals, rapid playful rhythmic rap phrasing, catchy sing-along melodic chorus, extended full track structure, 130 bpm",
+      "cluster_name": "🌇 Cluster A: 放課後・夕暮れ・青春キラメキ (130-136 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese kawaii bedroom pop",
+        "S2_Beat": "playful bouncy lo-fi trap beat",
+        "S3_Chords": "Sparkly bright pluck synths",
+        "S4_Foley": "light and bubbly adolescent vibe",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps and crisp hi-hats",
+        "S7_Aesthetic": "cheerful and sweet anime aesthetic",
+        "S8_Vocal": "Soft cute whispered Japanese female vocals",
+        "S9_Rap": "rapid playful rhythmic rap phrasing",
+        "S10_Hook": "catchy sing-along melodic chorus",
+        "S11_BPM": 130
+      }
+    },
+    {
+      "id": 6,
+      "bpm": 134,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌸 FutureBass②",
+      "label": "#06 [🌸FutureBass / 134 BPM] Future Bass × Melodic Trap・木製マリンバ",
+      "short_label": "134 BPM / Future Bass × Melodic Trap・木製マリンバ",
+      "adlib_hooks": [
+        "(コンコン たたくよ)",
+        "(ステップ ふんで)",
+        "(Tu-tu-ru)"
+      ],
+      "foley_visual_props": "walking along after-school slope, long shadows stretching on asphalt, wooden bench or music box motif",
+      "sound_aesthetic_tag": "nostalgic adolescent anime OST aesthetic, warm golden hour sunlight, dynamic cinematic framing",
+      "raw_native_prompt": "Japanese Kawaii Future Bass, playful Melodic Trap. Sparkly bright pluck synths, wooden marimba accents, bouncy 808 sub-bass, snappy claps, crisp hi-hat rolls, nostalgic adolescent vibe, cute anime OST aesthetic. Soft, breathy, cute Japanese female vocals with rapid playful rhythmic rap delivery and super catchy sing-along melodic hook, 134 bpm.",
+      "cluster_name": "🌇 Cluster A: 放課後・夕暮れ・青春キラメキ (130-136 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Future Bass",
+        "S2_Beat": "playful Melodic Trap",
+        "S3_Chords": "Sparkly bright pluck synths, wooden marimba accents",
+        "S4_Foley": "wooden marimba percussive resonance",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hat rolls",
+        "S7_Aesthetic": "nostalgic adolescent vibe, cute anime OST aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "rapid playful rhythmic rap delivery",
+        "S10_Hook": "super catchy sing-along melodic hook",
+        "S11_BPM": 134
+      }
+    },
+    {
+      "id": 7,
+      "bpm": 124,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#07 [🍰Bedroom / 124 BPM] パステル深夜・ドリーミーローズピアノ・チル",
+      "short_label": "124 BPM / パステル深夜・ドリーミーローズピアノ",
+      "adlib_hooks": [
+        "(ゆらゆら うかぶ)",
+        "(おやすみ まえに)",
+        "(ふわっと とける)"
+      ],
+      "foley_visual_props": "hugging a soft pillow on bed, fairy string lights on bedroom wall, crescent moon outside window",
+      "sound_aesthetic_tag": "pastel late-night aesthetic, dreamy lavender and cyan moonlight, cozy nocturnal warmth",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy lo-fi trap beat. Warm dreamy rhodes chords, deep lazy 808 sub-bass, snappy acoustic snare, crisp hi-hats, pastel late-night aesthetic, cozy nocturnal vibe. Soft, sleepy, cute Japanese female vocals with smooth relaxed rhythmic rap phrasing and catchy explosive melodic hook, 124 bpm.",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy lo-fi trap beat",
+        "S3_Chords": "Warm dreamy rhodes chords",
+        "S4_Foley": "cozy nocturnal room ambiance",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hats",
+        "S7_Aesthetic": "pastel late-night aesthetic, cozy nocturnal vibe",
+        "S8_Vocal": "Soft, sleepy, cute Japanese female vocals",
+        "S9_Rap": "smooth relaxed rhythmic rap phrasing",
+        "S10_Hook": "catchy explosive melodic hook",
+        "S11_BPM": 124
+      }
+    },
+    {
+      "id": 8,
+      "bpm": 126,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_B_Rainy_Nostalgic_Dusk",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#08 [🍰Bedroom / 126 BPM] 雨音ベッドルーム・木製マリンバ＆ローズ",
+      "short_label": "126 BPM / 雨音ベッドルーム・木製マリンバ＆ローズ",
+      "adlib_hooks": [
+        "(ポツポツ あまおと)",
+        "(しとしと ふるね)",
+        "(ためいき ひとつ)"
+      ],
+      "foley_visual_props": "raindrops trickling down window glass, finger tracing condensation on foggy window, transparent umbrella",
+      "sound_aesthetic_tag": "cozy rainy bedroom aesthetic, nostalgic blue-grey rain atmosphere, soft warm indoor contrast",
+      "raw_native_prompt": "Japanese Kawaii Melodic Trap, cozy rainy bedroom pop. Gentle rain ambient texture, delicate wooden marimba plucks, warm rhodes chords, bouncy 808 sub-bass, snappy acoustic snare, crisp hi-hat rolls, nostalgic anime aesthetic. Soft, breathy, cute Japanese female vocals with rapid playful rhythmic rap phrasing and catchy emotional hook, 126 bpm.",
+      "cluster_name": "🌧️ Cluster B: 雨音・帰り道・ノスタルジー (125-126 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Melodic Trap",
+        "S2_Beat": "cozy rainy bedroom pop",
+        "S3_Chords": "Delicate wooden marimba plucks, warm rhodes chords",
+        "S4_Foley": "gentle rain ambient texture",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hat rolls",
+        "S7_Aesthetic": "nostalgic anime aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "rapid playful rhythmic rap phrasing",
+        "S10_Hook": "catchy emotional hook",
+        "S11_BPM": 126
+      }
+    },
+    {
+      "id": 9,
+      "bpm": 136,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌸 FutureBass②",
+      "label": "#09 [🌸FutureBass / 136 BPM] 夕暮れ風・Supersaw・アニメOSTクライマックス",
+      "short_label": "136 BPM / 夕暮れ風・Supersaw・アニメOSTクライマックス",
+      "adlib_hooks": [
+        "(かぜが ふいたら)",
+        "(はしりだす よ)",
+        "(とどく かな)"
+      ],
+      "foley_visual_props": "hair and school ribbon blowing in strong sunset breeze, dramatic hill overlooking town, reaching hand toward sky",
+      "sound_aesthetic_tag": "anime OST climax style, dramatic twilight orange and purple sky, glowing rim light",
+      "raw_native_prompt": "Japanese Kawaii Future Bass, emotional Melodic Trap. Bright sparkly supersaw leads, energetic halftime beat, powerful 808 sub-bass, uplifting chord progression, sunset breeze ambiance, anime OST climax style. Soft, cute, energetic Japanese female vocals with rapid rhythmic rap delivery and soaring sing-along melodic chorus, 136 bpm.",
+      "cluster_name": "🌇 Cluster A: 放課後・夕暮れ・青春キラメキ (130-136 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Future Bass",
+        "S2_Beat": "emotional Melodic Trap, energetic halftime beat",
+        "S3_Chords": "Bright sparkly supersaw leads, uplifting chord progression",
+        "S4_Foley": "sunset breeze ambiance",
+        "S5_Bass": "powerful 808 sub-bass",
+        "S6_Drums": "energetic halftime drums, crisp hi-hat rolls",
+        "S7_Aesthetic": "anime OST climax style",
+        "S8_Vocal": "Soft, cute, energetic Japanese female vocals",
+        "S9_Rap": "rapid rhythmic rap delivery",
+        "S10_Hook": "soaring sing-along melodic chorus",
+        "S11_BPM": 136
+      }
+    },
+    {
+      "id": 10,
+      "bpm": 123,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#10 [🍰Bedroom / 123 BPM] 深夜ダイナー・氷が鳴るFoley音・フェルトピアノ",
+      "short_label": "123 BPM / 深夜ダイナー・氷が鳴るFoley音・フェルトピアノ",
+      "adlib_hooks": [
+        "(カランコロン ゆれる)",
+        "(こおりが とける)",
+        "(ふたりきり だね)"
+      ],
+      "foley_visual_props": "tall glass with clinking ice cubes and straw on retro diner table, neon sign reflecting in window",
+      "sound_aesthetic_tag": "pastel midnight diner aesthetic, warm booth lighting, retro late-night lo-fi atmosphere",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, midnight diner lo-fi trap. Warm felt piano chords, cozy vinyl warmth, lazy deep 808 sub-bass, snappy acoustic snare, ice clinking Foley textures, pastel midnight diner aesthetic. Soft, sleepy, cute Japanese female vocals with smooth relaxed rhythmic rap phrasing and catchy sing-along hook, 123 bpm.",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "midnight diner lo-fi trap",
+        "S3_Chords": "Warm felt piano chords",
+        "S4_Foley": "cozy vinyl warmth, ice clinking Foley textures",
+        "S5_Bass": "lazy deep 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hats",
+        "S7_Aesthetic": "pastel midnight diner aesthetic",
+        "S8_Vocal": "Soft, sleepy, cute Japanese female vocals",
+        "S9_Rap": "smooth relaxed rhythmic rap phrasing",
+        "S10_Hook": "catchy sing-along hook",
+        "S11_BPM": 123
+      }
+    },
+    {
+      "id": 11,
+      "bpm": 130,
+      "baseKey": "kawaii_electro_pop",
+      "cluster_id": "Cluster_D_Neon_Electro_Spice",
+      "cluster_label": "🤖 Electro③",
+      "label": "#11 [🤖Electro / 130 BPM] 2000s渋谷系テクノポップ・Chiptune・ケロケロ声",
+      "short_label": "130 BPM / 2000s渋谷系テクノポップ・Chiptune・ケロケロAutoTune",
+      "adlib_hooks": [
+        "(トゥルトゥル ならす)",
+        "(ワン ツースリー)",
+        "(くるくる ループ)"
+      ],
+      "foley_visual_props": "retro portable game console, flip phone or translucent Y2K headphones, pop holographic stickers",
+      "sound_aesthetic_tag": "2000s Shibuya-kei futuristic technopop vibe, glossy Y2K cyber pastel aesthetic",
+      "raw_native_prompt": "Japanese Kawaii Electro Pop, 2000s Japanese futuristic technopop, Chiptune Trap. Bright 8-bit synth arpeggios, vocoder robot accents, bouncy electro bassline, snappy electronic claps, crisp quantized hi-hats, nostalgic Shibuya-kei electronic vibe. Cute robotic autotuned Japanese female vocals, deadpan sweet delivery with fast rhythmic techno-rap phrasing and super catchy repeating melodic hook, 130 bpm.",
+      "cluster_name": "⚡ Cluster D: 2000s渋谷系・ネオン電子音スパイス (128-130 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Electro Pop, 2000s Japanese futuristic technopop",
+        "S2_Beat": "Chiptune Trap",
+        "S3_Chords": "Bright 8-bit synth arpeggios",
+        "S4_Foley": "vocoder robot accents, retro game bleeps",
+        "S5_Bass": "bouncy electro bassline",
+        "S6_Drums": "snappy electronic claps, crisp quantized hi-hats",
+        "S7_Aesthetic": "nostalgic Shibuya-kei electronic vibe",
+        "S8_Vocal": "Cute robotic autotuned Japanese female vocals, deadpan sweet delivery",
+        "S9_Rap": "fast rhythmic techno-rap phrasing",
+        "S10_Hook": "super catchy repeating melodic hook",
+        "S11_BPM": 130
+      }
+    },
+    {
+      "id": 12,
+      "bpm": 128,
+      "baseKey": "kawaii_electro_pop",
+      "cluster_id": "Cluster_D_Neon_Electro_Spice",
+      "cluster_label": "🤖 Electro③",
+      "label": "#12 [🤖Electro / 128 BPM] 雨のネオン街・Electro House・ディスコベース",
+      "short_label": "128 BPM / 雨のネオン街・Electro House・ディスコベース",
+      "adlib_hooks": [
+        "(ネオンが ゆれる)",
+        "(ステップ ふんで)",
+        "(Dancin in the night)"
+      ],
+      "foley_visual_props": "neon puddles reflecting on wet city pavement, glowing vending machine in rainy night, stylish earphones",
+      "sound_aesthetic_tag": "glossy futuristic rainy night aesthetic, vibrant magenta and cyan neon reflections",
+      "raw_native_prompt": "Japanese Kawaii Electro House, playful Melodic Club Pop. Heavy sidechain compressed sawtooth synth chords, punchy four-on-the-floor kick, sparkly FM synth bells, filtered disco bass, glossy futuristic rainy night aesthetic. Cute processed Japanese female vocals with crisp rhythmic techno delivery and soaring melodic electro hook, 128 bpm.",
+      "cluster_name": "⚡ Cluster D: 2000s渋谷系・ネオン電子音スパイス (128-130 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Electro House",
+        "S2_Beat": "playful Melodic Club Pop, punchy four-on-the-floor kick",
+        "S3_Chords": "Heavy sidechain compressed sawtooth synth chords, sparkly FM synth bells",
+        "S4_Foley": "rainy neon street ambiance",
+        "S5_Bass": "filtered disco bass",
+        "S6_Drums": "punchy four-on-the-floor kick, crisp quantized hi-hats",
+        "S7_Aesthetic": "glossy futuristic rainy night aesthetic",
+        "S8_Vocal": "Cute processed Japanese female vocals",
+        "S9_Rap": "crisp rhythmic techno delivery",
+        "S10_Hook": "soaring melodic electro hook",
+        "S11_BPM": 128
+      }
+    },
+    {
+      "id": 13,
+      "bpm": 124,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#13 [🍰Bedroom / 124 BPM] 冬の部屋・レコードノイズ・フェルトピアノ",
+      "short_label": "124 BPM / 冬の部屋・レコードノイズ・フェルトピアノ",
+      "adlib_hooks": [
+        "(パチパチ ゆれる)",
+        "(あったかい ココア)",
+        "(ぎゅっと してて)"
+      ],
+      "foley_visual_props": "holding a warm mug of hot cocoa with both hands, oversized knit sweater sleeves, snow outside window",
+      "sound_aesthetic_tag": "cozy winter bedroom warmth, soft vinyl crackle mood, gentle amber indoor lighting",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy winter lo-fi trap beat. Warm felt piano chords, cozy vinyl crackle texture, deep lazy 808 sub-bass, snappy acoustic snare, crisp hi-hat rolls, pastel late-night aesthetic, cozy nocturnal warmth. Soft, sleepy, cute Japanese female vocals with smooth relaxed rhythmic rap phrasing and catchy bittersweet melodic hook, 124 bpm.",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy winter lo-fi trap beat",
+        "S3_Chords": "Warm felt piano chords",
+        "S4_Foley": "cozy vinyl crackle texture",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hat rolls",
+        "S7_Aesthetic": "pastel late-night aesthetic, cozy nocturnal warmth",
+        "S8_Vocal": "Soft, sleepy, cute Japanese female vocals",
+        "S9_Rap": "smooth relaxed rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 124
+      }
+    },
+    {
+      "id": 14,
+      "bpm": 125,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_B_Rainy_Nostalgic_Dusk",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#14 [🍰Bedroom / 125 BPM] 冬の帰り道・ローズピアノ・ソフト808",
+      "short_label": "125 BPM / 冬の帰り道・ローズピアノ・ソフト808",
+      "adlib_hooks": [
+        "(しろい といき)",
+        "(かじかむ ゆびさき)",
+        "(もうちょっと だけ)"
+      ],
+      "foley_visual_props": "plaid muffler wrapped around neck, white breath in cold winter air, glowing streetlamps at dusk",
+      "sound_aesthetic_tag": "cozy winter street aesthetic, nostalgic twilight snow illumination, soft cinematic bokeh",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy adolescent lo-fi trap beat. Warm rhodes chords, sweet vinyl crackle texture, deep soft 808 sub-bass, snappy acoustic snare, crisp hi-hat rolls, cozy winter street aesthetic. Soft, breathy, cute Japanese female vocals with smooth playful rhythmic rap phrasing and catchy bittersweet melodic hook, 125 bpm.",
+      "cluster_name": "🌧️ Cluster B: 雨音・帰り道・ノスタルジー (125-126 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy adolescent lo-fi trap beat",
+        "S3_Chords": "Warm rhodes chords",
+        "S4_Foley": "sweet vinyl crackle texture",
+        "S5_Bass": "deep soft 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hat rolls",
+        "S7_Aesthetic": "cozy winter street aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "smooth playful rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 125
+      }
+    },
+    {
+      "id": 15,
+      "bpm": 123,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#15 [🍰Bedroom / 123 BPM] 深夜ダイナー・エレピ・氷グラスFoley・切ないフック",
+      "short_label": "123 BPM / 深夜ダイナー・エレピ・氷グラスFoley・切ないフック",
+      "adlib_hooks": [
+        "(カランコロン ならす)",
+        "(とけちゃう まえに)",
+        "(ねぇ こっちみて)"
+      ],
+      "foley_visual_props": "stirring ice cubes in glass with a straw, cozy diner window seat at midnight, soft neon bokeh",
+      "sound_aesthetic_tag": "pastel late-night diner aesthetic, bittersweet lo-fi warmth, intimate close-up",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy midnight diner lo-fi trap beat. Warm electric piano chords, soft vinyl crackle texture, deep lazy 808 sub-bass, snappy acoustic snare, crisp hi-hat rolls, ice glass Foley sounds, pastel late-night diner aesthetic. Soft, breathy, cute Japanese female vocals with smooth playful rhythmic rap phrasing and catchy bittersweet melodic hook, 123 bpm.",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy midnight diner lo-fi trap beat",
+        "S3_Chords": "Warm electric piano chords",
+        "S4_Foley": "soft vinyl crackle texture, ice glass Foley sounds",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hat rolls",
+        "S7_Aesthetic": "pastel late-night diner aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "smooth playful rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 123
+      }
+    },
+    {
+      "id": 16,
+      "bpm": 126,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_E_Dark_Fairytale_Ruins",
+      "cluster_label": "🥀 Ruins⑤",
+      "cluster_name": "🥀 Cluster E: 廃墟・アンティーク・ダークメルヘン (124-126 BPM)",
+      "label": "#16 [🥀Ruins / 126 BPM] 廃墟オルゴール・時計秒針Foley・アンティークピアノ",
+      "short_label": "126 BPM / 廃墟オルゴール・時計秒針Foley",
+      "adlib_hooks": [
+        "(チクタク まわる)",
+        "(きえないで ね)",
+        "(ぽつんと ひとり)"
+      ],
+      "foley_visual_props": "antique music box with brass gears, dusty clock hands ticking on abandoned wall, dried flowers in glass dome",
+      "sound_aesthetic_tag": "melancholic abandoned ruins aesthetic, moody desaturated lighting, dusty light rays through broken window",
+      "raw_native_prompt": "Cute Japanese dark fairytale bedroom pop, hauntingly beautiful lo-fi trap beat. Delicate antique music box plucks, dusty felt piano chords, subtle clock ticking Foley textures, deep lazy 808 sub-bass, snappy acoustic snare, crisp stereo hi-hat rolls, melancholic abandoned ruins aesthetic. Soft, fragile, cute Japanese female vocals with smooth whispered rhythmic rap phrasing and catchy bittersweet melodic hook, 126 bpm.",
+      "slots": {
+        "S1_Genre": "Cute Japanese dark fairytale bedroom pop",
+        "S2_Beat": "hauntingly beautiful lo-fi trap beat",
+        "S3_Chords": "Delicate antique music box plucks, dusty felt piano chords",
+        "S4_Foley": "subtle clock ticking Foley textures",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp stereo hi-hat rolls",
+        "S7_Aesthetic": "melancholic abandoned ruins aesthetic",
+        "S8_Vocal": "Soft, fragile, cute Japanese female vocals",
+        "S9_Rap": "smooth whispered rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 126
+      }
+    },
+    {
+      "id": 17,
+      "bpm": 124,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_E_Dark_Fairytale_Ruins",
+      "cluster_label": "🕯️ Castle⑤",
+      "cluster_name": "🕯️ Cluster E: 古城・書斎・ゴシックアカデミア (124 BPM)",
+      "label": "#17 [🕯️Castle / 124 BPM] 古城チェンバロ・万年筆Foley・ゴシックトラップ",
+      "short_label": "124 BPM / 古城チェンバロ・万年筆Foley",
+      "adlib_hooks": [
+        "(サラサラ かくよ)",
+        "(ひみつの ことば)",
+        "(ルルララ うたう)"
+      ],
+      "foley_visual_props": "fountain pen with gold nib writing on parchment paper, flickering candlelight on antique oak desk, vintage leather-bound books",
+      "sound_aesthetic_tag": "moonlit antique library aesthetic, warm flickering candle glow, deep velvety shadows",
+      "raw_native_prompt": "Japanese Kawaii Gothic Melodic Trap, classical dark academia bedroom pop. Sparkling harpsichord arpeggios, mournful chamber cello accents, fountain pen writing on paper Foley sounds, bouncy 808 sub-bass, snappy claps, crisp hi-hat rolls, moonlit antique library aesthetic. Soft, breathy, cute Japanese female vocals with rapid playful rhythmic rap delivery and dramatic emotional melodic hook, 124 bpm.",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Gothic Melodic Trap",
+        "S2_Beat": "classical dark academia bedroom pop, Melodic Trap",
+        "S3_Chords": "Sparkling harpsichord arpeggios, mournful chamber cello accents",
+        "S4_Foley": "fountain pen writing on paper Foley sounds",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hat rolls",
+        "S7_Aesthetic": "moonlit antique library aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "rapid playful rhythmic rap delivery",
+        "S10_Hook": "dramatic emotional melodic hook",
+        "S11_BPM": 124
+      }
+    },
+    {
+      "id": 18,
+      "bpm": 132,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌌 Celestial②",
+      "cluster_name": "🌌 Cluster A: 星海・神秘・クリスタル (132 BPM)",
+      "label": "#18 [🌌Celestial / 132 BPM] 星海クリスタル・水面波紋Foley・浮遊FutureBass",
+      "short_label": "132 BPM / 星海クリスタル・水面波紋Foley",
+      "adlib_hooks": [
+        "(きらきら ゆれる)",
+        "(ほしまで とどけ)",
+        "(ふわりと うかぶ)"
+      ],
+      "foley_visual_props": "stargazing binoculars or glowing glass lantern, ripples on night water reflecting Milky Way, luminous floating sparkles",
+      "sound_aesthetic_tag": "mystical starry night aesthetic, deep indigo sky and luminous cyan starlight, ethereal dreamlike bloom",
+      "raw_native_prompt": "Japanese Kawaii Ethereal Future Bass, dreamy celestial Melodic Trap. Shimmering crystal glass plucks, warm ambient synth pads, gentle water ripple textures, bouncy 808 sub-bass, snappy claps, crisp hi-hat rolls, mystical starry night aesthetic. Soft, airy, cute Japanese female vocals with smooth floating rhythmic rap phrasing and soaring sing-along melodic chorus, 132 bpm.",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Ethereal Future Bass",
+        "S2_Beat": "dreamy celestial Melodic Trap",
+        "S3_Chords": "Shimmering crystal glass plucks, warm ambient synth pads",
+        "S4_Foley": "gentle water ripple textures",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hat rolls",
+        "S7_Aesthetic": "mystical starry night aesthetic",
+        "S8_Vocal": "Soft, airy, cute Japanese female vocals",
+        "S9_Rap": "smooth floating rhythmic rap phrasing",
+        "S10_Hook": "soaring sing-along melodic chorus",
+        "S11_BPM": 132
+      }
+    },
+    {
+      "id": 19,
+      "bpm": 128,
+      "baseKey": "kawaii_electro_pop",
+      "cluster_id": "Cluster_D_Neon_Electro_Spice",
+      "cluster_label": "🏎️ Highway③",
+      "cluster_name": "🏎️ Cluster D: 湾岸・ハイウェイ・アーバンシティ (128 BPM)",
+      "label": "#19 [🏎️Highway / 128 BPM] 湾岸ミッドナイト・ヴィンテージエレピ・ハイウェイトラップ",
+      "short_label": "128 BPM / 湾岸ミッドナイト・ハイウェイトラップ",
+      "adlib_hooks": [
+        "(ビュンビュン はしる)",
+        "(ネオンの かなた)",
+        "(つれてって ね)"
+      ],
+      "foley_visual_props": "car dashboard glowing through rainy windshield, stream of red and white taillights, passenger side mirror reflecting city skyline",
+      "sound_aesthetic_tag": "nostalgic midnight drive aesthetic, cinematic anamorphic lens flares, slick wet asphalt reflections",
+      "raw_native_prompt": "Cute Japanese midnight city pop trap, sleek urban highway lo-fi beat. Glossy vintage electric piano chords, groovy synth bass + deep 808 sub-bass, snappy electronic claps, crisp hi-hat rolls, passing streetlights and wet asphalt ambiance, nostalgic midnight drive aesthetic. Soft, cool, breathy Japanese female vocals with tight rhythmic rap phrasing and catchy bittersweet melodic hook, 128 bpm.",
+      "slots": {
+        "S1_Genre": "Cute Japanese midnight city pop trap",
+        "S2_Beat": "sleek urban highway lo-fi beat",
+        "S3_Chords": "Glossy vintage electric piano chords",
+        "S4_Foley": "passing streetlights and wet asphalt ambiance",
+        "S5_Bass": "groovy synth bass + deep 808 sub-bass",
+        "S6_Drums": "snappy electronic claps, crisp hi-hat rolls",
+        "S7_Aesthetic": "nostalgic midnight drive aesthetic",
+        "S8_Vocal": "Soft, cool, breathy Japanese female vocals",
+        "S9_Rap": "tight rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 128
+      }
+    },
+    {
+      "id": 20,
+      "bpm": 135,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "☣️ Climax②",
+      "cluster_name": "☣️ Cluster A: 終末・嵐・ディストピアOST (135 BPM)",
+      "label": "#20 [☣️Climax / 135 BPM] 終末クライマックス・Supersaw・嵐ノイズFoley",
+      "short_label": "135 BPM / 終末クライマックス・嵐ノイズFoley",
+      "adlib_hooks": [
+        "(ザーザー ふるね)",
+        "(きこえて いますか)",
+        "(はしりぬける よ)"
+      ],
+      "foley_visual_props": "heavy raindrops hitting concrete, windblown yellow warning tape, dramatic lightning flash silhouetting industrial structure",
+      "sound_aesthetic_tag": "cinematic post-apocalyptic anime OST aesthetic, high contrast storm lighting, intense atmospheric rim lights",
+      "raw_native_prompt": "Japanese Kawaii Dystopian Future Bass, emotional Melodic Trap. Bright dramatic supersaw leads, melancholic piano counter-melody, faint radio static and rainstorm Foley textures, powerful 808 sub-bass, energetic halftime beat, crisp hi-hat rolls, cinematic post-apocalyptic anime OST aesthetic. Soft, cute, emotional Japanese female vocals with rapid rhythmic rap delivery and soaring heart-wrenching melodic chorus, 135 bpm.",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Dystopian Future Bass",
+        "S2_Beat": "emotional Melodic Trap, energetic halftime beat",
+        "S3_Chords": "Bright dramatic supersaw leads, melancholic piano counter-melody",
+        "S4_Foley": "faint radio static and rainstorm Foley textures",
+        "S5_Bass": "powerful 808 sub-bass",
+        "S6_Drums": "energetic halftime beat, crisp hi-hat rolls",
+        "S7_Aesthetic": "cinematic post-apocalyptic anime OST aesthetic",
+        "S8_Vocal": "Soft, cute, emotional Japanese female vocals",
+        "S9_Rap": "rapid rhythmic rap delivery",
+        "S10_Hook": "soaring heart-wrenching melodic chorus",
+        "S11_BPM": 135
+      }
+    }
+  ],
+  "total_themes": 140,
+  "categories": [
+    {
+      "category_id": "cat_01_bright_youth",
+      "category": "☀️ 【明るい・アオハル・恋・ときめき】",
+      "default_golden_ids": [
+        4,
+        5,
+        6,
+        9
+      ],
+      "items": [
+        {
+          "id": "mv_001",
+          "label": "🏃‍♀️ 部活帰りの夕暮れ坂道（彼氏と歩く帰り道・並ぶ影・少し触れる手と照れ笑い）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            9,
+            4,
+            2
+          ]
+        },
+        {
+          "id": "mv_002",
+          "label": "🍫 キッチンで手作りバレンタインチョコ（甘いカカオの香り・湯煎のボウル・エプロン姿とドキドキ）",
+          "default_golden_id": 5,
+          "compatible_golden_ids": [
+            5,
+            4,
+            2,
+            13
+          ]
+        },
+        {
+          "id": "mv_003",
+          "label": "🏫 文化祭前日の教室の居残り（段ボールの看板・絵の具の匂い・二人きりの買い出し）",
+          "default_golden_id": 4,
+          "compatible_golden_ids": [
+            4,
+            5,
+            6,
+            2
+          ]
+        },
+        {
+          "id": "mv_004",
+          "label": "📖 放課後の図書室の窓際（差し込む西日・机の下で重なる足・秘密の合図）",
+          "default_golden_id": 2,
+          "compatible_golden_ids": [
+            2,
+            6,
+            3,
+            4
+          ]
+        },
+        {
+          "id": "mv_005",
+          "label": "🌸 満開の桜の下の待ち合わせ（揺れる制服のスカート・舞い散る花びら・駆け寄ってくる笑顔）",
+          "default_golden_id": 4,
+          "compatible_golden_ids": [
+            4,
+            5,
+            6,
+            9
+          ]
+        },
+        {
+          "id": "mv_006",
+          "label": "🏊 夏休み初日の早朝プール（キラキラ光る水面・白い水着・飛び込む水しぶきと笑い声）",
+          "default_golden_id": 5,
+          "compatible_golden_ids": [
+            5,
+            4,
+            9
+          ]
+        },
+        {
+          "id": "mv_007",
+          "label": "🎆 花火大会の帰り道（慣れない下駄の音・浴衣の裾・つないだ手と提灯の明かり）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            9,
+            2,
+            4
+          ]
+        },
+        {
+          "id": "mv_008",
+          "label": "👟 新学期の朝の通学路（真新しいスニーカー・爽やかな青空・曲がり角での偶然の出会い）",
+          "default_golden_id": 4,
+          "compatible_golden_ids": [
+            4,
+            5,
+            6,
+            9
+          ]
+        },
+        {
+          "id": "mv_009",
+          "label": "🍦 屋上の青空と分け合うアイス（突き抜ける青・ソーダ味のアイスバー・笑い合う二人）",
+          "default_golden_id": 5,
+          "compatible_golden_ids": [
+            5,
+            4,
+            9,
+            6
+          ]
+        },
+        {
+          "id": "mv_010",
+          "label": "🌈 雨上がりのグラウンドと虹（部活の掛け声・濡れた土の匂い・空にかかる七色のアーチ）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            6,
+            4,
+            8
+          ]
+        },
+        {
+          "id": "mv_011",
+          "label": "🥖 お昼休みの購買ダッシュ（人気の焼きそばパン・廊下を走る足音・友達との大笑い）",
+          "default_golden_id": 4,
+          "compatible_golden_ids": [
+            4,
+            5,
+            11
+          ]
+        },
+        {
+          "id": "mv_012",
+          "label": "🧣 冬のイルミネーションとマフラー（白い息・かじかむ指先・一つのポケットで握る手）",
+          "default_golden_id": 14,
+          "compatible_golden_ids": [
+            14,
+            13,
+            2,
+            9
+          ]
+        },
+        {
+          "id": "mv_013",
+          "label": "🚲 自転車の二人乗りと河川敷（背中に伝わる体温・風をはらむ制服シャツ・夕焼けの土手）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            6,
+            4,
+            5
+          ]
+        },
+        {
+          "id": "mv_014",
+          "label": "📣 体育祭の応援合戦（舞うメガホン・青空に響く歓声・目が合って照れるハイタッチ）",
+          "default_golden_id": 5,
+          "compatible_golden_ids": [
+            5,
+            4,
+            9
+          ]
+        },
+        {
+          "id": "mv_015",
+          "label": "🎧 音楽室でイヤホンの半分こ（好きなバンドの曲・肩が触れ合う近さ・高鳴る鼓動）",
+          "default_golden_id": 2,
+          "compatible_golden_ids": [
+            2,
+            3,
+            4,
+            6
+          ]
+        },
+        {
+          "id": "mv_016",
+          "label": "📝 試験終わりのカラオケボックス（タンバリンのリズム・歌い疲れた笑顔・解き放たれる放課後）",
+          "default_golden_id": 5,
+          "compatible_golden_ids": [
+            5,
+            4,
+            11
+          ]
+        },
+        {
+          "id": "mv_017",
+          "label": "💌 卒業式前日の誰もいない体育館（跳び箱に座って話す二人・夕暮れの斜光・言えない想い）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            9,
+            2
+          ]
+        },
+        {
+          "id": "mv_018",
+          "label": "🌂 相合傘の帰り道（狭い傘の下・濡れる外側の肩・水たまりをよける一歩）",
+          "default_golden_id": 8,
+          "compatible_golden_ids": [
+            8,
+            2,
+            6
+          ]
+        },
+        {
+          "id": "mv_019",
+          "label": "🌻 夏祭りの射的と金魚すくい（すくえないポイ・笑い転げる二人・りんご飴の甘い匂い）",
+          "default_golden_id": 5,
+          "compatible_golden_ids": [
+            5,
+            4,
+            6
+          ]
+        },
+        {
+          "id": "mv_020",
+          "label": "🌤️ 始発で出かける朝焼けの海（まだ冷たい砂浜・スニーカーを脱いで走る波打ち際・青春の光）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            6,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "category_id": "cat_02_daily_sweets",
+      "category": "🍰 【日常・おうち時間・甘いスイーツ】",
+      "default_golden_ids": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        13
+      ],
+      "items": [
+        {
+          "id": "mv_021",
+          "label": "🥞 休日の朝のふかふかホットケーキ（立ちのぼる甘い湯気・バターとメープルシロップ・パジャマ姿）",
+          "default_golden_id": 5,
+          "compatible_golden_ids": [
+            5,
+            4,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "mv_022",
+          "label": "🍓 日曜日の手作りいちごタルト（真っ赤ないちご・泡立てるホイップクリーム・つまみ食いの笑顔）",
+          "default_golden_id": 5,
+          "compatible_golden_ids": [
+            5,
+            4,
+            2
+          ]
+        },
+        {
+          "id": "mv_023",
+          "label": "🥐 お気に入りのベーカリー巡り（焼きたてクロワッサン・紙袋を抱えて歩く並木道・弾む足取り）",
+          "default_golden_id": 4,
+          "compatible_golden_ids": [
+            4,
+            5,
+            6,
+            3
+          ]
+        },
+        {
+          "id": "mv_024",
+          "label": "🐱 陽だまりのリビングと愛猫（差し込む暖かい光・すやすや眠る猫・淹れたてのミルクティー）",
+          "default_golden_id": 2,
+          "compatible_golden_ids": [
+            2,
+            3,
+            7,
+            13
+          ]
+        },
+        {
+          "id": "mv_025",
+          "label": "🍊 こたつとみかんの冬休み（ぬくぬくの毛布・テレビのお正月特番・のんびり家族の時間）",
+          "default_golden_id": 13,
+          "compatible_golden_ids": [
+            13,
+            7,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "mv_026",
+          "label": "🌿 バルコニーのミニガーデニング（ジョウロから注ぐ水滴・キラキラ光るハーブの若葉・爽やかな朝風）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            4,
+            5,
+            2
+          ]
+        },
+        {
+          "id": "mv_027",
+          "label": "🍿 お泊まり会の深夜パジャマパーティー（広げたお菓子・恋バナで盛り上がる部屋・クッション投げ）",
+          "default_golden_id": 2,
+          "compatible_golden_ids": [
+            2,
+            7,
+            4,
+            5,
+            11
+          ]
+        },
+        {
+          "id": "mv_028",
+          "label": "🍪 雨の日のクッキー作り（オーブンのオレンジ色の光・香ばしい焼き上がり・アイシングのデコレーション）",
+          "default_golden_id": 8,
+          "compatible_golden_ids": [
+            8,
+            13,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "mv_029",
+          "label": "☕ 朝のフレンチトーストと淹れたてコーヒー（シナモンの香り・窓辺の観葉植物・やわらかな朝の光）",
+          "default_golden_id": 3,
+          "compatible_golden_ids": [
+            3,
+            2,
+            6,
+            4
+          ]
+        },
+        {
+          "id": "mv_030",
+          "label": "👗 お気に入りの古着コーデでお出かけ（鏡の前でファッションショー・選ぶベレー帽・ウキウキの休日）",
+          "default_golden_id": 4,
+          "compatible_golden_ids": [
+            4,
+            5,
+            3,
+            11
+          ]
+        },
+        {
+          "id": "mv_031",
+          "label": "🧸 お気に入りのぬいぐるみと読書（ふかふかのクッション・温かいほうじ茶ラテ・穏やかな午後）",
+          "default_golden_id": 7,
+          "compatible_golden_ids": [
+            7,
+            2,
+            13,
+            1
+          ]
+        },
+        {
+          "id": "mv_032",
+          "label": "🧼 休日のシーツ洗濯とお日様の匂い（青空にはためく真っ白なシーツ・柔軟剤のやさしい香り）",
+          "default_golden_id": 4,
+          "compatible_golden_ids": [
+            4,
+            5,
+            6,
+            9
+          ]
+        },
+        {
+          "id": "mv_033",
+          "label": "🍮 昔ながらの喫茶店のプリンアラモード（ほろ苦いカラメル・真っ赤なチェリー・銀の器）",
+          "default_golden_id": 3,
+          "compatible_golden_ids": [
+            3,
+            10,
+            15,
+            2
+          ]
+        },
+        {
+          "id": "mv_034",
+          "label": "🛁 お気に入りのバスボムと泡風呂（ラベンダーの香り・ゆったり溶けるグラデーション・自分へのご褒美）",
+          "default_golden_id": 7,
+          "compatible_golden_ids": [
+            7,
+            2,
+            13
+          ]
+        },
+        {
+          "id": "mv_035",
+          "label": "🍯 焼きたてアップルパイのシナモン（サクサクのパイ生地・煮込んだリンゴの甘酸っぱさ・冬のおやつ）",
+          "default_golden_id": 13,
+          "compatible_golden_ids": [
+            13,
+            3,
+            2,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "category_id": "cat_03_holiday_festival_pop",
+      "category": "🏖️ 【休日おでかけ・フェス・ポップ】",
+      "default_golden_ids": [
+        4,
+        5,
+        6,
+        9,
+        11
+      ],
+      "items": [
+        {
+          "id": "mv_036",
+          "label": "🚗 海沿いの海岸通りドライブ（オープンカー・弾ける炭酸ソーダ・流れるサマーアンセム）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            5,
+            4,
+            6
+          ]
+        },
+        {
+          "id": "mv_037",
+          "label": "🎠 遊園地のメリーゴーランド（きらめくイルミネーション・パステルカラーの木馬・笑顔のシャッター）",
+          "default_golden_id": 4,
+          "compatible_golden_ids": [
+            4,
+            5,
+            11,
+            9
+          ]
+        },
+        {
+          "id": "mv_038",
+          "label": "🎪 野外音楽フェスの青空ステージ（芝生に響くキック音・掲げる両手・吹き抜ける風）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            5,
+            4,
+            6
+          ]
+        },
+        {
+          "id": "mv_039",
+          "label": "🌻 ひまわり畑の真ん中で（どこまでも続く黄色い絨毯・麦わら帽子・入道雲と太陽）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "id": "mv_040",
+          "label": "⛺ キャンプファイヤーと焼きマシュマロ（パチパチ爆ぜる薪・とろけるマシュマロ・アコースティックギター）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            3,
+            7,
+            13
+          ]
+        },
+        {
+          "id": "mv_041",
+          "label": "🛫 朝一番の空港展望デッキ（飛び立つ白い飛行機・澄み渡る青空・新しい旅への高鳴り）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "id": "mv_042",
+          "label": "🕹️ ネオンきらめく夜のゲームセンター（クレーンゲームの景品・コインの落ちる音・取れた瞬間の歓声）",
+          "default_golden_id": 11,
+          "compatible_golden_ids": [
+            11,
+            12,
+            4,
+            5
+          ]
+        },
+        {
+          "id": "mv_043",
+          "label": "🐬 水族館のイルカショー（水しぶきのアーチ・宙を舞うイルカ・歓声と拍手）",
+          "default_golden_id": 5,
+          "compatible_golden_ids": [
+            5,
+            4,
+            9,
+            6
+          ]
+        },
+        {
+          "id": "mv_044",
+          "label": "🏄‍♀️ サンセットビーチのSUPクルージング（黄金色に染まる海面・パドルを漕ぐシルエット・波のさざめき）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            6,
+            2
+          ]
+        },
+        {
+          "id": "mv_045",
+          "label": "🍨 レトロポップなアメリカンダイナー（チェリーののったソーダフロート・チェッカータイルの床・ジュークボックス）",
+          "default_golden_id": 10,
+          "compatible_golden_ids": [
+            10,
+            15,
+            3,
+            11
+          ]
+        },
+        {
+          "id": "mv_046",
+          "label": "🎡 観覧車の頂上からの大パノラマ（小さく見える街並み・二人きりのゴンドラ・夕日のグラデーション）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            6,
+            2,
+            4
+          ]
+        },
+        {
+          "id": "mv_047",
+          "label": "🛹 夕暮れのスケートパーク（コンクリートのボウル・オーリーの乾いた音・ストリートカルチャー）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            9,
+            3,
+            11
+          ]
+        },
+        {
+          "id": "mv_048",
+          "label": "🛍️ 原宿・キャットストリート散策（カラフルなスイーツ・個性的なファッション・弾む会話）",
+          "default_golden_id": 11,
+          "compatible_golden_ids": [
+            11,
+            4,
+            5,
+            3
+          ]
+        },
+        {
+          "id": "mv_049",
+          "label": "🎿 白銀のスキーリゾート（パウダースノーのシュプール・ゴーグル越しの晴天・山小屋の温かいスープ）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            4,
+            14,
+            13
+          ]
+        },
+        {
+          "id": "mv_050",
+          "label": "🏮 賑やかな台湾夜市の屋台（立ちのぼる小籠包の湯気・赤い提灯・行き交う人々の活気）",
+          "default_golden_id": 19,
+          "compatible_golden_ids": [
+            19,
+            12,
+            11
+          ]
+        }
+      ]
+    },
+    {
+      "category_id": "cat_04_emo_twilight_nostalgia",
+      "category": "🌆 【エモい・黄昏・ノスタルジー】",
+      "default_golden_ids": [
+        2,
+        3,
+        6,
+        9,
+        14
+      ],
+      "items": [
+        {
+          "id": "mv_051",
+          "label": "🥖 夕暮れの商店街（お惣菜のいい匂い・伸びる影・店じまいのシャッター音）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            3,
+            14,
+            2
+          ]
+        },
+        {
+          "id": "mv_052",
+          "label": "🥪 昭和レトロな洋食店（ネルドリップの香り・使い込まれた革張りソファ・琥珀色の光）",
+          "default_golden_id": 3,
+          "compatible_golden_ids": [
+            3,
+            10,
+            15,
+            13
+          ]
+        },
+        {
+          "id": "mv_053",
+          "label": "🎶 レコードが鳴る古民家カフェ（針のプチプチ音・埃が踊る午後の日差し・琥珀色の世界）",
+          "default_golden_id": 3,
+          "compatible_golden_ids": [
+            3,
+            13,
+            2,
+            6
+          ]
+        },
+        {
+          "id": "mv_054",
+          "label": "📚 西日の差す古書店（高く積まれた本棚・紙とインクの匂い・静かなページめくり）",
+          "default_golden_id": 3,
+          "compatible_golden_ids": [
+            3,
+            2,
+            6,
+            1
+          ]
+        },
+        {
+          "id": "mv_055",
+          "label": "🎞️ フィルムカメラと街角（現像所のカウンター・色褪せたスナップ写真・過去の記憶）",
+          "default_golden_id": 3,
+          "compatible_golden_ids": [
+            3,
+            6,
+            2,
+            14
+          ]
+        },
+        {
+          "id": "mv_056",
+          "label": "🌆 ビルの屋上・街を見下ろす微風（茜色に染まる街並み・静かに揺れるスカート・夕凪）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            6,
+            2
+          ]
+        },
+        {
+          "id": "mv_057",
+          "label": "🚦 オレンジ色に染まる踏切（カンカンと響く警報機・通り過ぎる電車の風・見送る背中）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            9,
+            14,
+            2
+          ]
+        },
+        {
+          "id": "mv_058",
+          "label": "🌉 黄昏時の歩道橋（行き交う車のヘッドライト・紫と橙のマジックアワー・佇むシルエット）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            6,
+            14,
+            12
+          ]
+        },
+        {
+          "id": "mv_059",
+          "label": "🌾 夕焼け空を映す田んぼ（水鏡に映る茜色の雲・遠くの電柱・カエルの合唱）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            9,
+            3
+          ]
+        },
+        {
+          "id": "mv_060",
+          "label": "⚓ 潮風香る港町の夕暮れ（船の汽笛・オレンジ色に輝く波頭・防波堤に座る二人）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            6,
+            3
+          ]
+        },
+        {
+          "id": "mv_061",
+          "label": "🍮 木漏れ日の甘味処（緑茶の湯気・木製のテーブル・風鈴の微かな音）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            3,
+            2
+          ]
+        },
+        {
+          "id": "mv_062",
+          "label": "🪑 路地裏のベンチ（日向ぼっこの野良猫・ひび割れたアスファルト・穏やかな停滞）",
+          "default_golden_id": 3,
+          "compatible_golden_ids": [
+            3,
+            6,
+            2
+          ]
+        },
+        {
+          "id": "mv_063",
+          "label": "🥞 静かな休日のブランチ（シロップの滴るパンケーキ・やわらかな陽光・何もしない午後）",
+          "default_golden_id": 2,
+          "compatible_golden_ids": [
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "id": "mv_064",
+          "label": "🍞 朝のベーカリーの温もり（焼きたてパンの香ばしさ・ガラス越しの朝日・開店の合図）",
+          "default_golden_id": 4,
+          "compatible_golden_ids": [
+            4,
+            5,
+            3,
+            6
+          ]
+        },
+        {
+          "id": "mv_065",
+          "label": "🚃 夕暮れのローカル線（ガタゴト揺れる車内・オレンジ色の車窓・のどかな田園風景）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            3,
+            9,
+            14
+          ]
+        },
+        {
+          "id": "mv_066",
+          "label": "🌾 秋風そよぐ黄金色の稲穂（夕日に輝く田園風景・赤とんぼ・里山の静けさ）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            9,
+            3
+          ]
+        },
+        {
+          "id": "mv_067",
+          "label": "🍁 紅葉が水面に浮かぶ渓谷（赤と黄のグラデーション・清流のせせらぎ・秋の深まり）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            8,
+            3,
+            14
+          ]
+        },
+        {
+          "id": "mv_068",
+          "label": "🍂 落ち葉を踏みしめる並木道（カサカサと鳴る足音・冷たくなってきた空気・初冬の気配）",
+          "default_golden_id": 14,
+          "compatible_golden_ids": [
+            14,
+            6,
+            3,
+            13
+          ]
+        },
+        {
+          "id": "mv_069",
+          "label": "📮 茜色に染まるレトロな丸ポスト（古い瓦屋根・夕暮れの路地・届かなかった手紙）",
+          "default_golden_id": 3,
+          "compatible_golden_ids": [
+            3,
+            6,
+            14,
+            2
+          ]
+        },
+        {
+          "id": "mv_070",
+          "label": "🎸 放課後の音楽室と夕陽（黒板に書かれたコード進行・差し込むオレンジの光・アコギの爪弾き）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            9,
+            3,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "category_id": "cat_05_midnight_chill",
+      "category": "🌙 【深夜・チル・物思い】",
+      "default_golden_ids": [
+        1,
+        7,
+        10,
+        12,
+        13,
+        15
+      ],
+      "items": [
+        {
+          "id": "mv_071",
+          "label": "🌃 深夜2時の部屋（薄暗い間接照明・青白いPC画面・ベッドサイドのチル）",
+          "default_golden_id": 1,
+          "compatible_golden_ids": [
+            1,
+            7,
+            2,
+            13
+          ]
+        },
+        {
+          "id": "mv_072",
+          "label": "🎧 深夜の自販機前（青白い蛍光灯・冷たい缶コーヒー・静まり返った住宅街）",
+          "default_golden_id": 12,
+          "compatible_golden_ids": [
+            12,
+            14,
+            10,
+            15
+          ]
+        },
+        {
+          "id": "mv_073",
+          "label": "🛋️ 夜更かしのワンルーム（床に散らばる漫画・消えかけのテレビ・気だるい時間）",
+          "default_golden_id": 7,
+          "compatible_golden_ids": [
+            7,
+            1,
+            2,
+            3,
+            13
+          ]
+        },
+        {
+          "id": "mv_074",
+          "label": "🌙 ベランダの微風と夜風（冷えた夜気・遠くのサイレン・静かに揺れるTシャツ）",
+          "default_golden_id": 7,
+          "compatible_golden_ids": [
+            7,
+            2,
+            14,
+            15
+          ]
+        },
+        {
+          "id": "mv_075",
+          "label": "🛏️ 午前3時の毛布の中（イヤホン越しの音楽・スマートフォンの明かり・孤独の輪郭）",
+          "default_golden_id": 1,
+          "compatible_golden_ids": [
+            1,
+            7,
+            2,
+            13
+          ]
+        },
+        {
+          "id": "mv_076",
+          "label": "🕯️ 揺れるアロマキャンドル（仄暗い間接照明・漂う煙・思考がほどける静寂）",
+          "default_golden_id": 7,
+          "compatible_golden_ids": [
+            7,
+            13,
+            1,
+            15
+          ]
+        },
+        {
+          "id": "mv_077",
+          "label": "🪟 雨音と深夜の作業机（窓を伝う雫・キーボードの打鍵音・冷めたマグカップ）",
+          "default_golden_id": 1,
+          "compatible_golden_ids": [
+            1,
+            8,
+            7,
+            13
+          ]
+        },
+        {
+          "id": "mv_078",
+          "label": "📻 深夜ラジオのノイズ（ざらついた音声・眠れない夜の同調・薄明かりの灯火）",
+          "default_golden_id": 3,
+          "compatible_golden_ids": [
+            3,
+            1,
+            7,
+            13
+          ]
+        },
+        {
+          "id": "mv_079",
+          "label": "🧊 氷の溶ける音（グラスの結露・夜の渇き・あてもない考え事）",
+          "default_golden_id": 10,
+          "compatible_golden_ids": [
+            10,
+            15,
+            7,
+            1
+          ]
+        },
+        {
+          "id": "mv_080",
+          "label": "🚪 明け方の玄関先（まだ誰も起きていない時間・冷たいドアノブ・朝へのためらい）",
+          "default_golden_id": 7,
+          "compatible_golden_ids": [
+            7,
+            14,
+            8,
+            1
+          ]
+        },
+        {
+          "id": "mv_081",
+          "label": "🚗 都会の夜間ドライブ（雨に濡れた高速道路・流れるテールランプ・首都高）",
+          "default_golden_id": 12,
+          "compatible_golden_ids": [
+            12,
+            10,
+            15,
+            11
+          ]
+        },
+        {
+          "id": "mv_082",
+          "label": "🧺 深夜のコインランドリー（回る洗濯ドラム・漂う洗剤の香り・蛍光灯と外の雨）",
+          "default_golden_id": 15,
+          "compatible_golden_ids": [
+            15,
+            10,
+            8,
+            12,
+            3
+          ]
+        },
+        {
+          "id": "mv_083",
+          "label": "🏎️ 湾岸線のトワイライト（茜色に染まる工場地帯・アクセルを踏み込む瞬間・風切り音）",
+          "default_golden_id": 19,
+          "compatible_golden_ids": [
+            19,
+            12,
+            20
+          ]
+        },
+        {
+          "id": "mv_084",
+          "label": "🛣️ 終電後の大通り（誰もいないセンターライン・残響するエンジン音・冷たい舗装路）",
+          "default_golden_id": 12,
+          "compatible_golden_ids": [
+            12,
+            14,
+            15,
+            10
+          ]
+        },
+        {
+          "id": "mv_085",
+          "label": "⛽ 真夜中のガソリンスタンド（まぶしい白昼色の蛍光灯・静かな給油ノズル・夜間逃避行）",
+          "default_golden_id": 19,
+          "compatible_golden_ids": [
+            19,
+            12,
+            15
+          ]
+        },
+        {
+          "id": "mv_086",
+          "label": "🌉 高架下のパーキングエリア（自販機の列・遠くのビル群の明かり・アイドリング音）",
+          "default_golden_id": 12,
+          "compatible_golden_ids": [
+            12,
+            10,
+            15,
+            11
+          ]
+        },
+        {
+          "id": "mv_087",
+          "label": "🏙️ ガラス張りの展望エレベーター（上昇する夜景・宝石箱のような街並み・静かな加速）",
+          "default_golden_id": 12,
+          "compatible_golden_ids": [
+            12,
+            11,
+            9,
+            15
+          ]
+        },
+        {
+          "id": "mv_088",
+          "label": "🏢 高層ビルの狭間（垂直に切り取られた夜空・見上げる無機質な窓明かり・都会の孤独）",
+          "default_golden_id": 15,
+          "compatible_golden_ids": [
+            15,
+            12,
+            7,
+            11
+          ]
+        },
+        {
+          "id": "mv_089",
+          "label": "🅿️ 地下駐車場のコンクリート（冷徹な蛍光灯・響く足音・柱の影に消える車影）",
+          "default_golden_id": 19,
+          "compatible_golden_ids": [
+            19,
+            12,
+            16
+          ]
+        },
+        {
+          "id": "mv_090",
+          "label": "🚥 深夜の立体交差点（変わり続ける信号機・アスファルトの照り返し・無人の横断歩道）",
+          "default_golden_id": 12,
+          "compatible_golden_ids": [
+            12,
+            11,
+            15,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "category_id": "cat_06_rain_silence_lyricism",
+      "category": "🌧️ 【雨・静寂・哀愁・叙情】",
+      "default_golden_ids": [
+        7,
+        8,
+        12,
+        13,
+        14,
+        15
+      ],
+      "items": [
+        {
+          "id": "mv_091",
+          "label": "☕ 雨の日の純喫茶（曇った窓ガラス・温かい珈琲の湯気・静かな読書）",
+          "default_golden_id": 8,
+          "compatible_golden_ids": [
+            8,
+            10,
+            15,
+            3,
+            13
+          ]
+        },
+        {
+          "id": "mv_092",
+          "label": "🌧️ 軒下の雨宿り（突然の夕立・水たまりの波紋・近すぎる二人の距離）",
+          "default_golden_id": 8,
+          "compatible_golden_ids": [
+            8,
+            2,
+            6
+          ]
+        },
+        {
+          "id": "mv_093",
+          "label": "🫧 青く静かな巨大水族館（泳ぐ魚の群れ・水底に揺れる光の網・深海のような静寂）",
+          "default_golden_id": 7,
+          "compatible_golden_ids": [
+            7,
+            8,
+            2
+          ]
+        },
+        {
+          "id": "mv_094",
+          "label": "🐟 閉館間際のクラゲ水槽（浮遊する透明な命・青と紫のグラデーション・時間の喪失）",
+          "default_golden_id": 7,
+          "compatible_golden_ids": [
+            7,
+            8,
+            12,
+            15
+          ]
+        },
+        {
+          "id": "mv_095",
+          "label": "☂️ ビニール傘越しの街明かり（乱反射するヘッドライト・雨音のベール・ぼやけた輪郭）",
+          "default_golden_id": 8,
+          "compatible_golden_ids": [
+            8,
+            12,
+            15,
+            14
+          ]
+        },
+        {
+          "id": "mv_096",
+          "label": "💧 止みかけの雨とアスファルトの匂い（ペトリコール・雲の切れ間の光・水たまりを踏む音）",
+          "default_golden_id": 8,
+          "compatible_golden_ids": [
+            8,
+            6,
+            9,
+            2
+          ]
+        },
+        {
+          "id": "mv_097",
+          "label": "🚿 ガラス越しに滴る雨水（冷たい指先・外の喧騒を消し去る水音・物思いにふける午後）",
+          "default_golden_id": 8,
+          "compatible_golden_ids": [
+            8,
+            7,
+            1,
+            13
+          ]
+        },
+        {
+          "id": "mv_098",
+          "label": "🚣 霧雨の湖畔（靄に包まれた対岸・静かに揺れる小舟・水滴をまとう水草）",
+          "default_golden_id": 18,
+          "compatible_golden_ids": [
+            18,
+            8,
+            16
+          ]
+        },
+        {
+          "id": "mv_099",
+          "label": "🪞 水たまりに映る逆さの街（鏡のような路面・歪むビル群のシルエット・足元の異世界）",
+          "default_golden_id": 12,
+          "compatible_golden_ids": [
+            12,
+            8,
+            11,
+            6
+          ]
+        },
+        {
+          "id": "mv_100",
+          "label": "🌊 激しい雨と波打つ防波堤（打ち寄せる白波・雨風の轟音・感情の奔流）",
+          "default_golden_id": 20,
+          "compatible_golden_ids": [
+            20,
+            9,
+            18
+          ]
+        },
+        {
+          "id": "mv_101",
+          "label": "🚕 雨の日のタクシー後部座席（窓を流れる街のネオン・反射する水滴・ぼんやり眺める街）",
+          "default_golden_id": 15,
+          "compatible_golden_ids": [
+            15,
+            12,
+            10,
+            8
+          ]
+        },
+        {
+          "id": "mv_102",
+          "label": "❄️ 雪がシンシンと降る街灯の下（オレンジの光に浮かぶ雪粒・足跡・音のない世界）",
+          "default_golden_id": 14,
+          "compatible_golden_ids": [
+            14,
+            13,
+            7
+          ]
+        },
+        {
+          "id": "mv_103",
+          "label": "🌨️ 吹雪のあとの晴れ渡る雪原（真っ白な銀世界・まぶしい青空・純白の静寂）",
+          "default_golden_id": 14,
+          "compatible_golden_ids": [
+            14,
+            9,
+            13,
+            6
+          ]
+        },
+        {
+          "id": "mv_104",
+          "label": "🏙️ 霧が立ち込める早朝の街（まだ誰もいない静まり返った交差点・朝露）",
+          "default_golden_id": 8,
+          "compatible_golden_ids": [
+            8,
+            7,
+            6,
+            14
+          ]
+        },
+        {
+          "id": "mv_105",
+          "label": "🌿 雨上がりの新緑と木漏れ日（瑞々しい若葉・滴る雫・キラキラと輝く森）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            8,
+            4,
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "category_id": "cat_07_starry_nature_seasons",
+      "category": "🌌 【星空・自然・四季の絶景】",
+      "default_golden_ids": [
+        6,
+        7,
+        9,
+        13
+      ],
+      "items": [
+        {
+          "id": "mv_106",
+          "label": "🌌 満天の星空と焚き火（静寂の森・揺らめく小さな炎・火の粉と夜空）",
+          "default_golden_id": 18,
+          "compatible_golden_ids": [
+            18,
+            7,
+            13
+          ]
+        },
+        {
+          "id": "mv_107",
+          "label": "🔭 丘の上の旧天文台（開かれたドーム天井・巨大な望遠鏡・星々の微かな瞬き）",
+          "default_golden_id": 7,
+          "compatible_golden_ids": [
+            7,
+            9,
+            6,
+            3
+          ]
+        },
+        {
+          "id": "mv_108",
+          "label": "⛺ 山頂のテントサイト（眼下に広がる雲海・透き通った星空・吐く息の白さ）",
+          "default_golden_id": 18,
+          "compatible_golden_ids": [
+            18,
+            9,
+            20
+          ]
+        },
+        {
+          "id": "mv_109",
+          "label": "🌲 月光に照らされる針葉樹林（深い青の世界・木漏れ日の月明かり・静まり返った森）",
+          "default_golden_id": 18,
+          "compatible_golden_ids": [
+            18,
+            16,
+            7
+          ]
+        },
+        {
+          "id": "mv_110",
+          "label": "🌠 流れ星と夜の湖畔（鏡のような水面に映る銀河・静かな波紋・神秘的な静寂）",
+          "default_golden_id": 18,
+          "compatible_golden_ids": [
+            18,
+            7,
+            9
+          ]
+        },
+        {
+          "id": "mv_111",
+          "label": "🏜️ 砂漠の夜と天の川（どこまでも続く砂丘・冴えわたる満天の星・冷たい砂の感触）",
+          "default_golden_id": 18,
+          "compatible_golden_ids": [
+            18,
+            19,
+            7
+          ]
+        },
+        {
+          "id": "mv_112",
+          "label": "🏰 月夜の古城のテラス（崩れかけた石壁・青白い月光・風にそよぐツタ）",
+          "default_golden_id": 17,
+          "compatible_golden_ids": [
+            17,
+            16,
+            18
+          ]
+        },
+        {
+          "id": "mv_113",
+          "label": "❄️ 極北のオーロラカーテン（夜空を舞うエメラルドの光・凍てつく大地・神秘の帳）",
+          "default_golden_id": 18,
+          "compatible_golden_ids": [
+            18,
+            20,
+            14
+          ]
+        },
+        {
+          "id": "mv_114",
+          "label": "🕯️ 灯篭流しの夜の水辺（水面を漂う無数の灯火・揺れる炎の反射・祈りと幻想）",
+          "default_golden_id": 18,
+          "compatible_golden_ids": [
+            18,
+            7,
+            17
+          ]
+        },
+        {
+          "id": "mv_115",
+          "label": "🌾 草原の風と夕暮れ（あてもなく歩く帰り道・揺れる草木と黄金の光）",
+          "default_golden_id": 9,
+          "compatible_golden_ids": [
+            9,
+            6,
+            3
+          ]
+        },
+        {
+          "id": "mv_116",
+          "label": "🎋 七夕飾りの揺れる古い通り（笹の葉のすれる音・色とりどりの短冊・夏の夜風）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            7,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "mv_117",
+          "label": "🎆 遠くに見える夏祭りの花火（家々の屋根越し・ドーンと響く腹の音・一瞬の明滅）",
+          "default_golden_id": 6,
+          "compatible_golden_ids": [
+            6,
+            9,
+            2,
+            7
+          ]
+        },
+        {
+          "id": "mv_118",
+          "label": "🎨 木漏れ日のアトリエ（白いカーテンの揺れ・散らかったパレット・午後の光）",
+          "default_golden_id": 2,
+          "compatible_golden_ids": [
+            2,
+            3,
+            6,
+            4
+          ]
+        },
+        {
+          "id": "mv_119",
+          "label": "🩰 薄暗いバレエスタジオ（使い込まれた木の床・大きな鏡・手すりにかかるトゥシューズ）",
+          "default_golden_id": 2,
+          "compatible_golden_ids": [
+            2,
+            3,
+            7,
+            6
+          ]
+        },
+        {
+          "id": "mv_120",
+          "label": "🖋️ インクが滲む手紙と万年筆（机の上に灯るランプ・書き殴られた言葉・想いの行方）",
+          "default_golden_id": 17,
+          "compatible_golden_ids": [
+            17,
+            16,
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "category_id": "cat_08_ruins_dark_mysterious",
+      "category": "🏚️ 【退廃・廃墟・ダークミステリアス】",
+      "default_golden_ids": [
+        3,
+        7,
+        8,
+        11,
+        12,
+        15
+      ],
+      "items": [
+        {
+          "id": "mv_121",
+          "label": "🏥 遺棄されたサナトリウムの廊下（剥がれかけた壁紙・風に揺れる白い布・過ぎ去った時間）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            17,
+            8
+          ]
+        },
+        {
+          "id": "mv_122",
+          "label": "🎢 閉ざされた遊園地の観覧車（錆びついたゴンドラ・止まった時間・風に軋む鉄骨）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            20,
+            3
+          ]
+        },
+        {
+          "id": "mv_123",
+          "label": "🏫 廃校の音楽室と埃をかぶったピアノ（鍵盤に差す斜光・静まり返る黒板・記憶の残響）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            17,
+            3
+          ]
+        },
+        {
+          "id": "mv_124",
+          "label": "🚂 打ち捨てられた旧線の廃トンネル（レンガ積みのアーチ・湿った冷気・闇の向こうの光）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            20,
+            8
+          ]
+        },
+        {
+          "id": "mv_125",
+          "label": "🏭 廃工場と巨大なサビの配管（誰もいない巨大な吹き抜け・打ち棄てられた計器・静かな崩壊）",
+          "default_golden_id": 20,
+          "compatible_golden_ids": [
+            20,
+            16,
+            19
+          ]
+        },
+        {
+          "id": "mv_126",
+          "label": "🏊 枯れたプールの底に生える雑草（コンクリートの亀裂・飛び込み台の影・夏の痕跡）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            20,
+            6
+          ]
+        },
+        {
+          "id": "mv_127",
+          "label": "⛪ 朽ち果てた礼拝堂の残骸（崩れたステンドグラス・瓦礫の上の祈り・舞い落ちる光）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            17,
+            18
+          ]
+        },
+        {
+          "id": "mv_128",
+          "label": "🎡 夕暮れに佇む廃テーマパーク（色褪せたマスコット・伸びる影・静かな哀愁）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            20,
+            3
+          ]
+        },
+        {
+          "id": "mv_129",
+          "label": "💡 人が消えた街の点滅信号（点滅し続ける黄色・アスファルトを突き破る草・終末の静寂）",
+          "default_golden_id": 20,
+          "compatible_golden_ids": [
+            20,
+            19,
+            16
+          ]
+        },
+        {
+          "id": "mv_130",
+          "label": "🏚️ 草木に覆われた廃墟の温室（割れたガラス天井・差し込む光の筋・侵食するシダ植物）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            18,
+            8
+          ]
+        },
+        {
+          "id": "mv_131",
+          "label": "🌕 巨大な満月と一本の枯れ木（丘のシルエット・青い夜霧・息をのむ神秘）",
+          "default_golden_id": 17,
+          "compatible_golden_ids": [
+            17,
+            16,
+            18
+          ]
+        },
+        {
+          "id": "mv_132",
+          "label": "🪞 合わせ鏡の回廊（無限に続く自己の像・光の減衰・自己との対話）",
+          "default_golden_id": 17,
+          "compatible_golden_ids": [
+            17,
+            16,
+            11
+          ]
+        },
+        {
+          "id": "mv_133",
+          "label": "🪟 ステンドグラスが床を染める聖堂（七色の光の帯・高い天井・厳かな静寂と瞑想）",
+          "default_golden_id": 17,
+          "compatible_golden_ids": [
+            17,
+            18,
+            16
+          ]
+        },
+        {
+          "id": "mv_134",
+          "label": "🎻 弦の切れた楽器と楽譜の山（埃の舞う窓辺・未完成のメロディ・創作の葛藤）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            17,
+            3
+          ]
+        },
+        {
+          "id": "mv_135",
+          "label": "🎭 誰もいない劇場の舞台（中央を照らす一本のピンスポット・暗闇の客席・沈黙の空間）",
+          "default_golden_id": 16,
+          "compatible_golden_ids": [
+            16,
+            17,
+            15
+          ]
+        },
+        {
+          "id": "mv_136",
+          "label": "🏛️ 石造りの彫刻室（白い大理石の粉塵・差す光と深い影・息を止めたような静止世界）",
+          "default_golden_id": 17,
+          "compatible_golden_ids": [
+            17,
+            16,
+            18
+          ]
+        },
+        {
+          "id": "mv_137",
+          "label": "🕯️ 蝋燭が無数に灯る書斎（揺らめく影・革張りの古書・深まる思考の迷宮）",
+          "default_golden_id": 17,
+          "compatible_golden_ids": [
+            17,
+            16,
+            13
+          ]
+        },
+        {
+          "id": "mv_138",
+          "label": "🚇 誰も乗っていない最終地下鉄（冷たい蛍光灯の明滅・窓に映る疲れた瞳・闇を裂く轟音）",
+          "default_golden_id": 19,
+          "compatible_golden_ids": [
+            19,
+            20,
+            12
+          ]
+        },
+        {
+          "id": "mv_139",
+          "label": "🏢 立ち入り禁止の屋上ヘリポート（吹き荒ぶ強風・金網越しの摩天楼・遠い地上の光）",
+          "default_golden_id": 20,
+          "compatible_golden_ids": [
+            20,
+            19,
+            9
+          ]
+        },
+        {
+          "id": "mv_140",
+          "label": "☣️ 錆びた鉄扉と警告の赤いランプ（閉鎖されたシェルター・静寂の地下通路・封印された歴史）",
+          "default_golden_id": 20,
+          "compatible_golden_ids": [
+            20,
+            16,
+            19
+          ]
+        }
+      ]
+    }
+  ],
+  "gimmick_chips": [
+    {
+      "id": "pencil_room",
+      "label": "✏️ シャーペン・深夜部屋音",
+      "desc": "シャーペンノック音＆深夜の静寂Foley・作画小道具連動",
+      "slot_overrides": {
+        "S4_Foley": "quiet bedroom ambiance, mechanical pencil click textures"
+      },
+      "adlib_override": [
+        "(カチカチ ならす)",
+        "(もしもし きこえる)"
+      ],
+      "visual_props_add": "holding a mechanical pencil in delicate hands, open notebook on midnight study desk",
+      "lyrics_hint": "深夜の机、シャーペンのノック音やノートの余白を五感で描写し、合いの手に (カチカチ ならす) を配置"
+    },
+    {
+      "id": "diner_ice",
+      "label": "🧊 深夜ダイナー・氷グラス音",
+      "desc": "グラスの氷が鳴る音＆深夜カフェネオン連動",
+      "slot_overrides": {
+        "S4_Foley": "cozy vinyl warmth, ice clinking Foley textures",
+        "S7_Aesthetic": "pastel midnight diner aesthetic"
+      },
+      "adlib_override": [
+        "(カランコロン ゆれる)",
+        "(こおりが とける)"
+      ],
+      "visual_props_add": "tall glass with clinking ice cubes and straw on retro midnight diner table, neon window reflection",
+      "lyrics_hint": "深夜ダイナーのボックス席、グラスの中で溶ける氷の音とネオンの反射を描写し、合いの手に (カランコロン ゆれる) を配置"
+    },
+    {
+      "id": "rain_marimba",
+      "label": "🌧️ 雨音窓辺・木製マリンバ",
+      "desc": "窓を叩く雨音＆温かい木製マリンバアルペジオ",
+      "slot_overrides": {
+        "S3_Chords": "Delicate wooden marimba plucks, warm rhodes chords",
+        "S4_Foley": "gentle rain ambient texture"
+      },
+      "adlib_override": [
+        "(ポツポツ あまおと)",
+        "(しとしと ふるね)"
+      ],
+      "visual_props_add": "raindrops trickling down window glass, finger tracing condensation on foggy window",
+      "lyrics_hint": "窓を伝う雨粒と曇りガラスの湿度を五感で描写し、合いの手に (ポツポツ あまおと) を配置"
+    },
+    {
+      "id": "vinyl_retro",
+      "label": "💿 レコード・カセット質感",
+      "desc": "アナログレコードノイズ・カセットテープの温かみ",
+      "slot_overrides": {
+        "S4_Foley": "warm vinyl crackle texture"
+      },
+      "adlib_override": [
+        "(くるくる まわる)",
+        "(パチパチ はじける)"
+      ],
+      "visual_props_add": "spinning vinyl record on retro turntable, vintage cassette tape deck, warm amber light",
+      "lyrics_hint": "回るカセットテープやレコードの針音をモチーフに描写し、合いの手に (くるくる まわる) を配置"
+    },
+    {
+      "id": "fast_rap_rhyme",
+      "label": "⚡ 高速ラップ＆母音韻踏み",
+      "desc": "Verseの畳み掛け早口ラップ＆心地よい母音ライミング強化",
+      "slot_overrides": {
+        "S9_Rap": "rapid playful rhythmic rap delivery with tight rhyming flow"
+      },
+      "lyrics_hint": "Verse 1およびVerse 2で、行末の母音を揃えた気持ちいい高速ラップ・ライミング（韻踏み）を徹底強化"
+    },
+    {
+      "id": "english_mix",
+      "label": "🔤 英語フック多め",
+      "desc": "サビ・フックに自然な英語フレーズを30〜40%ブレンド",
+      "slot_overrides": {
+        "S10_Hook": "super catchy bilingual sing-along melodic chorus"
+      },
+      "lyrics_hint": "サビ（Chorus）やPost-Chorusに、ネイティブ発音で映えるエモーショナルな英語フレーズ（アルファベット表記のまま）を30〜40%織り交ぜる"
+    },
+    {
+      "id": "breathy_whisper",
+      "label": "💨 吐息・ウィスパー増し",
+      "desc": "耳元で囁くような吐息感・スリーピーKawaiiボーカル強化",
+      "slot_overrides": {
+        "S8_Vocal": "Soft, extra breathy, intimate whispered cute Japanese female vocals"
+      },
+      "lyrics_hint": "耳元で囁くような親密なウィスパー感と、行間の自然な余白・フェイク (Ah~~~~~) を強調"
+    },
+    {
+      "id": "cute_adlib",
+      "label": "🍬 丸カッコ合いの手増量",
+      "desc": "(くるくる まわる) 等のKawaii丸カッコ合いの手を各パート冒頭に配置",
+      "adlib_override": [
+        "(Tu-tu-ru)",
+        "(くるくる まわる)",
+        "(パチパチ はじける)",
+        "(ねぇ きいて)"
+      ],
+      "lyrics_hint": "Intro・Pre-Chorus・Chorusの冒頭や合間に、(Tu-tu-ru) や (くるくる まわる) 等の可愛い丸カッコ合いの手を贅沢に配置"
+    },
+    {
+      "id": "shibuya_electro",
+      "label": "🤖 ケロケロ渋谷系スパイス",
+      "desc": "2000s渋谷系ピコピコ電子音＆ケロケロAutoTuneエフェクト",
+      "force_cluster": "Cluster_D_Neon_Electro_Spice",
+      "lyrics_hint": "2000s渋谷系テクノポップ・エレクトロハウスのキュートなループ感とリズミカルな反復フレーズを強調"
+    }
+  ],
+  "themes": [
+    "🏃‍♀️ 部活帰りの夕暮れ坂道（彼氏と歩く帰り道・並ぶ影・少し触れる手と照れ笑い）",
+    "🍫 キッチンで手作りバレンタインチョコ（甘いカカオの香り・湯煎のボウル・エプロン姿とドキドキ）",
+    "🏫 文化祭前日の教室の居残り（段ボールの看板・絵の具の匂い・二人きりの買い出し）",
+    "📖 放課後の図書室の窓際（差し込む西日・机の下で重なる足・秘密の合図）",
+    "🌸 満開の桜の下の待ち合わせ（揺れる制服のスカート・舞い散る花びら・駆け寄ってくる笑顔）",
+    "🏊 夏休み初日の早朝プール（キラキラ光る水面・白い水着・飛び込む水しぶきと笑い声）",
+    "🎆 花火大会の帰り道（慣れない下駄の音・浴衣の裾・つないだ手と提灯の明かり）",
+    "👟 新学期の朝の通学路（真新しいスニーカー・爽やかな青空・曲がり角での偶然の出会い）",
+    "🍦 屋上の青空と分け合うアイス（突き抜ける青・ソーダ味のアイスバー・笑い合う二人）",
+    "🌈 雨上がりのグラウンドと虹（部活の掛け声・濡れた土の匂い・空にかかる七色のアーチ）",
+    "🥖 お昼休みの購買ダッシュ（人気の焼きそばパン・廊下を走る足音・友達との大笑い）",
+    "🧣 冬のイルミネーションとマフラー（白い息・かじかむ指先・一つのポケットで握る手）",
+    "🚲 自転車の二人乗りと河川敷（背中に伝わる体温・風をはらむ制服シャツ・夕焼けの土手）",
+    "📣 体育祭の応援合戦（舞うメガホン・青空に響く歓声・目が合って照れるハイタッチ）",
+    "🎧 音楽室でイヤホンの半分こ（好きなバンドの曲・肩が触れ合う近さ・高鳴る鼓動）",
+    "📝 試験終わりのカラオケボックス（タンバリンのリズム・歌い疲れた笑顔・解き放たれる放課後）",
+    "💌 卒業式前日の誰もいない体育館（跳び箱に座って話す二人・夕暮れの斜光・言えない想い）",
+    "🌂 相合傘の帰り道（狭い傘の下・濡れる外側の肩・水たまりをよける一歩）",
+    "🌻 夏祭りの射的と金魚すくい（すくえないポイ・笑い転げる二人・りんご飴の甘い匂い）",
+    "🌤️ 始発で出かける朝焼けの海（まだ冷たい砂浜・スニーカーを脱いで走る波打ち際・青春の光）",
+    "🥞 休日の朝のふかふかホットケーキ（立ちのぼる甘い湯気・バターとメープルシロップ・パジャマ姿）",
+    "🍓 日曜日の手作りいちごタルト（真っ赤ないちご・泡立てるホイップクリーム・つまみ食いの笑顔）",
+    "🥐 お気に入りのベーカリー巡り（焼きたてクロワッサン・紙袋を抱えて歩く並木道・弾む足取り）",
+    "🐱 陽だまりのリビングと愛猫（差し込む暖かい光・すやすや眠る猫・淹れたてのミルクティー）",
+    "🍊 こたつとみかんの冬休み（ぬくぬくの毛布・テレビのお正月特番・のんびり家族の時間）",
+    "🌿 バルコニーのミニガーデニング（ジョウロから注ぐ水滴・キラキラ光るハーブの若葉・爽やかな朝風）",
+    "🍿 お泊まり会の深夜パジャマパーティー（広げたお菓子・恋バナで盛り上がる部屋・クッション投げ）",
+    "🍪 雨の日のクッキー作り（オーブンのオレンジ色の光・香ばしい焼き上がり・アイシングのデコレーション）",
+    "☕ 朝のフレンチトーストと淹れたてコーヒー（シナモンの香り・窓辺の観葉植物・やわらかな朝の光）",
+    "👗 お気に入りの古着コーデでお出かけ（鏡の前でファッションショー・選ぶベレー帽・ウキウキの休日）",
+    "🧸 お気に入りのぬいぐるみと読書（ふかふかのクッション・温かいほうじ茶ラテ・穏やかな午後）",
+    "🧼 休日のシーツ洗濯とお日様の匂い（青空にはためく真っ白なシーツ・柔軟剤のやさしい香り）",
+    "🍮 昔ながらの喫茶店のプリンアラモード（ほろ苦いカラメル・真っ赤なチェリー・銀の器）",
+    "🛁 お気に入りのバスボムと泡風呂（ラベンダーの香り・ゆったり溶けるグラデーション・自分へのご褒美）",
+    "🍯 焼きたてアップルパイのシナモン（サクサクのパイ生地・煮込んだリンゴの甘酸っぱさ・冬のおやつ）",
+    "🚗 海沿いの海岸通りドライブ（オープンカー・弾ける炭酸ソーダ・流れるサマーアンセム）",
+    "🎠 遊園地のメリーゴーランド（きらめくイルミネーション・パステルカラーの木馬・笑顔のシャッター）",
+    "🎪 野外音楽フェスの青空ステージ（芝生に響くキック音・掲げる両手・吹き抜ける風）",
+    "🌻 ひまわり畑の真ん中で（どこまでも続く黄色い絨毯・麦わら帽子・入道雲と太陽）",
+    "⛺ キャンプファイヤーと焼きマシュマロ（パチパチ爆ぜる薪・とろけるマシュマロ・アコースティックギター）",
+    "🛫 朝一番の空港展望デッキ（飛び立つ白い飛行機・澄み渡る青空・新しい旅への高鳴り）",
+    "🕹️ ネオンきらめく夜のゲームセンター（クレーンゲームの景品・コインの落ちる音・取れた瞬間の歓声）",
+    "🐬 水族館のイルカショー（水しぶきのアーチ・宙を舞うイルカ・歓声と拍手）",
+    "🏄‍♀️ サンセットビーチのSUPクルージング（黄金色に染まる海面・パドルを漕ぐシルエット・波のさざめき）",
+    "🍨 レトロポップなアメリカンダイナー（チェリーののったソーダフロート・チェッカータイルの床・ジュークボックス）",
+    "🎡 観覧車の頂上からの大パノラマ（小さく見える街並み・二人きりのゴンドラ・夕日のグラデーション）",
+    "🛹 夕暮れのスケートパーク（コンクリートのボウル・オーリーの乾いた音・ストリートカルチャー）",
+    "🛍️ 原宿・キャットストリート散策（カラフルなスイーツ・個性的なファッション・弾む会話）",
+    "🎿 白銀のスキーリゾート（パウダースノーのシュプール・ゴーグル越しの晴天・山小屋の温かいスープ）",
+    "🏮 賑やかな台湾夜市の屋台（立ちのぼる小籠包の湯気・赤い提灯・行き交う人々の活気）",
+    "🥖 夕暮れの商店街（お惣菜のいい匂い・伸びる影・店じまいのシャッター音）",
+    "🥪 昭和レトロな洋食店（ネルドリップの香り・使い込まれた革張りソファ・琥珀色の光）",
+    "🎶 レコードが鳴る古民家カフェ（針のプチプチ音・埃が踊る午後の日差し・琥珀色の世界）",
+    "📚 西日の差す古書店（高く積まれた本棚・紙とインクの匂い・静かなページめくり）",
+    "🎞️ フィルムカメラと街角（現像所のカウンター・色褪せたスナップ写真・過去の記憶）",
+    "🌆 ビルの屋上・街を見下ろす微風（茜色に染まる街並み・静かに揺れるスカート・夕凪）",
+    "🚦 オレンジ色に染まる踏切（カンカンと響く警報機・通り過ぎる電車の風・見送る背中）",
+    "🌉 黄昏時の歩道橋（行き交う車のヘッドライト・紫と橙のマジックアワー・佇むシルエット）",
+    "🌾 夕焼け空を映す田んぼ（水鏡に映る茜色の雲・遠くの電柱・カエルの合唱）",
+    "⚓ 潮風香る港町の夕暮れ（船の汽笛・オレンジ色に輝く波頭・防波堤に座る二人）",
+    "🍮 木漏れ日の甘味処（緑茶の湯気・木製のテーブル・風鈴の微かな音）",
+    "🪑 路地裏のベンチ（日向ぼっこの野良猫・ひび割れたアスファルト・穏やかな停滞）",
+    "🥞 静かな休日のブランチ（シロップの滴るパンケーキ・やわらかな陽光・何もしない午後）",
+    "🍞 朝のベーカリーの温もり（焼きたてパンの香ばしさ・ガラス越しの朝日・開店の合図）",
+    "🚃 夕暮れのローカル線（ガタゴト揺れる車内・オレンジ色の車窓・のどかな田園風景）",
+    "🌾 秋風そよぐ黄金色の稲穂（夕日に輝く田園風景・赤とんぼ・里山の静けさ）",
+    "🍁 紅葉が水面に浮かぶ渓谷（赤と黄のグラデーション・清流のせせらぎ・秋の深まり）",
+    "🍂 落ち葉を踏みしめる並木道（カサカサと鳴る足音・冷たくなってきた空気・初冬の気配）",
+    "📮 茜色に染まるレトロな丸ポスト（古い瓦屋根・夕暮れの路地・届かなかった手紙）",
+    "🎸 放課後の音楽室と夕陽（黒板に書かれたコード進行・差し込むオレンジの光・アコギの爪弾き）",
+    "🌃 深夜2時の部屋（薄暗い間接照明・青白いPC画面・ベッドサイドのチル）",
+    "🎧 深夜の自販機前（青白い蛍光灯・冷たい缶コーヒー・静まり返った住宅街）",
+    "🛋️ 夜更かしのワンルーム（床に散らばる漫画・消えかけのテレビ・気だるい時間）",
+    "🌙 ベランダの微風と夜風（冷えた夜気・遠くのサイレン・静かに揺れるTシャツ）",
+    "🛏️ 午前3時の毛布の中（イヤホン越しの音楽・スマートフォンの明かり・孤独の輪郭）",
+    "🕯️ 揺れるアロマキャンドル（仄暗い間接照明・漂う煙・思考がほどける静寂）",
+    "🪟 雨音と深夜の作業机（窓を伝う雫・キーボードの打鍵音・冷めたマグカップ）",
+    "📻 深夜ラジオのノイズ（ざらついた音声・眠れない夜の同調・薄明かりの灯火）",
+    "🧊 氷の溶ける音（グラスの結露・夜の渇き・あてもない考え事）",
+    "🚪 明け方の玄関先（まだ誰も起きていない時間・冷たいドアノブ・朝へのためらい）",
+    "🚗 都会の夜間ドライブ（雨に濡れた高速道路・流れるテールランプ・首都高）",
+    "🧺 深夜のコインランドリー（回る洗濯ドラム・漂う洗剤の香り・蛍光灯と外の雨）",
+    "🏎️ 湾岸線のトワイライト（茜色に染まる工場地帯・アクセルを踏み込む瞬間・風切り音）",
+    "🛣️ 終電後の大通り（誰もいないセンターライン・残響するエンジン音・冷たい舗装路）",
+    "⛽ 真夜中のガソリンスタンド（まぶしい白昼色の蛍光灯・静かな給油ノズル・夜間逃避行）",
+    "🌉 高架下のパーキングエリア（自販機の列・遠くのビル群の明かり・アイドリング音）",
+    "🏙️ ガラス張りの展望エレベーター（上昇する夜景・宝石箱のような街並み・静かな加速）",
+    "🏢 高層ビルの狭間（垂直に切り取られた夜空・見上げる無機質な窓明かり・都会の孤独）",
+    "🅿️ 地下駐車場のコンクリート（冷徹な蛍光灯・響く足音・柱の影に消える車影）",
+    "🚥 深夜の立体交差点（変わり続ける信号機・アスファルトの照り返し・無人の横断歩道）",
+    "☕ 雨の日の純喫茶（曇った窓ガラス・温かい珈琲の湯気・静かな読書）",
+    "🌧️ 軒下の雨宿り（突然の夕立・水たまりの波紋・近すぎる二人の距離）",
+    "🫧 青く静かな巨大水族館（泳ぐ魚の群れ・水底に揺れる光の網・深海のような静寂）",
+    "🐟 閉館間際のクラゲ水槽（浮遊する透明な命・青と紫のグラデーション・時間の喪失）",
+    "☂️ ビニール傘越しの街明かり（乱反射するヘッドライト・雨音のベール・ぼやけた輪郭）",
+    "💧 止みかけの雨とアスファルトの匂い（ペトリコール・雲の切れ間の光・水たまりを踏む音）",
+    "🚿 ガラス越しに滴る雨水（冷たい指先・外の喧騒を消し去る水音・物思いにふける午後）",
+    "🚣 霧雨の湖畔（靄に包まれた対岸・静かに揺れる小舟・水滴をまとう水草）",
+    "🪞 水たまりに映る逆さの街（鏡のような路面・歪むビル群のシルエット・足元の異世界）",
+    "🌊 激しい雨と波打つ防波堤（打ち寄せる白波・雨風の轟音・感情の奔流）",
+    "🚕 雨の日のタクシー後部座席（窓を流れる街のネオン・反射する水滴・ぼんやり眺める街）",
+    "❄️ 雪がシンシンと降る街灯の下（オレンジの光に浮かぶ雪粒・足跡・音のない世界）",
+    "🌨️ 吹雪のあとの晴れ渡る雪原（真っ白な銀世界・まぶしい青空・純白の静寂）",
+    "🏙️ 霧が立ち込める早朝の街（まだ誰もいない静まり返った交差点・朝露）",
+    "🌿 雨上がりの新緑と木漏れ日（瑞々しい若葉・滴る雫・キラキラと輝く森）",
+    "🌌 満天の星空と焚き火（静寂の森・揺らめく小さな炎・火の粉と夜空）",
+    "🔭 丘の上の旧天文台（開かれたドーム天井・巨大な望遠鏡・星々の微かな瞬き）",
+    "⛺ 山頂のテントサイト（眼下に広がる雲海・透き通った星空・吐く息の白さ）",
+    "🌲 月光に照らされる針葉樹林（深い青の世界・木漏れ日の月明かり・静まり返った森）",
+    "🌠 流れ星と夜の湖畔（鏡のような水面に映る銀河・静かな波紋・神秘的な静寂）",
+    "🏜️ 砂漠の夜と天の川（どこまでも続く砂丘・冴えわたる満天の星・冷たい砂の感触）",
+    "🏰 月夜の古城のテラス（崩れかけた石壁・青白い月光・風にそよぐツタ）",
+    "❄️ 極北のオーロラカーテン（夜空を舞うエメラルドの光・凍てつく大地・神秘の帳）",
+    "🕯️ 灯篭流しの夜の水辺（水面を漂う無数の灯火・揺れる炎の反射・祈りと幻想）",
+    "🌾 草原の風と夕暮れ（あてもなく歩く帰り道・揺れる草木と黄金の光）",
+    "🎋 七夕飾りの揺れる古い通り（笹の葉のすれる音・色とりどりの短冊・夏の夜風）",
+    "🎆 遠くに見える夏祭りの花火（家々の屋根越し・ドーンと響く腹の音・一瞬の明滅）",
+    "🎨 木漏れ日のアトリエ（白いカーテンの揺れ・散らかったパレット・午後の光）",
+    "🩰 薄暗いバレエスタジオ（使い込まれた木の床・大きな鏡・手すりにかかるトゥシューズ）",
+    "🖋️ インクが滲む手紙と万年筆（机の上に灯るランプ・書き殴られた言葉・想いの行方）",
+    "🏥 遺棄されたサナトリウムの廊下（剥がれかけた壁紙・風に揺れる白い布・過ぎ去った時間）",
+    "🎢 閉ざされた遊園地の観覧車（錆びついたゴンドラ・止まった時間・風に軋む鉄骨）",
+    "🏫 廃校の音楽室と埃をかぶったピアノ（鍵盤に差す斜光・静まり返る黒板・記憶の残響）",
+    "🚂 打ち捨てられた旧線の廃トンネル（レンガ積みのアーチ・湿った冷気・闇の向こうの光）",
+    "🏭 廃工場と巨大なサビの配管（誰もいない巨大な吹き抜け・打ち棄てられた計器・静かな崩壊）",
+    "🏊 枯れたプールの底に生える雑草（コンクリートの亀裂・飛び込み台の影・夏の痕跡）",
+    "⛪ 朽ち果てた礼拝堂の残骸（崩れたステンドグラス・瓦礫の上の祈り・舞い落ちる光）",
+    "🎡 夕暮れに佇む廃テーマパーク（色褪せたマスコット・伸びる影・静かな哀愁）",
+    "💡 人が消えた街の点滅信号（点滅し続ける黄色・アスファルトを突き破る草・終末の静寂）",
+    "🏚️ 草木に覆われた廃墟の温室（割れたガラス天井・差し込む光の筋・侵食するシダ植物）",
+    "🌕 巨大な満月と一本の枯れ木（丘のシルエット・青い夜霧・息をのむ神秘）",
+    "🪞 合わせ鏡の回廊（無限に続く自己の像・光の減衰・自己との対話）",
+    "🪟 ステンドグラスが床を染める聖堂（七色の光の帯・高い天井・厳かな静寂と瞑想）",
+    "🎻 弦の切れた楽器と楽譜の山（埃の舞う窓辺・未完成のメロディ・創作の葛藤）",
+    "🎭 誰もいない劇場の舞台（中央を照らす一本のピンスポット・暗闇の客席・沈黙の空間）",
+    "🏛️ 石造りの彫刻室（白い大理石の粉塵・差す光と深い影・息を止めたような静止世界）",
+    "🕯️ 蝋燭が無数に灯る書斎（揺らめく影・革張りの古書・深まる思考の迷宮）",
+    "🚇 誰も乗っていない最終地下鉄（冷たい蛍光灯の明滅・窓に映る疲れた瞳・闇を裂く轟音）",
+    "🏢 立ち入り禁止の屋上ヘリポート（吹き荒ぶ強風・金網越しの摩天楼・遠い地上の光）",
+    "☣️ 錆びた鉄扉と警告の赤いランプ（閉鎖されたシェルター・静寂の地下通路・封印された歴史）"
+  ],
+  "golden_20_prompts": [
+    {
+      "id": 1,
+      "bpm": 123,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#01 [🍰Bedroom / 123 BPM] 深夜電話・フェルトピアノ・シャーペン音",
+      "short_label": "123 BPM / 深夜電話・フェルトピアノ・シャーペン音",
+      "adlib_hooks": [
+        "(カチカチ ならす)",
+        "(もしもし きこえる)",
+        "(ふわぁ ねむたいな)"
+      ],
+      "foley_visual_props": "holding a mechanical pencil in delicate hands, open notebook on midnight study desk, smartphone glowing on bed",
+      "sound_aesthetic_tag": "cozy midnight bedroom ambiance, warm desk lamp lighting, quiet intimate late-night mood",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy midnight phone call lo-fi trap beat. Warm felt piano chords, quiet bedroom ambiance, deep lazy 808 sub-bass, snappy acoustic snare, crisp stereo hi-hat rolls, mechanical pencil click textures. Soft, sleepy, cute Japanese female vocals with smooth relaxed rhythmic rap phrasing and catchy bittersweet melodic hook, 123 bpm",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy midnight phone call lo-fi trap beat",
+        "S3_Chords": "Warm felt piano chords",
+        "S4_Foley": "quiet bedroom ambiance, mechanical pencil click textures",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp stereo hi-hat rolls",
+        "S7_Aesthetic": "cozy midnight bedroom aesthetic",
+        "S8_Vocal": "Soft, sleepy, cute Japanese female vocals",
+        "S9_Rap": "smooth relaxed rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 123
+      }
+    },
+    {
+      "id": 2,
+      "bpm": 125,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_B_Rainy_Nostalgic_Dusk",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#02 [🍰Bedroom / 125 BPM] 王道ウィスパー・スポークンラップ・Bouncy 808",
+      "short_label": "125 BPM / 王道ウィスパー・スポークンラップ",
+      "adlib_hooks": [
+        "(ないしょの はなし)",
+        "(ねぇ きいて)",
+        "(ドキドキ しちゃう)"
+      ],
+      "foley_visual_props": "leaning close to camera, earphones dangling, soft curtain fluttering by window",
+      "sound_aesthetic_tag": "intimate bittersweet youth tone, soft pastel afternoon light, shallow depth of field",
+      "raw_native_prompt": "Kawaii bedroom pop, lo-fi trap, bouncy 808 sub-bass, crisp hi-hats, snappy claps, bright synth plucks, soft breathy female vocals, cute Japanese voice, whispered spoken rap section, 125 bpm, playful, intimate, bittersweet youth tone",
+      "cluster_name": "🌧️ Cluster B: 雨音・帰り道・ノスタルジー (125-126 BPM)",
+      "slots": {
+        "S1_Genre": "Kawaii bedroom pop",
+        "S2_Beat": "playful intimate lo-fi trap beat",
+        "S3_Chords": "Bright synth plucks",
+        "S4_Foley": "intimate room air texture",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hats",
+        "S7_Aesthetic": "playful, intimate, bittersweet youth tone",
+        "S8_Vocal": "Soft breathy cute Japanese female vocals",
+        "S9_Rap": "whispered spoken rap section",
+        "S10_Hook": "bittersweet youth melodic hook",
+        "S11_BPM": 125
+      }
+    },
+    {
+      "id": 3,
+      "bpm": 125,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_B_Rainy_Nostalgic_Dusk",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#03 [🍰Bedroom / 125 BPM] レコード質感・プレイフルスキャット・高速ラップ",
+      "short_label": "125 BPM / レコード質感・プレイフルスキャット",
+      "adlib_hooks": [
+        "(パチパチ はじける)",
+        "(Tu-tu-ru)",
+        "(くるくる まわる)"
+      ],
+      "foley_visual_props": "spinning vinyl record on retro turntable, cassette tapes, headphones around neck",
+      "sound_aesthetic_tag": "warm vinyl nostalgic mood, retro film grain texture, golden amber lighting",
+      "raw_native_prompt": "Japanese Kawaii Bedroom Pop, Lo-Fi Trap, 125 BPM, bouncy 808 sub-bass, bright sparkly synth plucks, snappy claps, crisp rhythmic hi-hats, soft cute female Japanese vocals, energetic playful scatting, fast rhythmic rap, bittersweet nostalgic mood, warm vinyl texture",
+      "cluster_name": "🌧️ Cluster B: 雨音・帰り道・ノスタルジー (125-126 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Bedroom Pop",
+        "S2_Beat": "Lo-Fi Trap beat",
+        "S3_Chords": "Bright sparkly synth plucks",
+        "S4_Foley": "warm vinyl texture",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp rhythmic hi-hats",
+        "S7_Aesthetic": "bittersweet nostalgic mood",
+        "S8_Vocal": "Soft cute female Japanese vocals",
+        "S9_Rap": "energetic playful scatting and fast rhythmic rap",
+        "S10_Hook": "bittersweet nostalgic melodic hook",
+        "S11_BPM": 125
+      }
+    },
+    {
+      "id": 4,
+      "bpm": 130,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌸 FuturePop②",
+      "label": "#04 [🌸FuturePop / 130 BPM] スイートアニメ・キラキラPluck・高速ラップ",
+      "short_label": "130 BPM / スイートアニメ・高速ラップ",
+      "adlib_hooks": [
+        "(キラキラ ひかる)",
+        "(ジャンプ して)",
+        "(せーのっ)"
+      ],
+      "foley_visual_props": "school bag with cute keychain plushie, fluttering ribbon, cheerful hand gesture",
+      "sound_aesthetic_tag": "cheerful sweet anime aesthetic, bright sunlight lens flare, vivid pastel colors",
+      "raw_native_prompt": "Cute Japanese kawaii bedroom pop, playful bouncy lo-fi trap beat, sparkly pluck synths, snappy claps, crisp hi-hats, bouncy 808 sub-bass, cheerful sweet anime aesthetic, soft cute female vocals, rapid rhythmic rap phrasing, catchy melodic chorus, 130 bpm",
+      "cluster_name": "🌇 Cluster A: 放課後・夕暮れ・青春キラメキ (130-136 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese kawaii bedroom pop",
+        "S2_Beat": "playful bouncy lo-fi trap beat",
+        "S3_Chords": "Sparkly pluck synths",
+        "S4_Foley": "sparkling anime chime accents",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hats",
+        "S7_Aesthetic": "cheerful sweet anime aesthetic",
+        "S8_Vocal": "Soft cute Japanese female vocals",
+        "S9_Rap": "rapid rhythmic rap phrasing",
+        "S10_Hook": "catchy melodic chorus",
+        "S11_BPM": 130
+      }
+    },
+    {
+      "id": 5,
+      "bpm": 130,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌸 FuturePop②",
+      "label": "#05 [🌸FuturePop / 130 BPM] 弾ける思春期・シンガロング・3分フル尺構成",
+      "short_label": "130 BPM / 弾ける思春期・シンガロング",
+      "adlib_hooks": [
+        "(ふわふわ はずむ)",
+        "(La-la-la)",
+        "(いっしょに うたお)"
+      ],
+      "foley_visual_props": "holding a sweet strawberry crepe wrapped in pink ribbon, after-school rooftop fence, smiling side profile",
+      "sound_aesthetic_tag": "bubbly adolescent anime aesthetic, sparkling bokeh particles, refreshing sky blue and pink palette",
+      "raw_native_prompt": "Cute Japanese kawaii bedroom pop, playful bouncy lo-fi trap beat, sparkly bright pluck synths, snappy claps and crisp hi-hats, bouncy 808 sub-bass, light and bubbly adolescent vibe, cheerful and sweet anime aesthetic, soft cute whispered female vocals, rapid playful rhythmic rap phrasing, catchy sing-along melodic chorus, extended full track structure, 130 bpm",
+      "cluster_name": "🌇 Cluster A: 放課後・夕暮れ・青春キラメキ (130-136 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese kawaii bedroom pop",
+        "S2_Beat": "playful bouncy lo-fi trap beat",
+        "S3_Chords": "Sparkly bright pluck synths",
+        "S4_Foley": "light and bubbly adolescent vibe",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps and crisp hi-hats",
+        "S7_Aesthetic": "cheerful and sweet anime aesthetic",
+        "S8_Vocal": "Soft cute whispered Japanese female vocals",
+        "S9_Rap": "rapid playful rhythmic rap phrasing",
+        "S10_Hook": "catchy sing-along melodic chorus",
+        "S11_BPM": 130
+      }
+    },
+    {
+      "id": 6,
+      "bpm": 134,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌸 FutureBass②",
+      "label": "#06 [🌸FutureBass / 134 BPM] Future Bass × Melodic Trap・木製マリンバ",
+      "short_label": "134 BPM / Future Bass × Melodic Trap・木製マリンバ",
+      "adlib_hooks": [
+        "(コンコン たたくよ)",
+        "(ステップ ふんで)",
+        "(Tu-tu-ru)"
+      ],
+      "foley_visual_props": "walking along after-school slope, long shadows stretching on asphalt, wooden bench or music box motif",
+      "sound_aesthetic_tag": "nostalgic adolescent anime OST aesthetic, warm golden hour sunlight, dynamic cinematic framing",
+      "raw_native_prompt": "Japanese Kawaii Future Bass, playful Melodic Trap. Sparkly bright pluck synths, wooden marimba accents, bouncy 808 sub-bass, snappy claps, crisp hi-hat rolls, nostalgic adolescent vibe, cute anime OST aesthetic. Soft, breathy, cute Japanese female vocals with rapid playful rhythmic rap delivery and super catchy sing-along melodic hook, 134 bpm.",
+      "cluster_name": "🌇 Cluster A: 放課後・夕暮れ・青春キラメキ (130-136 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Future Bass",
+        "S2_Beat": "playful Melodic Trap",
+        "S3_Chords": "Sparkly bright pluck synths, wooden marimba accents",
+        "S4_Foley": "wooden marimba percussive resonance",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hat rolls",
+        "S7_Aesthetic": "nostalgic adolescent vibe, cute anime OST aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "rapid playful rhythmic rap delivery",
+        "S10_Hook": "super catchy sing-along melodic hook",
+        "S11_BPM": 134
+      }
+    },
+    {
+      "id": 7,
+      "bpm": 124,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#07 [🍰Bedroom / 124 BPM] パステル深夜・ドリーミーローズピアノ・チル",
+      "short_label": "124 BPM / パステル深夜・ドリーミーローズピアノ",
+      "adlib_hooks": [
+        "(ゆらゆら うかぶ)",
+        "(おやすみ まえに)",
+        "(ふわっと とける)"
+      ],
+      "foley_visual_props": "hugging a soft pillow on bed, fairy string lights on bedroom wall, crescent moon outside window",
+      "sound_aesthetic_tag": "pastel late-night aesthetic, dreamy lavender and cyan moonlight, cozy nocturnal warmth",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy lo-fi trap beat. Warm dreamy rhodes chords, deep lazy 808 sub-bass, snappy acoustic snare, crisp hi-hats, pastel late-night aesthetic, cozy nocturnal vibe. Soft, sleepy, cute Japanese female vocals with smooth relaxed rhythmic rap phrasing and catchy explosive melodic hook, 124 bpm.",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy lo-fi trap beat",
+        "S3_Chords": "Warm dreamy rhodes chords",
+        "S4_Foley": "cozy nocturnal room ambiance",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hats",
+        "S7_Aesthetic": "pastel late-night aesthetic, cozy nocturnal vibe",
+        "S8_Vocal": "Soft, sleepy, cute Japanese female vocals",
+        "S9_Rap": "smooth relaxed rhythmic rap phrasing",
+        "S10_Hook": "catchy explosive melodic hook",
+        "S11_BPM": 124
+      }
+    },
+    {
+      "id": 8,
+      "bpm": 126,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_B_Rainy_Nostalgic_Dusk",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#08 [🍰Bedroom / 126 BPM] 雨音ベッドルーム・木製マリンバ＆ローズ",
+      "short_label": "126 BPM / 雨音ベッドルーム・木製マリンバ＆ローズ",
+      "adlib_hooks": [
+        "(ポツポツ あまおと)",
+        "(しとしと ふるね)",
+        "(ためいき ひとつ)"
+      ],
+      "foley_visual_props": "raindrops trickling down window glass, finger tracing condensation on foggy window, transparent umbrella",
+      "sound_aesthetic_tag": "cozy rainy bedroom aesthetic, nostalgic blue-grey rain atmosphere, soft warm indoor contrast",
+      "raw_native_prompt": "Japanese Kawaii Melodic Trap, cozy rainy bedroom pop. Gentle rain ambient texture, delicate wooden marimba plucks, warm rhodes chords, bouncy 808 sub-bass, snappy acoustic snare, crisp hi-hat rolls, nostalgic anime aesthetic. Soft, breathy, cute Japanese female vocals with rapid playful rhythmic rap phrasing and catchy emotional hook, 126 bpm.",
+      "cluster_name": "🌧️ Cluster B: 雨音・帰り道・ノスタルジー (125-126 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Melodic Trap",
+        "S2_Beat": "cozy rainy bedroom pop",
+        "S3_Chords": "Delicate wooden marimba plucks, warm rhodes chords",
+        "S4_Foley": "gentle rain ambient texture",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hat rolls",
+        "S7_Aesthetic": "nostalgic anime aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "rapid playful rhythmic rap phrasing",
+        "S10_Hook": "catchy emotional hook",
+        "S11_BPM": 126
+      }
+    },
+    {
+      "id": 9,
+      "bpm": 136,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌸 FutureBass②",
+      "label": "#09 [🌸FutureBass / 136 BPM] 夕暮れ風・Supersaw・アニメOSTクライマックス",
+      "short_label": "136 BPM / 夕暮れ風・Supersaw・アニメOSTクライマックス",
+      "adlib_hooks": [
+        "(かぜが ふいたら)",
+        "(はしりだす よ)",
+        "(とどく かな)"
+      ],
+      "foley_visual_props": "hair and school ribbon blowing in strong sunset breeze, dramatic hill overlooking town, reaching hand toward sky",
+      "sound_aesthetic_tag": "anime OST climax style, dramatic twilight orange and purple sky, glowing rim light",
+      "raw_native_prompt": "Japanese Kawaii Future Bass, emotional Melodic Trap. Bright sparkly supersaw leads, energetic halftime beat, powerful 808 sub-bass, uplifting chord progression, sunset breeze ambiance, anime OST climax style. Soft, cute, energetic Japanese female vocals with rapid rhythmic rap delivery and soaring sing-along melodic chorus, 136 bpm.",
+      "cluster_name": "🌇 Cluster A: 放課後・夕暮れ・青春キラメキ (130-136 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Future Bass",
+        "S2_Beat": "emotional Melodic Trap, energetic halftime beat",
+        "S3_Chords": "Bright sparkly supersaw leads, uplifting chord progression",
+        "S4_Foley": "sunset breeze ambiance",
+        "S5_Bass": "powerful 808 sub-bass",
+        "S6_Drums": "energetic halftime drums, crisp hi-hat rolls",
+        "S7_Aesthetic": "anime OST climax style",
+        "S8_Vocal": "Soft, cute, energetic Japanese female vocals",
+        "S9_Rap": "rapid rhythmic rap delivery",
+        "S10_Hook": "soaring sing-along melodic chorus",
+        "S11_BPM": 136
+      }
+    },
+    {
+      "id": 10,
+      "bpm": 123,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#10 [🍰Bedroom / 123 BPM] 深夜ダイナー・氷が鳴るFoley音・フェルトピアノ",
+      "short_label": "123 BPM / 深夜ダイナー・氷が鳴るFoley音・フェルトピアノ",
+      "adlib_hooks": [
+        "(カランコロン ゆれる)",
+        "(こおりが とける)",
+        "(ふたりきり だね)"
+      ],
+      "foley_visual_props": "tall glass with clinking ice cubes and straw on retro diner table, neon sign reflecting in window",
+      "sound_aesthetic_tag": "pastel midnight diner aesthetic, warm booth lighting, retro late-night lo-fi atmosphere",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, midnight diner lo-fi trap. Warm felt piano chords, cozy vinyl warmth, lazy deep 808 sub-bass, snappy acoustic snare, ice clinking Foley textures, pastel midnight diner aesthetic. Soft, sleepy, cute Japanese female vocals with smooth relaxed rhythmic rap phrasing and catchy sing-along hook, 123 bpm.",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "midnight diner lo-fi trap",
+        "S3_Chords": "Warm felt piano chords",
+        "S4_Foley": "cozy vinyl warmth, ice clinking Foley textures",
+        "S5_Bass": "lazy deep 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hats",
+        "S7_Aesthetic": "pastel midnight diner aesthetic",
+        "S8_Vocal": "Soft, sleepy, cute Japanese female vocals",
+        "S9_Rap": "smooth relaxed rhythmic rap phrasing",
+        "S10_Hook": "catchy sing-along hook",
+        "S11_BPM": 123
+      }
+    },
+    {
+      "id": 11,
+      "bpm": 130,
+      "baseKey": "kawaii_electro_pop",
+      "cluster_id": "Cluster_D_Neon_Electro_Spice",
+      "cluster_label": "🤖 Electro③",
+      "label": "#11 [🤖Electro / 130 BPM] 2000s渋谷系テクノポップ・Chiptune・ケロケロ声",
+      "short_label": "130 BPM / 2000s渋谷系テクノポップ・Chiptune・ケロケロAutoTune",
+      "adlib_hooks": [
+        "(トゥルトゥル ならす)",
+        "(ワン ツースリー)",
+        "(くるくる ループ)"
+      ],
+      "foley_visual_props": "retro portable game console, flip phone or translucent Y2K headphones, pop holographic stickers",
+      "sound_aesthetic_tag": "2000s Shibuya-kei futuristic technopop vibe, glossy Y2K cyber pastel aesthetic",
+      "raw_native_prompt": "Japanese Kawaii Electro Pop, 2000s Japanese futuristic technopop, Chiptune Trap. Bright 8-bit synth arpeggios, vocoder robot accents, bouncy electro bassline, snappy electronic claps, crisp quantized hi-hats, nostalgic Shibuya-kei electronic vibe. Cute robotic autotuned Japanese female vocals, deadpan sweet delivery with fast rhythmic techno-rap phrasing and super catchy repeating melodic hook, 130 bpm.",
+      "cluster_name": "⚡ Cluster D: 2000s渋谷系・ネオン電子音スパイス (128-130 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Electro Pop, 2000s Japanese futuristic technopop",
+        "S2_Beat": "Chiptune Trap",
+        "S3_Chords": "Bright 8-bit synth arpeggios",
+        "S4_Foley": "vocoder robot accents, retro game bleeps",
+        "S5_Bass": "bouncy electro bassline",
+        "S6_Drums": "snappy electronic claps, crisp quantized hi-hats",
+        "S7_Aesthetic": "nostalgic Shibuya-kei electronic vibe",
+        "S8_Vocal": "Cute robotic autotuned Japanese female vocals, deadpan sweet delivery",
+        "S9_Rap": "fast rhythmic techno-rap phrasing",
+        "S10_Hook": "super catchy repeating melodic hook",
+        "S11_BPM": 130
+      }
+    },
+    {
+      "id": 12,
+      "bpm": 128,
+      "baseKey": "kawaii_electro_pop",
+      "cluster_id": "Cluster_D_Neon_Electro_Spice",
+      "cluster_label": "🤖 Electro③",
+      "label": "#12 [🤖Electro / 128 BPM] 雨のネオン街・Electro House・ディスコベース",
+      "short_label": "128 BPM / 雨のネオン街・Electro House・ディスコベース",
+      "adlib_hooks": [
+        "(ネオンが ゆれる)",
+        "(ステップ ふんで)",
+        "(Dancin in the night)"
+      ],
+      "foley_visual_props": "neon puddles reflecting on wet city pavement, glowing vending machine in rainy night, stylish earphones",
+      "sound_aesthetic_tag": "glossy futuristic rainy night aesthetic, vibrant magenta and cyan neon reflections",
+      "raw_native_prompt": "Japanese Kawaii Electro House, playful Melodic Club Pop. Heavy sidechain compressed sawtooth synth chords, punchy four-on-the-floor kick, sparkly FM synth bells, filtered disco bass, glossy futuristic rainy night aesthetic. Cute processed Japanese female vocals with crisp rhythmic techno delivery and soaring melodic electro hook, 128 bpm.",
+      "cluster_name": "⚡ Cluster D: 2000s渋谷系・ネオン電子音スパイス (128-130 BPM)",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Electro House",
+        "S2_Beat": "playful Melodic Club Pop, punchy four-on-the-floor kick",
+        "S3_Chords": "Heavy sidechain compressed sawtooth synth chords, sparkly FM synth bells",
+        "S4_Foley": "rainy neon street ambiance",
+        "S5_Bass": "filtered disco bass",
+        "S6_Drums": "punchy four-on-the-floor kick, crisp quantized hi-hats",
+        "S7_Aesthetic": "glossy futuristic rainy night aesthetic",
+        "S8_Vocal": "Cute processed Japanese female vocals",
+        "S9_Rap": "crisp rhythmic techno delivery",
+        "S10_Hook": "soaring melodic electro hook",
+        "S11_BPM": 128
+      }
+    },
+    {
+      "id": 13,
+      "bpm": 124,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#13 [🍰Bedroom / 124 BPM] 冬の部屋・レコードノイズ・フェルトピアノ",
+      "short_label": "124 BPM / 冬の部屋・レコードノイズ・フェルトピアノ",
+      "adlib_hooks": [
+        "(パチパチ ゆれる)",
+        "(あったかい ココア)",
+        "(ぎゅっと してて)"
+      ],
+      "foley_visual_props": "holding a warm mug of hot cocoa with both hands, oversized knit sweater sleeves, snow outside window",
+      "sound_aesthetic_tag": "cozy winter bedroom warmth, soft vinyl crackle mood, gentle amber indoor lighting",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy winter lo-fi trap beat. Warm felt piano chords, cozy vinyl crackle texture, deep lazy 808 sub-bass, snappy acoustic snare, crisp hi-hat rolls, pastel late-night aesthetic, cozy nocturnal warmth. Soft, sleepy, cute Japanese female vocals with smooth relaxed rhythmic rap phrasing and catchy bittersweet melodic hook, 124 bpm.",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy winter lo-fi trap beat",
+        "S3_Chords": "Warm felt piano chords",
+        "S4_Foley": "cozy vinyl crackle texture",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hat rolls",
+        "S7_Aesthetic": "pastel late-night aesthetic, cozy nocturnal warmth",
+        "S8_Vocal": "Soft, sleepy, cute Japanese female vocals",
+        "S9_Rap": "smooth relaxed rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 124
+      }
+    },
+    {
+      "id": 14,
+      "bpm": 125,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_B_Rainy_Nostalgic_Dusk",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#14 [🍰Bedroom / 125 BPM] 冬の帰り道・ローズピアノ・ソフト808",
+      "short_label": "125 BPM / 冬の帰り道・ローズピアノ・ソフト808",
+      "adlib_hooks": [
+        "(しろい といき)",
+        "(かじかむ ゆびさき)",
+        "(もうちょっと だけ)"
+      ],
+      "foley_visual_props": "plaid muffler wrapped around neck, white breath in cold winter air, glowing streetlamps at dusk",
+      "sound_aesthetic_tag": "cozy winter street aesthetic, nostalgic twilight snow illumination, soft cinematic bokeh",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy adolescent lo-fi trap beat. Warm rhodes chords, sweet vinyl crackle texture, deep soft 808 sub-bass, snappy acoustic snare, crisp hi-hat rolls, cozy winter street aesthetic. Soft, breathy, cute Japanese female vocals with smooth playful rhythmic rap phrasing and catchy bittersweet melodic hook, 125 bpm.",
+      "cluster_name": "🌧️ Cluster B: 雨音・帰り道・ノスタルジー (125-126 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy adolescent lo-fi trap beat",
+        "S3_Chords": "Warm rhodes chords",
+        "S4_Foley": "sweet vinyl crackle texture",
+        "S5_Bass": "deep soft 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hat rolls",
+        "S7_Aesthetic": "cozy winter street aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "smooth playful rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 125
+      }
+    },
+    {
+      "id": 15,
+      "bpm": 123,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_C_Midnight_Room_Diner",
+      "cluster_label": "🍰 Bedroom①",
+      "label": "#15 [🍰Bedroom / 123 BPM] 深夜ダイナー・エレピ・氷グラスFoley・切ないフック",
+      "short_label": "123 BPM / 深夜ダイナー・エレピ・氷グラスFoley・切ないフック",
+      "adlib_hooks": [
+        "(カランコロン ならす)",
+        "(とけちゃう まえに)",
+        "(ねぇ こっちみて)"
+      ],
+      "foley_visual_props": "stirring ice cubes in glass with a straw, cozy diner window seat at midnight, soft neon bokeh",
+      "sound_aesthetic_tag": "pastel late-night diner aesthetic, bittersweet lo-fi warmth, intimate close-up",
+      "raw_native_prompt": "Cute Japanese chill bedroom pop, cozy midnight diner lo-fi trap beat. Warm electric piano chords, soft vinyl crackle texture, deep lazy 808 sub-bass, snappy acoustic snare, crisp hi-hat rolls, ice glass Foley sounds, pastel late-night diner aesthetic. Soft, breathy, cute Japanese female vocals with smooth playful rhythmic rap phrasing and catchy bittersweet melodic hook, 123 bpm.",
+      "cluster_name": "🌙 Cluster C: 深夜2時の部屋・ダイナー (123-124 BPM)",
+      "slots": {
+        "S1_Genre": "Cute Japanese chill bedroom pop",
+        "S2_Beat": "cozy midnight diner lo-fi trap beat",
+        "S3_Chords": "Warm electric piano chords",
+        "S4_Foley": "soft vinyl crackle texture, ice glass Foley sounds",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp hi-hat rolls",
+        "S7_Aesthetic": "pastel late-night diner aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "smooth playful rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 123
+      }
+    },
+    {
+      "id": 16,
+      "bpm": 126,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_E_Dark_Fairytale_Ruins",
+      "cluster_label": "🥀 Ruins⑤",
+      "cluster_name": "🥀 Cluster E: 廃墟・アンティーク・ダークメルヘン (124-126 BPM)",
+      "label": "#16 [🥀Ruins / 126 BPM] 廃墟オルゴール・時計秒針Foley・アンティークピアノ",
+      "short_label": "126 BPM / 廃墟オルゴール・時計秒針Foley",
+      "adlib_hooks": [
+        "(チクタク まわる)",
+        "(きえないで ね)",
+        "(ぽつんと ひとり)"
+      ],
+      "foley_visual_props": "antique music box with brass gears, dusty clock hands ticking on abandoned wall, dried flowers in glass dome",
+      "sound_aesthetic_tag": "melancholic abandoned ruins aesthetic, moody desaturated lighting, dusty light rays through broken window",
+      "raw_native_prompt": "Cute Japanese dark fairytale bedroom pop, hauntingly beautiful lo-fi trap beat. Delicate antique music box plucks, dusty felt piano chords, subtle clock ticking Foley textures, deep lazy 808 sub-bass, snappy acoustic snare, crisp stereo hi-hat rolls, melancholic abandoned ruins aesthetic. Soft, fragile, cute Japanese female vocals with smooth whispered rhythmic rap phrasing and catchy bittersweet melodic hook, 126 bpm.",
+      "slots": {
+        "S1_Genre": "Cute Japanese dark fairytale bedroom pop",
+        "S2_Beat": "hauntingly beautiful lo-fi trap beat",
+        "S3_Chords": "Delicate antique music box plucks, dusty felt piano chords",
+        "S4_Foley": "subtle clock ticking Foley textures",
+        "S5_Bass": "deep lazy 808 sub-bass",
+        "S6_Drums": "snappy acoustic snare, crisp stereo hi-hat rolls",
+        "S7_Aesthetic": "melancholic abandoned ruins aesthetic",
+        "S8_Vocal": "Soft, fragile, cute Japanese female vocals",
+        "S9_Rap": "smooth whispered rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 126
+      }
+    },
+    {
+      "id": 17,
+      "bpm": 124,
+      "baseKey": "kawaii_bedroom_trap",
+      "cluster_id": "Cluster_E_Dark_Fairytale_Ruins",
+      "cluster_label": "🕯️ Castle⑤",
+      "cluster_name": "🕯️ Cluster E: 古城・書斎・ゴシックアカデミア (124 BPM)",
+      "label": "#17 [🕯️Castle / 124 BPM] 古城チェンバロ・万年筆Foley・ゴシックトラップ",
+      "short_label": "124 BPM / 古城チェンバロ・万年筆Foley",
+      "adlib_hooks": [
+        "(サラサラ かくよ)",
+        "(ひみつの ことば)",
+        "(ルルララ うたう)"
+      ],
+      "foley_visual_props": "fountain pen with gold nib writing on parchment paper, flickering candlelight on antique oak desk, vintage leather-bound books",
+      "sound_aesthetic_tag": "moonlit antique library aesthetic, warm flickering candle glow, deep velvety shadows",
+      "raw_native_prompt": "Japanese Kawaii Gothic Melodic Trap, classical dark academia bedroom pop. Sparkling harpsichord arpeggios, mournful chamber cello accents, fountain pen writing on paper Foley sounds, bouncy 808 sub-bass, snappy claps, crisp hi-hat rolls, moonlit antique library aesthetic. Soft, breathy, cute Japanese female vocals with rapid playful rhythmic rap delivery and dramatic emotional melodic hook, 124 bpm.",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Gothic Melodic Trap",
+        "S2_Beat": "classical dark academia bedroom pop, Melodic Trap",
+        "S3_Chords": "Sparkling harpsichord arpeggios, mournful chamber cello accents",
+        "S4_Foley": "fountain pen writing on paper Foley sounds",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hat rolls",
+        "S7_Aesthetic": "moonlit antique library aesthetic",
+        "S8_Vocal": "Soft, breathy, cute Japanese female vocals",
+        "S9_Rap": "rapid playful rhythmic rap delivery",
+        "S10_Hook": "dramatic emotional melodic hook",
+        "S11_BPM": 124
+      }
+    },
+    {
+      "id": 18,
+      "bpm": 132,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "🌌 Celestial②",
+      "cluster_name": "🌌 Cluster A: 星海・神秘・クリスタル (132 BPM)",
+      "label": "#18 [🌌Celestial / 132 BPM] 星海クリスタル・水面波紋Foley・浮遊FutureBass",
+      "short_label": "132 BPM / 星海クリスタル・水面波紋Foley",
+      "adlib_hooks": [
+        "(きらきら ゆれる)",
+        "(ほしまで とどけ)",
+        "(ふわりと うかぶ)"
+      ],
+      "foley_visual_props": "stargazing binoculars or glowing glass lantern, ripples on night water reflecting Milky Way, luminous floating sparkles",
+      "sound_aesthetic_tag": "mystical starry night aesthetic, deep indigo sky and luminous cyan starlight, ethereal dreamlike bloom",
+      "raw_native_prompt": "Japanese Kawaii Ethereal Future Bass, dreamy celestial Melodic Trap. Shimmering crystal glass plucks, warm ambient synth pads, gentle water ripple textures, bouncy 808 sub-bass, snappy claps, crisp hi-hat rolls, mystical starry night aesthetic. Soft, airy, cute Japanese female vocals with smooth floating rhythmic rap phrasing and soaring sing-along melodic chorus, 132 bpm.",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Ethereal Future Bass",
+        "S2_Beat": "dreamy celestial Melodic Trap",
+        "S3_Chords": "Shimmering crystal glass plucks, warm ambient synth pads",
+        "S4_Foley": "gentle water ripple textures",
+        "S5_Bass": "bouncy 808 sub-bass",
+        "S6_Drums": "snappy claps, crisp hi-hat rolls",
+        "S7_Aesthetic": "mystical starry night aesthetic",
+        "S8_Vocal": "Soft, airy, cute Japanese female vocals",
+        "S9_Rap": "smooth floating rhythmic rap phrasing",
+        "S10_Hook": "soaring sing-along melodic chorus",
+        "S11_BPM": 132
+      }
+    },
+    {
+      "id": 19,
+      "bpm": 128,
+      "baseKey": "kawaii_electro_pop",
+      "cluster_id": "Cluster_D_Neon_Electro_Spice",
+      "cluster_label": "🏎️ Highway③",
+      "cluster_name": "🏎️ Cluster D: 湾岸・ハイウェイ・アーバンシティ (128 BPM)",
+      "label": "#19 [🏎️Highway / 128 BPM] 湾岸ミッドナイト・ヴィンテージエレピ・ハイウェイトラップ",
+      "short_label": "128 BPM / 湾岸ミッドナイト・ハイウェイトラップ",
+      "adlib_hooks": [
+        "(ビュンビュン はしる)",
+        "(ネオンの かなた)",
+        "(つれてって ね)"
+      ],
+      "foley_visual_props": "car dashboard glowing through rainy windshield, stream of red and white taillights, passenger side mirror reflecting city skyline",
+      "sound_aesthetic_tag": "nostalgic midnight drive aesthetic, cinematic anamorphic lens flares, slick wet asphalt reflections",
+      "raw_native_prompt": "Cute Japanese midnight city pop trap, sleek urban highway lo-fi beat. Glossy vintage electric piano chords, groovy synth bass + deep 808 sub-bass, snappy electronic claps, crisp hi-hat rolls, passing streetlights and wet asphalt ambiance, nostalgic midnight drive aesthetic. Soft, cool, breathy Japanese female vocals with tight rhythmic rap phrasing and catchy bittersweet melodic hook, 128 bpm.",
+      "slots": {
+        "S1_Genre": "Cute Japanese midnight city pop trap",
+        "S2_Beat": "sleek urban highway lo-fi beat",
+        "S3_Chords": "Glossy vintage electric piano chords",
+        "S4_Foley": "passing streetlights and wet asphalt ambiance",
+        "S5_Bass": "groovy synth bass + deep 808 sub-bass",
+        "S6_Drums": "snappy electronic claps, crisp hi-hat rolls",
+        "S7_Aesthetic": "nostalgic midnight drive aesthetic",
+        "S8_Vocal": "Soft, cool, breathy Japanese female vocals",
+        "S9_Rap": "tight rhythmic rap phrasing",
+        "S10_Hook": "catchy bittersweet melodic hook",
+        "S11_BPM": 128
+      }
+    },
+    {
+      "id": 20,
+      "bpm": 135,
+      "baseKey": "kawaii_future_bass",
+      "cluster_id": "Cluster_A_AfterSchool_Sunset",
+      "cluster_label": "☣️ Climax②",
+      "cluster_name": "☣️ Cluster A: 終末・嵐・ディストピアOST (135 BPM)",
+      "label": "#20 [☣️Climax / 135 BPM] 終末クライマックス・Supersaw・嵐ノイズFoley",
+      "short_label": "135 BPM / 終末クライマックス・嵐ノイズFoley",
+      "adlib_hooks": [
+        "(ザーザー ふるね)",
+        "(きこえて いますか)",
+        "(はしりぬける よ)"
+      ],
+      "foley_visual_props": "heavy raindrops hitting concrete, windblown yellow warning tape, dramatic lightning flash silhouetting industrial structure",
+      "sound_aesthetic_tag": "cinematic post-apocalyptic anime OST aesthetic, high contrast storm lighting, intense atmospheric rim lights",
+      "raw_native_prompt": "Japanese Kawaii Dystopian Future Bass, emotional Melodic Trap. Bright dramatic supersaw leads, melancholic piano counter-melody, faint radio static and rainstorm Foley textures, powerful 808 sub-bass, energetic halftime beat, crisp hi-hat rolls, cinematic post-apocalyptic anime OST aesthetic. Soft, cute, emotional Japanese female vocals with rapid rhythmic rap delivery and soaring heart-wrenching melodic chorus, 135 bpm.",
+      "slots": {
+        "S1_Genre": "Japanese Kawaii Dystopian Future Bass",
+        "S2_Beat": "emotional Melodic Trap, energetic halftime beat",
+        "S3_Chords": "Bright dramatic supersaw leads, melancholic piano counter-melody",
+        "S4_Foley": "faint radio static and rainstorm Foley textures",
+        "S5_Bass": "powerful 808 sub-bass",
+        "S6_Drums": "energetic halftime beat, crisp hi-hat rolls",
+        "S7_Aesthetic": "cinematic post-apocalyptic anime OST aesthetic",
+        "S8_Vocal": "Soft, cute, emotional Japanese female vocals",
+        "S9_Rap": "rapid rhythmic rap delivery",
+        "S10_Hook": "soaring heart-wrenching melodic chorus",
+        "S11_BPM": 135
+      }
+    }
+  ]
+}

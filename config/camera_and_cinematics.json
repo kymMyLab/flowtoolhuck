@@ -1,0 +1,187 @@
+{
+  "title": "🎥 カメラワーク・構図・KenBurns・演出規則マスター",
+  "camera_works": [
+    {
+      "id": "static",
+      "label": "固定（フィックス）",
+      "motionPrompt": "Static camera, perfectly still cinematic frame, stable perspective",
+      "recommendedKenBurns": "none"
+    },
+    {
+      "id": "zoom-in",
+      "label": "ゆっくりズームイン",
+      "motionPrompt": "Slow cinematic zoom in towards the subject, dramatic emotional tension",
+      "recommendedKenBurns": "zoom-in"
+    },
+    {
+      "id": "zoom-out",
+      "label": "ゆっくりズームアウト",
+      "motionPrompt": "Slow cinematic zoom out revealing the expansive atmosphere and surrounding environment",
+      "recommendedKenBurns": "zoom-out"
+    },
+    {
+      "id": "pan-left",
+      "label": "パン（左へ流す）",
+      "motionPrompt": "Smooth horizontal camera pan movement from right to left",
+      "recommendedKenBurns": "pan-left"
+    },
+    {
+      "id": "pan-right",
+      "label": "パン（右へ流す）",
+      "motionPrompt": "Smooth horizontal camera pan movement from left to right",
+      "recommendedKenBurns": "pan-right"
+    },
+    {
+      "id": "tilt-up",
+      "label": "ティルト（見上げる）",
+      "motionPrompt": "Slow cinematic vertical camera tilt moving upwards towards the sky",
+      "recommendedKenBurns": "tilt-up"
+    },
+    {
+      "id": "tilt-down",
+      "label": "ティルト（見下ろす）",
+      "motionPrompt": "Slow cinematic vertical camera tilt moving downwards from overhead",
+      "recommendedKenBurns": "tilt-down"
+    },
+    {
+      "id": "handheld",
+      "label": "手持ち風（微細な揺れ）",
+      "motionPrompt": "Realistic handheld camera style, subtle organic breathing camera shake, cinema verite realism",
+      "recommendedKenBurns": "zoom-in"
+    },
+    {
+      "id": "tracking",
+      "label": "被写体を追従（トラッキング）",
+      "motionPrompt": "Dynamic camera tracking shot smoothly following the character in motion",
+      "recommendedKenBurns": "pan-left"
+    }
+  ],
+  "shot_scales": {
+    "Close-Up": {
+      "scale": "Extreme Close-Up",
+      "tag": "極限ドアップ・瞳",
+      "cinematicAngle": "Intense macro close-up cropped tightly at mid-forehead and lower lip, massive emotive sparkling eyes dominating the canvas, delicate iris reflections, trembling eyelashes, pure face and eyes only",
+      "mangaAngle": "Full-bleed extreme macro eye panel, intense screentones, hyper-detailed iris reflections, dramatic emotional tension"
+    },
+    "Upward": {
+      "scale": "Low-Angle Upward",
+      "tag": "極限煽り・見上げ",
+      "cinematicAngle": "Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening against the immense soaring sky",
+      "mangaAngle": "Dynamic low-angle upward worm-eye view, dramatic perspective lines, character towering over camera, full-bleed kinetic angle"
+    },
+    "Medium": {
+      "scale": "Low-Angle Upward",
+      "tag": "上半身・対峙",
+      "cinematicAngle": "Dramatic low-angle worm\\",
+      "mangaAngle": "Dramatic high-contrast cel-shaded lighting, character holding a dynamic combat or decisive standing pose, speed lines, full-bleed"
+    },
+    "Panorama": {
+      "scale": "Extreme Wide Panorama",
+      "tag": "超広角・情景主役",
+      "cinematicAngle": "Grand panoramic environmental tableau where sweeping sky, colossal horizon, and expansive landscape overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette",
+      "mangaAngle": "Massive double-spread establishing panorama, detailed environment dominating canvas, tiny distant character silhouette, full-bleed"
+    },
+    "High-Angle": {
+      "scale": "Overhead High-Angle",
+      "tag": "真上俯瞰・影と幾何学",
+      "cinematicAngle": "Steep overhead high-angle bird-eye view looking down from above at a 75-degree angle, emphasizing ground geometry, environmental textures, and long dramatic cast shadows across the floor plane",
+      "mangaAngle": "High-angle bird-eye manga panel looking down on character from above, dramatic floor textures, angular top-down perspective, full-bleed"
+    },
+    "Profile": {
+      "scale": "Medium Close-Up Profile",
+      "tag": "完全真横・プロファイル",
+      "cinematicAngle": "Exact 90-degree horizontal side profile view of subject placed along outer rule-of-thirds gazing across wide open negative space toward frame edge, razor-sharp silhouette with brilliant rim lighting",
+      "mangaAngle": "Clean side profile manga portrait, dramatic negative space, stylish profile line art, rim light contrast, full-bleed"
+    },
+    "View": {
+      "scale": "Medium-Wide Rear View",
+      "tag": "背後・見送り・視線共有",
+      "cinematicAngle": "Atmospheric rear three-quarter view seen from behind looking outward into the glowing depth of the world, back turned to camera, sharing character\\",
+      "mangaAngle": "Dramatic back view manga panel, character seen from behind facing vast open world, expressive shoulder line, full-bleed"
+    },
+    "Shot": {
+      "scale": "Medium Bust Shot",
+      "tag": "堂々たるバストアップ",
+      "cinematicAngle": "Cinematic tight chest-up bust framing capturing nuanced facial emotion and upper-body posture, soft directional chiaroscuro rim lighting, beautifully framed rule-of-thirds composition",
+      "mangaAngle": "Heroic chest-up manga bust portrait, cel-shaded lighting, intense focus on character eyes and collar, full-bleed"
+    },
+    "Wide": {
+      "scale": "Extreme Wide Panorama",
+      "tag": "引き・世界観",
+      "cinematicAngle": "Cinematic wide horizontal shot, street-level atmospheric perspective with environment and props",
+      "mangaAngle": "Establishing shot with detailed pen-and-ink architecture, deep shadows, cinematic comic perspective, full-bleed edge-to-edge"
+    },
+    "Close-up": {
+      "scale": "Extreme Close-Up",
+      "tag": "迫真アップ",
+      "cinematicAngle": "Intense macro close-up cropped tightly at forehead and chin, massive emotive sparkling eyes dominating the canvas, delicate iris reflections",
+      "mangaAngle": "Intense macro eye close-up filling the frame, heavy screen tones, speed lines radiating, dramatic monologue expression, borderless"
+    }
+  },
+  "cine_cycles": [],
+  "negative_tokens": {
+    "anatomicalIntegrity": "giant, giantess, floating head, severed body, floating torso, half body cut off by scenery, scale error, diorama, simple mugshot, bad anatomy, deformed fingers",
+    "antiReferenceStiffness": "identical pose as reference image, repeating reference image pose, static mugshot pose, repeating reference angle",
+    "antiAnachronisms": "modern clothing, wristwatch, eyeglasses, sneakers, smartphone, headphones, electricity pole, asphalt road",
+    "antiFrameAndBorder": "frame, border, picture frame, ornate frame, arch frame, decorative border, white border, white margin, white gutter, paper margin, comic panel outline, panel border, outer frame, blank edge, cropped border, boxed layout, empty spacing",
+    "renderingQuality": "lowres, worst quality, text, subtitles, closed captions, caption bar, caption banner, speech bubbles, dialog box, Japanese characters, kanji subtitles, news ticker, text overlay, title text, watermark, signature, blurry, artifact, jpeg artifacts, poorly rendered"
+  },
+  "telop_styles": [
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "badgeColor": "",
+      "defaultTransition": "",
+      "defaultPosition": ""
+    },
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "badgeColor": "",
+      "defaultTransition": "",
+      "defaultPosition": ""
+    },
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "badgeColor": "",
+      "defaultTransition": "",
+      "defaultPosition": ""
+    },
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "badgeColor": "",
+      "defaultTransition": "",
+      "defaultPosition": ""
+    },
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "badgeColor": "",
+      "defaultTransition": "",
+      "defaultPosition": ""
+    },
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "badgeColor": "",
+      "defaultTransition": "",
+      "defaultPosition": ""
+    },
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "badgeColor": "",
+      "defaultTransition": "",
+      "defaultPosition": ""
+    }
+  ]
+}

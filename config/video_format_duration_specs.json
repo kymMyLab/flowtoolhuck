@@ -1,0 +1,378 @@
+{
+  "title": "192ネイティブ総合スタジオ 6大ジャンル別 尺・カット構成・演出初期値・音声・音楽・VFX完全定義仕様書",
+  "version": "1.2.0",
+  "updated_at": "2026-10-26T10:35:00+09:00",
+  "description": "音楽生成・画像生成・音声合成・動画レンダリング・フロントエンドUIで一元参照する、ジャンル別マスター仕様書。秒数・カット配分・テロップ演出初期値・音声有無・音楽歌唱種別・映像VFX設定・冒頭フック・話速・文字数目安・キャラアンカーを完全統括。",
+  "core_policy": {
+    "principle": "Head-Segment Extraction & Two-Stage Rocket Architecture",
+    "rule": "基本はロングの先頭部分（ヘッド）を抽出してショート動画とし、1回の台本・画像・音楽・音声生成でショート単体完結とロング完全版の両方を成立させる。"
+  },
+  "genres": {
+    "mv": {
+      "genre_id": "mv",
+      "name": "音楽MV（アルバム一括）",
+      "icon": "🎵",
+      "theme_file": "/opt/geekom-192/config/01_music_mv_themes.json",
+      "total_cuts": 30,
+      "character_anchor": false,
+      "export_format_default": "both",
+      "shorts": {
+        "target_duration_sec": 15.0,
+        "cut_count": 6,
+        "cut_range": [1, 6],
+        "aspect_ratio": "9:16",
+        "structure_role": "サビ・ティザー神仕様（最高潮のサビ15秒を凝縮した爆速ループ仕様）",
+        "audio_rule": "vocal_music_chorus",
+        "opening_hook": "flash_strobe",
+        "opening_hook_description": "冒頭0.2s扉絵 ＋ 1.0s全カット超高速走馬灯フラッシュ（最高密度のオープニングフック）"
+      },
+      "long": {
+        "target_duration_sec": 165.0,
+        "min_duration_sec": 150.0,
+        "max_duration_sec": 180.0,
+        "cut_count": 30,
+        "cut_range": [1, 30],
+        "aspect_ratio": "16:9",
+        "structure_role": "フル尺楽曲MV（イントロ・A/Bメロ・サビ・Cメロ・アウトロの完全な音楽世界観）",
+        "audio_rule": "vocal_music_full"
+      },
+      "production_specs": {
+        "telop_style_default": "remotion-kinetic-33600",
+        "telop_label": "🔥 Remotion 33,600通り キネティック神MV (ウイング縦書き×中央メガ黄金)",
+        "speech": {
+          "enabled": false,
+          "type": "none",
+          "speaking_rate": 1.0,
+          "char_limit_per_cut": "10〜15文字（歌詞フレーズ）",
+          "description": "ナレーションなし（楽曲ボーカルが主役）",
+          "default_speaker_id": null
+        },
+        "music": {
+          "enabled": true,
+          "vocal_mode": "vocal",
+          "music_type": "flow_vocal_album",
+          "is_karaoke": false,
+          "target_bpm": 128,
+          "duration_sec": 165.0,
+          "shorts_snippet_sec": 15.0,
+          "ducking_volume": 1.0,
+          "fade_out_duration_sec": 1.5,
+          "description": "普通に歌う（フルボーカル楽曲＋オケ、ダッキングなし）"
+        },
+        "vfx": {
+          "filter_preset": "none",
+          "equalizer_hud": true,
+          "digital_rain": true,
+          "camera_motion": "ken_burns_dynamic",
+          "description": "HUD・イコライザー・デジタルレイン全開、ビート同期ダイナミックカメラ"
+        }
+      },
+      "script_prompt_guide": "楽曲の歌詞・ビートに完全同期。前半6カットは最も視覚的インパクトの強いキラーサビを展開し、全体30カットで起承転結の壮大な音楽物語を描く。"
+    },
+    "drama": {
+      "genre_id": "drama",
+      "name": "ドラマ連番",
+      "icon": "🎬",
+      "theme_file": "/opt/geekom-192/config/02_drama_series_themes.json",
+      "total_cuts": 12,
+      "character_anchor": true,
+      "export_format_default": "both",
+      "shorts": {
+        "target_duration_sec": 30.0,
+        "cut_count": 6,
+        "cut_range": [1, 6],
+        "aspect_ratio": "9:16",
+        "structure_role": "起承転結・電撃決着編（Cut 1〜6で事件発生から鮮やかなオチまで完璧に一度完結）",
+        "audio_rule": "dialogue_narration_with_ducked_ost",
+        "opening_hook": "fade_in_cinematic",
+        "opening_hook_description": "走馬灯点滅なし。冒頭は特大扉絵から静かにフェードインし、セリフで引き込む"
+      },
+      "long": {
+        "target_duration_sec": 90.0,
+        "min_duration_sec": 80.0,
+        "max_duration_sec": 100.0,
+        "cut_count": 12,
+        "cut_range": [1, 12],
+        "aspect_ratio": "16:9",
+        "structure_role": "深層・歴史の真相編（前半30秒の決着の裏にあった謀略・人間ドラマ・後日談まで描く完全版）",
+        "audio_rule": "dialogue_narration_with_ducked_ost"
+      },
+      "production_specs": {
+        "telop_style_default": "cinema-subtle",
+        "telop_label": "🎞️ シネマティック・ミニマル (映画字幕・スリムプレート)",
+        "speech": {
+          "enabled": true,
+          "type": "dialogue_tts",
+          "speaking_rate": 1.0,
+          "char_limit_per_cut": "25〜35文字（聞き取りやすく感情が伝わる文字量）",
+          "description": "セリフ・掛け合い・感情ナレーションあり（VoiceVox音量1.0）",
+          "default_speaker_id": "13"
+        },
+        "music": {
+          "enabled": true,
+          "vocal_mode": "instrumental",
+          "music_type": "instrumental_ost",
+          "is_karaoke": false,
+          "target_bpm": 85,
+          "duration_sec": 90.0,
+          "shorts_snippet_sec": 30.0,
+          "ducking_volume": 0.10,
+          "fade_out_duration_sec": 2.5,
+          "description": "ボーカルなし劇伴OST（ナレーションを邪魔しないインスト劇伴、半分に抑えた-20dB微音ダッキング重畳）"
+        },
+        "vfx": {
+          "filter_preset": "filmgrain",
+          "equalizer_hud": false,
+          "digital_rain": false,
+          "camera_motion": "cinematic_drama",
+          "description": "イコライザー消灯・雨消灯、映画的フィルムグレイン、落ち着いたシネマパン"
+        }
+      },
+      "script_prompt_guide": "【2段ロケット構成必須】Cut 1〜6（前半30秒）で事件発生から衝撃のオチまで完全に起承転結を完結させること。Cut 7〜12（後半60秒）は『だが、歴史の真実はここからだった…』と切り出し、その決着の裏に隠された驚くべき謀略や悲哀、後日談へとさらに深く展開させること。"
+    },
+    "trivia": {
+      "genre_id": "trivia",
+      "name": "衝撃雑学Shorts",
+      "icon": "💡",
+      "theme_file": "/opt/geekom-192/config/03_trivia_shorts_themes.json",
+      "total_cuts": 8,
+      "character_anchor": false,
+      "export_format_default": "both",
+      "shorts": {
+        "target_duration_sec": 30.0,
+        "cut_count": 5,
+        "cut_range": [1, 5],
+        "aspect_ratio": "9:16",
+        "structure_role": "常識崩壊オチ（疑問提示 ➔ 常識の裏切り ➔ 衝撃の事実でスッキリ完結）",
+        "audio_rule": "fast_narration_with_loop_bgm",
+        "opening_hook": "zoom_pop_question",
+        "opening_hook_description": "走馬灯点滅なし。冒頭は疑問を投げかける特大文字とズームインで強烈に惹きつける"
+      },
+      "long": {
+        "target_duration_sec": 80.0,
+        "min_duration_sec": 70.0,
+        "max_duration_sec": 90.0,
+        "cut_count": 8,
+        "cut_range": [1, 8],
+        "aspect_ratio": "16:9",
+        "structure_role": "現代の余波・メカニズム深掘り編（雑学オチに続き、科学的理由・現代への影響まで解説）",
+        "audio_rule": "fast_narration_with_loop_bgm"
+      },
+      "production_specs": {
+        "telop_style_default": "mv-center-climax",
+        "telop_label": "💥 画面中央クライマックス (サビ・特大フラッシュ)",
+        "speech": {
+          "enabled": true,
+          "type": "fast_narration",
+          "speaking_rate": 1.18,
+          "char_limit_per_cut": "35〜50文字（早口テンポで情報量を詰め込む）",
+          "description": "1.18倍速のハキハキ明瞭ナレーション（ずんだもん等）",
+          "default_speaker_id": "3"
+        },
+        "music": {
+          "enabled": true,
+          "vocal_mode": "instrumental",
+          "music_type": "loop_bgm",
+          "is_karaoke": false,
+          "target_bpm": 125,
+          "duration_sec": 80.0,
+          "shorts_snippet_sec": 30.0,
+          "ducking_volume": 0.25,
+          "fade_out_duration_sec": 1.5,
+          "description": "軽快なインスト・ループBGM（ボーカルなし、音量0.25ダッキング）"
+        },
+        "vfx": {
+          "filter_preset": "none",
+          "equalizer_hud": false,
+          "digital_rain": false,
+          "camera_motion": "quick_impact",
+          "description": "イコライザー消灯、スラムズーム・高速テンポ切り替え"
+        }
+      },
+      "script_prompt_guide": "【2段ロケット構成】Cut 1〜5（前半30秒）で『実は○○だった！』という衝撃オチまで単体完結。Cut 6〜8（後半）で『なぜそんな事態になったのか？』という科学的・歴史的メカニズムと現代の驚きの応用例まで解説する。"
+    },
+    "quotes": {
+      "genre_id": "quotes",
+      "name": "偉人の名言・処方箋",
+      "icon": "📜",
+      "theme_file": "/opt/geekom-192/config/04_quotes_prescriptions_themes.json",
+      "total_cuts": 6,
+      "character_anchor": false,
+      "export_format_default": "both",
+      "shorts": {
+        "target_duration_sec": 20.0,
+        "cut_count": 3,
+        "cut_range": [1, 3],
+        "aspect_ratio": "9:16",
+        "structure_role": "魂の処方箋（現代人の苦悩 ➔ 偉人の名言バーン！で心を撃ち抜いて完結）",
+        "audio_rule": "solemn_narration_with_ambient_piano",
+        "opening_hook": "fade_in_cinematic",
+        "opening_hook_description": "走馬灯点滅なし。肖像画のような荘厳な静寂からフェードイン"
+      },
+      "long": {
+        "target_duration_sec": 65.0,
+        "min_duration_sec": 60.0,
+        "max_duration_sec": 75.0,
+        "cut_count": 6,
+        "cut_range": [1, 6],
+        "aspect_ratio": "16:9",
+        "structure_role": "壮絶生涯ドキュメント編（名言が生まれた絶望的な挫折と、明日からの具体的アクションプラン）",
+        "audio_rule": "solemn_narration_with_ambient_piano"
+      },
+      "production_specs": {
+        "telop_style_default": "cinema-gold-sub",
+        "telop_label": "👑 シネマ・ゴールド字幕 (映画字幕・金文字スモーク)",
+        "speech": {
+          "enabled": true,
+          "type": "solemn_narration",
+          "speaking_rate": 0.92,
+          "char_limit_per_cut": "15〜25文字（余韻と間を大切にした研ぎ澄まされた言葉）",
+          "description": "重厚で落ち着いた低音ナレーション（青山龍星等）",
+          "default_speaker_id": "13"
+        },
+        "music": {
+          "enabled": true,
+          "vocal_mode": "instrumental",
+          "music_type": "ambient_piano",
+          "is_karaoke": false,
+          "target_bpm": 68,
+          "duration_sec": 65.0,
+          "shorts_snippet_sec": 20.0,
+          "ducking_volume": 0.20,
+          "fade_out_duration_sec": 2.5,
+          "description": "重厚なインスト・アンビエントピアノ（ボーカルなし、静寂と余韻）"
+        },
+        "vfx": {
+          "filter_preset": "sepia",
+          "equalizer_hud": false,
+          "digital_rain": false,
+          "camera_motion": "slow_contemplation",
+          "description": "イコライザー消灯、温かみのあるセピア/銀残し、静かなスロー引きカメラ"
+        }
+      },
+      "script_prompt_guide": "【2段ロケット構成】Cut 1〜3（前半20秒）で圧倒的エモさで魂を鼓舞して完結。Cut 4〜6（後半）でその偉人がどれほどのどん底からこの言葉を紡ぎ出したのかという背景ドラマを語る。"
+    },
+    "horror": {
+      "genre_id": "horror",
+      "name": "怪異・未解決事件",
+      "icon": "👻",
+      "theme_file": "/opt/geekom-192/config/05_mystery_folklore_themes.json",
+      "total_cuts": 12,
+      "character_anchor": false,
+      "export_format_default": "both",
+      "shorts": {
+        "target_duration_sec": 45.0,
+        "cut_count": 6,
+        "cut_range": [1, 6],
+        "aspect_ratio": "9:16",
+        "structure_role": "恐怖の怪異譚（不気味な違和感 ➔ 恐怖のタメ ➔ ゾッとするオチで完結）",
+        "audio_rule": "whisper_narration_with_dark_drone",
+        "opening_hook": "flicker_dark_fade",
+        "opening_hook_description": "走馬灯点滅なし。暗闇と微細なフリッカーで心理的恐怖を醸成して開始"
+      },
+      "long": {
+        "target_duration_sec": 135.0,
+        "min_duration_sec": 120.0,
+        "max_duration_sec": 150.0,
+        "cut_count": 12,
+        "cut_range": [1, 12],
+        "aspect_ratio": "16:9",
+        "structure_role": "未解決検証ドキュメンタリー（警察の極秘捜査資料、矛盾する証言、今なお続く謎の追跡）",
+        "audio_rule": "whisper_narration_with_dark_drone"
+      },
+      "production_specs": {
+        "telop_style_default": "cyber-neon-glitch",
+        "telop_label": "⚡ サイバー・ネオングリッチ (RGBシフト＋ネオン枠)",
+        "speech": {
+          "enabled": true,
+          "type": "whisper_narration",
+          "speaking_rate": 0.90,
+          "char_limit_per_cut": "20〜35文字（間とタメを意識した不気味なセリフ）",
+          "description": "低く囁くウィスパー調・不穏なドキュメンタリーナレーション",
+          "default_speaker_id": "13"
+        },
+        "music": {
+          "enabled": true,
+          "vocal_mode": "instrumental",
+          "music_type": "dark_ambient_drone",
+          "is_karaoke": false,
+          "target_bpm": 60,
+          "duration_sec": 135.0,
+          "shorts_snippet_sec": 45.0,
+          "ducking_volume": 0.18,
+          "fade_out_duration_sec": 3.0,
+          "description": "不気味なインスト・ダークドローン（ボーカルなし、心理的圧迫感）"
+        },
+        "vfx": {
+          "filter_preset": "bleach_bypass",
+          "equalizer_hud": false,
+          "digital_rain": false,
+          "camera_motion": "creepy_creep",
+          "description": "イコライザー消灯、シネマ銀残し（重厚コントラスト・色調低下）、ジワジワ迫る不穏カメラ"
+        }
+      },
+      "script_prompt_guide": "【2段ロケット構成】Cut 1〜6（前半45秒）で1つの怪異体験談として背筋が凍るオチで完結。Cut 7〜12（後半90秒）で『しかし、警察が押収した現場の記録には、到底信じられない痕跡が残されていた…』と本格未解決検証へ展開する。"
+    },
+    "craft": {
+      "genre_id": "craft",
+      "name": "超絶技巧・職人魂",
+      "icon": "🏯",
+      "theme_file": "/opt/geekom-192/config/06_craftsmanship_themes.json",
+      "total_cuts": 10,
+      "character_anchor": false,
+      "export_format_default": "both",
+      "shorts": {
+        "target_duration_sec": 35.0,
+        "cut_count": 5,
+        "cut_range": [1, 5],
+        "aspect_ratio": "9:16",
+        "structure_role": "神業カタルシス（無骨な塊が神業の手仕事で劇的に美しく仕上がる快感オチ）",
+        "audio_rule": "asmr_craft_sounds_with_wagakki_lofi",
+        "opening_hook": "fade_in_cinematic",
+        "opening_hook_description": "走馬灯点滅なし。手元の作業音と素材のマクロ接写から滑らかに開始"
+      },
+      "long": {
+        "target_duration_sec": 105.0,
+        "min_duration_sec": 90.0,
+        "max_duration_sec": 120.0,
+        "cut_count": 10,
+        "cut_range": [1, 10],
+        "aspect_ratio": "16:9",
+        "structure_role": "匠の哲学と技術の深淵（0.01mmの精度を極める道具の秘密と千年の伝統哲学）",
+        "audio_rule": "asmr_craft_sounds_with_wagakki_lofi"
+      },
+      "production_specs": {
+        "telop_style_default": "cinema-subtle",
+        "telop_label": "🎞️ シネマティック・ミニマル (映画字幕・スリムプレート)",
+        "speech": {
+          "enabled": true,
+          "type": "minimal_poetic",
+          "speaking_rate": 0.95,
+          "char_limit_per_cut": "10〜20文字（最小限の詩的ナレーション、作業音が主役）",
+          "description": "最小限の詩的ナレーション（手元の作業音・ASMRが主役）",
+          "default_speaker_id": "13"
+        },
+        "music": {
+          "enabled": true,
+          "vocal_mode": "instrumental",
+          "music_type": "wagakki_lofi_ambient",
+          "is_karaoke": false,
+          "target_bpm": 80,
+          "duration_sec": 105.0,
+          "shorts_snippet_sec": 35.0,
+          "ducking_volume": 0.22,
+          "fade_out_duration_sec": 2.5,
+          "description": "和楽器ローファイ・作業用インスト（ボーカルなし、心地よい集中感）"
+        },
+        "vfx": {
+          "filter_preset": "filmgrain",
+          "equalizer_hud": false,
+          "digital_rain": false,
+          "camera_motion": "macro_glide",
+          "description": "イコライザー消灯、微細フィルムグレイン、手元・刃先の高精細マクログライド"
+        }
+      },
+      "script_prompt_guide": "【2段ロケット構成】Cut 1〜5（前半35秒）で原石から輝く名品への変貌をASMR的に凝縮して完結。Cut 6〜10（後半）でその神業を支える門外不出の道具や職人の哲学を語る。"
+    }
+  }
+}
