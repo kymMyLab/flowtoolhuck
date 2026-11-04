@@ -64,3 +64,4 @@ export const SAFE_CHARACTERS: SafeCharacter[] = [
     recommendedTastes: ['劇画・ヴィンテージ昭和', 'ダークゴシック童話・黒髪ノスタルジー', '90年代セル画・サイバーパンク']
   }
 ];
+

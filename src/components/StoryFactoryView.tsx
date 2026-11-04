@@ -3,7 +3,8 @@ import { SAFE_CHARACTERS } from '../config/safeCharacters';
 import { FACTORY_THEME_CATEGORIES } from '../config/factoryThemes';
 import { TASTES } from '../constants';
 import { runFactorySingleEpisode } from '../services/storyFactoryRunner';
-import { FactoryExportPayload } from '../services/storyFactoryService';
+import { FactoryExportCut, FactoryExportPayload } from '../services/storyFactoryService';
+import { formatDataUri } from '../services/utils';
 
 interface StoryFactoryViewProps {
   onBackToStudio: () => void;
@@ -25,6 +26,7 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
   const [completedCuts, setCompletedCuts] = useState<number>(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewNarration, setPreviewNarration] = useState<string>('');
+  const [liveCuts, setLiveCuts] = useState<FactoryExportCut[]>([]);
   const [historyPayloads, setHistoryPayloads] = useState<FactoryExportPayload[]>([]);
 
   const isAbortedRef = useRef<boolean>(false);
@@ -38,18 +40,20 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
     setIsProducing(true);
     isAbortedRef.current = false;
     setCompletedCuts(0);
+    setLiveCuts([]);
 
     const themeToUse = customTheme.trim() || activeCategory.items[Math.floor(Math.random() * activeCategory.items.length)];
     addLog(`🚀 【Story Factory】全自動連続生成を開始します（全${episodeCount}話 / 各話24カット + 扉絵2枚 + 自動DL）`, 'process');
 
-    let persistentTurnaround: string | undefined = undefined;
+    let persistentTurnaround: { base64: string; mediaId?: string } | undefined = undefined;
 
     try {
       for (let ep = 1; ep <= episodeCount; ep++) {
         if (isAbortedRef.current) break;
         setCurrentEpisodeNo(ep);
-        
-        // テーマ（複数話ある場合は少しアレンジまたは連番リストから選定）
+        setLiveCuts([]);
+
+        // テーマ（複数話ある場合は連番リストから選定）
         const epTheme = episodeCount > 1 && !customTheme.trim()
           ? activeCategory.items[(ep - 1) % activeCategory.items.length]
           : themeToUse;
@@ -67,14 +71,18 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
             setCompletedCuts(prog.completedCuts);
             if (prog.currentCutImage) setPreviewImage(prog.currentCutImage);
             if (prog.currentNarration) setPreviewNarration(prog.currentNarration);
+            if (prog.cutsSoFar) setLiveCuts(prog.cutsSoFar);
           },
           () => isAbortedRef.current,
           persistentTurnaround
         );
 
-        // シリーズ内で主人公の姿を揃えるため三面図を再利用
+        // シリーズ内で主人公の姿を揃えるため三面図(base64 & mediaId)を再利用
         if (result.turnaroundBase64) {
-          persistentTurnaround = result.turnaroundBase64;
+          persistentTurnaround = {
+            base64: result.turnaroundBase64,
+            mediaId: result.turnaroundMediaId
+          };
         }
 
         setHistoryPayloads(prev => [result, ...prev]);
@@ -108,6 +116,8 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
     addLog('🛑 緊急停止リクエストを送信しました...', 'warning');
   };
 
+  const formattedPreviewSrc = formatDataUri(previewImage);
+
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden font-sans">
       {/* ── 最上部ヘッダー ── */}
@@ -133,7 +143,7 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2 text-xs text-slate-400 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>超指数バックオフ常時ON (429自動回避)</span>
+            <span>既存エンジン直結: Banana2➔Pro自動昇格 ＆ 超指数バックオフ常時ON</span>
           </div>
         </div>
       </header>
@@ -277,7 +287,7 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
             </div>
             <div className="flex justify-between">
               <span>・キャラ三面図:</span>
-              <span className="text-emerald-400 font-bold">自動先行作画 (容姿固定)</span>
+              <span className="text-emerald-400 font-bold">自動先行作画 ＆ MediaID参照固定</span>
             </div>
             <div className="flex justify-between">
               <span>・保存方式:</span>
@@ -323,7 +333,7 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
                   <p className="text-xs text-slate-400">
                     {isProducing
                       ? `カット進捗: ${completedCuts} / 24 コマ作画済み`
-                      : 'ボタンを押すと、シナリオ考案 ➔ 三面図 ➔ 扉絵2枚 ➔ 24カット作画 ➔ 自動保存 が一気に走ります'}
+                      : 'ボタンを押すと、シナリオ考案 ➔ 三面図(MediaID固定) ➔ 扉絵2枚 ➔ 24カット作画 ➔ 自動保存 が一気に走ります'}
                   </p>
                 </div>
               </div>
@@ -345,12 +355,12 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
           </div>
 
           {/* リアルタイム作画プレビュー */}
-          <div className="flex-1 min-h-[360px] flex items-center justify-center p-6 rounded-2xl bg-slate-900/60 border border-slate-800 relative overflow-hidden">
-            {previewImage ? (
+          <div className="min-h-[340px] flex items-center justify-center p-6 rounded-2xl bg-slate-900/60 border border-slate-800 relative overflow-hidden">
+            {formattedPreviewSrc ? (
               <div className="flex flex-col items-center max-w-md w-full space-y-4">
                 <div className="w-72 h-72 rounded-2xl overflow-hidden border-2 border-emerald-500/50 shadow-2xl bg-black relative group">
                   <img
-                    src={previewImage}
+                    src={formattedPreviewSrc}
                     alt="Current Cut"
                     className="w-full h-full object-cover"
                   />
@@ -375,6 +385,33 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
             )}
           </div>
 
+          {/* 作画済みカット一覧グリッド */}
+          {liveCuts.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                🎞️ 現在のエピソード 作画済みカット ({liveCuts.length} / 24)
+              </h4>
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                {liveCuts.map((c) => {
+                  const src = formatDataUri(c.imageBase64);
+                  return (
+                    <div key={c.cutNo} className="rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex flex-col">
+                      <div className="aspect-square bg-black relative">
+                        {src && <img src={src} alt={`Cut ${c.cutNo}`} className="w-full h-full object-cover" />}
+                        <span className="absolute top-1 left-1 px-1.5 py-0.2 rounded bg-black/75 text-[9px] font-mono text-emerald-300">
+                          #{String(c.cutNo).padStart(2, '0')}
+                        </span>
+                      </div>
+                      <div className="p-1.5 text-[10px] text-slate-300 line-clamp-2 leading-tight">
+                        {c.narrationJp}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 生成済み履歴 / 自動ダウンロード通知 */}
           {historyPayloads.length > 0 && (
             <div className="space-y-3">
@@ -382,32 +419,35 @@ export const StoryFactoryView: React.FC<StoryFactoryViewProps> = ({ onBackToStud
                 📦 今回の自動ダウンロード完了アーカイブ ({historyPayloads.length}本)
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {historyPayloads.map((hist, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-xl bg-slate-900 border border-emerald-900/60 flex items-center justify-between"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-black shrink-0 border border-slate-700">
-                        {hist.cuts[0]?.imageBase64 && (
-                          <img
-                            src={hist.cuts[0].imageBase64}
-                            alt="thumb"
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-200">
-                          第{hist.episodeNo}話: {hist.titleJp}
+                {historyPayloads.map((hist, idx) => {
+                  const thumbSrc = formatDataUri(hist.cuts[0]?.imageBase64);
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-xl bg-slate-900 border border-emerald-900/60 flex items-center justify-between"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-black shrink-0 border border-slate-700">
+                          {thumbSrc && (
+                            <img
+                              src={thumbSrc}
+                              alt="thumb"
+                              className="w-full h-full object-cover"
+                            />
+                          )}
                         </div>
-                        <div className="text-[10px] text-emerald-400">
-                          ✅ 24cut + 扉絵2枚 + 台本 を自動保存済み
+                        <div>
+                          <div className="text-xs font-bold text-slate-200">
+                            第{hist.episodeNo}話: {hist.titleJp}
+                          </div>
+                          <div className="text-[10px] text-emerald-400">
+                            ✅ 24cut + 扉絵2枚 + 台本 を自動保存済み
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
