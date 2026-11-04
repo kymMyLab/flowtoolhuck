@@ -223,8 +223,15 @@ export async function generateFactoryImageWithExistingEngine(opts: {
     });
   }
 
-  const base64 = extractImageBase64(res);
+  let base64 = extractImageBase64(res);
   const mediaId = extractMediaId(res);
+
+  if (!base64 && mediaId && typeof (Flow as any)?.media?.getBase64 === 'function') {
+    try {
+      const b64Res = await (Flow as any).media.getBase64(mediaId);
+      base64 = extractImageBase64(b64Res);
+    } catch (_) {}
+  }
 
   if (!base64) {
     throw new Error(`${label} の画像データ抽出に失敗しました`);

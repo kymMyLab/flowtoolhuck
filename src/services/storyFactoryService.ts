@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import { savePackageFile, safeJsonStringify } from './export/fileDownloader';
 import { resolveMasterCategory } from '../config/masterCategories';
 import { extractHighlights } from './directorService';
+import { extractImageBase64 } from './utils';
 
 export interface FactoryExportCut {
   cutNo: number;
@@ -29,6 +30,16 @@ export interface FactoryExportPayload {
 
 // 同一秒内の複数ダウンロードでも100%衝突しない連番カウンタ
 let downloadSequenceCounter = 0;
+
+/**
+ * 文字列でもオブジェクト({ base64, mediaId })でも絶対にエラーを出さずに純粋なbase64文字列を取り出す安全関数
+ */
+export function safeCleanBase64(input: any): string | null {
+  const extracted = extractImageBase64(input);
+  if (!extracted || typeof extracted !== 'string') return null;
+  const raw = extracted.includes('base64,') ? extracted.split('base64,').pop() || '' : extracted;
+  return raw.trim() || null;
+}
 
 /**
  * ファイル名被りを100%根絶するユニークファイル名生成
@@ -103,33 +114,33 @@ export async function downloadStoryFactoryZip(
   const root = zip.folder(folderName) || zip;
 
   // 1. 三面図（既存互換 character_turnaround.png ＆ 00_character_anchor.png）
-  if (payload.turnaroundBase64) {
-    const raw = payload.turnaroundBase64.split('base64,').pop() || payload.turnaroundBase64;
-    root.file('character_turnaround.png', raw, { base64: true });
-    root.file('00_character_anchor.png', raw, { base64: true });
+  const cleanTurnaround = safeCleanBase64(payload.turnaroundBase64);
+  if (cleanTurnaround) {
+    root.file('character_turnaround.png', cleanTurnaround, { base64: true });
+    root.file('00_character_anchor.png', cleanTurnaround, { base64: true });
   }
 
   // 2. ショート用縦型扉絵 (9:16)（既存互換 cover_v.png / cover.png ＆ cover_shorts_9x16.png）
-  if (payload.coverShortsBase64) {
-    const raw = payload.coverShortsBase64.split('base64,').pop() || payload.coverShortsBase64;
-    root.file('cover_v.png', raw, { base64: true });
-    root.file('cover.png', raw, { base64: true });
-    root.file('cover_shorts_9x16.png', raw, { base64: true });
+  const cleanCoverShorts = safeCleanBase64(payload.coverShortsBase64);
+  if (cleanCoverShorts) {
+    root.file('cover_v.png', cleanCoverShorts, { base64: true });
+    root.file('cover.png', cleanCoverShorts, { base64: true });
+    root.file('cover_shorts_9x16.png', cleanCoverShorts, { base64: true });
   }
 
   // 3. ロング用横型扉絵 (16:9)（既存互換 cover_h.png ＆ cover_landscape_16x9.png）
-  if (payload.coverLongBase64) {
-    const raw = payload.coverLongBase64.split('base64,').pop() || payload.coverLongBase64;
-    root.file('cover_h.png', raw, { base64: true });
-    root.file('cover_landscape_16x9.png', raw, { base64: true });
+  const cleanCoverLong = safeCleanBase64(payload.coverLongBase64);
+  if (cleanCoverLong) {
+    root.file('cover_h.png', cleanCoverLong, { base64: true });
+    root.file('cover_landscape_16x9.png', cleanCoverLong, { base64: true });
   }
 
   // 4. 本編24カット（1:1 正方形連番画像 cut_01.png 〜 cut_24.png）
   for (const cut of payload.cuts) {
     const padNum = String(cut.cutNo).padStart(2, '0');
-    if (cut.imageBase64) {
-      const raw = cut.imageBase64.split('base64,').pop() || cut.imageBase64;
-      root.file(`cut_${padNum}.png`, raw, { base64: true });
+    const cleanCutImg = safeCleanBase64(cut.imageBase64);
+    if (cleanCutImg) {
+      root.file(`cut_${padNum}.png`, cleanCutImg, { base64: true });
     }
     await new Promise(r => setTimeout(r, 0));
   }
@@ -180,7 +191,7 @@ export async function downloadStoryFactoryZip(
     characterName: payload.characterName,
     speakerCredit: payload.characterCredit,
     characterDna: payload.characterDna || '',
-    hasTurnaround: !!payload.turnaroundBase64,
+    hasTurnaround: !!cleanTurnaround,
     cuts: payload.cuts.map(c => {
       const cutPad = String(c.cutNo).padStart(2, '0');
       const hl = extractHighlights(c.narrationJp || '');
