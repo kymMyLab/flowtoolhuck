@@ -1,3 +1,4 @@
+import { SAFE_CHARACTERS } from '../config/safeCharacters';
 import { SeriesEpisodePlan } from '../types';
 import { getProductionModeConfig } from '../config/studioDefinitions';
 import { resolveTastePrompt } from './tasteStorage';
@@ -325,11 +326,15 @@ export function buildCompactScriptPrompt(
   taste?: string,
   productionMode?: string,
   isMultiPanel?: boolean,
-  existingTitles?: string[]
+  existingTitles?: string[],
+  characterId?: string,
+  targetCutCount?: number
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
-  const cutCount = effMode === 'manga' ? 24 : (effMode === 'mv' || isMvMode ? 30 : 12);
+  const cutCount = targetCutCount && targetCutCount > 0 ? targetCutCount : (effMode === 'manga' ? 24 : (effMode === 'mv' || isMvMode ? 30 : 12));
+  const fixedChar = characterId ? SAFE_CHARACTERS.find(c => c.id === characterId) : undefined;
+  const charDirective = fixedChar ? `\nPROTAGONIST LOCK: The protagonist MUST be "${fixedChar.nameJa}" (${fixedChar.dnaPromptEn}). Personality & speaking style in narrationJp: ${fixedChar.personality}. SAFETY GUARDRAIL: Never depict cruel abuse or make ${fixedChar.nameJa} a ruthless murderer/criminal.` : '';
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
 
   const plannedTitleJp = cleanEpisodeTitle(currentPlan.titleJp || `場面${epId}`);
@@ -349,7 +354,7 @@ ${avoidDupClause}
 
 RULES:
 ${titleRule}
-2. Protagonist: Define "characterDna" in English (consistent single protagonist: age, gender, hair, signature attire). All character cuts MUST feature this exact protagonist.
+2. Protagonist: Define "characterDna" in English (consistent single protagonist: age, gender, hair, signature attire). All character cuts MUST feature this exact protagonist.${charDirective}
 3. Object Cut: Cut 6 should be an iconic object without humans ("isObjectOnly": true).
 4. 8-Second Universal Stable Micro-Motion Progression:
 Every cut is an 8-second video! Character pose and grounded anatomy MUST remain 100% stable without morphing:

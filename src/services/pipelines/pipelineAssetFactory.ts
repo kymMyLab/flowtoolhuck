@@ -74,8 +74,11 @@ export async function ensureCharacterTurnaround(
       });
     }
 
-    const base64 = extractImageBase64(res);
+    let base64 = extractImageBase64(res);
     const mediaId = extractMediaId(res);
+    if (!base64 && mediaId && typeof (Flow as any)?.media?.getBase64 === 'function') {
+      try { base64 = extractImageBase64(await (Flow as any).media.getBase64(mediaId)); } catch (_) {}
+    }
 
     if (mediaId || base64) {
       addLog(`✨ 【三面図マスター確定】主人公の三面図シートが完成！全カットの基準アセットとして登録しました。`, 'success');
@@ -170,8 +173,11 @@ export async function ensureInfographicCover(
       });
     }
 
-    const coverBase64 = extractImageBase64(res);
+    let coverBase64 = extractImageBase64(res);
     const coverMediaId = extractMediaId(res);
+    if (!coverBase64 && coverMediaId && typeof (Flow as any)?.media?.getBase64 === 'function') {
+      try { coverBase64 = extractImageBase64(await (Flow as any).media.getBase64(coverMediaId)); } catch (_) {}
+    }
 
     if (coverMediaId || coverBase64) {
       updateEpisode(freshEp.id, {
@@ -196,7 +202,7 @@ export async function ensureInfographicCover(
       } : e));
 
       addLog(`✨ Ep.${freshEp.id}: 【扉絵自動生成完了】世界観適応インフォグラフィック扉絵が完成しました！（被りゼロ本格ポスター）`, 'success');
-      return { mediaId: res.mediaId, base64: res.base64, promptEn: coverPromptObj.promptEn };
+      return { mediaId: coverMediaId, base64: coverBase64, promptEn: coverPromptObj.promptEn };
     }
   } catch (err: any) {
     updateEpisode(freshEp.id, { isGeneratingCover: false });

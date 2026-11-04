@@ -182,6 +182,7 @@ export interface Episode {
   error?: string;
 
   // 時代・画風の固定用
+  characterId?: string;
   taste?: string;
   era?: string;
   theme?: string;
@@ -225,6 +226,7 @@ export interface GeneratorSettings {
   selectedAssetId?: number;
   isMultiPanel?: boolean;
   aspectRatio?: '9:16' | '1:1' | '16:9';
+  characterId?: string;
 
   // 三面図パイプライン設定
   enableTurnaroundSheet?: boolean;

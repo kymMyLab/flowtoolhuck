@@ -860,8 +860,11 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
           throw firstErr;
         }
       }
-      const finalBase64 = extractImageBase64(res);
+      let finalBase64 = extractImageBase64(res);
       const finalMediaId = extractMediaId(res);
+      if (!finalBase64 && finalMediaId && typeof (Flow as any)?.media?.getBase64 === 'function') {
+        try { finalBase64 = extractImageBase64(await (Flow as any).media.getBase64(finalMediaId)); } catch (_) {}
+      }
       console.log(`🖼️ [Ep.${epId} C${cutId} 画像抽出結果]`, {
         hasBase64: !!finalBase64,
         base64Length: finalBase64?.length,

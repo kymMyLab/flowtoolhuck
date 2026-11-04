@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FieldDropdown, SegmentedToggle, ToggleSwitch, NumberChoice } from './Primitives';
-import { GeneratorSettings, ReferenceAsset, ProductionMode, Episode } from '../types';
+import { GeneratorSettings, ReferenceAsset, Episode } from '../types';
 import { 
   IMAGE_MODELS, 
-  VIDEO_RATIO_OPTIONS,
   TASTES
 } from '../constants';
 import { loadCustomTastes } from '../services/tasteStorage';
+import { SAFE_CHARACTERS } from '../config/safeCharacters';
 
 import { ReferenceVault } from './ReferenceVault';
 import { getAllReferenceAssets } from '../services/db';
@@ -38,27 +38,16 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   const [isVolumeOpen, setIsVolumeOpen] = useState(true);
   const [isPipelineOpen, setIsPipelineOpen] = useState(true);
 
-  // 現在のエピソードの最大カット数を判定（MVは30、ショートは12、マンガは24など）
-  const activeMaxCuts = episodes[0]?.cuts?.length || (settings.productionMode === 'mv' ? 30 : settings.productionMode === 'manga' ? 24 : 12);
-
-  // カット数プリセットの動的構築 (デフォルト30、100枚までボタンで即選択、全カットボタン、手入力で200/300枚も上限なし)
+  // カット数プリセット: テスト用の2枚、5枚、12枚、本命の24枚をワンクリック選択可能に
   const cutPresetOptions = React.useMemo(() => {
-    const baseValues = [1, 5, 12, 30, 50, 100];
-    const allValues = Array.from(new Set([...baseValues, activeMaxCuts])).sort((a, b) => a - b);
+    const baseValues = [2, 5, 12, 24];
+    return baseValues.map(val => ({
+      value: val,
+      label: val === 2 ? '2枚 (テスト)' : val === 24 ? '24枚 (標準)' : `${val}枚`
+    }));
+  }, []);
 
-    return allValues.map(val => {
-      let label = `${val}枚`;
-      if (val === activeMaxCuts) {
-        label = val === 30 ? '30枚 (全)' : val === 12 ? '12枚 (全)' : `${val}枚 (全)`;
-      }
-      return {
-        value: val,
-        label
-      };
-    });
-  }, [activeMaxCuts]);
-
-  // 生成曲数/話数の選択肢プリセット（100曲あっても見やすく、全曲ボタン付き）
+  // 生成話数の選択肢プリセット
   const episodeOptions = React.useMemo(() => {
     if (settings.productionMode === 'style-matrix') {
       const totalTastesCount = Object.keys({ ...TASTES, ...loadCustomTastes() }).length;
@@ -70,44 +59,27 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
       }
       return res;
     }
-    if (settings.productionMode === 'mv') {
-      const max = settings.totalEpisodes || episodes.length || 5;
-      if (max <= 5) {
-        const base = [1, 2, 3, 4, 5].filter(n => n <= max);
-        return base;
-      }
-      // 100曲など大規模の場合: よく使う [1, 2, 5, 10, 20, 50, 全]
-      const steps = [1, 2, 5, 10, 20, 50].filter(n => n < max);
-      const res = Array.from(new Set([...steps, max])).sort((a, b) => a - b);
-      if (!res.includes(settings.episodeCount)) {
-        return Array.from(new Set([...res, settings.episodeCount])).sort((a, b) => a - b);
-      }
-      return res;
-    }
-    const base = [1, 2, 4, 10, 20, 50];
+    const base = [1, 2, 4, 10, 20];
     if (!base.includes(settings.episodeCount)) {
       return [...base, settings.episodeCount].sort((a, b) => a - b);
     }
     return base;
-  }, [settings.productionMode, settings.totalEpisodes, settings.episodeCount, episodes.length]);
+  }, [settings.productionMode, settings.episodeCount]);
 
   const formatEpisodeLabel = (v: number) => {
     if (settings.productionMode === 'style-matrix') {
       const totalTastesCount = Object.keys({ ...TASTES, ...loadCustomTastes() }).length;
       return v >= totalTastesCount ? `${v}種 (全)` : `${v}種`;
     }
-    const max = settings.totalEpisodes || episodes.length;
-    if (settings.productionMode === 'mv' && max && v >= max) {
-      return `${v}曲 (全)`;
-    }
-    return `${v}${settings.productionMode === 'mv' ? '曲' : (settings.productionMode === 'episodes' ? '話' : '本')}`;
+    return `${v}${settings.productionMode === 'episodes' ? '話' : '本'}`;
   };
+
+  const selectedChar = SAFE_CHARACTERS.find(c => c.id === settings.characterId);
 
   const pipelineBadge = [
     settings.enableTurnaroundSheet !== false ? '三面図' : '',
-    settings.enableEndFrames !== false ? '2F' : '',
-    settings.enableObjectCut !== false ? '象徴' : '',
-    settings.autoVideo ? '自動完走' : ''
+    settings.autoDownload ? '自動DL' : '',
+    settings.superBackoff ? '指数バックオフ' : ''
   ].filter(Boolean).join('+') || '通常';
 
   return (
@@ -115,7 +87,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
       {/* ── 中央スクロールエリア（各項目アコーディオン） ── */}
       <div className="flex flex-col gap-2 overflow-y-auto pr-1 dark-scrollbar flex-1 py-2">
         
-        {/* ① リファレンス・作画演出 アコーディオン */}
+        {/* ① キャラクター・作画演出 アコーディオン */}
         <div className={`flex flex-col rounded-xl border border-slate-200 bg-white transition-all shadow-sm ${isWorldOpen ? 'overflow-visible relative z-30' : 'overflow-hidden'}`}>
           <button
             type="button"
@@ -124,11 +96,11 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="material-symbols-outlined text-[18px] text-purple-600 shrink-0">face</span>
-              <span className="text-xs font-bold text-slate-800 tracking-wide truncate">リファレンス・作画演出</span>
+              <span className="text-xs font-bold text-slate-800 tracking-wide truncate">主役キャラ・リファレンス</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 font-bold border border-purple-200 max-w-[140px] truncate">
-                {settings.selectedAssetId ? 'リファレンス適用中' : '未設定'}
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 max-w-[160px] truncate">
+                {selectedChar ? `${selectedChar.icon} ${selectedChar.nameJa}` : (settings.selectedAssetId ? 'リファレンス適用中' : 'テーマ自動')}
               </span>
               <span className={`material-symbols-outlined text-[20px] text-slate-400 transition-transform duration-200 ${isWorldOpen ? 'rotate-180 text-purple-600' : ''}`}>
                 expand_more
@@ -138,6 +110,50 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           
           {isWorldOpen && (
             <div className="p-3 flex flex-col gap-3 border-t border-slate-200 animate-in fade-in duration-200">
+              {/* 👤 主役キャラクター選択（VOICEVOX / 収益化OK） */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between px-0.5">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                    <span>👤 主役キャラクター固定</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-600 font-bold">VOICEVOX収益化OK</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {SAFE_CHARACTERS.map(char => {
+                    const isSelected = settings.characterId === char.id;
+                    return (
+                      <button
+                        key={char.id}
+                        type="button"
+                        disabled={isProducing}
+                        onClick={() => setSettings(s => ({ ...s, characterId: char.id }))}
+                        className={`px-2 py-1.5 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm font-black'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 font-bold'
+                        }`}
+                      >
+                        <span className="text-sm shrink-0">{char.icon}</span>
+                        <span className="text-[11px] truncate">{char.nameJa}</span>
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    disabled={isProducing}
+                    onClick={() => setSettings(s => ({ ...s, characterId: '' }))}
+                    className={`px-2 py-1.5 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-1.5 ${
+                      !settings.characterId
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm font-black'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 font-bold'
+                    }`}
+                  >
+                    <span className="text-sm shrink-0">🎭</span>
+                    <span className="text-[11px] truncate">テーマ自動</span>
+                  </button>
+                </div>
+              </div>
+
               <ReferenceVault 
                 assets={referenceAssets} 
                 selectedId={settings.selectedAssetId} 
@@ -185,7 +201,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold border border-amber-200">
-                {settings.episodeCount}{settings.productionMode === 'mv' ? '曲' : '話'} / 先行{settings.previewCutCount}枚
+                {settings.episodeCount}話 / {settings.previewCutCount}枚 ({settings.aspectRatio || '1:1'})
               </span>
               <span className={`material-symbols-outlined text-[20px] text-slate-400 transition-transform duration-200 ${isVolumeOpen ? 'rotate-180 text-amber-500' : ''}`}>
                 expand_more
@@ -199,7 +215,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               
               <SegmentedToggle 
                 label="作画アスペクト比" 
-                value={settings.aspectRatio || '9:16'} 
+                value={settings.aspectRatio || '1:1'} 
                 onChange={v => setSettings(s => ({ ...s, aspectRatio: v as any }))} 
                 items={[
                   { value: '9:16', label: '📱 9:16 (縦動画)' },
@@ -210,11 +226,11 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               
               <div className="grid grid-cols-2 gap-2.5">
                 <NumberChoice label="並列数" value={settings.parallelCount} options={[1, 2, 3, 4]} onChange={v => setSettings(s => ({ ...s, parallelCount: v }))} />
-                {/* 生成曲数・話数（直接入力＋動的プリセット） */}
+                {/* 生成話数（直接入力＋動的プリセット） */}
                 <div className="flex flex-col gap-1 w-full">
                   <div className="flex items-center justify-between px-0.5">
                     <p className="text-xs font-bold text-slate-600 truncate">
-                      {settings.productionMode === 'mv' ? '生成曲数' : (settings.productionMode === 'style-matrix' ? '比較画風数' : (settings.productionMode === 'episodes' ? '生成話数' : '生成本数'))}
+                      {settings.productionMode === 'style-matrix' ? '比較画風数' : '生成話数'}
                     </p>
                     <div className="flex items-center gap-1">
                       <span className="text-[10px] text-slate-400 font-medium">指定:</span>
@@ -233,7 +249,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                         className="w-12 h-5 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-indigo-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-inner"
                       />
                       <span className="text-[10px] font-bold text-slate-500">
-                        {settings.productionMode === 'mv' ? '曲' : (settings.productionMode === 'style-matrix' ? '種' : (settings.productionMode === 'episodes' ? '話' : '本'))}
+                        {settings.productionMode === 'style-matrix' ? '種' : '話'}
                       </span>
                     </div>
                   </div>
@@ -270,8 +286,8 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                   <div className="flex flex-col gap-1.5 w-full">
                     <div className="flex items-center justify-between px-1">
                       <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] text-indigo-600">movie_creation</span>
-                        {settings.productionMode === 'mv' ? '先行カット数' : '生成カット数'}
+                        <span className="material-symbols-outlined text-[16px] text-indigo-600">photo_library</span>
+                        1話あたりの作画枚数
                       </span>
                       <div className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
                         <span className="text-[10px] text-slate-500 font-bold">自由指定:</span>
@@ -279,7 +295,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                           type="number" 
                           min="1" 
                           max="9999"
-                          value={settings.previewCutCount || 30}
+                          value={settings.previewCutCount || 2}
                           onChange={e => {
                             const val = parseInt(e.target.value, 10);
                             if (!isNaN(val) && val > 0) {
@@ -300,7 +316,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                             key={opt.value}
                             type="button"
                             onClick={() => setSettings(s => ({ ...s, previewCutCount: opt.value }))}
-                            className={`flex-1 min-w-[50px] h-[30px] flex items-center justify-center text-xs font-bold transition-all cursor-pointer rounded-lg ${
+                            className={`flex-1 min-w-[60px] h-[30px] flex items-center justify-center text-xs font-bold transition-all cursor-pointer rounded-lg ${
                               isSelected 
                                 ? 'bg-indigo-600 text-white shadow-sm font-black' 
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
@@ -312,14 +328,13 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                       })}
                     </div>
                   </div>
-                  <SegmentedToggle label="動画化する割合" value={settings.videoRatio} onChange={v => setSettings(s => ({ ...s, videoRatio: v as any }))} items={VIDEO_RATIO_OPTIONS} />
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* ③ 自動化＆Veoパイプライン アコーディオン */}
+        {/* ③ 自動化＆パイプライン アコーディオン */}
         <div className={`flex flex-col rounded-xl border border-slate-200 bg-white transition-all shadow-sm ${isPipelineOpen ? 'overflow-visible relative z-10' : 'overflow-hidden'}`}>
           <button
             type="button"
@@ -342,10 +357,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
 
           {isPipelineOpen && (
             <div className="p-3 flex flex-col gap-2 border-t border-slate-200 animate-in fade-in duration-200 bg-white">
-              {settings.productionMode !== 'style-matrix' && (
-                <ToggleSwitch label="🎬 動画まで自動完走" checked={settings.autoVideo} onChange={v => setSettings(s => ({ ...s, autoVideo: v }))} />
-              )}
-              <ToggleSwitch label="📦 完了時自動ダウンロード" checked={settings.autoDownload} onChange={v => setSettings(s => ({ ...s, autoDownload: v }))} />
+              <ToggleSwitch label="📦 完了時自動ダウンロード (ZIP自動保存)" checked={settings.autoDownload} onChange={v => setSettings(s => ({ ...s, autoDownload: v }))} />
               <ToggleSwitch 
                 label="🌙 超指数バックオフ (夜間放置完走)" 
                 checked={!!settings.superBackoff} 
@@ -367,11 +379,6 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 label="📦 象徴アイテムカット (人なしシーン挿入)" 
                 checked={settings.enableObjectCut !== false} 
                 onChange={v => setSettings(s => ({ ...s, enableObjectCut: v }))} 
-              />
-              <ToggleSwitch 
-                label="🎬 1Cut2枚生成 (Veo補間用 Start/After絵)" 
-                checked={settings.enableEndFrames !== false} 
-                onChange={v => setSettings(s => ({ ...s, enableEndFrames: v }))} 
               />
             </div>
           )}

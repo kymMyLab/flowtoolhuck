@@ -1,3 +1,4 @@
+import { SAFE_CHARACTERS } from '../config/safeCharacters';
 import { Flow } from 'flow-sdk';
 import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, SeriesEpisodePlan, FocalPoint } from '../types';
 import { IMAGE_MODELS, DEFAULT_ASPECT_RATIO, STRICT_STYLE_SUFFIX, TASTES } from '../constants';
@@ -362,6 +363,8 @@ export interface GenerateSafeScriptOptions {
   productionMode?: string;
   isMultiPanel?: boolean;
   existingTitles?: string[];
+  characterId?: string;
+  targetCutCount?: number;
   superBackoff?: boolean;
   abortCheck?: () => boolean;
   addLog?: (msg: string, type?: 'info' | 'success' | 'warning' | 'error' | 'process') => void;
@@ -494,12 +497,13 @@ Output ONLY a JSON array of objects with the exact following keys (keep visualPr
 export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions): Promise<SafeScriptResult> {
   const {
     epId, currentPlan, country, theme, era, isMangaMode, isMvMode,
-    taste, productionMode, isMultiPanel, existingTitles, superBackoff, abortCheck, addLog
+    taste, productionMode, isMultiPanel, existingTitles, characterId, targetCutCount, superBackoff, abortCheck, addLog
   } = opts;
+  const fixedChar = characterId ? SAFE_CHARACTERS.find(c => c.id === characterId) : undefined;
 
   // 初手から無駄な長文指示を削ぎ落とした軽量骨組みプロンプトを使用（1〜2秒で即座に通す）
   const scriptPrompt = buildCompactScriptPrompt(
-    epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, isMultiPanel, existingTitles
+    epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, isMultiPanel, existingTitles, characterId, targetCutCount
   );
 
   let scriptRes: any;
@@ -609,7 +613,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   });
 
   const rawCuts = Array.isArray(parsed.cuts) ? parsed.cuts : (Array.isArray(parsed.scenes) ? parsed.scenes : (Array.isArray(parsed) ? parsed : []));
-  const effCutCount = isMangaMode ? 24 : (isMvMode ? 30 : 12);
+  const effCutCount = targetCutCount && targetCutCount > 0 ? targetCutCount : (isMangaMode ? 24 : (isMvMode ? 30 : 12));
   const targetLength = rawCuts.length >= 20 ? rawCuts.length : effCutCount;
   const normalizedCuts = Array.from({ length: targetLength }, (_, j) => {
     const cutData = rawCuts[j] || {};

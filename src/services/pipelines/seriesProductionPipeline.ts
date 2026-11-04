@@ -88,7 +88,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       titleJp: p.titleJp,
       titleEn: p.titleEn,
       summary: p.summary,
-      cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, settings.previewCutCount || (settings.productionMode === 'mv' ? 30 : 12)) }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
+      cuts: Array.from({ length: settings.previewCutCount || 2 }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
       isGenerating: false,
       isGeneratingRemainingImages: false,
       isBatchGeneratingVideos: false,
@@ -216,6 +216,8 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         productionMode: effectiveMode,
         isMultiPanel: settings.isMultiPanel,
         existingTitles,
+        characterId: settings.characterId,
+        targetCutCount: settings.previewCutCount,
         superBackoff: settings.superBackoff,
         abortCheck: () => isAbortedRef.current,
         addLog
@@ -223,7 +225,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
 
       addLog(`✨ 【第${epId}${unitLabel}】脚本＆演出構成が完成！（考証: ${sharedScript.eraAnalysisJp?.slice(0, 24) || '完了'}...）`, 'success');
 
-      const seriesCutsCount = Math.max(CUTS_PER_EPISODE, settings.previewCutCount || (isMv ? 30 : 12));
+      const seriesCutsCount = settings.previewCutCount || 2;
       const episodeCuts: Cut[] = Array.from({ length: seriesCutsCount }, (_, j) => {
         const cutData = sharedScript.cuts[j] || {} as any;
         return createPipelineCut(j, cutData, sharedScript, settings, effectiveMode, isMv, isManga);
@@ -270,7 +272,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         highlightWords: sharedScript.highlightWords || [], cuts: episodeCuts,
         characterTurnaroundMediaId: turnaroundMediaId,
         characterTurnaroundBase64: turnaroundBase64,
-        taste: settings.taste, era: settings.era, theme: settings.theme, productionMode: effectiveMode, isMvMode: isMv
+        characterId: settings.characterId, taste: settings.taste, era: settings.era, theme: settings.theme, productionMode: effectiveMode, isMvMode: isMv
       });
 
       addLog(`🎨 【第${epId}${unitLabel}】先行プレビュー ${settings.previewCutCount} カットの描画タスクを開始...（並列度: ${settings.parallelCount}）`, 'process');

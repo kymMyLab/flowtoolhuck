@@ -29,10 +29,13 @@ export const safeJsonStringify = (obj: any, indent = 2): string => {
 /**
  * ファイル名を生成（ASCII安全名とサニタイズ表示名の両方を作成）
  */
+let fileSeqCounter = 0;
 export function generateSafeFilenames(ep: Episode): { asciiFilename: string; displayFilename: string } {
+  fileSeqCounter = (fileSeqCounter + 1) % 1000;
+  const seq = String(fileSeqCounter).padStart(3, '0');
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
-  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}_${seq}`;
   
   // 1. 完全 ASCII 安全ファイル名 (Google Flow 親フレームやHTTPヘッダーが100%受け付ける英数字名)
   const asciiFilename = `FlowTool_Ep${ep.id}_${timestamp}.zip`;

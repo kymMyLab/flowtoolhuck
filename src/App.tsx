@@ -29,10 +29,10 @@ import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset, SeriesMani
 import { saveReferenceAsset } from './services/db';
 
 export default function App() {
-  const [studioViewMode, setStudioViewMode] = useState<'studio' | 'factory'>('factory');
+  const [studioViewMode, setStudioViewMode] = useState<'studio' | 'factory'>('studio');
   const [settings, setSettings] = useState<GeneratorSettings>({
-    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: '30%', episodeCount: 1, previewCutCount: 30, parallelCount: 2, autoVideo: false, autoDownload: false, superBackoff: false, isMvMode: false, isMultiPanel: false, aspectRatio: '1:1',
-    enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: true
+    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: 'none', episodeCount: 1, previewCutCount: 2, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, isMultiPanel: false, aspectRatio: '1:1', characterId: 'zundamon',
+    enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: false
   });
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -625,7 +625,7 @@ export default function App() {
           onOpenTasteShowroom={() => setIsTasteShowroomOpen(true)}
           onOpenCastModal={() => setIsCastModalOpen(true)}
           onOpenComicWizard={() => setIsComicWizardOpen(prev => !prev)}
-          onOpenMusicImport={() => setIsMusicImportOpen(prev => !prev)}
+          onOpenMusicImport={undefined}
           isMusicImportOpen={isMusicImportOpen}
           isComicWizardOpen={isComicWizardOpen}
           castCount={mangaProject.characters.length}

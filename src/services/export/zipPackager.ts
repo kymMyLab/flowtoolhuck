@@ -1,3 +1,5 @@
+import { extractImageBase64 } from '../utils';
+import { SAFE_CHARACTERS } from '../../config/safeCharacters';
 import JSZip from 'jszip';
 import { Episode, SeriesManifest } from '../../types';
 import { LogEntry } from '../../components/StudioLogs';
@@ -53,7 +55,8 @@ export const downloadZip = async (
       // Start絵
       if (c.imageBase64) {
         try {
-          const cleanImg = c.imageBase64.split('base64,').pop() || c.imageBase64;
+          const extImg = extractImageBase64(c.imageBase64) || '';
+          const cleanImg = typeof extImg === 'string' ? (extImg.split('base64,').pop() || extImg) : '';
           folder.file(`cut_${cutPad}.png`, cleanImg, { base64: true });
         } catch (e) {
           console.warn(`Failed to inject start image for cut ${c.id}:`, e);
@@ -85,7 +88,8 @@ export const downloadZip = async (
     const turnaroundBase64 = ep.characterTurnaroundBase64 || manifest?.referenceAsset?.base64;
     if (turnaroundBase64) {
       try {
-        const cleanTurnaround = turnaroundBase64.split('base64,').pop() || turnaroundBase64;
+        const extTurn = extractImageBase64(turnaroundBase64) || '';
+        const cleanTurnaround = typeof extTurn === 'string' ? (extTurn.split('base64,').pop() || extTurn) : '';
         folder.file('character_turnaround.png', cleanTurnaround, { base64: true });
       } catch (e) {
         console.warn('Failed to inject turnaround asset:', e);
@@ -93,7 +97,8 @@ export const downloadZip = async (
     }
     if (ep.masterAnchorBase64) {
       try {
-        const cleanMaster = ep.masterAnchorBase64.split('base64,').pop() || ep.masterAnchorBase64;
+        const extMas = extractImageBase64(ep.masterAnchorBase64) || '';
+        const cleanMaster = typeof extMas === 'string' ? (extMas.split('base64,').pop() || extMas) : '';
         folder.file('master_anchor.png', cleanMaster, { base64: true });
       } catch (e) {
         console.warn('Failed to inject master anchor asset:', e);
@@ -102,13 +107,24 @@ export const downloadZip = async (
     
     addLog(`📝 SRT字幕ファイルを生成中...`, 'info');
     folder.file('subtitles.srt', generateSRT(ep));
+    const charInfo = SAFE_CHARACTERS.find(ch => ch.id === ep.characterId);
+    const creditLine = charInfo ? charInfo.speakerCredit : 'VOICEVOX:ずんだもん / 東北ずん子プロジェクト (SSS合同会社)';
+    const scriptTxtLines = [
+      `【タイトル】${ep.titleJp || ''}`,
+      `【クレジット表記（概要欄用）】${creditLine}`,
+      `【あらすじ】${ep.summary || ''}`,
+      '',
+      ...ep.cuts.map(c => `[Cut ${String(c.id).padStart(2, '0')}] ${c.narrationJp || ''}`)
+    ].join('\n');
+    folder.file('script.txt', scriptTxtLines);
 
     // ━━━ REQ-03: 看板画像（cover）の縦型（9:16）＆ 横型（16:9）両面同梱 ━━━
     addLog(`🖼️ 看板画像（縦型 cover_v & 横型 cover_h）を合成中...`, 'info');
     
     // A. 縦型看板（1080x1920 / 9:16 縦型看板・ショート動画用）
     if (ep.coverBase64) {
-      const cleanCover = ep.coverBase64.split('base64,').pop() || ep.coverBase64;
+      const extCov = extractImageBase64(ep.coverBase64) || '';
+      const cleanCover = typeof extCov === 'string' ? (extCov.split('base64,').pop() || extCov) : '';
       folder.file('cover_v.png', cleanCover, { base64: true });
       folder.file('cover.png', cleanCover, { base64: true }); // 既存後方互換
     } else {
