@@ -322,9 +322,8 @@ export {
 
 export const PRODUCTION_MODES = PRODUCTION_MODES_LIST;
 export const IMAGE_MODELS = IMAGE_MODELS_REGISTRY;
-export const sanitizeFilename = (name: string) => (name || '').replace(/[\\/:*?"<>|]/g, '').trim();
 
 // システム動作に必要なテクニカル定数
-export const STRICT_STYLE_SUFFIX = ' seamless full-bleed vertical 9:16 artwork. Strictly upright vertical perspective. Grounded immersive cinematic human eye-level framing. Absolutely NO drone shots, NO modern aerial drones, NO borders, NO margins, NO text, NO subtitles, NO caption banner, NO speech bubbles, NO kanji, NO numbers, NO year labels, NO signs indicating the year or date, clean edge-to-edge artwork.';
+export const STRICT_STYLE_SUFFIX = ' seamless full-bleed square 1:1 artwork. Grounded immersive cinematic framing. Absolutely NO drone shots, NO modern aerial drones, NO borders, NO margins, NO text, NO subtitles, NO caption banner, NO speech bubbles, NO kanji, NO numbers, NO year labels, NO signs indicating the year or date, clean edge-to-edge artwork.';
 export const CUTS_PER_EPISODE = 12;
 export const DEFAULT_ASPECT_RATIO = '1:1';

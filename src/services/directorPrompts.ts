@@ -1,6 +1,5 @@
 import { SAFE_CHARACTERS } from '../config/safeCharacters';
 import { SeriesEpisodePlan } from '../types';
-import { getProductionModeConfig } from '../config/studioDefinitions';
 import { resolveTastePrompt } from './tasteStorage';
 import { checkIsHistorical, cleanEpisodeTitle, cleanEpisodeTitleEn } from './directorTextHelpers';
 
@@ -12,32 +11,15 @@ export function buildCharacterTurnaroundPrompt(
   country: string,
   era?: string,
   taste?: string,
-  characterDna?: string
+  characterDna?: string,
+  characterId?: string
 ): string {
-  const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
+  const fixedChar = (characterId && characterId !== 'auto')
+    ? SAFE_CHARACTERS.find(c => c.id === characterId)
+    : (characterDna ? SAFE_CHARACTERS.find(c => characterDna.includes(c.dnaPromptEn.slice(0, 24))) : undefined);
+
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
   const isHist = checkIsHistorical(era, theme);
-  const costumeInstruction = isHist 
-    ? `Strictly authentic historical attire matching ${era || 'period Japan'}. No modern elements.` 
-    : `Aesthetic, evocative outfit and styling fitting ${worldSetting}.`;
-
-  const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${characterDna || ''} ${theme || ''}`);
-  
-  // Google Imagenセーフティ対策: "school girl" と着衣の乱れ（着崩した、ほどけた等）の直結を完全排除
-  const defaultProtagonistDesc = hasExplicitMale 
-    ? `Handsome aesthetic anime youth protagonist with neat modern styling.`
-    : `Charming elegant anime female protagonist with neat modern school uniform attire.`;
-
-  const protagonistProfile = characterDna 
-    ? `Protagonist design: ${characterDna}.` 
-    : defaultProtagonistDesc;
-
-  // テーマからセーフティNG語句（着崩し、露出等）を除去して安全な世界観プロンプトを構築
-  const safeThemeDesc = (theme || 'Japanese youth drama')
-    .replace(/(少し着崩した|着崩した|ほどけかけた|乱れた|はだけた)/g, 'stylish')
-    .replace(/[^\w\s,\.\-]/g, ' ')
-    .trim() || 'Japanese school youth';
-
   let cleanStyle = rawStyle;
   if (!isHist && cleanStyle) {
     cleanStyle = cleanStyle
@@ -47,6 +29,27 @@ export function buildCharacterTurnaroundPrompt(
       .replace(/,\s*$/, '')
       .trim();
   }
+
+  if (fixedChar) {
+    return `${fixedChar.turnaroundPromptEn}
+Protagonist DNA: ${fixedChar.dnaPromptEn}.
+${cleanStyle ? `Art style: ${cleanStyle}.` : ''}
+CRITICAL MANDATE: EXACTLY THREE VIEWS (front, side, back) of ONE SINGLE INDIVIDUAL (${fixedChar.id}) aligned on a single clean white reference sheet. Maintain signature hair color, accessories, and outfit 100% faithfully.`;
+  }
+
+  const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${characterDna || ''} ${theme || ''}`);
+  const defaultProtagonistDesc = hasExplicitMale 
+    ? `Handsome aesthetic anime youth protagonist with neat modern styling.`
+    : `Charming elegant anime female protagonist with neat modern school uniform attire.`;
+
+  const protagonistProfile = characterDna 
+    ? `Protagonist design: ${characterDna}.` 
+    : defaultProtagonistDesc;
+
+  const safeThemeDesc = (theme || 'Japanese youth drama')
+    .replace(/(少し着崩した|着崩した|ほどけかけた|乱れた|はだけた)/g, 'stylish')
+    .replace(/[^\w\s,\.\-]/g, ' ')
+    .trim() || 'Japanese school youth';
 
   return `Master character model sheet, three-view turnaround:
 front view, side profile view, back view of the same single protagonist standing in a neutral pose side-by-side.
@@ -207,113 +210,7 @@ Output ONLY valid JSON:
 }
 
 /**
- * 各話の脚本（12カット分）および時代考証をAIに動的生成させるプロンプト
- */
-export function buildScriptPrompt(
-  epId: number, 
-  currentPlan: SeriesEpisodePlan, 
-  country: string, 
-  theme: string, 
-  era?: string, 
-  isMangaMode?: boolean, 
-  isMvMode?: boolean,
-  taste?: string,
-  productionMode?: string,
-  isMultiPanel?: boolean
-): string {
-  const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
-  const rawStyle = taste ? resolveTastePrompt(taste) : '';
-  const isHistorical = checkIsHistorical(era, theme);
-  const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
-  const cutCount = effMode === 'manga' ? 24 : (effMode === 'mv' || isMvMode ? 30 : 12);
-
-  const modeConfig = getProductionModeConfig(effMode, isMvMode);
-  const directorRole = modeConfig.getDirectorRole(isMangaMode, isHistorical);
-  const contextTitle = modeConfig.getContextTitle(isMangaMode, isHistorical);
-
-  const visualStyleMandate = taste
-    ? `VISUAL ART STYLE INTEGRATION:
-Visual Style: "${taste}"
-Style Attributes: "${rawStyle}"
-MANDATORY VISUAL RULES:
-- Ensure all cut visual descriptions ("basicPlot") harmonize naturally with this art style, maintaining rich atmosphere and color.
-- NEVER describe scenes as monochrome, black and white, or sketch unless the art style itself is explicitly monochrome!
-- NEVER include elements of this art style (e.g., neon, pop, pastel, anime, glowing lights) into forbidden lists!`
-    : "";
-
-  const mvCameraMandate = isMvMode
-    ? "CRITICAL MV CAMERA GAZE: The Chorus climax section (Cut 17 to Cut 24 in a 30-cut video) is the ONLY section in the entire music video where direct eye contact with the camera is permitted for intense emotional resonance. In all other non-chorus cuts, the subject MUST NOT look at the camera/viewer under any circumstances! Direct the character looking away, into the distance, eyes cast downward in thought, in pure side profile, or seen from behind."
-    : "";
-
-  return `You are a ${directorRole} and visual researcher.
-Create a ${cutCount}-cut ${contextTitle} for Episode ${epId} ("${currentPlan.titleJp}").
-Theme & Setting: "${worldSetting}".
-Episode Narrative Arc & Context: "${currentPlan.summary || currentPlan.titleJp}".
-${visualStyleMandate}
-${mvCameraMandate}
-
-${isMultiPanel ? `DYNAMIC MANGA COMIC PANEL COMPOSITION:
-Vary panel shapes and cuts dynamically to avoid monotonous layouts!
-Assign "panelLayout" dynamically for each cut from:
-- "diagonal-slash" (kinetic sharp angled diagonal dividing the frame into 2 wedge panels)
-- "l-shaped" (asymmetrical 3-panel: 1 dominant tall vertical hero panel + 2 stacked horizontal sub-panels)
-- "panoramic-split" (wide panoramic establishing panel at top + 2 vertical side-by-side reaction panels below)
-- "inset-reaction" (epic splash shot with a smaller floating inset box showing emotional reaction or detail)
-- "vertical-split" (asymmetrical vertical division splitting into two side-by-side portrait panels)
-- "split-2" (asymmetrical non-uniform 2 panels)
-- "single" (impactful 1-panel splash cut)
-Do NOT output identical layouts sequentially. Create visual drama and rhythm!
-` : ''}
-CRITICAL: UNIVERSAL STABLE MICRO-MOTION MANDATE FOR VEO (START -> END INTERPOLATION):
-To eliminate AI video morphing and grotesque anatomical hallucinations across ALL themes, STRICTLY FORBID rapid macro locomotion (NEVER command walking forward, running, jumping, or sharp turns).
-Focus EXCLUSIVELY on organic, lifelike MICRO-MOTIONS that breathe soul into the still illustration while preserving 100% of the artwork's integrity:
-- "veoMotionPrompt": Fluid progression of micro-motions using transition adverbs (First ..., then ..., finally ... smoothly settles). Mandate:
-  ① Natural gentle blinking and subtle shifting gaze or tender smile deepening.
-  ② Soft breeze gently fluttering loose hair strands and clothing hem.
-  ③ Slow cinematic camera breathing (slow push-in or delicate parallax drift).
-- "endFramePlot": The visual state at the end of the camera/micro-motion, perfectly maintaining character pose and identity with subtly evolved serene expression.
-
-${isMvMode ? 'ATMOSPHERIC & VISUAL HARMONY:' : (isHistorical ? 'STRICT HISTORICAL ACCURACY:' : 'AUTHENTIC SETTING & CULTURAL ACCURACY:')}
-Dynamically analyze the period, setting, and atmosphere implied by "${worldSetting}". Determine authentic aesthetic attire and identify elements that would break the mood and must NEVER appear (NEVER forbid elements of the chosen Visual Art Style).
-
-CRITICAL SUBTITLE HIGHLIGHTS:
-For EACH cut, select 1 to 2 key terms (which MUST BE EXACTLY present in narrationJp) for the "highlights" array to be highlighted in gold text.
-
-Output ONLY valid JSON matching this exact structure:
-{
-  "titleJp": "${currentPlan.titleJp}",
-  "titleEn": "${currentPlan.titleEn}",
-  "summary": "${isMvMode ? '楽曲の世界観・全体の雰囲気（日本語2〜3行）' : '話のあらすじ（日本語）'}",
-  "eraAnalysisJp": "${isMvMode ? 'MVのビジュアルコンセプトと情緒の解説（日本語）' : '時代背景と舞台設定の考証解説（日本語）'}",
-  "authenticAttireEn": "Detailed English prompt for natural attire and wardrobe matching ${worldSetting}",
-  "forbiddenKeywordsEn": "${isMvMode ? 'loud screaming, harsh dissonance, out-of-context modern clutter, theatrical over-acting' : 'Comma-separated English negative keywords for anachronisms that must NEVER appear in ' + worldSetting}",
-  "forbiddenAnachronisms": ["${isMvMode ? '過剰な劇的演出' : '日本語の禁止要素1'}", "${isMvMode ? '世界観を壊す不自然な要素' : '日本語の禁止要素2'}"],
-  "coverCatchphraseJp": "${isMvMode ? '楽曲に寄り添うエモーショナルなフレーズ' : '超ド迫力キャッチコピー'}",
-  "highlightWords": ["代表キーワード1", "代表キーワード2"],
-  "cuts": [
-    { 
-      "id": 1, 
-      ${isMultiPanel ? '"panelLayout": "diagonal-slash",' : ''}
-      "isObjectOnly": false,
-      "focalPoint": {
-        "grid": "top-center",
-        "normalizedCoord": [0.5, 0.3],
-        "focalSubject": "character_face"
-      },
-      "compositionPrompt": "Subject framed at upper-third, face centered at top-center, rule of thirds",
-      "basicPlot": "Concise scene concept and situation in English (1-2 sentences, e.g. Protagonist standing quietly by the countryside road under glowing dusk sky)", 
-      "veoMotionPrompt": "First character standing stably with hair gently swaying in the breeze, then naturally blinking and softly shifting gaze towards the sunset glow, finally smoothly settling into a serene reflective pause as camera pushes in slightly",
-      "endFramePlot": "Side profile of protagonist bathed in golden sunset glow, gazing quietly at the distant horizon with tranquil expression",
-      "narrationJp": "${isMvMode ? '楽曲の歌詞・リリック（1曲の歌として繋がるエモい歌詞20文字前後）' : '重厚なナレーション（日本語）'}",
-      "highlights": ["ナレーション内の重要語1", "ナレーション内の重要語2"]
-    }
-  ]
-}
-`;
-}
-
-/**
- * Google Flow Gemini 負荷軽減用: 必要最小限の出力構造に絞った軽量脚本プロンプト（フェイルセーフ用）
+ * Google Flow Gemini 負荷軽減用: 必要最小限の出力構造に絞った軽量脚本プロンプト
  */
 export function buildCompactScriptPrompt(
   epId: number, 
@@ -333,8 +230,9 @@ export function buildCompactScriptPrompt(
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
   const cutCount = targetCutCount && targetCutCount > 0 ? targetCutCount : (effMode === 'manga' ? 24 : (effMode === 'mv' || isMvMode ? 30 : 12));
-  const fixedChar = characterId ? SAFE_CHARACTERS.find(c => c.id === characterId) : undefined;
+  const fixedChar = (characterId && characterId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === characterId) : undefined;
   const charDirective = fixedChar ? `\nPROTAGONIST LOCK: The protagonist MUST be "${fixedChar.nameJa}" (${fixedChar.dnaPromptEn}). Personality & speaking style in narrationJp: ${fixedChar.personality}. SAFETY GUARDRAIL: Never depict cruel abuse or make ${fixedChar.nameJa} a ruthless murderer/criminal.` : '';
+  const defaultCharDna = fixedChar ? fixedChar.dnaPromptEn : 'Consistent single protagonist matching the world setting and narrative';
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
 
   const plannedTitleJp = cleanEpisodeTitle(currentPlan.titleJp || `場面${epId}`);
@@ -354,30 +252,23 @@ ${avoidDupClause}
 
 RULES:
 ${titleRule}
-2. Protagonist: Define "characterDna" in English (consistent single protagonist: age, gender, hair, signature attire). All character cuts MUST feature this exact protagonist.${charDirective}
+2. Protagonist: Define "characterDna" in English. All character cuts MUST feature this exact protagonist in "basicPlot".${charDirective}
 3. Object Cut: Cut 6 should be an iconic object without humans ("isObjectOnly": true).
-4. 8-Second Universal Stable Micro-Motion Progression:
-Every cut is an 8-second video! Character pose and grounded anatomy MUST remain 100% stable without morphing:
-- "basicPlot": Start frame initial situation and camera framing in English.
-- "endFramePlot": The reached visual state 8 seconds later with subtly shifted gaze and emotional expression.
-- "veoMotionPrompt": Natural continuous 8-second micro-motion directive for Veo 3.1 interpolation (blinking, hair flutter, subtle smile/expression shift, gentle camera breathing).
-${isMultiPanel ? '5. Dynamic Manga Panel Layouts: Assign diverse and dynamic comic panel shapes matching the scene rhythm and emotion! Choose from: "diagonal-slash" (kinetic sharp angled slash), "l-shaped" (asymmetric hero panel + 2 stacked sub-panels), "panoramic-split" (wide top establishing shot + 2 vertical sub-panels), "inset-reaction" (splash scene with smaller inset reaction frame), "vertical-split" (side-by-side vertical panels), "split-2" (asymmetric 2-panel), or "single" (full-bleed single splash). VARY the layout dynamically between cuts!' : ''}
+${isMultiPanel ? '4. Dynamic Manga Panel Layouts: Assign diverse comic panel shapes from: "diagonal-slash", "l-shaped", "panoramic-split", "inset-reaction", "vertical-split", "split-2", or "single".' : ''}
 
 Output ONLY valid JSON:
 {
   "titleJp": "${plannedTitleJp}",
   "titleEn": "${plannedTitleEn}",
   "summary": "${isMvMode ? '楽曲の世界観（日本語）' : 'あらすじ（日本語）'}",
-  "characterDna": "Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob, cozy knit sweater, sleek headphones",
+  "characterDna": "${defaultCharDna}",
   "eraAnalysisJp": "時代背景の解説（日本語）",
   "cuts": [
     { 
       "id": 1, 
       ${isMultiPanel ? '"panelLayout": "diagonal-slash", ' : ''}
       "isObjectOnly": false,
-      "basicPlot": "Front-three-quarters view of protagonist sitting focused at glowing desk in dark room", 
-      "endFramePlot": "Close-up of protagonist smiling softly at the monitor, eyes glistening warmly in the soft light",
-      "veoMotionPrompt": "Continuous 8-second cinematic micro-motion: protagonist pose firmly maintained, natural gentle blinking, warm radiant smile softly deepening, subtle breeze fluttering hair strands, slow cinematic camera push-in",
+      "basicPlot": "Front-three-quarters view of ${fixedChar ? fixedChar.dnaPromptEn : 'protagonist'} in atmospheric scene matching ${plannedTitleEn}", 
       "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}"
     }
   ]

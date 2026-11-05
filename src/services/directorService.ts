@@ -1,12 +1,8 @@
 import { SAFE_CHARACTERS } from '../config/safeCharacters';
 import { Flow } from 'flow-sdk';
-import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, SeriesEpisodePlan, FocalPoint } from '../types';
-import { IMAGE_MODELS, DEFAULT_ASPECT_RATIO, STRICT_STYLE_SUFFIX, TASTES } from '../constants';
-import { resolveTastePrompt } from './tasteStorage';
+import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, FocalPoint } from '../types';
 import { safeJsonParse, callWithRetry, formatDurationMs } from './utils';
 import { 
-  getProductionModeConfig, 
-  resolveCameraWork, 
   resolveRecommendedCameraWorkAndKenBurns, 
   resolveRecommendedTelopStaging 
 } from '../config/studioDefinitions';
@@ -36,7 +32,6 @@ import {
   buildCharacterScreeningPrompt,
   buildGrandDesignPrompt,
   buildNextEpisodePlanPrompt,
-  buildScriptPrompt,
   buildCompactScriptPrompt,
   buildAdaptiveInfographicCoverPrompt,
   InfographicCoverPromptOptions
@@ -52,7 +47,6 @@ export {
   buildCharacterScreeningPrompt,
   buildGrandDesignPrompt,
   buildNextEpisodePlanPrompt,
-  buildScriptPrompt,
   buildCompactScriptPrompt,
   buildAdaptiveInfographicCoverPrompt
 };
@@ -77,30 +71,16 @@ export function buildAntiPreviousCompositionNegative(
 export const buildImagePromptAndNegative = buildFinalCinematicPromptAndNegative;
 
 /**
- * カットごとの演出データ（構図、テロップ、ケンバーン効果）をAIで決定
- * （studioDefinitions および promptEngine に基づく宣言的ロジック駆動）
+ * カットごとの演出データ（構図、テロップ、ケンバーン効果）を決定
  */
 export async function directShot(
   task: GenerationTask,
   settings: GeneratorSettings,
-  activeReference: any,
-  previousShotInfo?: PreviousShotContext,
-  addLog?: (msg: string, type?: any) => void
+  _activeReference: any,
+  previousShotInfo?: PreviousShotContext
 ): Promise<Partial<Cut>> {
-  const { cutId, prompt, styleKey } = task;
-  const rawStyle = resolveTastePrompt(styleKey);
-  const effectiveDna = task.characterDna || activeReference?.characterDna;
-  const isObjectCut = !!task.isObjectOnly;
-  const characterGuidance = isObjectCut
-    ? 'OBJECT/INSERT CUT: This scene features strictly NO HUMANS. Focus purely on the iconic object, still-life, or environmental scenery.'
-    : effectiveDna
-      ? `EXACT PROTAGONIST CONSISTENCY MANDATE: The protagonist is explicitly defined as: "${effectiveDna}".
-You MUST retain THIS EXACT SAME character (same gender, same age, same hairstyle, same hair color, same eyes, same clothing style/accessories). DO NOT alter their face or clothing.`
-      : activeReference 
-        ? `Protagonist: ${activeReference.characterDna}. NOTE: Adopt only the character's appearance and distinctive features (face, hair, eyes); DO NOT copy reference pose.` 
-        : 'Consistent single protagonist throughout the entire story.';
+  const { cutId, prompt } = task;
 
-  // 定義テーブルから本カットの演出プリセットおよびカメラワーク＆ケンバーンを取得
   const preset = getStoryboardPreset(cutId, settings.isMvMode, settings.isMangaMode);
   const recCw = resolveRecommendedCameraWorkAndKenBurns(
     cutId,
@@ -109,48 +89,8 @@ You MUST retain THIS EXACT SAME character (same gender, same age, same hairstyle
     settings.isMangaMode
   );
   const kbPreset: KenBurnsPreset = recCw.recommendedKenBurns;
-
-  const directorRole = settings.isMvMode ? "music video (MV) visual director" : settings.isMangaMode ? "comic book/manga storyboard artist" : "film director";
-  
-  // MVモード時のカメラ目線厳格制御（サビ区間[Cut 17〜24]のみ許可、他は一切カメラを見ない）
   const isAllowedEyeContact = settings.isMvMode && isMvChorusCut(cutId, 30);
-  const mvGazeMandate = settings.isMvMode 
-    ? (isAllowedEyeContact 
-        ? "CRITICAL MV CLIMAX GAZE: This is the ONLY single cut in the entire music video where direct eye contact with the camera is permitted for powerful emotional resonance." 
-        : "CRITICAL MV GAZE MANDATE: The subject MUST NOT look at the camera/viewer under any circumstances! Direct the character looking away, gazing into the distance, eyes cast downward in thought, in pure side profile, or seen from behind. Strict candid documentary aesthetic—never break the fourth wall.")
-    : "";
-
-  const mvExtraDirecting = settings.isMvMode 
-    ? `MANDATORY FOR MV MODE: Atmospheric, ambient, and seamless continuity. Subdued, introspective, and aesthetic expression. No shouting, no melodramatic action poses, no theatrical over-acting. Natural, gentle movements or contemplative gaze matching the background mood. ${mvGazeMandate}` 
-    : "";
-  const mangaExtraDirecting = settings.isMangaMode 
-    ? "MANDATORY FOR MANGA: Full-bleed edge-to-edge artwork ONLY. Never generate panel borders, white gutters, frames, or blank margins. Fill the entire canvas with dynamic pen-inking, screentones, cel-shading, dynamic facial expressions, and comic-style impact." 
-    : "";
-
-  const previousContrastMandate = previousShotInfo?.scale
-    ? `CRITICAL CINEMATIC CONTRAST MANDATE:
-The PREVIOUS CUT (Cut ${cutId - 1}) was framed as: [${previousShotInfo.scale}] with angle: "${previousShotInfo.angle || previousShotInfo.tag || ''}".
-Context of previous cut: "${previousShotInfo.prompt?.slice(0, 120) || ''}".
-MANDATORY RULE: This Cut ${cutId} MUST BE RADICALLY DIFFERENT from the previous cut!
-- If the previous cut was seated or on the floor, THIS CUT MUST BE standing, walking, in motion, or a dramatic bust portrait!
-- NEVER repeat the same camera distance, angle, or character posture as the previous cut.
-- Requested Framing for THIS cut is: ${preset.scale} (${preset.angle}).`
-    : `Requested Framing: ${preset.scale} (${preset.angle}).`;
-
   const isHistorical = checkIsHistorical(settings.era, settings.theme);
-  const genreDesc = settings.isMvMode 
-    ? "an aesthetic music video" 
-    : settings.isMangaMode 
-      ? "a dramatic comic/manga series" 
-      : isHistorical 
-        ? "a historical drama" 
-        : "a cinematic visual drama";
-
-  const wardrobeDesc = settings.isMvMode
-    ? "stylish aesthetic wardrobe matching the music video theme"
-    : isHistorical
-      ? "authentic historical period attire"
-      : "natural character attire matching the setting";
 
   const defaultTelop = resolveRecommendedTelopStaging(
     cutId, 
@@ -161,43 +101,9 @@ MANDATORY RULE: This Cut ${cutId} MUST BE RADICALLY DIFFERENT from the previous 
   );
 
   const isMultiPanelActive = !!(settings.isMultiPanel || task.isMultiPanel);
-  const rawPanelLayout = task.panelLayout || (isMultiPanelActive ? 'dynamic-multi' : 'single');
-  const multiPanelExtraDirecting = (isMultiPanelActive && rawPanelLayout !== 'single')
-    ? `MANDATORY MULTI-PANEL COMIC COMPOSITION (${rawPanelLayout}):
-Create a dynamic split comic panels composition with seamless full-bleed edge-to-edge artwork.
-- Absolutely NO white outer borders, NO blank page margins!
-- Clearly divided separate panel frames.
-- If one panel features a character, other panels MUST focus on world-appropriate background scenery (matching the setting), props, atmospheric lighting, or distinct camera angles.
-- NEVER stack or overlap characters directly on top of each other! Keep composition spacious with visual breathing room.`
-    : '';
-
-  const directorPrompt = `You are a ${directorRole} designing a visual shot and motion-graphics telop staging for ${genreDesc}.
-Context: "${prompt}".
-Style: "${rawStyle}".
-${characterGuidance}
-${previousContrastMandate}
-
-Avoid scale errors. If wide shot, character MUST be small and background realistic. If close-up, show head/shoulders with natural proportions.
-COLOR & MEDIUM FIDELITY: Maintain the authentic color grading, vibrant lighting, and visual medium of "${rawStyle}". Do NOT describe scenes as monochrome, grayscale, pencil sketch, or manga screentones unless the chosen style is explicitly monochrome.
-${mangaExtraDirecting}
-${mvExtraDirecting}
-${multiPanelExtraDirecting}
-
-Output ONLY valid JSON:
-{
-  "enhancedPrompt": "Extremely detailed scene description in English including lighting, props, ${wardrobeDesc}, atmosphere, shot angle, and distinct character pose/action",
-  "cameraWork": "${recCw.label}",
-  "cinematicAngle": "${preset.angle}",
-  "shotScale": "${preset.scale}",
-  "telopStyle": "${defaultTelop.style}",
-  "telopTransition": "${defaultTelop.transition}",
-  "directorTelopNote": "${defaultTelop.directorNote}"
-}`;
-
   const effectiveScale = task.shotScale || preset.scale;
   const effectiveAngle = task.cinematicAngle || preset.angle;
 
-  // 定義テーブルに基づき直前構図を自動除外するネガティブ文字列を生成
   let antiPreviousNegative = buildDynamicAntiPreviousNegative(previousShotInfo, effectiveScale);
   if (settings.isMvMode && !isAllowedEyeContact) {
     antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${MV_ANTI_CAMERA_LOOK_NEGATIVE}` : MV_ANTI_CAMERA_LOOK_NEGATIVE;
@@ -207,7 +113,6 @@ Output ONLY valid JSON:
     antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${multiPanelNeg}` : multiPanelNeg;
   }
 
-  // プロンプトにすでにカメラディレクティブが含まれている場合は二重付与せず最高解像度の指示を優先
   const hasCameraDirective = prompt.includes('[CAMERA DIRECTIVE:') || prompt.includes('[STRICT') || prompt.includes('[IRONCLAD');
   const finalPromptEn = hasCameraDirective ? prompt : `${effectiveAngle}. ${prompt}`;
 
@@ -282,9 +187,14 @@ export interface SafeScriptResult {
 export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions): Promise<SafeScriptResult> {
   const {
     epId, currentPlan, country, theme, era, isMangaMode, isMvMode,
-    taste, productionMode, isMultiPanel, existingTitles, characterId, targetCutCount, superBackoff, abortCheck, addLog
+    taste, productionMode, isMultiPanel, existingTitles, characterId, targetCutCount, abortCheck, addLog
   } = opts;
-  const fixedChar = characterId ? SAFE_CHARACTERS.find(c => c.id === characterId) : undefined;
+  const fixedChar = (characterId && characterId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === characterId) : undefined;
+  const fallbackDna = fixedChar
+    ? fixedChar.dnaPromptEn
+    : (isMvMode
+      ? 'Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob hair, gentle eyes, oversized cozy knit cardigan, sleek over-ear headphones'
+      : 'Consistent single protagonist matching the world setting and narrative');
 
   // 初手から無駄な長文指示を削ぎ落とした軽量骨組みプロンプトを使用（1〜2秒で即座に通す）
   const scriptPrompt = buildCompactScriptPrompt(
@@ -329,29 +239,28 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     if (scriptHeartbeat) clearInterval(scriptHeartbeat);
   }
 
+  const effCutCount = targetCutCount && targetCutCount > 0 ? targetCutCount : (isMangaMode ? 24 : (isMvMode ? 30 : 12));
+
   if (!scriptRes) {
     return {
       titleJp: currentPlan.titleJp,
       titleEn: currentPlan.titleEn,
       summary: currentPlan.summary || `${currentPlan.titleJp}の世界観で紡がれる物語`,
-      characterDna: isMvMode 
-        ? 'Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob hair, gentle eyes, oversized cozy knit cardigan, sleek over-ear headphones'
-        : 'Consistent single protagonist matching the world setting and narrative',
+      characterDna: fallbackDna,
       eraAnalysisJp: '歴史・文化と人情の情景。',
       forbiddenAnachronisms: ['時代にそぐわない現代物'],
       authenticAttireEn: 'Authentic costume matching setting',
       forbiddenKeywordsEn: 'modern items',
       coverCatchphraseJp: `${currentPlan.titleJp}`,
       highlightWords: ['光', '風'],
-      cuts: Array.from({ length: isMangaMode ? 24 : (isMvMode ? 30 : 12) }, (_, j) => {
+      cuts: Array.from({ length: effCutCount }, (_, j) => {
         const isObj = j === 5 || j === 8; // Cut 6 or Cut 9 as object/insert
         const defaultGrid = isObj ? 'center' : 'top-center';
         const defaultCoord: [number, number] = isObj ? [0.5, 0.5] : [0.5, 0.3];
         const defaultSubject = isObj ? 'symbolic_object' : 'character_face';
         const defaultBasicPlot = isObj
           ? `Close-up shot of an iconic atmospheric object matching ${theme}, completely deserted with no people, moody lighting`
-          : `Cinematic high quality visual scene, ${theme}, scene ${j + 1} of ${currentPlan.titleEn}, atmospheric lighting`;
-
+          : `${fixedChar ? `${fixedChar.dnaPromptEn} in a ` : ''}cinematic high quality visual scene, ${theme}, scene ${j + 1} of ${currentPlan.titleEn}, atmospheric lighting`;
 
         const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
         return {
@@ -388,26 +297,22 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   });
 
   const rawCuts = Array.isArray(parsed.cuts) ? parsed.cuts : (Array.isArray(parsed.scenes) ? parsed.scenes : (Array.isArray(parsed) ? parsed : []));
-  const effCutCount = targetCutCount && targetCutCount > 0 ? targetCutCount : (isMangaMode ? 24 : (isMvMode ? 30 : 12));
   const targetLength = rawCuts.length >= 20 ? rawCuts.length : effCutCount;
   const normalizedCuts = Array.from({ length: targetLength }, (_, j) => {
     const cutData = rawCuts[j] || {};
     const rawNarration = cutData.narrationJp || cutData.narration || (isMvMode ? `歌詞${j + 1}` : `場面${j + 1}`);
     
-    // 物体カットの判定（AI指定、またはCut 6をデフォルトで物体カットに指定）
     const isObj = cutData.isObjectOnly !== undefined 
       ? Boolean(cutData.isObjectOnly) 
-      : (j === 5); // Cut 6 is iconic insert by default
+      : (j === 5);
 
-    // 9分割focalPointのパースと正規化
     const rawFocal = cutData.focalPoint || {};
     const grid = rawFocal.grid || (isObj ? 'center' : 'top-center');
     const coord: [number, number] = Array.isArray(rawFocal.normalizedCoord) && rawFocal.normalizedCoord.length === 2
       ? [Number(rawFocal.normalizedCoord[0]) || 0.5, Number(rawFocal.normalizedCoord[1]) || (isObj ? 0.5 : 0.3)]
       : (isObj ? [0.5, 0.5] : [0.5, 0.3]);
     const subject = rawFocal.focalSubject || (isObj ? 'symbolic_object' : 'character_face');
-    const basicPlot = cutData.basicPlot || cutData.promptEn || cutData.prompt || `Scene ${j + 1} of ${currentPlan.titleEn}`;
-
+    const basicPlot = cutData.basicPlot || cutData.promptEn || cutData.prompt || `${fixedChar && !isObj ? `${fixedChar.dnaPromptEn}, ` : ''}Scene ${j + 1} of ${currentPlan.titleEn}`;
 
     const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
     const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
@@ -436,9 +341,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     titleJp: cleanEpisodeTitle(sanitizeForYouTubeSafety(parsed.titleJp || currentPlan.titleJp)),
     titleEn: cleanEpisodeTitleEn(parsed.titleEn || currentPlan.titleEn),
     summary: sanitizeForYouTubeSafety(parsed.summary || currentPlan.summary || ''),
-    characterDna: parsed.characterDna || (isMvMode 
-      ? 'Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob hair, gentle eyes, oversized cozy knit cardigan, sleek over-ear headphones' 
-      : undefined),
+    characterDna: fixedChar ? fixedChar.dnaPromptEn : (parsed.characterDna || fallbackDna),
     eraAnalysisJp: sanitizeForYouTubeSafety(parsed.eraAnalysisJp || ''),
     forbiddenAnachronisms: parsed.forbiddenAnachronisms || [],
     authenticAttireEn: parsed.authenticAttireEn || '',

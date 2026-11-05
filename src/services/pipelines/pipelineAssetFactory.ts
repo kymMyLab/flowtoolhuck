@@ -1,6 +1,7 @@
 import { Flow } from 'flow-sdk';
 import { Episode } from '../../types';
 import { resolveImageModel } from '../../constants';
+import { SAFE_CHARACTERS } from '../../config/safeCharacters';
 import { callWithRetry, formatErrorMessage, extractImageBase64, extractMediaId } from '../utils';
 import { ProductionPipelineContext } from './pipelineTypes';
 import { 
@@ -34,13 +35,16 @@ export async function ensureCharacterTurnaround(
   }
 
   try {
-    addLog(`🎨 【三面図マスター生成】360度キャラ一貫性を保証する主人公の三面図（正面・横顔・後ろ姿）を設計中...`, 'process');
+    const charId = ep.characterId || settings.characterId;
+    const fixedChar = (charId && charId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === charId) : undefined;
+    addLog(`🎨 【三面図マスター生成】360度キャラ一貫性を保証する主人公（${fixedChar ? fixedChar.nameJa : '主人公'}）の三面図を設計中...`, 'process');
     const turnaroundPrompt = buildCharacterTurnaroundPrompt(
       ep.theme || settings.theme,
       settings.country,
       ep.era || settings.era,
       ep.taste || settings.taste,
-      ep.characterDna
+      fixedChar?.dnaPromptEn || ep.characterDna,
+      charId
     );
 
     const modelDef = resolveImageModel(settings.imageModel);
@@ -113,6 +117,8 @@ export async function ensureInfographicCover(
     addLog(`🎨 Ep.${freshEp.id}: 【扉絵自動生成】世界観適応インフォグラフィック扉絵（9:16特大ポスター）を描画中...`, 'process');
     updateEpisode(freshEp.id, { isGeneratingCover: true });
 
+    const charId = freshEp.characterId || settings.characterId;
+    const fixedChar = (charId && charId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === charId) : undefined;
     const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
       titleJp: cleanEpisodeTitle(freshEp.titleJp),
       titleEn: cleanEpisodeTitleEn(freshEp.titleEn),
@@ -123,7 +129,7 @@ export async function ensureInfographicCover(
       taste: freshEp.taste || settings.taste,
       country: settings.country,
       productionMode: freshEp.productionMode || settings.productionMode,
-      characterDna: freshEp.characterDna,
+      characterDna: fixedChar?.dnaPromptEn || freshEp.characterDna,
       styleDna: activeReferenceRef.current?.styleDna,
       forbiddenAnachronisms: freshEp.forbiddenAnachronisms,
       authenticAttireEn: freshEp.authenticAttireEn

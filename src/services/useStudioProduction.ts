@@ -2,12 +2,10 @@ import { runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensur
 import { useRef, useCallback } from 'react';
 import { Flow } from 'flow-sdk';
 import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, LogEntry } from '../types';
+import { SAFE_CHARACTERS } from '../config/safeCharacters';
 import { 
-  DEFAULT_ASPECT_RATIO, 
   CUTS_PER_EPISODE, 
-  TASTES,
-  resolveImageModel,
-  resolveRecommendedTelopStaging
+  resolveImageModel
 } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId } from './utils';
 import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate, isMvChorusCut } from './promptEngine';
@@ -163,9 +161,9 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
   }, [addLog]);
 
   const buildCutTasks = (ep: Episode, cuts: Cut[], styleKey?: string): GenerationTask[] => {
+    const charId = ep.characterId || settings.characterId;
+    const fixedChar = (charId && charId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === charId) : undefined;
     return cuts.map(c => {
-      // 三面図（characterTurnaroundMediaId）はキャラクター専用の360度基準シート（背景無しの純粋な設定資料）
-      // 物体専用カット（isObjectOnly）のみ除外し、キャラクターが登場する全カット（ドアップ、横顔、手元、足元、俯瞰等）には三面図を最優先バインド！
       const turnaroundMediaId = ep.characterTurnaroundMediaId || (ep.isMvMode ? undefined : activeReferenceRef.current?.mediaId);
       const refMediaId = c.isObjectOnly
         ? undefined
@@ -188,10 +186,8 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         authenticAttireEn: ep.authenticAttireEn,
         forbiddenKeywordsEn: ep.forbiddenKeywordsEn,
         referenceImageMediaId: refMediaId,
-        characterDna: ep.characterDna,
+        characterDna: fixedChar?.dnaPromptEn || ep.characterDna,
         isObjectOnly: c.isObjectOnly,
-        characterPresence: c.characterPresence,
-        extractedSongDna: ep.extractedSongDna,
         focalSubject: c.focalPoint?.focalSubject,
         shotScale: c.shotScale,
         cinematicAngle: c.cinematicAngle,
@@ -293,8 +289,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
           task,
           settings,
           activeReferenceRef.current,
-          previousShotInfo,
-          addLog
+          previousShotInfo
         );
 
         shotScale = directResult.shotScale || shotScale;
@@ -456,10 +451,11 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         }
       }
 
+      const charId = ep?.characterId || settings.characterId;
+      const fixedChar = (charId && charId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === charId) : undefined;
       const taskWithAntiPrevious: GenerationTask = {
         ...task,
-        characterPresence: currentCutObj?.characterPresence,
-        extractedSongDna: ep?.extractedSongDna,
+        characterDna: fixedChar?.dnaPromptEn || task.characterDna || ep?.characterDna,
         focalSubject: currentCutObj?.focalPoint?.focalSubject,
         referenceImageMediaId: refMediaId,
         negativePrompt: effectiveNegative,
@@ -469,7 +465,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       const effectiveActiveRef = ep?.isMvMode ? undefined : activeReferenceRef.current;
       const { finalPrompt, finalNegative, referenceImageMediaIds } = buildImagePromptAndNegative(taskWithAntiPrevious, settings, effectiveActiveRef);
       
-      // 生成前に投入パラメータを保存（失敗してもインスペクターで追えるようにする）
       updateCut(epId, cutId, {
         finalPromptUsed: finalPrompt,
         finalNegativeUsed: finalNegative,
@@ -478,13 +473,9 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         imageModelUsed: modelDef.label
       });
 
-      const chosenRatio = settings.aspectRatio || DEFAULT_ASPECT_RATIO || '9:16';
-      const safeAspectRatio = (chosenRatio === '1:1' || chosenRatio === '16:9' || chosenRatio === '9:16') ? chosenRatio : '9:16';
-
+      const safeAspectRatio = '1:1';
       let safePrompt = finalPrompt && /[a-zA-Z0-9]/.test(finalPrompt) ? finalPrompt : 'Cinematic scene, high quality';
-      if (safeAspectRatio === '1:1') {
-        safePrompt += ', balanced centered composition, ample negative space around subject, safe for 16:9 and 9:16 cropping';
-      }
+      safePrompt += ', balanced centered composition, ample negative space around subject, safe for 16:9 and 9:16 cropping';
       const primaryModelName = modelDef?.name || '🍌 Nano Banana 2';
 
       let res: any;

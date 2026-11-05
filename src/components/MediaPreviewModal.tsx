@@ -14,7 +14,6 @@ export interface MediaPreviewModalProps {
   onNext?: () => void;
   currentIndex?: number;
   totalCuts?: number;
-  aspectRatio?: '9:16' | '1:1' | '16:9';
   onClose: () => void;
   onUpdateCut: (updates: Partial<Cut>) => void;
   onRegenerateImage: (modelLabel: string, customPrompt?: string, customNeg?: string) => void;
@@ -24,7 +23,6 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
   isOpen,
   cut,
   episodeId,
-  aspectRatio = '1:1',
   currentImageModel,
   hasPrev,
   hasNext,
@@ -62,7 +60,6 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
       <div className="relative w-full max-w-[1200px] h-[95vh] lg:h-[85vh] bg-[#0c0c0c] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row animate-in fade-in zoom-in-95 duration-200">
         <PreviewPlayer
           cut={cut}
-          aspectRatio={aspectRatio}
           hasPrev={hasPrev}
           hasNext={hasNext}
           onPrev={onPrev}

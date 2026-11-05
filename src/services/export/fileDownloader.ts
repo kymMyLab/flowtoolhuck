@@ -242,18 +242,6 @@ export const savePackageFile = async (
   return { success: true, method: 'dom_dispatched' };
 };
 
-export const triggerBrowserDownload = (blobUrl: string, filename: string): boolean => {
-  fetch(blobUrl).then(r => r.blob()).then(b => savePackageFile(b, filename)).catch(() => {
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { try { if (a.parentNode) document.body.removeChild(a); } catch (_) {} }, 2000);
-  });
-  return true;
-};
-
 /**
  * series_manifest.json 単体のダウンロード (レジューム用バックアップ)
  */

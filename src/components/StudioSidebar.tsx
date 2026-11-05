@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FieldDropdown, SegmentedToggle, NumberChoice } from './Primitives';
+import { FieldDropdown, NumberChoice } from './Primitives';
 import { GeneratorSettings, ReferenceAsset, Episode, LogEntry } from '../types';
 import { IMAGE_MODELS } from '../constants';
 import { SAFE_CHARACTERS } from '../config/safeCharacters';
@@ -161,7 +161,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold border border-amber-200">
-                {settings.episodeCount}話 / {settings.previewCutCount}枚 ({settings.aspectRatio || '1:1'})
+                {settings.episodeCount}話 / {settings.previewCutCount}枚
               </span>
               <span className={`material-symbols-outlined text-[20px] text-slate-400 transition-transform duration-200 ${isVolumeOpen ? 'rotate-180 text-amber-500' : ''}`}>
                 expand_more
@@ -172,17 +172,6 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           {isVolumeOpen && (
             <div className="p-3 flex flex-col gap-3 border-t border-slate-200 animate-in fade-in duration-200">
               <FieldDropdown label="画像モデル" value={settings.imageModel} options={IMAGE_MODELS.map(m => m.label)} onChange={v => setSettings(s => ({ ...s, imageModel: v }))} disabled={isProducing} />
-              
-              <SegmentedToggle 
-                label="作画アスペクト比" 
-                value={settings.aspectRatio || '1:1'} 
-                onChange={v => setSettings(s => ({ ...s, aspectRatio: v as any }))} 
-                items={[
-                  { value: '9:16', label: '📱 9:16 (縦)' },
-                  { value: '1:1', label: '⬛ 1:1 (正方形)' },
-                  { value: '16:9', label: '🖥️ 16:9 (横)' }
-                ]} 
-              />
               
               <div className="grid grid-cols-2 gap-2.5">
                 <NumberChoice label="並列数" value={settings.parallelCount} options={[1, 2, 3, 4]} onChange={v => setSettings(s => ({ ...s, parallelCount: v }))} />

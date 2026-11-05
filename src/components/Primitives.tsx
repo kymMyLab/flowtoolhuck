@@ -31,45 +31,9 @@ export const PillButton: React.FC<{
   );
 };
 
-export const StepperField: React.FC<{
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  unit?: string;
-  onChange: (val: number) => void;
-  className?: string;
-}> = ({ label, value, min, max, unit = '話', onChange, className = '' }) => {
-  return (
-    <div className={`border border-slate-200 bg-white rounded-xl flex flex-col gap-1 justify-center p-2.5 shadow-sm select-none ${className}`}>
-      <p className="text-xs font-bold text-slate-600">{label}</p>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => onChange(Math.max(min, value - 1))}
-            className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 transition-colors border border-slate-200"
-          >
-            <span className="material-symbols-outlined text-[18px]">remove</span>
-          </button>
-          <span className="text-sm font-bold text-slate-900 min-w-[36px] text-center">
-            {value} <span className="text-xs text-slate-500 font-normal">{unit}</span>
-          </span>
-          <button 
-            onClick={() => onChange(Math.min(max, value + 1))}
-            className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 transition-colors border border-slate-200"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export interface FieldDropdownOption {
   label: string;
   value: string;
-  image?: string;
   sublabel?: string;
 }
 
@@ -98,7 +62,6 @@ export const FieldDropdown: React.FC<{
     return options.find(o => (typeof o === 'string' ? o : o.value) === value) as FieldDropdownOption | string | undefined;
   }, [options, value]);
 
-  const selectedImage = typeof selectedOpt === 'object' ? selectedOpt?.image : undefined;
   const selectedLabel = typeof selectedOpt === 'object' ? selectedOpt?.label : value;
 
   return (
@@ -112,13 +75,6 @@ export const FieldDropdown: React.FC<{
         {label && <p className="text-[10px] font-bold text-slate-500 leading-tight">{label}</p>}
         <div className="flex items-center justify-between w-full gap-1.5">
           <div className="flex items-center gap-2 min-w-0 pr-1 flex-1">
-            {selectedImage && (
-              <img 
-                src={selectedImage} 
-                alt="" 
-                className="w-7 h-7 object-cover rounded-lg border border-slate-200 shrink-0 shadow-2xs bg-slate-100" 
-              />
-            )}
             <span className="text-xs font-bold text-slate-900 leading-snug break-words truncate">
               {selectedLabel || value}
             </span>
@@ -158,7 +114,6 @@ export const FieldDropdown: React.FC<{
             options.map((opt) => {
               const optVal = typeof opt === 'string' ? opt : opt.value;
               const optLabel = typeof opt === 'string' ? opt : opt.label;
-              const optImg = typeof opt === 'object' ? opt.image : undefined;
               const optSub = typeof opt === 'object' ? opt.sublabel : undefined;
               return (
                 <button 
@@ -171,27 +126,15 @@ export const FieldDropdown: React.FC<{
                   }`}
                   onClick={() => { onChange(optVal); setIsOpen(false); }}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                    {optImg ? (
-                      <div className="w-[88px] h-[88px] sm:w-[96px] sm:h-[96px] rounded-xl overflow-hidden border border-slate-200 shrink-0 shadow-sm bg-slate-100 relative">
-                        <img 
-                          src={optImg} 
-                          alt="" 
-                          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" 
-                          loading="lazy"
-                        />
-                      </div>
-                    ) : null}
-                    <div className="flex flex-col justify-center min-w-0 flex-1 py-0.5">
-                      <span className="text-[13px] font-bold text-slate-900 break-words leading-snug group-hover:text-indigo-600 transition-colors">
-                        {optLabel}
-                      </span>
-                      {optSub && (
-                        <p className="text-xs text-slate-500 font-normal leading-relaxed line-clamp-2 mt-1">
-                          {optSub}
-                        </p>
-                      )}
-                    </div>
+                  <div className="flex flex-col justify-center min-w-0 flex-1 py-0.5">
+                    <span className="text-[13px] font-bold text-slate-900 break-words leading-snug group-hover:text-indigo-600 transition-colors">
+                      {optLabel}
+                    </span>
+                    {optSub && (
+                      <p className="text-xs text-slate-500 font-normal leading-relaxed line-clamp-2 mt-1">
+                        {optSub}
+                      </p>
+                    )}
                   </div>
                   {value === optVal && <span className="material-symbols-outlined text-[20px] text-indigo-600 shrink-0 ml-1">check_circle</span>}
                 </button>
@@ -230,31 +173,6 @@ export const TextInput: React.FC<{
   </div>
 );
 
-export const SegmentedToggle: React.FC<{
-  value: string; items: { value: string; label: string }[];
-  onChange: (val: string) => void; label?: string;
-}> = ({ value, items, onChange, label }) => (
-  <div className="flex flex-col gap-1 w-full">
-    {label && <p className="text-xs font-bold text-slate-600 px-1">{label}</p>}
-    <div className="flex w-full items-center border border-slate-300 rounded-xl overflow-hidden bg-slate-100 p-0.5">
-      {items.map((item) => (
-        <button 
-          key={item.value} 
-          type="button" 
-          onClick={() => onChange(item.value)}
-          className={`flex-1 flex items-center justify-center h-[32px] text-xs font-bold transition-all cursor-pointer rounded-lg ${
-            value === item.value 
-              ? 'bg-indigo-600 text-white shadow-sm' 
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-          }`}
-        >
-          <span>{item.label}</span>
-        </button>
-      ))}
-    </div>
-  </div>
-);
-
 export const NumberChoice: React.FC<{
   label: string;
   value: number;
@@ -283,42 +201,3 @@ export const NumberChoice: React.FC<{
     </div>
   </div>
 );
-
-export const ToggleSwitch: React.FC<{
-  label: string; checked: boolean; onChange: (val: boolean) => void; disabled?: boolean;
-}> = ({ label, checked, onChange, disabled }) => (
-  <button 
-    type="button" 
-    disabled={disabled}
-    onClick={() => !disabled && onChange(!checked)} 
-    className={`flex items-center justify-between w-full px-2 py-1.5 select-none rounded-lg hover:bg-slate-100/70 transition-colors ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
-  >
-    <span className="text-xs font-medium text-slate-800 tracking-wide text-left">{label}</span>
-    <div className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${checked ? 'bg-indigo-600' : 'bg-slate-300'}`}>
-      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${checked ? 'left-[22px]' : 'left-0.5'}`} />
-    </div>
-  </button>
-);
-
-export const ConfirmationModal: React.FC<{
-  isOpen: boolean;
-  title: string;
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}> = ({ isOpen, title, message, onConfirm, onCancel }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative w-full max-w-[340px] bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-        <h4 className="text-lg font-bold text-slate-900 tracking-tight">{title}</h4>
-        <p className="text-xs text-slate-600 leading-relaxed">{message}</p>
-        <div className="flex gap-2 pt-2">
-          <PillButton variant="outline" className="flex-1" onClick={onCancel}>キャンセル</PillButton>
-          <PillButton variant="filled" className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold" onClick={onConfirm}>確定</PillButton>
-        </div>
-      </div>
-    </div>
-  );
-};

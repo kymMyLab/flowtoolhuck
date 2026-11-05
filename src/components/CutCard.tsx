@@ -6,13 +6,12 @@ interface CutCardProps {
   cut: Cut;
   episodeId: number;
   isMvMode?: boolean;
-  aspectRatio?: '9:16' | '1:1' | '16:9';
   onPreviewCut: (epId: number, cutId: number) => void;
   onRetry?: (epId: number, cutId: number) => void;
 }
 
 export const CutCard: React.FC<CutCardProps> = React.memo(({ 
-  cut, episodeId, isMvMode, aspectRatio = '1:1', onPreviewCut, onRetry 
+  cut, episodeId, isMvMode, onPreviewCut, onRetry 
 }) => {
   const imageSrc = formatDataUri(cut.imageBase64 || (cut as any)?.image);
 
@@ -21,18 +20,12 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
     if (onRetry) onRetry(episodeId, cut.id);
   };
 
-  const isSquare = aspectRatio === '1:1';
-  const isLandscape = aspectRatio === '16:9';
-  const cardWidthClass = isSquare ? 'w-[155px]' : (isLandscape ? 'w-[185px]' : 'w-[140px]');
-  const aspectClass = isSquare ? 'aspect-square' : (isLandscape ? 'aspect-video' : 'aspect-[9/16]');
-
   return (
     <div 
       onClick={() => onPreviewCut(episodeId, cut.id)}
-      className="flex-shrink-0 bg-white border border-[#333] hover:border-[#969696] rounded-xl overflow-hidden flex flex-col group transition-all relative shadow-lg cursor-pointer"
-      style={{ width: isSquare ? 155 : isLandscape ? 185 : 140 }}
+      className="w-[155px] flex-shrink-0 bg-white border border-[#333] hover:border-[#969696] rounded-xl overflow-hidden flex flex-col group transition-all relative shadow-lg cursor-pointer"
     >
-      <div className={`relative ${aspectClass} bg-slate-200 flex items-center justify-center overflow-hidden`}>
+      <div className="relative aspect-square bg-slate-200 flex items-center justify-center overflow-hidden">
         {imageSrc ? (
           <div className="w-full h-full overflow-hidden">
             <img 

@@ -4,7 +4,6 @@ import { formatDataUri } from '../../services/utils';
 
 export interface PreviewPlayerProps {
   cut: Cut;
-  aspectRatio?: '9:16' | '1:1' | '16:9';
   hasPrev?: boolean;
   hasNext?: boolean;
   onPrev?: () => void;
@@ -18,7 +17,6 @@ export interface PreviewPlayerProps {
 
 export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
   cut,
-  aspectRatio = '1:1',
   hasPrev,
   hasNext,
   onPrev,
@@ -67,7 +65,7 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
           </div>
         )}
 
-        <div className={`relative h-full max-h-full ${aspectRatio === '1:1' ? 'aspect-square' : (aspectRatio === '16:9' ? 'aspect-video' : 'aspect-[9/16]')} shadow-2xl rounded-2xl overflow-hidden border border-white/10 group bg-[#111] flex items-center justify-center`}>
+        <div className="relative h-full max-h-full aspect-square shadow-2xl rounded-2xl overflow-hidden border border-white/10 group bg-[#111] flex items-center justify-center">
           {startImageSrc ? (
             <div className="w-full h-full overflow-hidden flex items-center justify-center">
               <img src={startImageSrc} className="w-full h-full object-contain block" alt={`Cut ${cut.id}`} />

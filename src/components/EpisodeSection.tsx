@@ -397,7 +397,6 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
 
 interface EpisodeSectionProps {
   ep: Episode;
-  aspectRatio?: '9:16' | '1:1' | '16:9';
   onGenerateRemaining: (epId: number) => void;
   onDownloadZip: (ep: Episode) => void;
   onPreviewCut: (epId: number, cut: Cut) => void;
@@ -407,7 +406,7 @@ interface EpisodeSectionProps {
 }
 
 export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
-  ep, aspectRatio = '1:1', onGenerateRemaining, onDownloadZip, onPreviewCut, onGenerateCover, onRerollTaste, onRetry
+  ep, onGenerateRemaining, onDownloadZip, onPreviewCut, onGenerateCover, onRerollTaste, onRetry
 }) => {
   // 先行プレビュー完了(isPreviewDone)または全体完了(isDone)していれば操作可能
   const isPending = !ep.isGenerating && !ep.isDone && !ep.isPreviewDone;
@@ -489,7 +488,7 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
       <div className={`no-wrap-row gap-4 pb-6 dark-scrollbar ${isPending ? 'grayscale pointer-events-none' : ''}`}>
         {ep.cuts.map(cut => (
           <CutCard 
-            key={cut.id} cut={cut} episodeId={ep.id} isMvMode={ep.isMvMode} aspectRatio={aspectRatio}
+            key={cut.id} cut={cut} episodeId={ep.id} isMvMode={ep.isMvMode}
             onPreviewCut={() => onPreviewCut(ep.id, cut)}
             onRetry={onRetry}
           />

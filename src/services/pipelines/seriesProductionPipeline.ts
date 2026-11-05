@@ -1,6 +1,6 @@
 import { Flow } from 'flow-sdk';
 import { Episode, Cut, SeriesEpisodePlan } from '../../types';
-import { CUTS_PER_EPISODE } from '../../constants';
+import { SAFE_CHARACTERS } from '../../config/safeCharacters';
 import { createDefaultCut, safeJsonParse, callWithRetry, formatErrorMessage } from '../utils';
 import { 
   generateSafeEpisodeScript, 
@@ -34,6 +34,10 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     activeReferenceRef 
   } = ctx;
 
+  const fixedChar = (settings.characterId && settings.characterId !== 'auto')
+    ? SAFE_CHARACTERS.find(c => c.id === settings.characterId)
+    : undefined;
+
   if (!seriesManifestRef.current) {
     const isHist = checkIsHistorical(settings.era, settings.theme);
     const isMv = settings.isMvMode || settings.productionMode === 'mv';
@@ -41,7 +45,16 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     const genreLabel = isMv ? '音楽MVシリーズ' : isManga ? '漫画シリーズ' : isHist ? '大河ドラマ' : '連続ドラマ';
     const totalEps = settings.totalEpisodes || settings.episodeCount || 1;
     addLog(`📜 全${totalEps}話の${genreLabel}グランドデザインをAIに策定依頼中... [世界観・テーマ: ${settings.theme}]`, 'process');
-    const designPrompt = buildGrandDesignPrompt(totalEps, settings.country, settings.theme, settings.era, isManga, isMv);
+    const designPrompt = buildGrandDesignPrompt(
+      totalEps,
+      settings.country,
+      settings.theme,
+      settings.era,
+      isManga,
+      isMv,
+      fixedChar?.dnaPromptEn,
+      fixedChar?.nameJa
+    );
     const designStartTime = Date.now();
     let designHeartbeat: any = setInterval(() => {
       const elapsed = Math.round((Date.now() - designStartTime) / 1000);
@@ -244,7 +257,8 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
 
       const currentEpObj = episodesRef.current.find(e => e.id === epId);
       if (currentEpObj) {
-        currentEpObj.characterDna = sharedScript.characterDna;
+        currentEpObj.characterDna = fixedChar?.dnaPromptEn || sharedScript.characterDna;
+        currentEpObj.characterId = settings.characterId;
       }
       let turnaroundMediaId = currentEpObj?.characterTurnaroundMediaId || manifest.referenceAsset?.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId;
       let turnaroundBase64 = currentEpObj?.characterTurnaroundBase64 || manifest.referenceAsset?.characterTurnaroundBase64;

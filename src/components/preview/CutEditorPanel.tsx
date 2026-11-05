@@ -3,7 +3,7 @@ import { Cut } from '../../types';
 import { resolveImageModel } from '../../constants';
 import { Flow } from 'flow-sdk';
 import { callWithRetry } from '../../services/utils';
-import { TextInput, SectionLabel, PillButton, FieldDropdown, ToggleSwitch } from '../Primitives';
+import { TextInput, SectionLabel, PillButton, FieldDropdown } from '../Primitives';
 
 export interface CutEditorPanelProps {
   cut: Cut;
@@ -66,7 +66,10 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-5 dark-scrollbar min-h-0 pb-14">
         <div className="flex flex-col gap-4">
           <TextInput label="ナレーション / セリフ (JP)" value={cut.narrationJp || ''} onChange={v => onUpdateCut({ narrationJp: v })} />
-          <ToggleSwitch label="プレビュー上に字幕を表示する" checked={showTelop} onChange={setShowTelop} />
+          <label className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 cursor-pointer select-none">
+            <span className="text-xs font-medium text-white/80">プレビュー上に字幕を表示する</span>
+            <input type="checkbox" checked={showTelop} onChange={e => setShowTelop(e.target.checked)} className="w-4 h-4 accent-amber-500 cursor-pointer" />
+          </label>
 
           {/* ✨ AIへのおねがい */}
           <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30">

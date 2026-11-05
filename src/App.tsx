@@ -223,7 +223,7 @@ export default function App() {
             <div className="max-w-[1300px] mx-auto flex flex-col gap-6">
               {episodes.map((ep, idx) => (
             <EpisodeSection 
-              key={ep.internalId || `ep_${ep.id}_${idx}`} ep={ep} aspectRatio={settings.aspectRatio || '1:1'} onGenerateRemaining={handleGenerateRemaining} onDownloadZip={handleDownloadZip} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onGenerateCover={generateInfographicCover} onRerollTaste={handleRerollTaste} onRetry={(eId, cId) => {
+              key={ep.internalId || `ep_${ep.id}_${idx}`} ep={ep} onGenerateRemaining={handleGenerateRemaining} onDownloadZip={handleDownloadZip} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onGenerateCover={generateInfographicCover} onRerollTaste={handleRerollTaste} onRetry={(eId, cId) => {
                 const epFound = episodes.find(e => e.id === eId);
                 const cutFound = epFound?.cuts.find(c => c.id === cId);
                 if (cutFound) {
@@ -266,7 +266,6 @@ export default function App() {
             isOpen={true} 
             cut={activeCut} 
             episodeId={previewingCutData.epId} 
-            aspectRatio={settings.aspectRatio || '1:1'}
             currentImageModel={settings.imageModel} 
             hasPrev={hasPrev}
             hasNext={hasNext}

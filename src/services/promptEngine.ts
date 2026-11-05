@@ -1,13 +1,11 @@
 import { GeneratorSettings, GenerationTask, TelopStyle, TelopTransition, TelopPosition } from '../types';
-import { TASTES, STRICT_STYLE_SUFFIX } from '../constants';
+import { STRICT_STYLE_SUFFIX } from '../constants';
 import { resolveTastePrompt } from './tasteStorage';
 import { 
-  SHOT_SCALE_REGISTRY, 
   POSE_CONTRAST_RULES, 
   TWELVE_CUT_STORYBOARD_PRESETS, 
   UNIVERSAL_CINE_CYCLE,
-  BASELINE_NEGATIVE_TOKENS,
-  StoryShotPreset 
+  BASELINE_NEGATIVE_TOKENS
 } from '../config/studioDefinitions';
 
 export interface PreviousShotContext {
@@ -380,11 +378,7 @@ export function buildFinalCinematicPromptAndNegative(
   const isAllowedEyeContact = isMv && isMvChorusCut(task.cutId || 1);
   let cameraContext = '';
 
-  if (task.isEndFrame) {
-    // EndFrame（到達点フレーム）: 元絵からの相対変化（カメラ・表情・距離）を最重要視
-    const cameraShift = task.endFrameCameraDirective || 'Relative to the start frame: subtle cinematic camera and gaze shift';
-    cameraContext = `[RELATIVE TRANSFORMATION FROM START FRAME]: ${cameraShift}`;
-  } else if (isMv) {
+  if (isMv) {
     const mvGazePrompt = isAllowedEyeContact
       ? 'dramatic emotional climax, direct captivating eye contact with camera, powerful cinematic presence'
       : 'unposed candid non-look angle, character looking away into distance or downcast in quiet contemplation, no camera look, no eye contact';
@@ -542,29 +536,6 @@ export function buildFinalCinematicPromptAndNegative(
     styleSpecificNegatives.push('detailed shading, heavy gradient, 3d render, complex shading');
   }
 
-  // 4. 浮世絵・伝統和風画風特化: 現代設定時の時代劇逆流防止ガード（画風と時代・舞台の明確分離）
-  // 画風（和紙・墨線・鉱物顔料の質感）は100%維持したまま、江戸時代の茅葺屋根・宿場町・通行人（蓑笠、着物、侍）の補完を徹底排除
-  const isTraditionalJapaneseMedium = lowerStyleFull.includes('hokusai') || 
-                                     lowerStyleFull.includes('ukiyoe') || 
-                                     lowerStyleFull.includes('ukiyo-e') || 
-                                     lowerStyleFull.includes('浮世絵') || 
-                                     lowerStyleFull.includes('北斎') || 
-                                     lowerStyleFull.includes('japonisme') || 
-                                     lowerStyleFull.includes('ジャポニスム') || 
-                                     lowerStyleFull.includes('絵巻') || 
-                                     lowerStyleFull.includes('戯画');
-
-  const combinedContextText = `${task.eraAnalysis || ''} ${task.storyContext || ''} ${settings.era || ''} ${settings.theme || ''} ${task.characterDna || ''} ${task.prompt || ''} ${effectivePrompt || ''}`.toLowerCase();
-  const isExplicitHistoricalEra = /\b(edo period|feudal japan|samurai era|sengoku|heian|meiji period|taisho|kamakura|時代劇|江戸時代|戦国|平安|明治時代|侍|大名|武士)\b/i.test(combinedContextText);
-  const hasModernMarkers = /\b(student|school|blazer|uniform|asphalt|modern|contemporary|bus stop|sneakers|loafers|headphones|smartphone|train station|高校生|学生|制服|現代|アスファルト|駅|ブレザー|ローファー)\b/i.test(combinedContextText);
-  const isModernJapaneseContext = isMv || (!isExplicitHistoricalEra) || hasModernMarkers;
-
-  if (isTraditionalJapaneseMedium && isModernJapaneseContext) {
-    styleSpecificNegatives.push(
-      'edo period, ancient feudal japan, ancient historical setting, historical period crowd, ancient travelers, peasants, samurai, ronin, straw raincoat, mino, conical straw hat, kasa, sugegasa, thatched roof, thatched cottages, old wooden shacks, traditional japanese peasant clothing, topknot, chonmage, period drama mob, historical costumes on passersby, old dirt village road, pre-modern village'
-    );
-  }
-
   const styleSpecificNegative = styleSpecificNegatives.join(', ');
 
   const negativeLayers: string[] = [
@@ -581,164 +552,75 @@ export function buildFinalCinematicPromptAndNegative(
     BASELINE_NEGATIVE_TOKENS.renderingQuality
   ];
 
-  if (task.isEndFrame) {
-    // EndFrameでは、完全に静止して変化しないフリーズ重複や、全く別キャラ・別世界になる乖離を防ぐ
-    negativeLayers.push('frozen motionless static duplicate, completely identical frozen posture, different character, different outfit, different bedroom setting');
-  }
-
   const panelDirective = multiPanelPrompt ? `[PANEL COMPOSITION: ${multiPanelPrompt}]. ` : '';
 
   // ── キャラクター一貫性（Character Consistency DNA）＆ 物体カット分離 ──
   const rawScale = (task.shotScale || '').toLowerCase();
   const rawAngle = (task.cinematicAngle || '').toLowerCase();
-  const isObjectStillLife = !!task.isObjectOnly || rawScale.includes('object') || rawScale.includes('still-life') || rawAngle.includes('still-life') || rawScale.includes('prop');
-  const isObjectCut = isObjectStillLife;
+  const isObjectCut = !!task.isObjectOnly || rawScale.includes('object') || rawScale.includes('still-life') || rawAngle.includes('still-life') || rawScale.includes('prop');
   const effectiveDna = !isObjectCut ? (task.characterDna || activeReference?.characterDna) : '';
 
-  // 🛡️ 静物・小道具カット（isObjectCut）特化: 画風プロンプトから人物解剖・体型・顔・ガチャ演出トークンを完全除去
-  if (isObjectCut) {
-    const sanitizeStyleForObject = (styleStr: string) => {
-      return styleStr
-        .replace(/\b(gacha splash art style|gacha splash art|refined mature young-adult anime aesthetic|mature young-adult|young-adult|elegant mature proportions|sleek jawline|alluring expressive almond-shaped eyes|almond-shaped eyes|sophisticated beauty|soft cinematic rim light on silhouette|portrait|jawline|lips|face|eyes|chin|silhouette|full body|featuring a graceful student girl|student girl|raven black hair|black ponytail|burgundy wine-red ribbon|violet-dark eyes|contemplative gaze|academy blazer uniform|pleated skirt|ribbon tie|school bag|hair strands)\b/gi, '')
-        .replace(/,\s*,/g, ',')
-        .replace(/^\s*,\s*/, '')
-        .replace(/,\s*$/, '')
-        .trim();
-    };
-    effectiveMasterPrefix = sanitizeStyleForObject(effectiveMasterPrefix);
-    effectiveMasterPrompt = sanitizeStyleForObject(effectiveMasterPrompt);
-  }
-
-  // 重要: もし prompt 内にすでに [PROTAGONIST DNA]: が含まれている場合、二重注入・長大化を防ぐためにアクションプロンプトから分離
   let cleanActionPrompt = effectivePrompt || '';
   if (cleanActionPrompt.includes('[PROTAGONIST DNA]:')) {
     cleanActionPrompt = cleanActionPrompt.replace(/,?\s*\[PROTAGONIST DNA\]:[^,\]]*/gi, '').trim();
   }
 
-  // 🛡️ 伝統和風画風（北斎肉筆浮世絵等）× 現代劇: 画風（Medium）と時代・舞台（Setting）の完全分離
-  // 画風（和紙・墨線・顔料）の質感は維持したまま、舞台を現代日本の舗装道路・現代学生街に固定
-  if (isTraditionalJapaneseMedium && isModernJapaneseContext) {
-    const stripHistoricalEraFromMedium = (str: string) => {
-      return str
-        .replace(/\b(katsushika hokusai|hokusai|ukiyo-e|ukiyoe|edo period|feudal japan|ancient japan|ancient japanese|heian|kamakura|showa|edo)\b/gi, '')
-        .replace(/,\s*,/g, ',')
-        .replace(/^\s*,\s*/, '')
-        .replace(/,\s*$/, '')
-        .trim();
-    };
-    effectiveMasterPrefix = stripHistoricalEraFromMedium(effectiveMasterPrefix);
-    effectiveMasterPrompt = stripHistoricalEraFromMedium(effectiveMasterPrompt);
-
-    cleanActionPrompt = `[CONTEMPORARY MODERN JAPAN SETTING: modern paved asphalt road, contemporary Japanese architecture and modern lifestyle, rendered with traditional hand-painted washi paper texture, mineral pigments, and sumi ink brush lines]. ${cleanActionPrompt}`;
-  }
-
-  // ── 映画的画角＆アングル連動インテリジェント制御（立ち姿の呪縛解放＆視点防衛） ──
+  // ── 映画的画角＆アングル連動インテリジェント制御 ──
   const fullPromptContext = `${cleanActionPrompt} ${cameraContext} ${task.shotScale || ''} ${task.cinematicAngle || ''} ${task.camera || ''}`.toLowerCase();
 
-  // 1. 部位特化マクロ・ディテール判定（最優先・タイトルや歌詞の「指先」「足音」による誤爆を完全防止）
-  const isHandsShot = rawScale.includes('hands') || rawAngle.includes('macro hands') || rawAngle.includes('hands & gestures') || rawAngle.includes('tactile extreme close-up macro');
-  const isFootstepsShot = rawScale.includes('footsteps') || rawAngle.includes('low-angle footsteps') || rawAngle.includes('ground-level low-angle worm-eye');
-  const isMouthShot = rawScale.includes('mouth') || rawAngle.includes('macro mouth') || rawAngle.includes('mouth & breath');
-
-  // 2. カメラアングル特化判定（横顔、背後、俯瞰、煽り、斜め）
-  const isProfileShot = rawScale.includes('profile') || rawAngle.includes('profile') || rawAngle.includes('side profile') || rawAngle.includes('side view') || rawAngle.includes('90-degree');
+  const isHandsShot = rawScale.includes('hands') || rawAngle.includes('macro hands') || rawAngle.includes('hands & gestures');
+  const isFootstepsShot = rawScale.includes('footsteps') || rawAngle.includes('low-angle footsteps');
+  const isMouthShot = rawScale.includes('mouth') || rawAngle.includes('macro mouth');
+  const isProfileShot = rawScale.includes('profile') || rawAngle.includes('profile') || rawAngle.includes('side profile') || rawAngle.includes('90-degree');
   const isRearShot = rawScale.includes('rear') || rawAngle.includes('rear') || rawAngle.includes('back view') || rawAngle.includes('from behind');
-  const isHighAngle = rawScale.includes('high-angle') || rawAngle.includes('high-angle') || rawScale.includes('overhead') || rawAngle.includes("bird's-eye") || rawAngle.includes('overhead') || rawAngle.includes('looking down');
-  const isLowAngle = rawScale.includes('low-angle') || rawAngle.includes('low-angle') || rawAngle.includes('worm-eye') || rawAngle.includes('looking sharply upward');
-  const isDutchAngle = rawScale.includes('dutch') || rawAngle.includes('dutch') || rawAngle.includes('dutch-angle') || rawAngle.includes('diagonal') || rawAngle.includes('tilted');
+  const isHighAngle = rawScale.includes('high-angle') || rawAngle.includes('high-angle') || rawScale.includes('overhead') || rawAngle.includes("bird's-eye");
+  const isLowAngle = rawScale.includes('low-angle') || rawAngle.includes('low-angle') || rawAngle.includes('worm-eye');
+  const isDutchAngle = rawScale.includes('dutch') || rawAngle.includes('dutch');
+  const isBustShot = (rawScale.includes('bust') || rawAngle.includes('bust shot') || rawAngle.includes('chest-up')) && !isProfileShot;
+  const isExtremeWideShot = rawScale.includes('extreme wide') || rawScale.includes('panorama') || rawAngle.includes('wide panorama') || rawAngle.includes('panoramic environmental tableau');
 
-  // 3. 構図スケール判定（バストアップ、超広角、極限ドアップ）
-  const isBustShot = (rawScale.includes('bust') || rawAngle.includes('bust shot') || rawAngle.includes('chest-up') || rawAngle.includes('candid medium')) && !isProfileShot;
-  const isWideShot = rawScale.includes('wide') || rawScale.includes('panorama') || rawAngle.includes('wide panorama') || rawAngle.includes('panoramic environmental tableau');
-
-  // 極限顔面ドアップ: 静物OBJや他の特化アングル（横顔・バスト・口元・手元・足元・引き・背後）ではない、純粋な顔面クローズアップのみ
-  // 【超重要】プロンプト内にコード、手すり、スニーカー、肩の隙間、ブレザー、耳元、静物等の明確な部位・物体指定がある場合は顔面ドアップ化を完全抑止！
   const hasSpecificNonFaceSubject = /(cable|wire|handrail|shoes?|sneakers?|boots?|bag|can|mug|window frame|phone|bell|button|earbud|earpiece|earlobe|narrow gap|blazer)/i.test(fullPromptContext);
-  const isCloseUpShot = !isObjectStillLife && !isProfileShot && !isBustShot && !isHandsShot && !isFootstepsShot && !isMouthShot && !isWideShot && !isRearShot && !hasSpecificNonFaceSubject && (
-    rawScale.includes('close-up') || rawAngle.includes('macro portrait') || rawAngle.includes('extreme macro close-up portrait') || rawScale.includes('extreme close-up')
+  const isCloseUpShot = !isObjectCut && !isProfileShot && !isBustShot && !isHandsShot && !isFootstepsShot && !isMouthShot && !isExtremeWideShot && !isRearShot && !hasSpecificNonFaceSubject && (
+    rawScale.includes('close-up') || rawAngle.includes('macro portrait') || rawScale.includes('extreme close-up')
   );
-
-  const isMacroOrDetailShot = isCloseUpShot || isMouthShot || isHandsShot || isFootstepsShot || isObjectCut;
 
   const cineShotSpecificNegatives: string[] = [];
 
   if (isHandsShot) {
-    // 手元・指先マクロ: 顔・全身・頭部・ベンチ・自販機を完全粉砕
-    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'portrait', 'full body', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot', 'sitting on bench', 'bench', 'vending machine');
-    cleanActionPrompt = `[STRICT MACRO HANDS: Tactile extreme close-up macro focusing sharply on hands, fingers, and subtle emotional gestures, hands in sharp focus, background softly blurred, strictly hands and tactile gesture only, absolutely NO face]. ${cleanActionPrompt}`;
+    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'portrait', 'full body', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot');
+    cleanActionPrompt = `[STRICT MACRO HANDS: Tactile extreme close-up macro focusing sharply on hands, fingers, and subtle emotional gestures, background softly blurred, strictly hands only, NO face]. ${cleanActionPrompt}`;
   } else if (isFootstepsShot) {
-    // 足元・靴ローアングル: 顔・上半身・ベンチを完全粉砕
-    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'torso', 'chest', 'portrait', 'upper body', 'standard eye level', 'high angle', 'sitting on bench', 'bench', 'seated pose');
-    cleanActionPrompt = `[STRICT LOW-ANGLE FOOTSTEPS: Extreme ground-level low-angle worm-eye camera tracking footsteps and footwear stepping across terrain, natural ground texture and environmental atmosphere, dynamic kinetic motion, strictly ground and feet level, absolutely NO face]. ${cleanActionPrompt}`;
+    cineShotSpecificNegatives.push('face', 'eyes', 'head', 'torso', 'chest', 'portrait', 'upper body', 'standard eye level', 'high angle');
+    cleanActionPrompt = `[STRICT LOW-ANGLE FOOTSTEPS: Extreme ground-level low-angle worm-eye camera tracking footsteps and footwear stepping across terrain, strictly ground and feet level, NO face]. ${cleanActionPrompt}`;
   } else if (isMouthShot) {
-    // 口元・吐息マクロ: 全身・足元・ベンチ・自販機を徹底粉砕
-    cineShotSpecificNegatives.push('full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot', 'distant face', 'sitting on bench', 'bench', 'vending machine', 'seated posture', 'seated pose');
-    cleanActionPrompt = `[STRICT MACRO MOUTH & BREATH: Intimate macro close-up focusing tightly on lips, mouth, chin, and throat in emotional contemplation, holding back unspoken words, shallow depth of field with 100% blurred abstract bokeh, strictly lower face and lips only, absolutely NO full body, NO legs, NO torso, NO bench]. ${cleanActionPrompt}`;
+    cineShotSpecificNegatives.push('full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'wide shot', 'medium shot', 'distant face');
+    cleanActionPrompt = `[STRICT MACRO MOUTH & BREATH: Intimate macro close-up focusing tightly on lips, mouth, chin, and throat, shallow depth of field, strictly lower face and lips only, NO full body]. ${cleanActionPrompt}`;
   } else if (isProfileShot) {
-    // 横顔・プロファイル（90度真横・振り返り）: 正面向き・カメラ目線を徹底粉砕！三面図があっても必ず真横を向かせる
-    cineShotSpecificNegatives.push(
-      'facing camera', 'front view', '3/4 front view', 'direct eye contact',
-      'looking at viewer', 'centered portrait', 'front-facing character',
-      'extreme close-up of eyes', 'macro eyes', 'both eyes visible symmetrically'
-    );
-    cleanActionPrompt = `[STRICT SIDE PROFILE: Exact 90-degree horizontal side profile view of subject placed along the outer rule-of-thirds, gazing across immense open negative space toward the frame edge, razor-sharp silhouette with brilliant directional rim lighting outlining hair and facial profile, strictly side angle with only one eye profile visible, absolutely NO front view]. ${cleanActionPrompt
-      .replace(/\b(facing camera|looking at camera|direct gaze|front view)\b/gi, '')}`;
+    cineShotSpecificNegatives.push('facing camera', 'front view', '3/4 front view', 'direct eye contact', 'looking at viewer', 'centered portrait', 'front-facing character', 'both eyes visible symmetrically');
+    cleanActionPrompt = `[STRICT SIDE PROFILE: Exact 90-degree horizontal side profile view of subject placed along outer rule-of-thirds, directional rim lighting outlining hair and facial profile, strictly side angle, NO front view]. ${cleanActionPrompt.replace(/\b(facing camera|looking at camera|direct gaze|front view)\b/gi, '')}`;
   } else if (isBustShot) {
-    // バストショット（胸から上・自然な佇まい）: 瞳の極限ドアップ化を防止し、衣装・肩・姿勢・空間が映る構図を死守
-    cineShotSpecificNegatives.push(
-      'extreme close-up of eyes', 'macro eyes', 'cropped forehead', 'huge face filling screen',
-      'severed head', 'full body standing far', 'legs', 'feet', 'shoes', 'stiff mannequin posture'
-    );
-    cleanActionPrompt = `[STRICT MEDIUM BUST SHOT: Candid cinematic chest-up framing capturing authentic posture, upper-body clothing, and natural atmospheric presence within the environment, unposed natural aesthetic, rich rim lighting, rule-of-thirds composition, head and shoulders visible with comfortable breathing room]. ${cleanActionPrompt}`;
+    cineShotSpecificNegatives.push('extreme close-up of eyes', 'macro eyes', 'cropped forehead', 'huge face filling screen', 'severed head', 'full body standing far', 'legs', 'feet');
+    cleanActionPrompt = `[STRICT MEDIUM BUST SHOT: Candid cinematic chest-up framing capturing authentic posture, upper-body clothing, and natural atmospheric presence within the environment, head and shoulders visible]. ${cleanActionPrompt}`;
   } else if (isCloseUpShot) {
-    // 極限ドアップ・瞳と表情: 顔面・瞳・表情のみ。身体・ベンチ・自販機・背景を徹底粉砕（世界観のボケ味は保持）
-    cineShotSpecificNegatives.push(
-      'full body', 'torso', 'chest', 'shoulders', 'arms', 'hands', 'legs', 'feet', 'shoes',
-      'standing pose', 'seated pose', 'sitting', 'sitting on bench', 'bench', 'vending machine', 'wide shot', 'medium shot', 'distant face',
-      'normal portrait', 'waist-up crop', 'stiff standing posture'
-    );
-    // すでに詳細なプロンプトが存在している場合は重複・打ち消しを防ぐ
+    cineShotSpecificNegatives.push('full body', 'torso', 'chest', 'shoulders', 'arms', 'hands', 'legs', 'feet', 'shoes', 'standing pose', 'seated pose', 'wide shot', 'medium shot', 'distant face');
     if (!cleanActionPrompt.includes('macro detail shot') && !cleanActionPrompt.includes('close-up shot focused on')) {
-      cleanActionPrompt = `[STRICT MACRO PORTRAIT: Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit, NO bench]. ${cleanActionPrompt
-        .replace(/\b(standing|standing upright|upright|standing by[^\,]+|leaning on[^\,]+|seated|sitting|chair|bench|vending machine)\b/gi, '')
-        .replace(/(立っている|佇んでいる|佇む|直立して|座っている|ベンチ|椅子|自販機)/g, '')}`;
+      cleanActionPrompt = `[STRICT MACRO PORTRAIT: Close-up portrait focusing on expressive face, hair, and eyes, shallow depth of field, NO full body, NO legs]. ${cleanActionPrompt}`;
     }
   } else if (isLowAngle) {
-    // 煽り: 地面スレスレからの極限見上げパースを強制
-    cineShotSpecificNegatives.push(
-      'eye-level shot', 'horizontal camera angle', 'flat perspective', 'looking down',
-      'high angle', 'normal eye level', 'standard seated pose', 'level horizon', 'flat straight perspective',
-      'extreme close-up'
-    );
-    cleanActionPrompt = `[STRICT DRAMATIC LOW-ANGLE: Extreme ground-level camera looking sharply upward at a 60-degree vertical angle, towering majestic perspective with exaggerated vertical foreshortening, subject standing tall framed against the soaring expanse above, dramatic worm-eye parallax]. ${cleanActionPrompt}`;
+    cineShotSpecificNegatives.push('eye-level shot', 'horizontal camera angle', 'flat perspective', 'looking down', 'high angle', 'extreme close-up');
+    cleanActionPrompt = `[STRICT DRAMATIC LOW-ANGLE: Ground-level camera looking upward, towering perspective showing character and environment]. ${cleanActionPrompt}`;
   } else if (isDutchAngle) {
-    // ダッチアングル: 斜め35度傾き
-    cineShotSpecificNegatives.push(
-      'horizontal level frame', 'straight horizontal camera', 'level horizon', 'flat standard shot',
-      'vertical upright symmetry', 'level camera'
-    );
-    cleanActionPrompt = `[STRICT DUTCH ANGLE: Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal lines slashing across the frame, off-kilter dynamic perspective creating palpable tension and emotional instability, stylish cinematic slant]. ${cleanActionPrompt}`;
-  } else if (isWideShot) {
-    // 引き・全景: 風景・環境が画面の90%を支配、被写体は豆粒シルエット
-    cineShotSpecificNegatives.push(
-      'close-up', 'medium shot', 'prominent character in foreground', 'large face',
-      'dominant person in center', 'waist-up', 'chest-up', 'normal portrait'
-    );
-    cleanActionPrompt = `[STRICT EXTREME WIDE PANORAMA: Grand panoramic environmental tableau where the vast grand environment, immense background scale, and sweeping atmospheric horizon overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, breathtaking spatial depth]. ${cleanActionPrompt}`;
+    cineShotSpecificNegatives.push('horizontal level frame', 'straight horizontal camera', 'level horizon', 'vertical upright symmetry');
+    cleanActionPrompt = `[STRICT DUTCH ANGLE: Tilted 35-degree off-axis Dutch-angle camera framing, dynamic diagonal perspective]. ${cleanActionPrompt}`;
+  } else if (isExtremeWideShot) {
+    cineShotSpecificNegatives.push('close-up', 'macro face', 'waist-up', 'chest-up');
+    cleanActionPrompt = `[STRICT WIDE PANORAMA: Expansive environmental scene with protagonist visible in the world setting, breathtaking spatial depth]. ${cleanActionPrompt}`;
   } else if (isHighAngle) {
-    // 俯瞰: 真上75度見下ろし
-    cineShotSpecificNegatives.push(
-      'eye-level shot', 'horizontal angle', 'looking up from below', 'worm-eye view',
-      'frontal portrait', 'standard eye level', 'horizontal eye contact', 'extreme close-up'
-    );
-    cleanActionPrompt = `[STRICT OVERHEAD BIRD'S-EYE: Steep overhead high-angle bird-eye view looking down from high vantage point at a 75-degree angle, emphasizing ground geometry, environmental textures, and long elongated dramatic shadows cast across the floor plane, unique top-down perspective]. ${cleanActionPrompt}`;
+    cineShotSpecificNegatives.push('eye-level shot', 'looking up from below', 'worm-eye view', 'extreme close-up');
+    cleanActionPrompt = `[STRICT OVERHEAD HIGH-ANGLE: High-angle view looking down from above, showing the protagonist within the environmental geometry]. ${cleanActionPrompt}`;
   } else if (isRearShot) {
-    // 背後: 後ろ姿
-    cineShotSpecificNegatives.push(
-      'facing camera', 'front view', 'looking back at camera', 'direct eye contact',
-      'full frontal face', 'front view portrait', 'extreme close-up of eyes'
-    );
-    cleanActionPrompt = `[STRICT REAR VIEW: Atmospheric rear three-quarter view seen from behind looking outward into the glowing depth of the world, back turned to camera, expressive back silhouette, sharing the character forward gaze toward the unfolding horizon]. ${cleanActionPrompt}`;
+    cineShotSpecificNegatives.push('facing camera', 'front view', 'looking back at camera', 'direct eye contact', 'full frontal face');
+    cleanActionPrompt = `[STRICT REAR VIEW: Atmospheric rear three-quarter view seen from behind looking outward into the world, back turned to camera]. ${cleanActionPrompt}`;
   }
 
   if (cineShotSpecificNegatives.length > 0) {
@@ -746,104 +628,24 @@ export function buildFinalCinematicPromptAndNegative(
   }
 
   let characterPromptLayer = '';
-  const presence = task.characterPresence;
-  const songDna = task.extractedSongDna;
-
-  if (presence === '5_scenic_or_still_life' || isObjectCut) {
-    // ── 5. 完全無人・静物・風景カット ──
-    const propDna = songDna?.keyPropsDna || '';
+  if (isObjectCut) {
     const focal = task.focalSubject || 'symbolic scene';
-    characterPromptLayer = `[UNINHABITED STILL LIFE / SCENERY: ${focal}]: ${propDna ? `${propDna}, ` : ''}completely deserted scene, strictly NO humans, NO person, NO face, pure atmospheric cinematic environment. `;
+    characterPromptLayer = `[UNINHABITED STILL LIFE / SCENERY: ${focal}]: completely deserted scene, strictly NO humans, NO person, NO face, pure atmospheric cinematic environment. `;
     negativeLayers.push(
-      'human, person, girl, boy, man, woman, child, face, eye, eyes, pupils, mouth, lips, cheeks, hands, fingers, legs, feet, body silhouette, crowd, portrait',
-      'warrior, soldier, swordsman, knight, martial arts, magic, magic circle, fantasy, armor, weapons, sword, blade, ancient costume, hanfu, kimono, standing character, sitting character, anime character'
+      'human, person, girl, boy, man, woman, child, face, eye, eyes, pupils, mouth, lips, cheeks, hands, fingers, legs, feet, body silhouette, crowd, portrait, standing character, sitting character, anime character'
     );
-  } else if (presence === '4_hands_or_feet_detail') {
-    // ── 4. 手元・足元・小道具マクロ（顔面化を物理遮断） ──
-    const partialDna = songDna?.protagonistPartialWardrobeDna || 'navy school blazer cuffs and sleeves, pleated skirt hem, black school loafers on pavement';
-    const propDna = songDna?.keyPropsDna || '';
-    const focal = task.focalSubject || 'focal prop detail';
-    characterPromptLayer = `[EXTREME MACRO ON ${focal}]: ${partialDna}${propDna ? `, ${propDna}` : ''}, rich fabric and tactile texture, highly focused detail. `;
-    negativeLayers.push(
-      'face, eyes, eye, head, portrait, smile, gaze, lips, mouth, headshot, upper body, torso, bust shot, full body, dress, gown, armor, sword, warrior'
-    );
-  } else if (presence === '3_two_characters_asymmetric') {
-    // ── 3. 男女2人・非対称フレーミング（ヒロイン三面図アンカーON＋男子ナメ/後ろ姿） ──
-    const heroDna = songDna?.protagonistDna || effectiveDna || 'delicate Japanese anime high school girl, dark navy blazer uniform, expressive eyes';
-    const partnerDna = songDna?.partnerDna || 'tall high school boy with short neat black hair, wearing beige duffle coat over uniform, masculine silhouette';
-    characterPromptLayer = `[PRIMARY FOCAL HEROINE (FROM TURNAROUND)]: ${heroDna}, sharp cinematic focus on female protagonist's face, expressive eyes and emotional gaze, matching turnaround sheet. [ASYMMETRIC PARTNER]: ${partnerDna}, strictly framed over-the-shoulder / from behind / chin-down foreground silhouette, tall height difference, masculine posture, NO second female face visible. `;
-    // 男子・複数人を認めるため、ネガティブから male / multiple people を排除し、クローン女子化防止ネガティブを追加
-    negativeLayers.push('twin girls, two girls, yuri, identical faces, clone faces, duplicate female face, multiple girls');
-  } else if (presence === '2_protagonist_or_pair_wide') {
-    // ── 2. 風景メインの引き・全景・後ろ姿（白背景三面図アンカーONで顔アップ化を阻止） ──
-    const heroDna = songDna?.protagonistDna || effectiveDna || 'delicate Japanese anime high school girl, dark navy blazer uniform';
-    const partnerPart = songDna?.partnerDna ? ` [PARTNER]: ${songDna.partnerDna}` : '';
-    characterPromptLayer = `[STRICT WIDE ESTABLISHING SHOT: tiny full figures in expansive cinematic environment, majestic panoramic scale] [PROTAGONIST]: ${heroDna}.${partnerPart} `;
-    negativeLayers.push('close-up, extreme close-up, macro, portrait, face filling screen, huge head, cropped forehead');
-  } else if (presence === '1_protagonist_solo_focus') {
-    // ── 1. ヒロイン単身・表情・バストアップ（三面図アンカー100%適合） ──
-    const heroDna = songDna?.protagonistDna || effectiveDna || 'delicate Japanese anime high school girl, dark navy blazer uniform, expressive eyes, beautiful feminine features';
-    characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${heroDna}, strictly maintain identical facial appearance, hairstyle, and uniform matching turnaround sheet]. `;
-    negativeLayers.push('male, boy, man, masculine, multiple people, extra person, duplicate characters, changing appearance');
   } else {
-    // ── 既存フォールバック（presence未指定時） ──
     const hasExplicitMale = /\b(male|boy|man|guy|men|masculine|男子|男の子|少年|男性|青年|オッサン|おじさん)\b/i.test(`${effectiveDna || ''} ${cleanActionPrompt}`);
-    let baseDna = effectiveDna || '';
+    const sanitizedDna = (effectiveDna || (hasExplicitMale ? 'handsome anime male protagonist' : 'charming anime female protagonist')).trim();
     if (!hasExplicitMale) {
-      if (!baseDna) {
-        baseDna = 'delicate cute anime high school girl, beautiful female protagonist, soft feminine features';
-      } else {
-        baseDna = baseDna.replace(/(?<!女子)高校生/g, '女子高校生')
-          .replace(/(?<!女子)学生/g, '女子学生');
-        if (!/\b(female|girl|woman|美少女|女子)\b/i.test(baseDna)) {
-          baseDna = `delicate anime girl, ${baseDna}`;
-        }
-      }
       negativeLayers.push('male, boy, man, masculine, male character, young boy, guy, muscular, broad shoulders, facial hair, stubble');
     }
-
-    let sanitizedDna = baseDna;
-
-    if (isProfileShot) {
-      sanitizedDna = sanitizedDna
-        .replace(/\b(standing|standing upright|upright|full body|shoes?|sneakers?|feet|legs?|sitting|seated|bench)\b/gi, '')
-        .trim();
-      characterPromptLayer = `[PROTAGONIST PROFILE: ${sanitizedDna}, side profile silhouette, hairstyle, and facial profile matching turnaround sheet, facing sideways]. `;
-    } else if (isBustShot) {
-      sanitizedDna = sanitizedDna
-        .replace(/\b(standing upright|full body|head-to-toe|shoes?|sneakers?|boots?|feet|legs?)\b/gi, '')
-        .trim();
-      characterPromptLayer = `[PROTAGONIST BUST SHOT: ${sanitizedDna}, upper body, chest-up posture, hair, and clothing matching turnaround sheet]. `;
-    } else if (isCloseUpShot || isMouthShot) {
-      sanitizedDna = sanitizedDna
-        .replace(/\b(standing|standing upright|upright|full body|head-to-toe|shoes?|sneakers?|boots?|legs?|feet|pants|skirt|jacket|coat|windbreaker|sitting|seated|bench)\b/gi, '')
-        .trim();
-      characterPromptLayer = `[PROTAGONIST CLOSE-UP: ${sanitizedDna}, face, facial features, hair, eyes matching reference turnaround sheet]. `;
-    } else if (isHandsShot || isFootstepsShot) {
-      sanitizedDna = sanitizedDna
-        .replace(/\b(face|eyes|hair|headshot|portrait|smile|gaze)\b/gi, '')
-        .trim();
-      characterPromptLayer = `[PROTAGONIST ATTIRE: ${sanitizedDna}]. `;
-    } else if (isRearShot) {
-      sanitizedDna = sanitizedDna
-        .replace(/\b(face|eyes|smile|gaze|facial features)\b/gi, '')
-        .trim();
-      characterPromptLayer = `[PROTAGONIST REAR: ${sanitizedDna}, back silhouette, hair and outfit matching turnaround sheet]. `;
-    } else if (task.isEndFrame) {
-      characterPromptLayer = `[PROTAGONIST CONTINUITY: ${sanitizedDna}, strictly maintain identical hairstyle, hair color, and clothing from this transformed perspective]. `;
-      negativeLayers.push('different character, change of clothes, multiple people, extra person, duplicate characters');
-    } else {
-      characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${sanitizedDna}, strictly maintain identical appearance, hairstyle, hair color, and clothing across all scenes matching turnaround sheet]. `;
-      negativeLayers.push('different character, different face, different hair, change of clothes, multiple people, extra person, duplicate characters, changing appearance');
-    }
+    characterPromptLayer = `[MANDATORY SINGLE PROTAGONIST: ${sanitizedDna}, strictly maintain identical appearance, hairstyle, hair color, accessories, and clothing across all scenes matching reference turnaround sheet]. `;
+    negativeLayers.push('different character, different face, different hair, change of clothes, multiple people, extra person, duplicate characters, changing appearance');
   }
 
-  // 参照画像（Reference Images / Turnaround / Master Anchor）
-  // 物体専用カット（isObjectCut）、手元・足元（4）、無人風景（5）は人物参照を物理遮断して顔面化・首発生を完全防御！
-  // キャラクターが登場するカット（1, 2, 3）には白背景三面図を100%完全バインド！
   const targetMediaIds: string[] = [];
-  const isAnchorExcluded = isObjectCut || presence === '4_hands_or_feet_detail' || presence === '5_scenic_or_still_life';
-  if (!isAnchorExcluded) {
+  if (!isObjectCut) {
     if (task.referenceImageMediaId) {
       targetMediaIds.push(task.referenceImageMediaId);
     } else if (!task.isMvMode && activeReference?.mediaId) {
@@ -851,11 +653,9 @@ export function buildFinalCinematicPromptAndNegative(
     }
   }
 
-  // ネガティブレイヤーの結合（前カットからの対比ネガティブは絶対に消さない＋普遍的物理独立性ネガティブ常時付加）
-  let sanitizedNegativeLayers = negativeLayers.filter(Boolean);
+  const sanitizedNegativeLayers = negativeLayers.filter(Boolean);
   sanitizedNegativeLayers.push(UNIVERSAL_PHYSICAL_SANITY_NEGATIVE);
 
-  // 【プロンプト先頭配置ガード】マクロ接写・極限画角の場合、AIが最初に見る位置にカメラディレクティブを直接配置して最優先解釈させる
   let leadingDirective = '';
   let remainingAction = cleanActionPrompt;
   const strictMatch = cleanActionPrompt.match(/^(\[STRICT[^\]]+\]\.\s*)/);
@@ -864,59 +664,45 @@ export function buildFinalCinematicPromptAndNegative(
     remainingAction = cleanActionPrompt.slice(strictMatch[0].length);
   }
 
-  // ★ 第2段セーフティ: 直前カットと同一の構図・アングル・シーンの反復を厳格に禁止するポジティブ指令
   let positiveContrastMandate = task.antiPreviousMandate || '';
   if (!positiveContrastMandate && task.previousContexts) {
     positiveContrastMandate = buildPositiveAntiPreviousMandate(task.previousContexts);
   }
   const contrastDirective = positiveContrastMandate ? `${positiveContrastMandate}. ` : '';
+  const effectiveAttire = isObjectCut ? '' : dynamicAttire;
+  const attirePromptPart = effectiveAttire ? ` ${effectiveAttire}.` : '';
 
   if (activeReference && !isObjectCut) {
     const { styleDna, antiPoseNegative, eraNegative } = activeReference;
     if (antiPoseNegative) sanitizedNegativeLayers.push(antiPoseNegative);
     if (eraNegative) sanitizedNegativeLayers.push(eraNegative);
-
-    const effectiveAttire = isObjectCut ? '' : dynamicAttire;
-    const attirePromptPart = effectiveAttire ? ` ${effectiveAttire}.` : '';
-
     const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
-    const rawFinalPrompt = task.isEndFrame
-      ? `${leadingDirective}${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}]. ${cameraContext}.${attirePromptPart} ${effectiveMasterPrompt}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`
-      : `${leadingDirective}${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}].${attirePromptPart} ${effectiveMasterPrompt}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
-
-    return {
-      finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
-      finalNegative,
-      referenceImageMediaIds: targetMediaIds.length > 0 ? targetMediaIds : undefined
-    };
-  } else {
-    const effectiveAttire = isObjectCut ? '' : dynamicAttire;
-    const attirePromptPart = effectiveAttire ? ` ${effectiveAttire}.` : '';
-
-    const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
-    const rawFinalPrompt = task.isEndFrame
-      ? `${leadingDirective}${panelDirective}${characterPromptLayer}${remainingAction}. ${cameraContext}.${attirePromptPart} ${effectiveMasterPrompt}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`
-      : `${leadingDirective}${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}.${attirePromptPart} ${effectiveMasterPrompt}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
-
+    const rawFinalPrompt = `${leadingDirective}${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}].${attirePromptPart} ${effectiveMasterPrompt}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
       finalNegative,
       referenceImageMediaIds: targetMediaIds.length > 0 ? targetMediaIds : undefined
     };
   }
+
+  const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
+  const rawFinalPrompt = `${leadingDirective}${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}.${attirePromptPart} ${effectiveMasterPrompt}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
+
+  return {
+    finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
+    finalNegative,
+    referenceImageMediaIds: targetMediaIds.length > 0 ? targetMediaIds : undefined
+  };
 }
 
 /**
  * Google AI (Imagen 3 / Banana) のセーフティポリシーによる誤検知を回避するためのサニタイザー
- * 性的・暴力的・未成年関連の誤認を招くキーワードを洗練された安全な芸術的表現に置換
  */
 export function sanitizePromptForGoogleSafety(prompt: string): string {
   if (!prompt) return prompt;
 
   let cleaned = prompt
-    // undefinedやnullの混入を除去
     .replace(/\b(undefined|null)\b/gi, '')
-    // 性的・誘惑的・成人向け誤認ワードの無害化
     .replace(/\b(seductive|seductively)\b/gi, 'charismatic')
     .replace(/\b(adult manga|erotic manga|hentai)\b/gi, 'graphic novel')
     .replace(/\b(intimate lighting|intimate scene|intimate atmosphere)\b/gi, 'moody atmospheric lighting')
@@ -927,14 +713,8 @@ export function sanitizePromptForGoogleSafety(prompt: string): string {
     .replace(/\b(childlike|child-like)\b/gi, 'stylized')
     .replace(/\b(naked|nude|nudity)\b/gi, 'artistic silhouette')
     .replace(/\b(skimpy|revealing)\b/gi, 'stylish')
-    // 空のブラケットや括弧を除去
     .replace(/\[\s*\]/g, '')
     .replace(/\(\s*\)/g, '')
-    // 🧣 物理破綻防止: 「二人羽織マフラー（首と首が一本の布で連結されるバグ）」を完全解体
-    .replace(/sharing\s+(a\s+)?(scarf|muffler)/gi, 'each wearing an independent $2')
-    .replace(/one\s+(scarf|muffler)\s+wrapped\s+around\s+both/gi, 'each wearing their own separate $1')
-    .replace(/single\s+(scarf|muffler)\s+connecting\s+two/gi, 'physically separate scarves for each')
-    // 連続するカンマやピリオド、空白の整理
     .replace(/,\s*,+/g, ',')
     .replace(/\.\s*\.+/g, '.')
     .replace(/,\s*\./g, '.')
@@ -943,12 +723,6 @@ export function sanitizePromptForGoogleSafety(prompt: string): string {
     .replace(/^[,.\s]+|[,.\s]+$/g, '')
     .trim();
 
-  // 二人組でマフラーがある場合、独立した別々のマフラーを自分の首に巻くよう厳格指示
-  if (/(two characters|couple|pair|two people|boy and girl|standing together)/i.test(cleaned) && /(scarf|muffler)/i.test(cleaned)) {
-    cleaned += ', each person wearing their own completely separate scarf around neck, two physically independent scarves, strictly no cloth connecting two necks';
-  }
-
-  // Google Imagen の安全長制限 (2500文字以内に抑制)
   if (cleaned.length > 2500) {
     cleaned = cleaned.slice(0, 2480).replace(/,[^,]*$/, '').trim() + ', masterpiece';
   }
