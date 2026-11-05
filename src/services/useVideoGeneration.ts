@@ -5,7 +5,7 @@ import { LogEntry } from '../components/StudioLogs';
 import { DEFAULT_ASPECT_RATIO, resolveVideoModel } from '../constants';
 import { callWithRetry, formatDurationMs, formatErrorMessage } from './utils';
 import { resolveCameraWork } from '../config/studioDefinitions';
-import { renderKenBurnsVideo } from './browserVideoService';
+
 import { sanitizePromptForGoogleSafety } from './promptEngine';
 
 interface UseVideoGenerationProps {
@@ -201,30 +201,7 @@ export function useVideoGeneration({
     }
   };
 
-  const generateBrowserVideo = async (epId: number, cutId: number) => {
-    const ep = episodesRef.current.find(e => e.id === epId);
-    const cut = ep?.cuts.find(c => c.id === cutId);
-    const rawImage = cut?.imageBase64 || (cut as any)?.image;
-    if (!rawImage) {
-      addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 静止画が見つからないためスキップしました`, 'warning');
-      return;
-    }
-    updateCut(epId, cutId, { isGeneratingVideo: true, videoModelUsed: 'Browser (0pt)', error: undefined });
-    addLog(`⚡ Ep.${epId} C${cutId.toString().padStart(2, '0')}: ブラウザ動画化中（Ken Burns＆テロップ合成）...`, 'process');
-    try {
-      const isMvMode = ep?.isMvMode || false;
-      const isHorizontal = settings.aspectRatio !== '9:16';
-      const duration = cut?.duration || 4;
-      const base64 = await renderKenBurnsVideo(cut!, duration, isMvMode, isHorizontal);
-      const cleanVideoBase64 = base64 ? base64.replace(/^data:[^;]+;base64,/, '') : '';
-      updateCut(epId, cutId, { videoBase64: cleanVideoBase64, isGeneratingVideo: false, error: undefined, videoDuration: duration });
-      addLog(`🎬 Ep.${epId} C${cutId.toString().padStart(2, '0')}: ブラウザ動画化完了！`, 'success');
-    } catch (err: any) { 
-      console.error(`❌ Ep.${epId} C${cutId} ブラウザ動画化エラー:`, err);
-      updateCut(epId, cutId, { isGeneratingVideo: false, error: err?.message || '失敗' }); 
-      addLog(`❌ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 動画化失敗 - ${err?.message || err}`, 'error');
-    }
-  };
+  const generateBrowserVideo = async (_epId?: number, _cutId?: number) => {};
 
   return {
     generateVideo,

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Cut, VideoModelType, RecommendationModel } from '../types';
-import { normalizeKenBurnsPreset } from '../services/browserVideoService';
 import { VIDEO_MODELS_REGISTRY, resolveVideoModel } from '../config/studioDefinitions';
 import { formatDataUri } from '../services/utils';
+import { normalizeKenBurnsPreset } from '../services/renderers/kenBurns';
 
 interface CutCardProps {
   cut: Cut;

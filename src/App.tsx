@@ -21,7 +21,7 @@ import { ThemeEditorModal } from './components/ThemeEditorModal';
 import { TasteEditorModal } from './components/TasteEditorModal';
 import { CastManagerModal } from './components/CastManagerModal';
 import { ComicCreationWizardModal } from './components/ComicCreationWizardModal';
-import { MusicImportModal } from './components/music/MusicImportModal';
+
 import { TasteShowroomModal } from './components/TasteShowroomModal';
 import { StoryFactoryView } from './components/StoryFactoryView';
 import { loadMangaProject, saveMangaProject } from './services/castStorage';
@@ -640,24 +640,7 @@ export default function App() {
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark-scrollbar relative">
             <div className="max-w-[1300px] mx-auto flex flex-col gap-6">
 
-              {/* 🎵 音楽インポート アコーディオン展開パネル (モーダル完全撤廃・DOM直配置でD&D 100%安定) */}
-              {isMusicImportOpen && (
-                <MusicImportModal
-                  isOpen={isMusicImportOpen}
-                  isModal={false}
-                  initialJsonText={injectedJsonText}
-                  injectedPayload={injectedPayload}
-                  videoRatio={settings.videoRatio}
-                  onClose={() => {
-                    setIsMusicImportOpen(false);
-                    setInjectedJsonText('');
-                    setInjectedPayload(null);
-                  }}
-                  onOpenCastModal={() => setIsCastModalOpen(true)}
-                  onDeployEpisode={handleDeployMusicEpisode}
-                  onDeployBatchEpisodes={handleDeployBatchMusicEpisodes}
-                />
-              )}
+              
 
               {/* 📖 ① プロデュース アコーディオン展開パネル (モーダル完全撤廃) */}
               {isComicWizardOpen && (

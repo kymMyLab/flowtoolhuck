@@ -13,7 +13,7 @@ import {
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId } from './utils';
 import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate, isMvChorusCut } from './promptEngine';
 import { getAllReferenceAssets } from './db';
-import { renderFullEpisodeMovie, renderKenBurnsVideo } from './browserVideoService';
+
 import { renderCoverBase64 } from './exportService';
 import { 
   directShot, 
@@ -37,7 +37,7 @@ import { saveReferenceAsset } from './db';
 import { resolveCameraWork } from '../config/studioDefinitions';
 import type { LogEntry } from '../components/StudioLogs';
 import { useVideoGeneration } from './useVideoGeneration';
-import { extractLyricVisualPlot } from './musicImporter';
+
 
 interface UseStudioProductionProps {
   settings: GeneratorSettings;
@@ -187,25 +187,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
         : (turnaroundMediaId || ep.masterAnchorMediaId);
 
       let effectivePrompt = c.promptEn || '';
-      const rawLyric = c.telop?.fullText || c.narrationJp || '';
-      // MVモードで歌詞が存在する場合のプロンプト補完・置換（コンパイル済みのときは重複追加しない）
-      if (ep.isMvMode && rawLyric && !ep.isLyricAnalyzed && !c.characterPresence) {
-        if (c.geminiVisualPrompt) {
-          if (!effectivePrompt.includes(c.geminiVisualPrompt)) {
-            if (effectivePrompt.includes('embodying lyric')) {
-              effectivePrompt = effectivePrompt.replace(/Scene visually embodying lyric "[^"]*", set within the world of "[^"]*"\.?/g, c.geminiVisualPrompt);
-            } else {
-              effectivePrompt = `${effectivePrompt}, ${c.geminiVisualPrompt}`;
-            }
-          }
-        } else if (!effectivePrompt.includes('embodying lyric')) {
-          const visualPlot = extractLyricVisualPlot(rawLyric, c.telop?.directorNote || '', ep.theme || ep.titleJp || '', c.id, !!c.isObjectOnly);
-          if (!effectivePrompt.includes(visualPlot)) {
-            effectivePrompt = `${effectivePrompt}, ${visualPlot}`;
-          }
-        }
-      }
-
       return {
         epId: ep.id,
         cutId: c.id,
@@ -449,30 +430,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     }
   };
 
-  const handleExportFullMovie = async (epId: number) => {
-    const ep = episodesRef.current.find(e => e.id === epId);
-    if (!ep) return;
-    addLog(`🎬 Ep.${epId}: 映像結合を開始...`, 'process');
-    updateEpisode(epId, { isExportingMovie: true });
-    try {
-      const isHorizontal = settings.aspectRatio !== '9:16';
-      const movieBlob = await renderFullEpisodeMovie(ep, (idx, total) => {
-        addLog(`🎞️ 映像レンダリング中... ${idx}/${total}`, 'info');
-      }, isHorizontal);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = (reader.result as string).split(',')[1];
-        updateEpisode(epId, { fullMovieBase64: base64 });
-        await Flow.download({ base64, mimeType: 'video/mp4', filename: `Episode_${epId}_Export.mp4` });
-        addLog(`✅ Ep.${epId}: 動画の出力に成功しました。`, 'success');
-      };
-      reader.readAsDataURL(movieBlob);
-    } catch (err) {
-      addLog(`❌ レンダリング失敗: ${formatErrorMessage(err)}`, 'error');
-    } finally {
-      updateEpisode(epId, { isExportingMovie: false });
-    }
-  };
+  const handleExportFullMovie = async () => {};
 
   const runTasks = async (tasks: GenerationTask[]) => {
     // ── Phase 1: 演出・構図決定フェーズ（直列連鎖で前カットの構図を完全に追跡＆ネガティブ化） ──
@@ -1078,39 +1036,7 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     setIsProducing(false);
   };
 
-  const handleBulkBrowserVideo = async (epId: number) => {
-    const ep = episodesRef.current.find(e => e.id === epId);
-    if (!ep) {
-      addLog(`⚠️ エピソードが見つかりません`, 'warning');
-      return;
-    }
-    const availableCuts = ep.cuts.filter(c => !!(c.imageBase64 || (c as any)?.image));
-    if (availableCuts.length === 0) {
-      addLog(`⚠️ 動画化できる静止画がまだ生成されていません。「③ 作成開始」で画像を生成してください`, 'warning');
-      return;
-    }
-    const targets = availableCuts.filter(c => !c.videoBase64);
-    if (targets.length === 0) {
-      addLog(`ℹ️ 全${availableCuts.length}カットがすでに動画化済みです`, 'info');
-      return;
-    }
-    addLog(`⚡ 全${targets.length}カットのブラウザ動画化（0pt Ken Burns＆字幕焼き込み）を開始します...`, 'process');
-    setIsProducing(true);
-    isAbortedRef.current = false;
-    updateEpisode(epId, { isBatchGeneratingVideos: true });
-    try {
-      for (const cut of targets) {
-        if (isAbortedRef.current) {
-          addLog(`🛑 ブラウザ動画化を一括中止しました`, 'warning');
-          break;
-        }
-        await generateBrowserVideo(epId, cut.id);
-      }
-    } finally {
-      updateEpisode(epId, { isBatchGeneratingVideos: false });
-      setIsProducing(false);
-    }
-  };
+  const handleBulkBrowserVideo = async (_epId?: number) => {};
 
   const startProduction = async (overrideSettings?: Partial<GeneratorSettings>) => {
     if (isProducing) {
