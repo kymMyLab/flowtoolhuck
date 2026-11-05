@@ -2,24 +2,42 @@ import { Flow } from 'flow-sdk';
 import { Episode, SeriesManifest } from '../../types';
 
 /**
- * 循環参照やDOMノード（HTMLSpanElement等）を確実に排除する安全なJSON文字列化関数
+ * 循環参照やDOMノード（HTMLSpanElement等）・クロスオリジンWindowを確実に排除する安全なJSON文字列化関数
  */
 export const safeJsonStringify = (obj: any, indent = 2): string => {
   const seen = new WeakSet();
-  try {
-    return JSON.stringify(obj, (key, value) => {
-      if (typeof value === 'object' && value !== null) {
-        // DOM ノード (nodeType を持つ要素) や React Fiber ノードは除外
-        if (typeof (value as any).nodeType === 'number' || (value as any).$$typeof) {
-          return undefined;
+  const sanitizeValue = (val: any): any => {
+    if (val === null || val === undefined) return val;
+    if (typeof val === 'function' || typeof val === 'symbol') return undefined;
+    if (typeof val !== 'object') return val;
+    try {
+      if (val === window || (typeof Window !== 'undefined' && val instanceof Window)) return undefined;
+      if (typeof Event !== 'undefined' && val instanceof Event) return undefined;
+      if (typeof val.nodeType === 'number' || val.$$typeof || val.nativeEvent) return undefined;
+    } catch {
+      // Cross-origin Window or restricted host object
+      return undefined;
+    }
+    if (seen.has(val)) return '[Circular]';
+    seen.add(val);
+    if (Array.isArray(val)) {
+      return val.map(item => sanitizeValue(item));
+    }
+    const cleanObj: Record<string, any> = {};
+    for (const k of Object.keys(val)) {
+      try {
+        const child = sanitizeValue(val[k]);
+        if (child !== undefined) {
+          cleanObj[k] = child;
         }
-        if (seen.has(value)) {
-          return '[Circular]';
-        }
-        seen.add(value);
+      } catch {
+        // Ignore inaccessible cross-origin properties
       }
-      return value;
-    }, indent);
+    }
+    return cleanObj;
+  };
+  try {
+    return JSON.stringify(sanitizeValue(obj), null, indent);
   } catch (err) {
     console.warn('safeJsonStringify fallback:', err);
     return '{}';

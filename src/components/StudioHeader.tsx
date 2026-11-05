@@ -59,15 +59,15 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   }, []);
 
   return (
-    <header className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 z-40 relative shadow-sm flex-wrap">
+    <header className="bg-white border-b border-slate-200 px-3 py-2 flex items-center justify-between gap-2 shrink-0 z-40 relative shadow-sm flex-wrap">
       {/* 左側: ロゴ & ざっくり設定（モード・テーマ・画風） */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 shrink-0 text-slate-800">
-          <span className="material-symbols-outlined text-amber-500 text-2xl">movie_edit</span>
-          <h1 className="text-base font-black italic tracking-tighter uppercase whitespace-nowrap">Studio Pro</h1>
+      <div className="flex items-center gap-2 flex-wrap min-w-0">
+        <div className="flex items-center gap-1.5 shrink-0 text-slate-800">
+          <span className="material-symbols-outlined text-amber-500 text-xl">movie_edit</span>
+          <h1 className="text-sm font-black italic tracking-tighter uppercase whitespace-nowrap">Studio Pro</h1>
         </div>
 
-        <div className="flex items-center gap-2 p-1 bg-gradient-to-r from-emerald-50/80 via-teal-50/60 to-emerald-50/80 rounded-xl border border-emerald-300/80 shadow-2xs shrink-0 flex-wrap">
+        <div className="flex items-center gap-1.5 p-1 bg-gradient-to-r from-emerald-50/80 via-teal-50/60 to-emerald-50/80 rounded-xl border border-emerald-300/80 shadow-2xs shrink-0 flex-wrap">
           {/* 制作モード */}
           <FieldDropdown 
             label=""
@@ -78,10 +78,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               if (matched) handleModeChange(matched.value);
             }}
             disabled={isProducing}
-            className="w-[135px]"
+            className="w-[120px]"
           />
 
-          <div className="w-px h-6 bg-emerald-200/90 shrink-0" />
+          <div className="w-px h-5 bg-emerald-200/90 shrink-0" />
 
           {/* テーマ選択 */}
           <FieldDropdown 
@@ -91,10 +91,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             groups={themeConfig.groups}
             onChange={v => setSettings(s => ({ ...s, theme: v, era: v }))} 
             disabled={isProducing} 
-            className="w-[210px]"
+            className="w-[175px]"
           />
 
-          <div className="w-px h-6 bg-emerald-200/90 shrink-0" />
+          <div className="w-px h-5 bg-emerald-200/90 shrink-0" />
 
           {/* 画風選択 */}
           <FieldDropdown 
@@ -103,7 +103,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             options={tasteOptions} 
             onChange={v => setSettings(s => ({ ...s, taste: v }))} 
             disabled={isProducing || !!settings.selectedAssetId} 
-            className="w-[250px]"
+            className="w-[195px]"
           />
         </div>
       </div>
@@ -114,7 +114,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           <button 
             type="button"
             className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
-            onClick={onAbort}
+            onClick={() => onAbort()}
           >
             <span className="material-symbols-outlined text-[18px]">stop_circle</span>
             <span>中止</span>
@@ -123,8 +123,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           <button 
             type="button"
             disabled={isProducing}
-            onClick={onStart}
-            className={`h-9 px-5 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shrink-0 whitespace-nowrap relative ${
+            onClick={() => onStart()}
+            className={`h-9 px-4 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shrink-0 whitespace-nowrap relative ${
               isWaitingForStart
                 ? 'ring-4 ring-pink-400 ring-offset-2 animate-pulse shadow-[0_0_25px_rgba(236,72,153,0.8)] brightness-110 !bg-gradient-to-r !from-indigo-600 !via-purple-600 !to-pink-600 text-white hover:brightness-125 hover:scale-105 active:scale-95'
                 : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg active:scale-95'

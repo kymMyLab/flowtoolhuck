@@ -707,9 +707,15 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       console.warn('⚠️ [FlowTool Studio] すでに制作プロセスが実行中です。');
       return;
     }
+    const isValidOverride =
+      overrideSettings &&
+      typeof overrideSettings === 'object' &&
+      !('nativeEvent' in (overrideSettings as any)) &&
+      !('target' in (overrideSettings as any)) &&
+      !('preventDefault' in (overrideSettings as any));
     const effectiveSettings: GeneratorSettings = {
       ...settings,
-      ...(overrideSettings || {})
+      ...(isValidOverride ? overrideSettings : {})
     };
 
     console.log(

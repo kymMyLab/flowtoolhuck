@@ -65,7 +65,7 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
           <span className="text-slate-900/10 text-[8px] tracking-widest uppercase">Standby</span>
         )}
 
-        {/* 演出バッジ (Shot Scale & Object & Focal & Panel) */}
+        {/* 演出バッジ (Shot Scale & Object & Panel) */}
         <div className="absolute bottom-1.5 left-1.5 flex flex-wrap items-center gap-1 z-10 max-w-[95%] overflow-hidden">
           {cut.shotScale && (
             <div className="px-1.5 py-0.5 rounded-sm bg-amber-500 text-[7px] font-black text-black uppercase tracking-tighter shadow-lg shrink-0">
@@ -75,11 +75,6 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
           {cut.isObjectOnly && (
             <div className="px-1.5 py-0.5 rounded-sm bg-emerald-600 text-[7px] font-black text-slate-900 uppercase tracking-tighter shadow-lg shrink-0" title="人物なし・物体/情景カット">
               📦 OBJ
-            </div>
-          )}
-          {cut.focalPoint && (
-            <div className="px-1.5 py-0.5 rounded-sm bg-cyan-800/80 border border-cyan-400/30 text-[7px] font-black text-cyan-200 uppercase tracking-tighter shadow-lg shrink-0">
-              🎯 {cut.focalPoint.grid.replace('top-', 'T-').replace('bottom-', 'B-').replace('center', 'CTR').toUpperCase()}
             </div>
           )}
           {cut.panelLayout && cut.panelLayout !== 'single' && (
