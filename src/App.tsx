@@ -17,12 +17,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { loadCustomThemes } from './services/themeStorage';
 import { loadCustomTastes } from './services/tasteStorage';
 
-import { ThemeEditorModal } from './components/ThemeEditorModal';
-import { TasteEditorModal } from './components/TasteEditorModal';
-import { CastManagerModal } from './components/CastManagerModal';
 import { ComicCreationWizardModal } from './components/ComicCreationWizardModal';
 
-import { TasteShowroomModal } from './components/TasteShowroomModal';
 import { StoryFactoryView } from './components/StoryFactoryView';
 import { loadMangaProject, saveMangaProject } from './services/castStorage';
 import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset, SeriesManifest } from './types';
@@ -753,44 +749,10 @@ export default function App() {
         <ArchiveDrawer isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} stories={stories} onRemake={(s) => { setSettings(prev => ({ ...prev, country: s.country, era: s.era, theme: s.theme })); setArchiveOpen(false); }} />
         <ConfirmationModal isOpen={isTrashModalOpen} title="全消去" message="制作中のデータを消去します。" onConfirm={() => { clearEpisodes(); setIsTrashModalOpen(false); }} onCancel={() => setIsTrashModalOpen(false)} />
         <React.Suspense fallback={null}>
-          <ThemeEditorModal 
-            isOpen={isThemeEditorOpen} 
-            onClose={() => setIsThemeEditorOpen(false)} 
-            currentMode={settings.productionMode} 
-            modeLabel={settings.productionMode} 
-            onThemesUpdated={(updatedList) => {
-              setCustomThemes(prev => ({ ...prev, [settings.productionMode]: updatedList }));
-            }} 
-          />
-          <TasteEditorModal 
-            isOpen={isTasteEditorOpen} 
-            onClose={() => setIsTasteEditorOpen(false)} 
-            onTastesUpdated={(updatedTastes) => {
-              setCustomTastes(updatedTastes);
-            }} 
-          />
-          <TasteShowroomModal
-            isOpen={isTasteShowroomOpen}
-            onClose={() => setIsTasteShowroomOpen(false)}
-            currentTaste={settings.taste}
-            onSelectTaste={(tasteKey) => {
-              setSettings(s => ({ ...s, taste: tasteKey }));
-              addLog(`🎨 画風スタイルを「${tasteKey}」に変更しました`, 'info');
-            }}
-          />
-          <CastManagerModal
-            isOpen={isCastModalOpen}
-            onClose={() => setIsCastModalOpen(false)}
-            project={mangaProject}
-            onUpdateProject={handleUpdateMangaProject}
-            onApplyCharacterToVault={handleApplyCharacterToVault}
-            onAddLog={addLog}
-            currentTaste={settings.taste}
-            onOpenComicWizard={() => {
-              setIsCastModalOpen(false);
-              setIsComicWizardOpen(true);
-            }}
-          />
+          
+          
+          
+          
         </React.Suspense>
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
       </div>

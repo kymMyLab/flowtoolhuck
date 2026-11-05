@@ -349,15 +349,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               disabled={isProducing} 
               className="w-[190px]"
             />
-            <button
-              type="button"
-              onClick={onOpenThemeEditor}
-              disabled={isProducing}
-              className="w-8 h-8 rounded-lg bg-emerald-100/80 text-emerald-800 hover:bg-emerald-200 border border-emerald-300 flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
-              title="テーマ編集"
-            >
-              <span className="material-symbols-outlined text-[16px]">edit</span>
-            </button>
+            
           </div>
 
           <div className="w-px h-6 bg-emerald-200/90 shrink-0"></div>
@@ -388,25 +380,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                 />
               );
             })()}
-            <button
-              type="button"
-              onClick={onOpenTasteShowroom}
-              disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId}
-              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all hover:scale-102 cursor-pointer shrink-0 border border-emerald-500"
-              title="作例画像（学生・江戸町人・社会人）を見ながら画風を選択"
-            >
-              <span className="material-symbols-outlined text-[16px]">gallery_thumbnail</span>
-              <span>作例ギャラリー</span>
-            </button>
-            <button
-              type="button"
-              onClick={onOpenTasteEditor}
-              disabled={isProducing || settings.productionMode === 'style-matrix' || !!settings.selectedAssetId}
-              className="w-8 h-8 rounded-lg bg-teal-100/80 text-teal-800 hover:bg-teal-200 border border-teal-300 flex items-center justify-center transition-colors disabled:opacity-40 shadow-2xs cursor-pointer shrink-0"
-              title="画風プロンプト編集(JSON)"
-            >
-              <span className="material-symbols-outlined text-[16px]">data_object</span>
-            </button>
+            
+            
           </div>
         </div>
       </div>
