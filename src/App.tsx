@@ -15,14 +15,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { loadCustomThemes } from './services/themeStorage';
 import { loadCustomTastes } from './services/tasteStorage';
 
-import { ComicCreationWizardModal } from './components/ComicCreationWizardModal';
-
-import { loadMangaProject, saveMangaProject } from './services/castStorage';
-import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset, SeriesManifest } from './types';
-import { saveReferenceAsset } from './services/db';
-
 export default function App() {
-  const [studioViewMode, setStudioViewMode] = useState<'studio' | 'factory'>('studio');
   const [settings, setSettings] = useState<GeneratorSettings>({
     productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: 'none', episodeCount: 1, previewCutCount: 2, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, isMultiPanel: false, aspectRatio: '1:1', characterId: 'zundamon',
     enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: false
@@ -59,84 +52,10 @@ export default function App() {
   }, []);
 
   const [stories, setStories] = useState<StoryRecord[]>([]);
-  const [archiveOpen, setArchiveOpen] = useState(false);
-  const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
-  const [isLogDrawerOpen, setIsLogDrawerOpen] = useState(false);
-  const [customThemes, setCustomThemes] = useState(() => loadCustomThemes());
-  const [customTastes, setCustomTastes] = useState(() => loadCustomTastes());
-  const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
-  const [isTasteEditorOpen, setIsTasteEditorOpen] = useState(false);
-  const [isTasteShowroomOpen, setIsTasteShowroomOpen] = useState(false);
-  const [mangaProject, setMangaProject] = useState<MangaProject>(() => loadMangaProject());
-  const [isCastModalOpen, setIsCastModalOpen] = useState(false);
-  const [isComicWizardOpen, setIsComicWizardOpen] = useState(false);
-  const [isMusicImportOpen, setIsMusicImportOpen] = useState(false);
-  const isMusicImportOpenRef = useRef(false);
-  useEffect(() => {
-    isMusicImportOpenRef.current = isMusicImportOpen;
-  }, [isMusicImportOpen]);
-  const [injectedJsonText, setInjectedJsonText] = useState<string>('');
-  const [injectedPayload, setInjectedPayload] = useState<{ text: string; fileName: string; timestamp: number } | null>(null);
-  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
-  const globalDragCounterRef = useRef(0);
+  const [customThemes] = useState(() => loadCustomThemes());
+  const [customTastes] = useState(() => loadCustomTastes());
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
-
-
-
-  const handleUpdateMangaProject = useCallback((updated: MangaProject) => {
-    setMangaProject(prev => {
-      // 既存キャラの表情画像が消えないよう保護マージ
-      const mergedChars = updated.characters.map(newChar => {
-        const prevChar = prev.characters.find(c => c.id === newChar.id);
-        if (!prevChar) return newChar;
-        const mergedExpressions: any = { ...newChar.expressions };
-        (Object.keys(prevChar.expressions) as ExpressionType[]).forEach(expKey => {
-          if (!mergedExpressions[expKey]?.imageBase64 && prevChar.expressions[expKey]?.imageBase64) {
-            mergedExpressions[expKey] = {
-              ...mergedExpressions[expKey],
-              imageBase64: prevChar.expressions[expKey].imageBase64,
-              mediaId: prevChar.expressions[expKey].mediaId
-            };
-          }
-        });
-        return {
-          ...newChar,
-          avatarBase64: newChar.avatarBase64 || prevChar.avatarBase64,
-          expressions: mergedExpressions
-        };
-      });
-      const next: MangaProject = { ...updated, characters: mergedChars };
-      saveMangaProject(next);
-      return next;
-    });
-  }, []);
-
-  const handleApplyCharacterToVault = useCallback(async (char: CastCharacter, expressionType: ExpressionType = 'neutral') => {
-    const exp = char.expressions[expressionType] || char.expressions.neutral;
-    const base64 = exp?.imageBase64 || char.avatarBase64;
-    if (!base64) {
-      addLog(`⚠️ 「${char.name}」にはまだ画像が登録されていません。先にAI作画またはアップロードを行ってください。`, 'warning');
-      return;
-    }
-
-    const newAsset: ReferenceAsset = {
-      name: `${char.name} [${exp?.label || '通常'}]`,
-      base64: base64,
-      mimeType: 'image/png',
-      characterAnalysis: char.dnaPromptEn,
-      styleAnalysis: exp?.promptModifierEn,
-      createdAt: new Date().toISOString()
-    };
-
-    try {
-      const id = await saveReferenceAsset(newAsset);
-      setSettings(prev => ({ ...prev, selectedAssetId: id }));
-      addLog(`✨ キャスト「${char.name}」を参照庫へ登録し、Active DNAとして同期しました！`, 'success');
-    } catch (err: any) {
-      addLog(`❌ 参照庫への登録に失敗しました: ${err.message}`, 'error');
-    }
-  }, [addLog]);
 
   // マウント時にDevToolsコンソールへ準備完了バナーと制作構成を出力
   useEffect(() => {
@@ -221,57 +140,6 @@ export default function App() {
       (window as any).__STUDIO_EPISODES__ = episodes;
     }
   }, [episodes]);
-
-  const handleLaunchComicSeries = useCallback(async (payload: {
-    productionMode: ProductionMode;
-    theme: string;
-    taste: string;
-    protagonist: CastCharacter;
-    subCharacters: CastCharacter[];
-    manifest: SeriesManifest;
-    totalEpisodes: number;
-    cutsPerEpisode: number;
-  }) => {
-    addLog(`🎯 大前提プロデュース設定を確定: 『${payload.manifest.seriesTitle}』(全${payload.totalEpisodes}話 × ${payload.cutsPerEpisode}Cut)`, 'success');
-
-    // 1. キャスト台帳を更新
-    const allCharacters = [payload.protagonist, ...payload.subCharacters];
-    const newProject: MangaProject = {
-      ...mangaProject,
-      title: payload.manifest.seriesTitle,
-      description: payload.manifest.overallSynopsis,
-      characters: allCharacters,
-      activeCharacterId: payload.protagonist.id,
-      updatedAt: new Date().toISOString()
-    };
-    handleUpdateMangaProject(newProject);
-
-    // 2. スタジオ設定を大枠仕様に自動同期（ドラマ連番 / 音楽MV / マンガ等）
-    const effectiveSettingsUpdates: Partial<GeneratorSettings> = {
-      productionMode: payload.productionMode,
-      isMvMode: payload.productionMode === 'mv',
-      isMangaMode: payload.productionMode === 'manga',
-      isMultiPanel: payload.productionMode === 'manga',
-      theme: payload.theme,
-      taste: payload.taste,
-      previewCutCount: payload.cutsPerEpisode,
-      episodeCount: payload.totalEpisodes,
-    };
-    setSettings(prev => ({
-      ...prev,
-      ...effectiveSettingsUpdates
-    }));
-
-    // 3. シリーズ設計図を復元注入（主人公三面図をマスター参照画像としてセット）
-    await resumeSeries(payload.manifest, (assetId) => {
-      effectiveSettingsUpdates.selectedAssetId = assetId;
-      setSettings(prev => ({ ...prev, selectedAssetId: assetId }));
-    });
-
-    // 4. ウィザードで「連載スタート」を押した後は、二度手間なく直ちに全自動で本編作画を開始！
-    addLog(`🚀 【全自動連載スタート】『${payload.manifest.seriesTitle}』の本編作画を直ちに開始します！`, 'success');
-    await startProduction(effectiveSettingsUpdates);
-  }, [mangaProject, handleUpdateMangaProject, resumeSeries, addLog, startProduction]);
 
   const handleDownloadZip = useCallback(async (ep: Episode) => {
     const filename = ep.packageZipFilename || `Episode_${ep.id}_Package.zip`;
@@ -382,23 +250,10 @@ export default function App() {
           isProducing={isProducing}
           onStart={startProduction}
           onAbort={abortProduction}
-          onClear={() => setIsTrashModalOpen(true)}
-          onOpenArchive={() => setArchiveOpen(true)}
-          onToggleLogs={() => setIsLogDrawerOpen(prev => !prev)}
           customThemes={customThemes}
           customTastes={customTastes}
-          onOpenThemeEditor={() => setIsThemeEditorOpen(true)}
-          onOpenTasteEditor={() => setIsTasteEditorOpen(true)}
-          onOpenTasteShowroom={() => setIsTasteShowroomOpen(true)}
-          onOpenCastModal={() => setIsCastModalOpen(true)}
-          onOpenComicWizard={() => setIsComicWizardOpen(prev => !prev)}
-          onOpenMusicImport={undefined}
-          isMusicImportOpen={isMusicImportOpen}
-          isComicWizardOpen={isComicWizardOpen}
-          castCount={mangaProject.characters.length}
           activeSeriesManifest={activeSeriesManifest}
           onResumeClick={() => resumeFileRef.current?.click()}
-          isLogDrawerOpen={isLogDrawerOpen}
           isWaitingForStart={isWaitingForStart}
         />
         <div className="flex flex-1 overflow-hidden relative">
@@ -406,25 +261,6 @@ export default function App() {
           
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark-scrollbar relative">
             <div className="max-w-[1300px] mx-auto flex flex-col gap-6">
-
-              
-
-              {/* 📖 ① プロデュース アコーディオン展開パネル (モーダル完全撤廃) */}
-              {isComicWizardOpen && (
-                <React.Suspense fallback={<div className="p-8 text-center text-slate-500 font-bold bg-white rounded-2xl border border-slate-200 animate-pulse">📖 プロデュースパネル展開中...</div>}>
-                  <ComicCreationWizardModal
-                    isOpen={isComicWizardOpen}
-                    isModal={false}
-                    currentMode={settings.productionMode}
-                    currentTheme={settings.theme}
-                    currentTaste={settings.taste}
-                    onLaunchComicSeries={handleLaunchComicSeries}
-                    onClose={() => setIsComicWizardOpen(false)}
-                    onAddLog={addLog}
-                  />
-                </React.Suspense>
-              )}
-
               {episodes.map((ep, idx) => (
             <EpisodeSection 
               key={ep.internalId || `ep_${ep.id}_${idx}`} ep={ep} aspectRatio={settings.aspectRatio || '1:1'} onGenerateRemaining={handleGenerateRemaining} onBulkVideo={handleBulkVideo} onBulkBrowserVideo={handleBulkBrowserVideo} onExportFullMovie={handleExportFullMovie} onDownloadZip={handleDownloadZip} onAnimateRequest={generateVideo} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onUpdateCut={updateCutWrapped} onBulkRerollTelop={handleBulkRerollTelop} onGenerateCover={generateInfographicCover} onRerollTaste={handleRerollTaste} onRetry={(type, eId, cId) => {

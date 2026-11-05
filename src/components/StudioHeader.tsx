@@ -11,28 +11,15 @@ interface StudioHeaderProps {
   isProducing: boolean;
   onStart: () => void;
   onAbort: () => void;
-  onClear: () => void;
-  onOpenArchive: () => void;
-  onToggleLogs: () => void;
   customThemes: CustomThemeMap;
   customTastes: Record<string, any>;
-  onOpenThemeEditor: () => void;
-  onOpenTasteEditor: () => void;
-  onOpenTasteShowroom?: () => void;
-  onOpenCastModal?: () => void;
-  onOpenComicWizard?: () => void;
-  onOpenMusicImport?: () => void;
-  isMusicImportOpen?: boolean;
-  isComicWizardOpen?: boolean;
-  castCount?: number;
   activeSeriesManifest?: any;
   onResumeClick?: () => void;
-  isLogDrawerOpen: boolean;
   isWaitingForStart?: boolean;
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
-  settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenTasteShowroom, onOpenCastModal, onOpenComicWizard, onOpenMusicImport, isMusicImportOpen = false, isComicWizardOpen = false, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen, isWaitingForStart = false
+  settings, setSettings, isProducing, onStart, onAbort, customThemes, customTastes, activeSeriesManifest, onResumeClick, isWaitingForStart = false
 }) => {
   const currentModeDef = PRODUCTION_MODES.find(m => m.value === settings.productionMode) || PRODUCTION_MODES[0];
 
@@ -98,69 +85,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
           <div className="w-px h-6 bg-slate-200 shrink-0"></div>
 
-          {/* 音楽インポート (アコーディオン開閉トグル) */}
-          {onOpenMusicImport && (
-            <button 
-              type="button"
-              disabled={isProducing}
-              onClick={onOpenMusicImport}
-              className={`h-9 px-3 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 border ${
-                isMusicImportOpen
-                  ? 'bg-amber-400 text-slate-950 border-amber-300 ring-4 ring-amber-400/40 shadow-lg scale-105'
-                  : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:brightness-110 text-white border-purple-400/40 ring-2 ring-purple-400/30'
-              }`}
-              title="CT198楽曲JSONインポート (クリックでアコーディオン開閉)"
-            >
-              <span className={`material-symbols-outlined text-[18px] ${isMusicImportOpen ? 'text-slate-950 animate-bounce' : 'text-amber-300'}`}>
-                {isMusicImportOpen ? 'expand_less' : 'library_music'}
-              </span>
-              <span>🎵 音楽インポート</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                isMusicImportOpen ? 'bg-black text-amber-300' : 'bg-purple-900/60 text-purple-200'
-              }`}>
-                {isMusicImportOpen ? '展開中 ▲' : '開く ▼'}
-              </span>
-            </button>
-          )}
-
-          <div className="w-px h-6 bg-slate-200 shrink-0"></div>
-
-          {/* ① 先頭: プロデュースボタン (アコーディオン開閉トグル) */}
-          {onOpenComicWizard && (
-            <button 
-              type="button"
-              disabled={isProducing}
-              onClick={onOpenComicWizard}
-              className={`h-9 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 border ${
-                isComicWizardOpen
-                  ? 'bg-indigo-600 text-white border-indigo-400 ring-4 ring-indigo-400/40 shadow-lg scale-105'
-                  : activeSeriesManifest 
-                    ? 'bg-gradient-to-r from-purple-700 via-indigo-600 to-emerald-600 text-white ring-2 ring-purple-400/50 border-purple-400/40'
-                    : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 hover:brightness-110 text-white border-indigo-400/40'
-              }`}
-              title={
-                activeSeriesManifest
-                  ? `大前提プロデュース設定済: 『${activeSeriesManifest.seriesTitle || '連載'}』(クリックでアコーディオン開閉)`
-                  : '主人公三面図・配役・全話プロットを事前決定し、作品の方向性を確立（クリックでアコーディオン開閉）'
-              }
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                {isComicWizardOpen ? 'expand_less' : activeSeriesManifest ? 'verified' : 'auto_stories'}
-              </span>
-              <span>① プロデュース</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                isComicWizardOpen 
-                  ? 'bg-black text-indigo-300' 
-                  : activeSeriesManifest ? 'bg-emerald-400 text-emerald-950' : 'bg-white/20 text-white'
-              }`}>
-                {isComicWizardOpen ? '展開中 ▲' : activeSeriesManifest ? '確定済 ✓' : '大前提 ▼'}
-              </span>
-            </button>
-          )}
-
-          <div className="w-px h-6 bg-slate-200 shrink-0"></div>
-
-          {/* ③ 最重要メインアクション: 作成開始ボタン */}
+          {/* 最重要メインアクション: 作成開始ボタン */}
           <div className="flex items-center gap-1.5 shrink-0">
             {isProducing ? (
               <button 
