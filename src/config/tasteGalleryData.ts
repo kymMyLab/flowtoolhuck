@@ -410,16 +410,8 @@ export const TASTE_GALLERY_DATA: TasteGalleryItem[] = [
 
 /**
  * 画風キー（または表示名）から作例サムネイル（Cut 1枚）のURLを取得
+ * FlowのCSP制限（外部画像ブロック）に抵触しないよう常にundefinedを返却
  */
-export function getTasteSampleCut(tasteKey: string): string | undefined {
-  if (!tasteKey) return undefined;
-  const lower = tasteKey.toLowerCase();
-  const match = TASTE_GALLERY_DATA.find(
-    t => t.tasteKey === tasteKey || 
-         t.displayName === tasteKey || 
-         tasteKey.includes(t.displayName) || 
-         t.displayName.includes(tasteKey.split(' (')[0].trim()) ||
-         (t.id && lower.includes(t.id.toLowerCase()))
-  );
-  return match?.samples?.students || match?.samples?.adult || match?.samples?.edo;
+export function getTasteSampleCut(_tasteKey: string): string | undefined {
+  return undefined;
 }

@@ -174,19 +174,7 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
             </div>
           </div>
           
-          <div 
-            onClick={cycleModel}
-            className={`px-1.5 py-0.5 rounded-sm text-[7px] font-black uppercase tracking-tighter backdrop-blur-md border transition-all ${
-              cut.targetVideoModel === 'omni-flash' ? 'bg-purple-600/80 border-purple-400 text-slate-900' :
-              cut.targetVideoModel === 'veo-fast' ? 'bg-indigo-600/80 border-indigo-400 text-slate-900' :
-              cut.targetVideoModel === 'veo-lite' ? 'bg-blue-600/80 border-blue-400 text-slate-900' :
-              'bg-slate-100 border-slate-200 text-slate-900/30'
-            }`}
-          >
-            {cut.targetVideoModel === 'none' 
-              ? 'Still Only' 
-              : resolveVideoModel(cut.targetVideoModel).name.replace(' - ', ' ')}
-          </div>
+          
         </div>
 
         {cut.isQueued && (

@@ -476,24 +476,8 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
                 画風を変えて全再生成
               </PillButton>
             )}
-            <PillButton 
-              variant="outline" 
-              className="h-8 px-3 border-amber-500/30 text-amber-400 hover:text-amber-200 font-bold text-xs whitespace-nowrap shrink-0" 
-              disabled={ep.isBatchGeneratingVideos || ep.isGenerating || isPending} 
-              onClick={() => onBulkBrowserVideo(ep.id)} 
-              icon={<span className="material-symbols-outlined text-amber-500 text-sm">bolt</span>}
-            >
-              ブラウザ動画化
-            </PillButton>
-            <PillButton 
-              variant="filled" 
-              className="h-8 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-slate-900 font-black text-xs border border-indigo-400/50 whitespace-nowrap shrink-0" 
-              disabled={ep.isExportingMovie || ep.isGenerating || isPending} 
-              onClick={() => onExportFullMovie(ep.id)} 
-              icon={ep.isExportingMovie ? <div className="w-3.5 h-3.5 border-2 border-slate-200 border-t-white rounded-full animate-spin" /> : <span className="material-symbols-outlined text-sm">movie</span>}
-            >
-              動画結合 (MP4)
-            </PillButton>
+            
+            
             <PillButton 
               variant="outline" 
               className="h-8 px-3 border-slate-200 hover:border-white/30 text-slate-500 hover:text-slate-900 font-bold text-xs whitespace-nowrap shrink-0" 
@@ -503,15 +487,7 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
             >
               残り描画
             </PillButton>
-            <PillButton 
-              variant="filled" 
-              className="h-8 px-3.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs whitespace-nowrap shrink-0 shadow-md" 
-              disabled={ep.isBatchGeneratingVideos || ep.isGenerating || isPending} 
-              onClick={() => onBulkVideo(ep.id)} 
-              icon={ep.isBatchGeneratingVideos ? <div className="w-3.5 h-3.5 border-2 border-black/10 border-t-black rounded-full animate-spin" /> : <span className="material-symbols-outlined text-sm">movie_filter</span>}
-            >
-              Veo一括
-            </PillButton>
+            
             <PillButton 
               variant="outline" 
               className="h-8 px-3 border-slate-200 hover:border-white/40 text-slate-600 hover:text-slate-900 font-bold text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer" 
