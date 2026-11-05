@@ -334,55 +334,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           )}
         </div>
 
-        {/* ③ 自動化＆パイプライン アコーディオン */}
-        <div className={`flex flex-col rounded-xl border border-slate-200 bg-white transition-all shadow-sm ${isPipelineOpen ? 'overflow-visible relative z-10' : 'overflow-hidden'}`}>
-          <button
-            type="button"
-            onClick={() => setIsPipelineOpen(!isPipelineOpen)}
-            className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer select-none text-left"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">smart_toy</span>
-              <span className="text-xs font-bold text-slate-800 tracking-wide truncate">自動化＆パイプライン</span>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
-                {pipelineBadge}
-              </span>
-              <span className={`material-symbols-outlined text-[20px] text-slate-400 transition-transform duration-200 ${isPipelineOpen ? 'rotate-180 text-emerald-600' : ''}`}>
-                expand_more
-              </span>
-            </div>
-          </button>
-
-          {isPipelineOpen && (
-            <div className="p-3 flex flex-col gap-2 border-t border-slate-200 animate-in fade-in duration-200 bg-white">
-              <ToggleSwitch label="📦 完了時自動ダウンロード (ZIP自動保存)" checked={settings.autoDownload} onChange={v => setSettings(s => ({ ...s, autoDownload: v }))} />
-              <ToggleSwitch 
-                label="🌙 超指数バックオフ (夜間放置完走)" 
-                checked={!!settings.superBackoff} 
-                onChange={v => setSettings(s => ({ ...s, superBackoff: v }))} 
-              />
-              <ToggleSwitch 
-                label="🎨 三面図先行生成 (360°キャラ崩れ防止)" 
-                checked={settings.enableTurnaroundSheet !== false} 
-                onChange={v => setSettings(s => ({ ...s, enableTurnaroundSheet: v }))} 
-              />
-              {settings.enableTurnaroundSheet !== false && (
-                <ToggleSwitch 
-                  label="⚡ 三面図自動承認 (無人完走)" 
-                  checked={!!settings.autoApproveTurnaround} 
-                  onChange={v => setSettings(s => ({ ...s, autoApproveTurnaround: v }))} 
-                />
-              )}
-              <ToggleSwitch 
-                label="📦 象徴アイテムカット (人なしシーン挿入)" 
-                checked={settings.enableObjectCut !== false} 
-                onChange={v => setSettings(s => ({ ...s, enableObjectCut: v }))} 
-              />
-            </div>
-          )}
-        </div>
+        
 
       </div>
 

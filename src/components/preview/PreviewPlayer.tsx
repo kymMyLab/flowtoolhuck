@@ -5,7 +5,6 @@ import {
   resolveNeonTheme 
 } from '../../constants';
 import { extractHighlights, buildLyricLines } from '../../services/directorService';
-import { normalizeKenBurnsPreset } from '../../services/renderers/kenBurns';
 import { formatDataUri } from '../../services/utils';
 
 export interface PreviewPlayerProps {
@@ -92,12 +91,7 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
     }
   }, [cut.id, !!cut.videoBase64]);
 
-  const getKenBurnsClass = () => {
-    if (activeView === 'video' || (activeView === 'start' && !startImageSrc) || (activeView === 'end' && !endImageSrc)) return '';
-    const preset = normalizeKenBurnsPreset(cut.kenBurnsPreset);
-    if (preset === 'none') return '';
-    return `studio-kb-${preset}`;
-  };
+  const getKenBurnsClass = () => "";
 
   const telopContent = useMemo(() => {
     const rawText = (cut.telop?.fullText || cut.narrationJp || '').trim();

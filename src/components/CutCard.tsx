@@ -2,7 +2,6 @@ import React from 'react';
 import { Cut, VideoModelType, RecommendationModel } from '../types';
 import { VIDEO_MODELS_REGISTRY, resolveVideoModel } from '../config/studioDefinitions';
 import { formatDataUri } from '../services/utils';
-import { normalizeKenBurnsPreset } from '../services/renderers/kenBurns';
 
 interface CutCardProps {
   cut: Cut;
@@ -49,12 +48,7 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
     else onUpdateSelection(episodeId, cut.id, false);
   };
 
-  const getKenBurnsClass = () => {
-    if (videoSrc || !imageSrc) return '';
-    const preset = normalizeKenBurnsPreset(cut.kenBurnsPreset);
-    if (preset === 'none') return '';
-    return `studio-kb-${preset}`;
-  };
+  const getKenBurnsClass = () => "";
 
   const isSquare = aspectRatio === '1:1';
   const isLandscape = aspectRatio === '16:9';
@@ -145,30 +139,13 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
               <span>🏁 2F</span>
             </div>
           )}
-          {cut.kenBurnsPreset && cut.kenBurnsPreset !== 'none' && !videoSrc && (
-            <div className="px-1.5 py-0.5 rounded-sm bg-white/90 backdrop-blur-md border border-slate-200 text-[7px] font-bold text-slate-800 uppercase tracking-tighter shadow-lg flex items-center gap-0.5 truncate shrink-0">
-              <span className="material-symbols-outlined text-[8px] text-amber-400">videocam</span>
-              <span>{cut.kenBurnsPreset.replace('-', ' ')}</span>
-            </div>
-          )}
         </div>
 
 
 
         <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10">
           <div className="flex gap-1">
-            <div 
-              onClick={handleToggleSelection}
-              className={`w-5 h-5 flex items-center justify-center rounded-sm backdrop-blur-md border transition-all ${
-                cut.isSelectedForVideo 
-                  ? 'bg-amber-500 border-amber-400 text-black shadow-lg shadow-amber-500/20' 
-                  : 'bg-slate-200 border-slate-200 text-slate-500 hover:bg-white/90'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[14px] font-bold">
-                {cut.isSelectedForVideo ? 'check' : 'check_box_outline_blank'}
-              </span>
-            </div>
+            
             <div className="px-1.5 py-0.5 rounded-sm bg-white/90 text-[8px] font-black text-slate-800 backdrop-blur-md border border-slate-200 flex items-center">
               C{cut.id.toString().padStart(2, '0')}
             </div>

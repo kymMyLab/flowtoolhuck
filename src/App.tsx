@@ -19,7 +19,6 @@ import { loadCustomTastes } from './services/tasteStorage';
 
 import { ComicCreationWizardModal } from './components/ComicCreationWizardModal';
 
-import { StoryFactoryView } from './components/StoryFactoryView';
 import { loadMangaProject, saveMangaProject } from './services/castStorage';
 import { MangaProject, CastCharacter, ExpressionType, ReferenceAsset, SeriesManifest } from './types';
 import { saveReferenceAsset } from './services/db';
@@ -175,46 +174,9 @@ export default function App() {
     handleRerollTasteProduction(epId, targetTaste);
   }, [episodes, settings.taste, handleRerollTasteProduction]);
 
-  const handleDeployMusicEpisode = useCallback((ep: Episode) => {
-    clearEpisodes();
-    setEpisodes([ep]);
-    setActiveSeriesManifest(null);
-    setSettings(prev => ({
-      ...prev,
-      productionMode: 'mv',
-      isMvMode: true,
-      selectedAssetId: undefined,
-      theme: ep.theme || prev.theme,
-      taste: ep.taste || prev.taste,
-      episodeCount: 1,
-      totalEpisodes: 1,
-      previewCutCount: ep.cuts.length || 30
-    }));
-    addLog(`🎵 CT198楽曲「${ep.titleJp}」の${ep.cuts.length}カット絵コンテを展開しました！（サビ30秒テロップ＆伏線小道具自動バインド済）`, 'success');
-  }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog, clearEpisodes]);
+  
 
-  const handleDeployBatchMusicEpisodes = useCallback((eps: Episode[]) => {
-    clearEpisodes();
-    const normalizedEps = eps.map((ep, idx) => ({
-      ...ep,
-      id: idx + 1
-    }));
-    setEpisodes(normalizedEps);
-    setActiveSeriesManifest(null);
-    const cutsCount = normalizedEps[0]?.cuts.length || 30;
-    setSettings(prev => ({
-      ...prev,
-      productionMode: 'mv',
-      isMvMode: true,
-      selectedAssetId: undefined,
-      theme: normalizedEps[0]?.theme || prev.theme,
-      taste: normalizedEps[0]?.taste || prev.taste,
-      episodeCount: normalizedEps.length,
-      totalEpisodes: normalizedEps.length,
-      previewCutCount: cutsCount
-    }));
-    addLog(`🎵 CT198楽曲 全${normalizedEps.length}曲の${cutsCount}カット絵コンテを一括展開しました！`, 'success');
-  }, [setEpisodes, setActiveSeriesManifest, setSettings, addLog, clearEpisodes]);
+  
 
   // ヘッダー等で画風（taste）が変更された際、画像未生成のエピソード群のtasteも即座に同期
   useEffect(() => {
@@ -370,176 +332,7 @@ export default function App() {
     });
   }, [resumeSeries, addLog]);
 
-  // アプリ全体の全画面ドラッグ＆ドロップ監視（JSONファイルならいつでも即座に音楽インポーターまたはシリーズ/キャスト復元を自動起動）
-  useEffect(() => {
-    const handleGlobalDragEnter = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-      console.log('%c📥 [FlowTool App 全画面 dragenter検知]', 'background: #3b82f6; color: #fff; font-weight: bold;', {
-        isModalOpen: isMusicImportOpenRef.current,
-        types: Array.from(e.dataTransfer?.types || []),
-        target: (e.target as HTMLElement)?.tagName,
-        className: (e.target as HTMLElement)?.className
-      });
-      if (isMusicImportOpenRef.current) return;
-      globalDragCounterRef.current += 1;
-      setIsGlobalDragging(true);
-    };
-
-    const handleGlobalDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      if (isMusicImportOpenRef.current) return;
-      globalDragCounterRef.current -= 1;
-      if (globalDragCounterRef.current <= 0) {
-        globalDragCounterRef.current = 0;
-        setIsGlobalDragging(false);
-      }
-    };
-
-    const handleGlobalDragOver = (e: DragEvent) => {
-      // 常にブラウザデフォルトのファイルオープン/ドロップ拒否を防止！
-      e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    };
-
-    const handleGlobalDrop = async (e: DragEvent) => {
-      e.preventDefault();
-      setIsGlobalDragging(false);
-      globalDragCounterRef.current = 0;
-
-      // もし既にMusicImportModalが開いており、ドロップがその点線枠上で行われた場合は、コンポーネント自身の onDrop に任せる
-      if (isMusicImportOpenRef.current && (e.target as HTMLElement)?.closest?.('.group\\/dropzone')) {
-        console.log('🎯 [FlowTool D&D] 点線枠への直接ドロップのため、インポーターコンポーネントへ処理を委譲します');
-        return;
-      }
-
-      const fileList = e.dataTransfer?.files;
-      const file = fileList?.[0];
-      const rawDroppedText = e.dataTransfer?.getData('text') || '';
-
-      console.log('%c🚀 [FlowTool App] 全画面ドロップ検知！即座に自動パースします！', 'background: #8b5cf6; color: #fff; font-weight: bold; font-size: 14px; padding: 3px 8px;', {
-        filesCount: fileList?.length || 0,
-        fileName: file?.name,
-        fileSize: file?.size ? `${Math.round(file.size / 1024)} KB` : '0 KB',
-        hasRawText: !!rawDroppedText,
-        isModalOpen: isMusicImportOpenRef.current
-      });
-
-      if (!file && !rawDroppedText) {
-        console.warn('⚠️ [FlowTool D&D] ドロップイベントが発生しましたが、ファイルもテキストも空でした。', e.dataTransfer);
-        return;
-      }
-
-      try {
-        let text = '';
-        let fileName = file?.name || 'dropped_text.json';
-
-        if (file) {
-          try {
-            text = await file.text();
-          } catch (textErr) {
-            console.warn('⚠️ [FlowTool D&D] file.text() 失敗、FileReaderに切り替えます:', textErr);
-            text = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(String(reader.result || ''));
-              reader.onerror = () => reject(reader.error);
-              reader.readAsText(file);
-            });
-          }
-        } else if (rawDroppedText) {
-          text = rawDroppedText;
-        }
-
-        console.log(`📥 [FlowTool D&D] ファイル即座読み取り成功 (${text.length}文字)`);
-
-        // もしMusicImportModalが開いている場合は、直接インポーターにペイロードを渡して即時パース！
-        if (isMusicImportOpenRef.current) {
-          setInjectedPayload({ text, fileName, timestamp: Date.now() });
-          setInjectedJsonText(text);
-          addLog(`🎵 楽曲メタデータ「${fileName}」(${Math.round(text.length / 1024)}KB) をインポーターへ展開しました！`, 'process');
-          return;
-        }
-
-        // JSONの中身をパースして自動仕分け
-        let parsed: any = null;
-        try {
-          parsed = JSON.parse(text.replace(/^\uFEFF/, '').trim());
-        } catch (jsonErr: any) {
-          console.warn('⚠️ [FlowTool D&D] JSON解析警告:', jsonErr);
-        }
-
-        // A. 連載シリーズ設定JSON (seriesTitle または episodesPlan)
-        if (parsed && (parsed.seriesTitle || parsed.episodesPlan)) {
-          addLog(`📂 連載シリーズ設定「${parsed.seriesTitle || fileName}」を復元します`, 'process');
-          await handleResumeSeries(parsed);
-          return;
-        }
-
-        // B. キャスト設定JSON (characters 配列)
-        if (parsed && Array.isArray(parsed.characters) && parsed.characters.length > 0 && !parsed.tracks) {
-          addLog(`🎭 キャスト設定「${parsed.title || fileName}」を復元します`, 'process');
-          saveMangaProject(parsed);
-          setMangaProject(parsed);
-          alert(`✅ キャスト（${parsed.characters.length}人）を正常に復元しました！`);
-          return;
-        }
-
-        // C. 楽曲メタデータ（またはその他JSON）
-        // 音楽インポートモーダルを開き、ペイロードを直接注入！
-        setInjectedPayload({ text, fileName, timestamp: Date.now() });
-        setInjectedJsonText(text);
-        setIsMusicImportOpen(true);
-        addLog(`🎵 楽曲メタデータ「${fileName}」(${Math.round(text.length / 1024)}KB) をインポーターへ展開しました！`, 'process');
-
-      } catch (readErr: any) {
-        console.error('❌ [FlowTool D&D] ファイル読み取り失敗:', readErr);
-        addLog(`❌ ファイル読み取り失敗: ${readErr.message}`, 'error');
-      }
-    };
-
-    const eventTargets: (Window | Document)[] = [window, document];
-    try {
-      if (window.parent && window.parent !== window) {
-        eventTargets.push(window.parent);
-        if (window.parent.document) eventTargets.push(window.parent.document);
-      }
-    } catch (_) {}
-    try {
-      if (window.top && window.top !== window && !eventTargets.includes(window.top)) {
-        eventTargets.push(window.top);
-        if (window.top.document) eventTargets.push(window.top.document);
-      }
-    } catch (_) {}
-
-    const addListeners = (target: any) => {
-      try {
-        target.addEventListener('dragenter', handleGlobalDragEnter, true);
-        target.addEventListener('dragleave', handleGlobalDragLeave, true);
-        target.addEventListener('dragover', handleGlobalDragOver, true);
-        target.addEventListener('drop', handleGlobalDrop, true);
-      } catch (_) {}
-    };
-
-    const removeListeners = (target: any) => {
-      try {
-        target.removeEventListener('dragenter', handleGlobalDragEnter, true);
-        target.removeEventListener('dragleave', handleGlobalDragLeave, true);
-        target.removeEventListener('dragover', handleGlobalDragOver, true);
-        target.removeEventListener('drop', handleGlobalDrop, true);
-      } catch (_) {}
-    };
-
-    eventTargets.forEach(addListeners);
-    console.log('🛡️ [FlowTool] 全階層フレーム（${eventTargets.length}箇所）へキャプチャリングD&Dリスナーを配備完了');
-
-    return () => {
-      eventTargets.forEach(removeListeners);
-    };
-  }, [addLog, handleResumeSeries]);
+  
 
   const updateCutWrapped = useCallback((epId: number, cutId: number, updates: Partial<Cut>) => {
     // ナレーションが更新された場合はテロップテキストとハイライトも自動同期（演出設定は保持）
@@ -580,31 +373,11 @@ export default function App() {
   // 待機中（光る状態）＝ 現在制作中ではなく、かつ未生成のカットが存在すること
   const isWaitingForStart = !isProducing && hasPendingCuts;
 
-  if (studioViewMode === 'factory') {
-    return (
-      <ErrorBoundary>
-        <StoryFactoryView onBackToStudio={() => setStudioViewMode('studio')} addLog={addLog} />
-      </ErrorBoundary>
-    );
-  }
 
   return (
     <ErrorBoundary>
       <div className="flex flex-col h-screen w-screen bg-slate-50 text-slate-900 select-none overflow-hidden relative">
-        {/* 全画面 JSON ドロップゾーン オーバーレイ */}
-        {isGlobalDragging && (
-          <div className="absolute inset-0 z-[9999] bg-violet-950/85 backdrop-blur-md flex flex-col items-center justify-center pointer-events-none animate-fadeIn border-4 border-dashed border-violet-400 m-4 rounded-3xl shadow-2xl">
-            <div className="w-24 h-24 rounded-full bg-violet-600/50 flex items-center justify-center mb-6 ring-8 ring-violet-400/30 animate-bounce">
-              <span className="text-5xl">🎵</span>
-            </div>
-            <h2 className="text-3xl font-black text-white tracking-wider mb-3 drop-shadow">
-              楽曲メタデータ (JSON) をドロップ
-            </h2>
-            <p className="text-violet-200 text-base font-bold bg-violet-900/60 px-6 py-2 rounded-full border border-violet-400/40">
-              画面のどこに落としても即座にMV制作インポーターが起動します
-            </p>
-          </div>
-        )}
+        
         <StudioHeader 
           settings={settings}
           setSettings={setSettings}

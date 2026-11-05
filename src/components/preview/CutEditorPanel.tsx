@@ -15,10 +15,8 @@ import {
 import { Flow } from 'flow-sdk';
 import { callWithRetry } from '../../services/utils';
 import { extractHighlights } from '../../services/directorService';
-import { normalizeKenBurnsPreset } from '../../services/renderers/kenBurns';
 import { TextInput, SectionLabel, PillButton, FieldDropdown } from '../Primitives';
 import { CutTelopEditor } from './CutTelopEditor';
-import { CutVideoControls } from './CutVideoControls';
 
 export interface CutEditorPanelProps {
   cut: Cut;
@@ -100,15 +98,7 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
     });
   };
 
-  const currentCw = CAMERA_WORK_REGISTRY.find(
-    c => c.id === cut.cameraWork ||
-         c.motionPrompt === cut.cameraMotion ||
-         (cut.kenBurnsPreset && cut.kenBurnsPreset !== 'none' && c.recommendedKenBurns === cut.kenBurnsPreset)
-  ) || CAMERA_WORK_REGISTRY[0];
-
-  const currentKb = KEN_BURNS_PRESETS.find(
-    p => p.value === normalizeKenBurnsPreset(cut.kenBurnsPreset)
-  ) || KEN_BURNS_PRESETS[0];
+  
 
   const staging = resolveRecommendedTelopStaging(cut.id, isMvMode, false);
   const currentStyle = resolveTelopStyle(cut.telop?.style || staging.style);
@@ -166,30 +156,7 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
             isMvMode={isMvMode}
           />
 
-          {/* カメラワーク & ケンバーン */}
-          <div className="grid grid-cols-2 gap-2">
-            <FieldDropdown
-              label="カメラワーク"
-              value={currentCw.label}
-              options={CAMERA_WORK_REGISTRY.map(c => c.label)}
-              onChange={l => {
-                const cw = CAMERA_WORK_REGISTRY.find(c => c.label === l);
-                if (cw) onUpdateCut({ cameraWork: cw.id, cameraMotion: cw.motionPrompt, kenBurnsPreset: cw.recommendedKenBurns });
-              }}
-            />
-            <FieldDropdown
-              label="ケンバーン演出"
-              value={currentKb.label}
-              options={KEN_BURNS_PRESETS.map(p => p.label)}
-              onChange={l => {
-                const kb = KEN_BURNS_PRESETS.find(p => p.label === l);
-                if (kb) {
-                  const cw = CAMERA_WORK_REGISTRY.find(c => c.recommendedKenBurns === kb.value);
-                  onUpdateCut({ kenBurnsPreset: kb.value as KenBurnsPreset, ...(cw ? { cameraWork: cw.id, cameraMotion: cw.motionPrompt } : {}) });
-                }
-              }}
-            />
-          </div>
+          
 
           <FieldDropdown
             label="コマ割り構成 (Panel Layout)"
@@ -413,137 +380,7 @@ export const CutEditorPanel: React.FC<CutEditorPanelProps> = ({
           </div>
         </div>
 
-        {/* ── 🎬 Veo 3.1 2点間補間モーション＆After絵設計 ── */}
-        <div className="pt-6 border-t border-white/5 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <SectionLabel>Veo 3.1 補間モーション＆After絵</SectionLabel>
-            <span className="text-[9px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30 flex items-center gap-1">
-              <span className="material-symbols-outlined text-[11px]">compare</span>
-              1Cut 2画像補間
-            </span>
-          </div>
-
-          <div className="bg-blue-950/20 p-3.5 rounded-xl border border-blue-500/30 flex flex-col gap-3">
-            {/* 補間挙動（veoMotionPrompt）指示 */}
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-amber-300 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px] text-amber-400">animation</span>
-                  補間モーション命令 (Motion Directive)
-                </span>
-                <span className="text-[9px] text-white/40">Start ➜ End 間の推移動作</span>
-              </div>
-              <textarea
-                value={cut.veoMotionPrompt || ''}
-                onChange={e => onUpdateCut({ veoMotionPrompt: e.target.value })}
-                placeholder="例: Continuous cinematic micro-motion: character pose firmly preserved, natural gentle blinking, hair flutter..."
-                rows={2}
-                className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 text-xs text-white/90 font-mono outline-none focus:border-amber-400 leading-relaxed resize-none"
-              />
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[9px] text-amber-300/70 font-bold shrink-0">微動プリセット:</span>
-                <button
-                  type="button"
-                  onClick={() => onUpdateCut({ veoMotionPrompt: 'Continuous cinematic micro-motion: character pose firmly maintained, gentle breeze softly fluttering hair strands and clothing hem, natural gentle blinking, slow cinematic camera push-in' })}
-                  className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-500/20 text-white/70 hover:text-amber-200 border border-white/10 hover:border-amber-500/30 transition-colors"
-                >
-                  🌬️ 髪そよぎ・風
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUpdateCut({ veoMotionPrompt: 'Continuous cinematic micro-motion: character grounded pose stably preserved, radiant genuine smile softly deepening, eyes glistening warmly with natural blinking, slow subtle camera drift' })}
-                  className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-500/20 text-white/70 hover:text-amber-200 border border-white/10 hover:border-amber-500/30 transition-colors"
-                >
-                  😊 微笑み・表情
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUpdateCut({ veoMotionPrompt: 'Continuous cinematic micro-motion: character pose stably preserved, natural gentle blinking as gaze softly shifts toward distant light, quiet contemplative expression, slow subtle parallax' })}
-                  className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-500/20 text-white/70 hover:text-amber-200 border border-white/10 hover:border-amber-500/30 transition-colors"
-                >
-                  👀 視線の移ろい
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUpdateCut({ veoMotionPrompt: 'Continuous cinematic micro-motion: character pose firmly preserved, subtle natural breathing and relaxed presence, soft ambient lighting shifts, gentle cinematic camera breathing' })}
-                  className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-500/20 text-white/70 hover:text-amber-200 border border-white/10 hover:border-amber-500/30 transition-colors"
-                >
-                  🍃 呼吸・光ゆらぎ
-                </button>
-              </div>
-            </div>
-
-            {/* 到達点プロンプト（endFramePromptEn） */}
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-blue-300 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">flag</span>
-                  After絵プロンプト (End Frame Plot)
-                </span>
-                <span className="text-[9px] text-white/40">到達地点の描画指示</span>
-              </div>
-              <textarea
-                value={cut.endFramePromptEn || ''}
-                onChange={e => onUpdateCut({ endFramePromptEn: e.target.value })}
-                placeholder="例: Close-up profile of the protagonist smiling gently, bathed in warm sunset..."
-                rows={2}
-                className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 text-xs text-white/90 font-mono outline-none focus:border-blue-400 leading-relaxed resize-none"
-              />
-            </div>
-
-            {/* After絵のプレビュー＆生成ボタン */}
-            <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/5">
-              <div className="flex items-center gap-2 min-w-0">
-                {cut.endFrameImageBase64 ? (
-                  <div className="flex items-center gap-2">
-                    <img 
-                      src={`data:image/png;base64,${cut.endFrameImageBase64}`} 
-                      alt="After frame" 
-                      className="w-12 h-16 object-cover rounded-lg border border-blue-400/50 shadow-md shrink-0" 
-                    />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[11px] font-bold text-blue-300 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-xs text-green-400">check_circle</span>
-                        After絵 生成済
-                      </span>
-                      <span className="text-[9px] text-white/40 truncate">Veo補間の終点として登録中</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <div className="w-12 h-16 rounded-lg border border-dashed border-white/20 bg-black/40 flex flex-col items-center justify-center text-white/20 shrink-0">
-                      <span className="material-symbols-outlined text-base">hide_image</span>
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[11px] font-bold text-white/60">After絵 未生成</span>
-                      <span className="text-[9px] text-white/30">Start絵を参照して生成可能</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {onGenerateEndFrame && (
-                <button
-                  type="button"
-                  onClick={() => onGenerateEndFrame(cut.endFramePromptEn)}
-                  disabled={cut.isGeneratingEndFrame || !cut.imageBase64}
-                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-lg shadow-blue-600/30 transition-all cursor-pointer disabled:opacity-50 shrink-0"
-                >
-                  <span className="material-symbols-outlined text-sm">palette</span>
-                  {cut.isGeneratingEndFrame ? '描画中...' : cut.endFrameImageBase64 ? 'After絵を再描画' : 'After絵を描画'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 動画生成 */}
-        <CutVideoControls
-          cut={cut}
-          episodeId={episodeId}
-          onAnimate={onAnimate}
-          onBrowserAnimate={onBrowserAnimate}
-        />
+        
       </div>
 
       {/* Bottom Action Footer */}
