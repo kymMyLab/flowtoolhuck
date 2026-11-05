@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ConfirmationModal } from './components/Primitives';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
-import { ArchiveDrawer } from './components/ArchiveDrawer';
 import { StudioSidebar } from './components/StudioSidebar';
 import { StudioHeader } from './components/StudioHeader';
 import { EpisodeSection } from './components/EpisodeSection';
-import { StudioLogs, LogEntry } from './components/StudioLogs';
+import { LogEntry } from './components/StudioLogs';
 import { Cut, GeneratorSettings, VideoModelType, Episode, ProductionMode } from './types';
 import { THEMES, TASTES, IMAGE_MODELS, VIDEO_MODELS } from './constants';
 import { createLogMessage, isCutSelectedForVideo } from './services/utils';
@@ -511,16 +509,10 @@ export default function App() {
         );
       })()}
           
-          <StudioLogs 
-            logs={logs} 
-            onAddLog={addLog} 
-            isProducing={isProducing} 
-            isOpen={isLogDrawerOpen} 
-            onClose={() => setIsLogDrawerOpen(false)} 
-          />
+          
         </div>
-        <ArchiveDrawer isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} stories={stories} onRemake={(s) => { setSettings(prev => ({ ...prev, country: s.country, era: s.era, theme: s.theme })); setArchiveOpen(false); }} />
-        <ConfirmationModal isOpen={isTrashModalOpen} title="全消去" message="制作中のデータを消去します。" onConfirm={() => { clearEpisodes(); setIsTrashModalOpen(false); }} onCancel={() => setIsTrashModalOpen(false)} />
+        
+        
         <React.Suspense fallback={null}>
           
           

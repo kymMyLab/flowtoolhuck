@@ -3,7 +3,6 @@ import { FieldDropdown, PillButton, FieldDropdownOption } from './Primitives';
 import { GeneratorSettings, ProductionMode } from '../types';
 import { PRODUCTION_MODES, THEMES, MV_THEMES, TRIVIA_THEMES, QUOTES_THEMES, CRAFT_THEMES, THEME_CATEGORIES, TASTES } from '../constants';
 import { CustomThemeMap } from '../services/themeStorage';
-import { exportProjectJson, importProjectJson, loadMangaProject, saveMangaProject } from '../services/castStorage';
 import { getTasteSampleCut, TASTE_GALLERY_DATA } from '../config/tasteGalleryData';
 
 interface StudioHeaderProps {
@@ -35,31 +34,6 @@ interface StudioHeaderProps {
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
   settings, setSettings, isProducing, onStart, onAbort, onClear, onOpenArchive, onToggleLogs, customThemes, customTastes, onOpenThemeEditor, onOpenTasteEditor, onOpenTasteShowroom, onOpenCastModal, onOpenComicWizard, onOpenMusicImport, isMusicImportOpen = false, isComicWizardOpen = false, castCount = 3, activeSeriesManifest, onResumeClick, isLogDrawerOpen, isWaitingForStart = false
 }) => {
-  const jsonFileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleExportJson = () => {
-    try {
-      const proj = loadMangaProject();
-      exportProjectJson(proj);
-    } catch (e) {
-      console.error('Failed to export JSON', e);
-    }
-  };
-
-  const handleImportJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const proj = await importProjectJson(file);
-      saveMangaProject(proj);
-      alert(`✅ プロジェクト設定・キャスト（${proj.characters?.length || 0}人）を正常に復元しました！`);
-      window.location.reload();
-    } catch (err: any) {
-      alert(`❌ JSON復元エラー: ${err?.message || err}`);
-    } finally {
-      if (e.target) e.target.value = '';
-    }
-  };
   const currentModeDef = PRODUCTION_MODES.find(m => m.value === settings.productionMode) || PRODUCTION_MODES[0];
 
   const handleModeChange = (modeVal: string) => {
@@ -237,77 +211,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           </div>
         </div>
 
-        {/* 右側サブツール群 (JSON保存/読込, 台帳, アーカイブ, 全消去, ログ) */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* JSON 保存・復元 */}
-          <input 
-            type="file" 
-            ref={jsonFileInputRef} 
-            onChange={handleImportJson} 
-            accept=".json" 
-            className="hidden" 
-          />
-          <button 
-            type="button"
-            onClick={handleExportJson}
-            className="h-9 px-2.5 flex items-center gap-1 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 transition-colors border border-slate-200 shrink-0 cursor-pointer text-xs font-semibold"
-            title="プロジェクト設定・キャスト・プロットをJSONダウンロード保存"
-          >
-            <span className="material-symbols-outlined text-[17px]">download</span>
-            <span className="hidden sm:inline">保存</span>
-          </button>
-          <button 
-            type="button"
-            onClick={() => jsonFileInputRef.current?.click()}
-            className="h-9 px-2.5 flex items-center gap-1 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 transition-colors border border-slate-200 shrink-0 cursor-pointer text-xs font-semibold"
-            title="保存済みJSON設定ファイルをアップロードして復元"
-          >
-            <span className="material-symbols-outlined text-[17px]">file_upload</span>
-            <span className="hidden sm:inline">読込</span>
-          </button>
-
-          {onOpenCastModal && (
-            <button 
-              type="button"
-              disabled={isProducing}
-              onClick={onOpenCastModal}
-              className="h-9 px-2.5 flex items-center gap-1 rounded-xl bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 shrink-0 cursor-pointer transition-colors text-xs font-semibold"
-              title={`登場人物キャスト台帳を開く (${castCount}人)`}
-            >
-              <span className="material-symbols-outlined text-[17px]">theater_comedy</span>
-              <span className="hidden sm:inline">台帳 ({castCount})</span>
-            </button>
-          )}
-
-          <button 
-            type="button"
-            onClick={onOpenArchive} 
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200 shrink-0 cursor-pointer" 
-            title="アーカイブ"
-          >
-            <span className="material-symbols-outlined text-[18px]">folder</span>
-          </button>
-
-          <button 
-            type="button"
-            disabled={isProducing}
-            onClick={onClear} 
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors border border-red-200 shrink-0 cursor-pointer" 
-            title="全消去"
-          >
-            <span className="material-symbols-outlined text-[18px]">delete</span>
-          </button>
-
-          <button 
-            type="button"
-            onClick={onToggleLogs} 
-            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors border shrink-0 cursor-pointer ${isLogDrawerOpen ? 'bg-indigo-100 border-indigo-200 text-indigo-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'}`} 
-            title="ログ表示"
-          >
-            <span className="material-symbols-outlined text-[18px]">subject</span>
-          </button>
         </div>
-      </div>
 
       {/* 下段（Row 2）: ② ざっくり設定エリア（モード・世界観・画風）を左寄せで広々と配置 */}
       <div className="flex items-center justify-start gap-2 w-full flex-wrap pt-1 border-t border-slate-100">
