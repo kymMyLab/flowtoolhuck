@@ -1,6 +1,6 @@
 import { Flow } from 'flow-sdk';
-import { Episode, Cut, SeriesEpisodePlan, VideoModelType } from '../../types';
-import { CUTS_PER_EPISODE, resolveVideoModel } from '../../constants';
+import { Episode, Cut, SeriesEpisodePlan } from '../../types';
+import { CUTS_PER_EPISODE } from '../../constants';
 import { createDefaultCut, safeJsonParse, callWithRetry, formatErrorMessage } from '../utils';
 import { 
   generateSafeEpisodeScript, 
@@ -28,8 +28,6 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     updateEpisode, 
     runTasks, 
     buildCutTasks, 
-    generateVideo, 
-    handleBulkVideo,
     seriesManifestRef, 
     setActiveSeriesManifest, 
     currentAssetRef, 
@@ -55,14 +53,27 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       designRes = await callWithRetry<any>(
         () => Flow.generate.text(designPrompt),
         (attempt, max, delay) => addLog(`Retrying Grand Design (attempt ${attempt}/${max}) after ${delay} ms...`, 'warning'),
-        5
+        2
       );
       const elapsed = ((Date.now() - designStartTime) / 1000).toFixed(1);
       addLog(`📥 シリーズ設計図のAI応答を受信（応答時間: ${elapsed}秒）`, 'process');
+    } catch (designErr) {
+      addLog(`⚠️ シリーズ設計図API混雑のため、標準プロット構成で即座に制作を開始します！`, 'warning');
+      designRes = { text: '' };
     } finally {
       clearInterval(designHeartbeat);
     }
-    const design = safeJsonParse<any>(designRes.text, { seriesTitle: 'Untitled Series', overallSynopsis: '', episodesPlan: [] });
+    const baseThemeTitle = settings.theme.split('（')[0].replace(/^[^\w\s一-龯]+/, '').trim() || '物語の記録';
+    const fallbackPlans: SeriesEpisodePlan[] = Array.from({ length: totalEps }, (_, idx) => ({
+      epNumber: idx + 1,
+      titleJp: totalEps > 1 ? `${baseThemeTitle} 第${idx + 1}章` : baseThemeTitle,
+      titleEn: `Episode ${idx + 1}`,
+      summary: `${settings.theme}の世界観で描かれる物語`
+    }));
+    const design = safeJsonParse<any>(designRes?.text || '', { seriesTitle: baseThemeTitle, overallSynopsis: '', episodesPlan: fallbackPlans });
+    if (!Array.isArray(design.episodesPlan) || design.episodesPlan.length === 0) {
+      design.episodesPlan = fallbackPlans;
+    }
 
     seriesManifestRef.current = {
       seriesTitle: design.seriesTitle,
@@ -163,7 +174,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         titleJp: cleanEpisodeTitle(newPlan.titleJp),
         titleEn: cleanEpisodeTitleEn(newPlan.titleEn),
         summary: newPlan.summary,
-        cuts: Array.from({ length: Math.max(CUTS_PER_EPISODE, settings.previewCutCount || (settings.productionMode === 'mv' ? 30 : 12)) }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
+        cuts: Array.from({ length: settings.previewCutCount || 2 }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
         isGenerating: false,
         isGeneratingRemainingImages: false,
         isBatchGeneratingVideos: false,

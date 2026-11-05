@@ -1,13 +1,12 @@
-import { runStyleMatrixProduction, runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensureInfographicCover, ensureCharacterTurnaround } from './productionPipelines';
+import { runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensureInfographicCover, ensureCharacterTurnaround } from './productionPipelines';
 import { useRef, useCallback } from 'react';
 import { Flow } from 'flow-sdk';
-import { Episode, Cut, GeneratorSettings, VideoModelType, GenerationTask, SeriesManifest } from '../types';
+import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, LogEntry } from '../types';
 import { 
   DEFAULT_ASPECT_RATIO, 
   CUTS_PER_EPISODE, 
   TASTES,
   resolveImageModel,
-  resolveVideoModel,
   resolveRecommendedTelopStaging
 } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId } from './utils';
@@ -21,32 +20,25 @@ import {
   buildCharacterScreeningPrompt, 
   extractHighlights,
   checkIsHistorical,
-  resolveCinematicEndFrameAndMotion,
   buildAdaptiveInfographicCoverPrompt,
   cleanEpisodeTitle,
   cleanEpisodeTitleEn,
   PreviousShotInfo,
-  analyzeLyricVisualsWithGemini
 } from './directorService';
-import { extractSongDnaWithGemini, compileStoryboardWithGemini } from './directorCompilerService';
-import { isCutSelectedForVideo } from './utils';
 import { useEpisodeState } from './useEpisodeState';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 import { saveReferenceAsset } from './db';
 import { resolveCameraWork } from '../config/studioDefinitions';
-import type { LogEntry } from '../components/StudioLogs';
-import { useVideoGeneration } from './useVideoGeneration';
 
 
 interface UseStudioProductionProps {
   settings: GeneratorSettings;
   addLog: (message: string, type?: LogEntry['type']) => void;
-  refreshStories: () => Promise<void>;
   logs?: LogEntry[];
 }
 
-export function useStudioProduction({ settings, addLog, refreshStories, logs }: UseStudioProductionProps) {
+export function useStudioProduction({ settings, addLog, logs }: UseStudioProductionProps) {
   const logsRef = useRef(logs);
   logsRef.current = logs;
 
@@ -92,13 +84,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     eraNegative: string;
   } | null>(null);
 
-  const { generateVideo, generateBrowserVideo } = useVideoGeneration({
-    settings,
-    addLog,
-    isAbortedRef,
-    episodesRef,
-    updateCut
-  });
 
 
   const resumeSeries = useCallback(async (manifest: SeriesManifest, onAssetRestored?: (assetId: number) => void) => {
@@ -215,175 +200,12 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     });
   };
 
-  const ensureLyricVisualAnalysis = async (ep: Episode): Promise<void> => {
-    if (!ep.isMvMode || ep.isLyricAnalyzed) return;
-
-    // ── Step 2.5: 楽曲DNAの抽出とキャッシュパージ ──
-    let extractedDna = ep.extractedSongDna;
-    if (!extractedDna) {
-      extractedDna = await extractSongDnaWithGemini({
-        character_setting: ep.characterDna || ep.summary,
-        surface_theme: ep.theme || ep.titleJp,
-        sensory_details: ep.summary
-      }, addLog);
-      ep.extractedSongDna = extractedDna;
-      ep.characterDna = extractedDna.protagonistDna;
-      updateEpisode(ep.id, {
-        extractedSongDna: extractedDna,
-        characterDna: extractedDna.protagonistDna
-      });
-    }
-
-    // ── Step 3: 映像総監督Geminiによる30カット絵コンテ一括コンパイル ──
-    const rawStoryboard = ep.cuts.map(c => ({
-      cut_number: c.id,
-      lyrics_part: c.narrationJp || c.telop?.fullText || '',
-      camera_composition: c.cleanComposition || c.cinematicAngle || c.cameraWork || '',
-      character_action: c.cleanAction || c.scenePlot || c.promptEn || '',
-      lighting_scene: c.cleanLighting || c.telop?.directorNote || '',
-      image_prompt: c.cleanImagePrompt || c.promptEn || ''
-    }));
-
-    const compiledCuts = await compileStoryboardWithGemini(
-      rawStoryboard,
-      extractedDna,
-      ep.theme || ep.titleJp || '',
-      addLog
-    );
-
-    if (compiledCuts && compiledCuts.length > 0) {
-      const newCuts = ep.cuts.map(c => {
-        const res = compiledCuts.find(a => a.cutId === c.id);
-        if (!res) return c;
-
-        const isScenicProp = res.character_presence === '5_scenic_or_still_life';
-        const isSelectedForVideo = isCutSelectedForVideo(c.id - 1, settings.videoRatio, res.veo_priority_rank, ep.cuts.length);
-
-        const lowerPrompt = (res.compiled_prompt_en || '').toLowerCase();
-        let derivedShotScale = c.shotScale || 'Medium Shot';
-        if (res.character_presence === '1_protagonist_solo_focus') {
-          derivedShotScale = (lowerPrompt.includes('extreme close') || lowerPrompt.includes('macro') || lowerPrompt.includes('eyes'))
-            ? 'Extreme Close-Up'
-            : 'Medium Bust Shot';
-        } else if (res.character_presence === '2_protagonist_or_pair_wide') {
-          derivedShotScale = 'Wide Shot';
-        } else if (res.character_presence === '3_two_characters_asymmetric') {
-          derivedShotScale = 'Medium Shot';
-        } else if (res.character_presence === '4_hands_or_feet_detail') {
-          derivedShotScale = lowerPrompt.includes('foot') || lowerPrompt.includes('shoes') || lowerPrompt.includes('footsteps') ? 'Low-Angle Footsteps' : 'Macro Hands';
-        } else if (res.character_presence === '5_scenic_or_still_life') {
-          derivedShotScale = 'Still-Life Object Macro';
-        }
-
-        const updatedCut: Cut = {
-          ...c,
-          characterPresence: res.character_presence,
-          focalPoint: { grid: 'center', normalizedCoord: [0.5, 0.5], focalSubject: res.focal_subject },
-          veoPriorityRank: res.veo_priority_rank,
-          cameraWork: res.camera_work,
-          cinematicAngle: res.camera_work,
-          shotScale: derivedShotScale,
-          panelLayout: res.panel_layout,
-          veoMotionPrompt: res.veo_motion_and_end_frame_prompt,
-          promptEn: res.compiled_prompt_en,
-          isObjectOnly: isScenicProp,
-          isSelectedForVideo: isSelectedForVideo,
-          targetVideoModel: isSelectedForVideo ? 'veo-fast' : c.targetVideoModel,
-          telop: c.telop ? {
-            ...c.telop,
-            highlights: [{ word: c.telop.fullText, color: res.telop_neon_color, sizeScale: 1.1 }]
-          } : undefined
-        };
-
-        updateCut(ep.id, c.id, {
-          characterPresence: res.character_presence,
-          focalPoint: updatedCut.focalPoint,
-          veoPriorityRank: res.veo_priority_rank,
-          cameraWork: res.camera_work,
-          cinematicAngle: res.camera_work,
-          shotScale: derivedShotScale,
-          panelLayout: res.panel_layout,
-          veoMotionPrompt: res.veo_motion_and_end_frame_prompt,
-          promptEn: res.compiled_prompt_en,
-          isObjectOnly: isScenicProp,
-          isSelectedForVideo: isSelectedForVideo,
-          targetVideoModel: updatedCut.targetVideoModel,
-          telop: updatedCut.telop
-        });
-
-        return updatedCut;
-      });
-
-      ep.cuts = newCuts;
-      ep.isLyricAnalyzed = true;
-      updateEpisode(ep.id, { isLyricAnalyzed: true });
-      addLog(`✨ Ep.${ep.id}: 映画的緩急＆5段階ルーティング（映像総監督Gemini）を全カットに適用しました！`, 'success');
-      return;
-    }
-
-    // ── フォールバック: 既存歌詞解析 ──
-    const lyricLines = ep.cuts
-      .filter(c => c.narrationJp || c.telop?.fullText)
-      .map(c => ({
-        cutId: c.id,
-        lyric: c.narrationJp || c.telop?.fullText || '',
-        section: (c.telop?.directorNote?.toLowerCase().includes('chorus') || isMvChorusCut(c.id)) ? 'chorus' : 'verse'
-      }));
-
-    if (lyricLines.length === 0) return;
-
-    addLog(`🧠 Ep.${ep.id}: 歌詞ビジュアルをGeminiで全体解析中（映画的緩急バランス判定）...`, 'process');
-    const charCtx = ep.characterDna || activeReferenceRef.current?.characterDna || 'Protagonist';
-    const analysis = await analyzeLyricVisualsWithGemini(lyricLines, ep.theme || ep.titleJp || '', charCtx, addLog);
-
-    if (analysis && analysis.length > 0) {
-      const newCuts = ep.cuts.map(c => {
-        const res = analysis.find(a => a.cutId === c.id);
-        if (!res) return c;
-
-        const isScenicProp = res.stagingType === 'scenic_prop_insert';
-        let updatedPromptEn = c.promptEn || '';
-        if (res.visualPromptEn) {
-          if (updatedPromptEn.includes('embodying lyric')) {
-            updatedPromptEn = updatedPromptEn.replace(/Scene visually embodying lyric "[^"]*", set within the world of "[^"]*"\.?/g, res.visualPromptEn);
-          } else if (!updatedPromptEn.includes(res.visualPromptEn)) {
-            updatedPromptEn = updatedPromptEn ? `${updatedPromptEn}, ${res.visualPromptEn}` : res.visualPromptEn;
-          }
-        }
-
-        const updatedCut: Cut = {
-          ...c,
-          geminiVisualPrompt: res.visualPromptEn,
-          stagingType: res.stagingType,
-          isObjectOnly: isScenicProp,
-          promptEn: updatedPromptEn
-        };
-        updateCut(ep.id, c.id, {
-          geminiVisualPrompt: res.visualPromptEn,
-          stagingType: res.stagingType,
-          isObjectOnly: isScenicProp,
-          promptEn: updatedPromptEn
-        });
-        return updatedCut;
-      });
-      ep.cuts = newCuts;
-      ep.isLyricAnalyzed = true;
-      updateEpisode(ep.id, { isLyricAnalyzed: true });
-      addLog(`✨ Ep.${ep.id}: 歌詞の映画的緩急バランス（Gemini自律判断）を反映しました！ [人物主導/静物インサート最適化]`, 'success');
-    } else {
-      addLog(`⚠️ Ep.${ep.id}: 歌詞解析をスキップしました (決定論的フォールバックを使用)`, 'warning');
-    }
-  };
-
   const handleGenerateRemaining = async (epId: number) => {
     isAbortedRef.current = false;
     const ep = episodesRef.current.find(e => e.id === epId);
     if (!ep) return;
 
     // MVモード未解析ならバッチ画像生成前にGeminiで全体解析（映画的緩急バランス判定）
-    if (ep.isMvMode && !ep.isLyricAnalyzed) {
-      await ensureLyricVisualAnalysis(ep);
-    }
 
     // エピソードの三面図が未アップロードなら即座にFlowへ自動アップロード
     if (ep.characterTurnaroundBase64 && !ep.characterTurnaroundMediaId) {
@@ -419,9 +241,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     if (stillRemaining === 0) {
       updateEpisode(epId, { isGeneratingRemainingImages: false, isDone: true, isPreviewDone: true });
       addLog(`✅ Ep.${epId}: すべての画像生成（全${ep.cuts.length}カット）が完了しました！`, 'success');
-      if (settings.autoVideo && !isAbortedRef.current) {
-        handleBulkBrowserVideo(epId);
-      }
     } else {
       updateEpisode(epId, { isGeneratingRemainingImages: false });
       if (!isAbortedRef.current) {
@@ -430,7 +249,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     }
   };
 
-  const handleExportFullMovie = async () => {};
 
   const runTasks = async (tasks: GenerationTask[]) => {
     // ── Phase 1: 演出・構図決定フェーズ（直列連鎖で前カットの構図を完全に追跡＆ネガティブ化） ──
@@ -862,112 +680,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     }
   };
 
-  const generateEndFrame = async (epId: number, cutId: number, customEndPrompt?: string) => {
-    if (isAbortedRef.current) return;
-    const ep = episodesRef.current.find(e => e.id === epId);
-    const cut = ep?.cuts.find(c => c.id === cutId);
-    if (!ep || !cut) return;
-
-    updateCut(epId, cutId, { isGeneratingEndFrame: true });
-    const modelDef = resolveImageModel(settings.imageModel);
-    addLog(`🏁 Ep.${epId} C${cutId.toString().padStart(2, '0')}: Veo補間用 After絵（到達点フレーム）を描画中...`, 'process');
-
-    try {
-      // Start絵の参照（i2i）
-      const refMediaIds: string[] = [];
-      if (cut.imageMediaId) {
-        refMediaIds.push(cut.imageMediaId);
-      } else if (ep.masterAnchorMediaId) {
-        refMediaIds.push(ep.masterAnchorMediaId);
-      }
-
-      // 到達点プロンプトの決定（Start絵からの8秒後のドラマチックな姿勢・表情進化を保証）
-      let effectiveEndPlot = customEndPrompt || cut.endFramePromptEn;
-      if (effectiveEndPlot && !/[a-zA-Z0-9]/.test(effectiveEndPlot)) {
-        effectiveEndPlot = undefined;
-      }
-      if (!effectiveEndPlot || effectiveEndPlot === cut.promptEn) {
-        const evo = resolveCinematicEndFrameAndMotion({
-          cutIndex: cutId - 1,
-          basicPlot: cut.promptEn || cut.narrationJp || cut.narrationEn || '',
-          isObjectOnly: cut.isObjectOnly,
-          theme: ep.theme || settings.theme,
-          isMvMode: ep.isMvMode
-        });
-        effectiveEndPlot = evo.endFramePlot;
-        // cutのメタデータも更新
-        updateCut(epId, cutId, {
-          endFramePromptEn: effectiveEndPlot,
-          veoMotionPrompt: cut.veoMotionPrompt || evo.veoMotionPrompt
-        });
-      }
-
-      const endPromptInstruction = cut.isObjectOnly
-        ? `[RELATIVE TO START FRAME - STILL LIFE]: ${effectiveEndPlot}. Maintain identical scene environment, props, and ambient lighting tone, ensuring seamless spatial continuity.`
-        : `[RELATIVE TO START FRAME]: ${effectiveEndPlot}. Maintain identical room setting, identical protagonist, hairstyle, and outfit as the reference start frame, ensuring seamless natural evolution.`;
-
-      const endTask: GenerationTask = {
-        epId,
-        cutId,
-        prompt: endPromptInstruction,
-        styleKey: ep.taste || settings.taste,
-        imageModel: settings.imageModel,
-        isMvMode: ep.isMvMode,
-        isMultiPanel: false,
-        storyContext: ep.summary || '',
-        eraAnalysis: ep.eraAnalysis,
-        forbiddenAnachronisms: ep.forbiddenAnachronisms,
-        authenticAttireEn: ep.authenticAttireEn,
-        forbiddenKeywordsEn: ep.forbiddenKeywordsEn,
-        referenceImageMediaId: refMediaIds[0],
-        characterDna: ep.characterDna,
-        isObjectOnly: cut.isObjectOnly,
-        isEndFrame: true,
-        endFrameCameraDirective: effectiveEndPlot
-      };
-
-      const { finalPrompt, finalNegative, referenceImageMediaIds } = buildImagePromptAndNegative(
-        endTask,
-        settings,
-        activeReferenceRef.current
-      );
-
-      const chosenRatio = settings.aspectRatio || DEFAULT_ASPECT_RATIO || '9:16';
-      const safeAspectRatio = (chosenRatio === '1:1' || chosenRatio === '16:9' || chosenRatio === '9:16') ? chosenRatio : '9:16';
-
-      let safePrompt = finalPrompt && /[a-zA-Z0-9]/.test(finalPrompt) ? finalPrompt : 'Cinematic finale scene, high quality';
-      if (safeAspectRatio === '1:1') {
-        safePrompt += ', balanced centered composition, ample negative space around subject, safe for 16:9 and 9:16 cropping';
-      }
-      const safeModelName = modelDef?.name || 'imagen-3.0-generate-002';
-
-      const res = await callWithRetry<any>(
-        () => Flow.generate.image({
-          prompt: safePrompt,
-          negativePrompt: finalNegative,
-          modelDisplayName: safeModelName,
-          aspectRatio: safeAspectRatio as any,
-          referenceImageMediaIds: referenceImageMediaIds || refMediaIds
-        }),
-        undefined,
-        4
-      );
-
-      const endMediaId = extractMediaId(res);
-      const endBase64 = extractImageBase64(res);
-      updateCut(epId, cutId, {
-        endFrameImageMediaId: endMediaId,
-        endFrameImageBase64: endBase64,
-        isGeneratingEndFrame: false
-      });
-      addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: After絵（到達点フレーム）の描画が完了しました！`, 'success');
-    } catch (err) {
-      const errorMsg = formatErrorMessage(err);
-      updateCut(epId, cutId, { isGeneratingEndFrame: false });
-      addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: After絵の生成スキップ - ${errorMsg}`, 'warning');
-    }
-  };
-
   const generateInfographicCover = useCallback(async (epId: number) => {
     if (isAbortedRef.current) return;
     const ep = episodesRef.current.find(e => e.id === epId);
@@ -982,9 +694,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       updateEpisode,
       runTasks,
       buildCutTasks,
-      ensureLyricVisualAnalysis,
-      generateVideo,
-      handleBulkVideo,
       seriesManifestRef,
       setActiveSeriesManifest,
       activeReferenceRef,
@@ -992,51 +701,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     };
     await ensureInfographicCover(pipelineContext, ep, true);
   }, [settings, addLog, updateEpisode]);
-
-  const handleBulkVideo = async (epId: number) => {
-    const ep = episodesRef.current.find(e => e.id === epId);
-    if (!ep) return;
-    setIsProducing(true);
-    updateEpisode(epId, { isBatchGeneratingVideos: true });
-
-    const targets = ep.cuts.filter(c => c.isSelectedForVideo && !c.videoBase64 && !c.videoMediaId);
-    const videoQueue = [...targets];
-    const videoConcurrency = Math.min(4, Math.max(1, settings.parallelCount || 2));
-
-    const workers = Array(videoConcurrency).fill(null).map(async (_, wIdx) => {
-      if (wIdx > 0) await sleep(wIdx * 1500);
-      while (videoQueue.length > 0) {
-        if (isAbortedRef.current) break;
-        const currentCut = videoQueue.shift();
-        if (!currentCut) break;
-        const targetModel = resolveVideoModel(currentCut.targetVideoModel || settings.videoModel).id;
-        try {
-          await generateVideo(epId, currentCut.id, targetModel as VideoModelType);
-        } catch (err) {
-          console.error(`Video generation error on cut ${currentCut.id}:`, err);
-        }
-        if (videoQueue.length > 0 && !isAbortedRef.current) {
-          await sleep(1500);
-        }
-      }
-    });
-    await Promise.all(workers);
-
-    // 確実に全カットの isGeneratingVideo を解除し、バッチフラグをOFFにする
-    episodesRef.current = episodesRef.current.map(e => e.id === epId ? {
-      ...e,
-      isBatchGeneratingVideos: false,
-      cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
-    } : e);
-    setEpisodes(prev => prev.map(e => e.id === epId ? {
-      ...e,
-      isBatchGeneratingVideos: false,
-      cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
-    } : e));
-    setIsProducing(false);
-  };
-
-  const handleBulkBrowserVideo = async (_epId?: number) => {};
 
   const startProduction = async (overrideSettings?: Partial<GeneratorSettings>) => {
     if (isProducing) {
@@ -1106,9 +770,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       updateEpisode,
       runTasks,
       buildCutTasks,
-      ensureLyricVisualAnalysis,
-      generateVideo,
-      handleBulkVideo,
       seriesManifestRef,
       setActiveSeriesManifest,
       activeReferenceRef,
@@ -1116,10 +777,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
     };
 
     try {
-      if (settings.productionMode === 'style-matrix') {
-        await runStyleMatrixProduction(pipelineContext);
-        return;
-      }
 
       // ★ 最重要: ①大前提プロデュース設計図（seriesManifestRef.current）が存在する場合
       // ただし、MVモードまたは音楽インポートによるエピソードがある場合は、
@@ -1142,31 +799,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       addLog(`❌ 制作エラー: ${detail}`, 'error');
     } finally {
       setIsProducing(false);
-      refreshStories();
     }
   };
-
-  const handleBulkRerollTelop = useCallback((epId: number) => {
-    const targetEp = episodesRef.current.find(e => e.id === epId);
-    if (!targetEp) return;
-    let prevStaging: any = undefined;
-    const isMv = !!targetEp.isMvMode || targetEp.titleJp.startsWith('🎵');
-    const isHist = checkIsHistorical(targetEp.era, targetEp.theme);
-    const updatedCuts = targetEp.cuts.map((c) => {
-      const staging = resolveRecommendedTelopStaging(c.id, isMv, isHist, prevStaging);
-      prevStaging = { transition: staging.transition, position: staging.position, style: staging.style };
-      const rawText = c.telop?.fullText || c.narrationJp || '';
-      const existingHighlights = c.telop?.highlights || [];
-      const highlights = existingHighlights.length > 0 ? existingHighlights : extractHighlights(rawText);
-      return {
-        ...c,
-        telop: { fullText: rawText, highlights, style: staging.style, transition: staging.transition, position: staging.position, directorNote: staging.directorNote }
-      };
-    });
-    setEpisodes(prev => prev.map(e => e.id === epId ? { ...e, cuts: updatedCuts } : e));
-    episodesRef.current = episodesRef.current.map(e => e.id === epId ? { ...e, cuts: updatedCuts } : e);
-    addLog(`🎲 第 ${epId} 話: 全12カットのテロップ演出（動き・配置）を一括再抽選しました！（画像は保持）`, 'success');
-  }, [addLog]);
 
   const handleRerollTasteProduction = async (epId: number, targetTaste?: string) => {
     isAbortedRef.current = false;
@@ -1238,9 +872,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       updateEpisode,
       runTasks,
       buildCutTasks: (e: Episode, cuts: Cut[], styleKey?: string) => buildCutTasks(e, cuts, styleKey || newTaste),
-      ensureLyricVisualAnalysis,
-      generateVideo,
-      handleBulkVideo,
       seriesManifestRef,
       setActiveSeriesManifest,
       activeReferenceRef,
@@ -1249,10 +880,6 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
 
     try {
       // 1. 先に歌詞ビジュアル解析（楽曲DNA抽出＆Step 3絵コンテコンパイル）を完了させて主人公DNAを確定
-      if (updatedEp.isMvMode && !updatedEp.isLyricAnalyzed && ensureLyricVisualAnalysis) {
-        addLog(`🧬 第${epId}話: 楽曲DNAの抽出と絵コンテの事前コンパイルを実行中...`, 'process');
-        await ensureLyricVisualAnalysis(updatedEp);
-      }
 
       if (isAbortedRef.current) return;
 
@@ -1298,9 +925,8 @@ export function useStudioProduction({ settings, addLog, refreshStories, logs }: 
       addLog(`❌ 画風切り替え再作成エラー: ${formatErrorMessage(err)}`, 'error');
     } finally {
       setIsProducing(false);
-      refreshStories();
     }
   };
 
-  return { episodes, setEpisodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, handleRerollTasteProduction, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes: handleClearEpisodes };
-}
+  return { episodes, setEpisodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleRerollTasteProduction, generateImage, generateInfographicCover, updateCut, updateEpisode, clearEpisodes: handleClearEpisodes };
+}

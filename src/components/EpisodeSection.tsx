@@ -399,21 +399,15 @@ interface EpisodeSectionProps {
   ep: Episode;
   aspectRatio?: '9:16' | '1:1' | '16:9';
   onGenerateRemaining: (epId: number) => void;
-  onBulkVideo: (epId: number) => void;
-  onBulkBrowserVideo: (epId: number) => void;
-  onExportFullMovie: (epId: number) => void;
   onDownloadZip: (ep: Episode) => void;
-  onAnimateRequest: (epId: number, cutId: number, modelType: VideoModelType) => void;
   onPreviewCut: (epId: number, cut: Cut) => void;
-  onUpdateCut: (epId: number, cutId: number, updates: Partial<Cut>) => void;
-  onBulkRerollTelop?: (epId: number) => void;
   onGenerateCover?: (epId: number) => void;
   onRerollTaste?: (epId: number) => void;
-  onRetry?: (type: 'image' | 'video', epId: number, cutId: number) => void;
+  onRetry?: (epId: number, cutId: number) => void;
 }
 
 export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
-  ep, aspectRatio = '1:1', onGenerateRemaining, onBulkVideo, onBulkBrowserVideo, onExportFullMovie, onDownloadZip, onAnimateRequest, onPreviewCut, onUpdateCut, onBulkRerollTelop, onGenerateCover, onRerollTaste, onRetry
+  ep, aspectRatio = '1:1', onGenerateRemaining, onDownloadZip, onPreviewCut, onGenerateCover, onRerollTaste, onRetry
 }) => {
   // 先行プレビュー完了(isPreviewDone)または全体完了(isDone)していれば操作可能
   const isPending = !ep.isGenerating && !ep.isDone && !ep.isPreviewDone;
@@ -440,18 +434,6 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
           
           {/* アクションボタン群（下段にゆったり横並び配置） */}
           <div className="flex items-center gap-2 flex-wrap">
-            {onBulkRerollTelop && (
-              <PillButton 
-                variant="outline" 
-                className="h-8 px-3 border-purple-500/40 text-purple-400 hover:text-purple-200 hover:border-purple-400 hover:bg-purple-950/30 font-black text-xs whitespace-nowrap shrink-0 transition-colors" 
-                disabled={ep.isGenerating || isPending} 
-                onClick={() => onBulkRerollTelop(ep.id)} 
-                icon={<span className="material-symbols-outlined text-purple-400 text-sm">casino</span>}
-                title="画像は一切再生成せず、12カットすべてのテロップ演出を一括再抽選"
-              >
-                テロップ一括
-              </PillButton>
-            )}
             {onGenerateCover && (
               <PillButton 
                 variant="outline" 
@@ -477,7 +459,6 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
               </PillButton>
             )}
             
-            
             <PillButton 
               variant="outline" 
               className="h-8 px-3 border-slate-200 hover:border-white/30 text-slate-500 hover:text-slate-900 font-bold text-xs whitespace-nowrap shrink-0" 
@@ -494,7 +475,7 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
               disabled={isPending}
               onClick={() => onDownloadZip(ep)} 
               icon={<span className="material-symbols-outlined text-sm">download</span>}
-              title="素材パッケージ（画像・動画・字幕・スクリプト）を一括ダウンロード"
+              title="素材パッケージ（画像・字幕・スクリプト）を一括ダウンロード"
             >
               パッケージ
             </PillButton>
@@ -509,10 +490,7 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
         {ep.cuts.map(cut => (
           <CutCard 
             key={cut.id} cut={cut} episodeId={ep.id} isMvMode={ep.isMvMode} aspectRatio={aspectRatio}
-            onAnimateRequest={onAnimateRequest}
             onPreviewCut={() => onPreviewCut(ep.id, cut)}
-            onUpdateSelection={(eId, cId, sel) => onUpdateCut(eId, cId, { isSelectedForVideo: sel })}
-            onUpdateModel={(eId, cId, mod) => onUpdateCut(eId, cId, { targetVideoModel: mod })}
             onRetry={onRetry}
           />
         ))}

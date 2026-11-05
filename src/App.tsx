@@ -3,21 +3,18 @@ import { MediaPreviewModal } from './components/MediaPreviewModal';
 import { StudioSidebar } from './components/StudioSidebar';
 import { StudioHeader } from './components/StudioHeader';
 import { EpisodeSection } from './components/EpisodeSection';
-import { LogEntry } from './components/StudioLogs';
-import { Cut, GeneratorSettings, VideoModelType, Episode, ProductionMode } from './types';
-import { THEMES, TASTES, IMAGE_MODELS, VIDEO_MODELS } from './constants';
-import { createLogMessage, isCutSelectedForVideo } from './services/utils';
-import { initDB, getAllStories, StoryRecord } from './services/db';
-import { downloadZip, triggerBrowserDownload, savePackageFile } from './services/exportService';
+import { Cut, GeneratorSettings, Episode, LogEntry } from './types';
+import { THEMES, TASTES, IMAGE_MODELS } from './constants';
+import { createLogMessage } from './services/utils';
+import { initDB } from './services/db';
+import { downloadZip, savePackageFile } from './services/exportService';
 import { useStudioProduction } from './services/useStudioProduction';
 import { extractHighlights } from './services/directorService';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { loadCustomThemes } from './services/themeStorage';
-import { loadCustomTastes } from './services/tasteStorage';
 
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
-    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: VIDEO_MODELS[0].label, videoRatio: 'none', episodeCount: 1, previewCutCount: 2, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, isMultiPanel: false, aspectRatio: '1:1', characterId: 'zundamon',
+    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: '', videoRatio: 'none', episodeCount: 1, previewCutCount: 2, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, isMultiPanel: false, aspectRatio: '1:1', characterId: 'zundamon',
     enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: false
   });
 
@@ -51,9 +48,6 @@ export default function App() {
     });
   }, []);
 
-  const [stories, setStories] = useState<StoryRecord[]>([]);
-  const [customThemes] = useState(() => loadCustomThemes());
-  const [customTastes] = useState(() => loadCustomTastes());
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
 
@@ -66,18 +60,12 @@ export default function App() {
     console.log(
       `🎬 制作プリセット: 【モード: ${settings.productionMode || '通常'}】 / 【テーマ: ${settings.theme}】 / 【画風: ${settings.taste}】 / 【全${settings.totalEpisodes || settings.episodeCount || 1}話】`
     );
-    console.log('💡 左サイドバーの【全自動プロデュース開始】または【シリーズレジューム】をクリックすると制作が始まります。進行ログはここにもリアルタイム出力されます。');
+    console.log('💡 ヘッダー右側の【作成開始】をクリックすると制作が始まります。進行ログはここにもリアルタイム出力されます。');
   }, []);
 
-  const refreshStories = useCallback(async () => {
-    const all = await getAllStories();
-    setStories(all);
-  }, []);
-
-  const { episodes, setEpisodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleBulkVideo, handleBulkBrowserVideo, handleExportFullMovie, handleBulkRerollTelop, handleRerollTasteProduction, generateImage, generateEndFrame, generateInfographicCover, generateVideo, generateBrowserVideo, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
+  const { episodes, setEpisodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleRerollTasteProduction, generateImage, generateInfographicCover, updateCut, updateEpisode } = useStudioProduction({ 
     settings, 
     addLog, 
-    refreshStories,
     logs
   });
 
@@ -90,10 +78,6 @@ export default function App() {
     const targetTaste = settings.taste;
     handleRerollTasteProduction(epId, targetTaste);
   }, [episodes, settings.taste, handleRerollTasteProduction]);
-
-  
-
-  
 
   // ヘッダー等で画風（taste）が変更された際、画像未生成のエピソード群のtasteも即座に同期
   useEffect(() => {
@@ -111,28 +95,6 @@ export default function App() {
       return changed ? next : prev;
     });
   }, [settings.taste, setEpisodes]);
-
-  // サイドバー等で動画化割合（videoRatio）が変更された際、未動画化カットの isSelectedForVideo も即座に同期
-  useEffect(() => {
-    if (!settings.videoRatio) return;
-    setEpisodes(prev => {
-      let changed = false;
-      const next = prev.map(ep => {
-        const nextCuts = ep.cuts.map((c, idx) => {
-          // すでに動画生成済み(videoBase64やvideoMediaIdがある)のカットは維持
-          if (c.videoBase64 || c.videoMediaId) return c;
-          const expected = isCutSelectedForVideo(idx, settings.videoRatio, c.veoPriorityRank, ep.cuts.length);
-          if (c.isSelectedForVideo !== expected) {
-            changed = true;
-            return { ...c, isSelectedForVideo: expected };
-          }
-          return c;
-        });
-        return changed ? { ...ep, cuts: nextCuts } : ep;
-      });
-      return changed ? next : prev;
-    });
-  }, [settings.videoRatio, setEpisodes]);
 
   // グローバル（コンソール）から全エピソードデータにいつでも直接アクセス・救出可能にする
   useEffect(() => {
@@ -220,7 +182,7 @@ export default function App() {
   }, [updateCut]);
 
   useEffect(() => {
-    initDB().then(refreshStories);
+    initDB().catch(() => {});
     const styleId = 'studio-core-styles';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
@@ -228,7 +190,7 @@ export default function App() {
       style.textContent = `@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&family=Outfit:wght@800;900&family=Montserrat:wght@800;900&family=Dela+Gothic+One&display=swap'); .no-wrap-row { display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; scroll-behavior: smooth; } .dark-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; } .dark-scrollbar::-webkit-scrollbar-track { background: transparent; } .dark-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; } .dark-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; } @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } .animate-slide-in { animation: slideIn 0.3s ease-out forwards; } @keyframes dropdown-enter { from { opacity: 0; transform: scale(0.97) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } } .animate-dropdown { animation: dropdown-enter 0.15s ease-out forwards; } .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`;
       document.head.appendChild(style);
     }
-  }, [refreshStories]);
+  }, []);
 
   // 先行プレビュー枚数分（または各話のカット）の画像がまだ未生成であるかどうかを厳密に判定
   const hasPendingCuts = episodes.length > 0 && episodes.some(ep => {
@@ -250,8 +212,6 @@ export default function App() {
           isProducing={isProducing}
           onStart={startProduction}
           onAbort={abortProduction}
-          customThemes={customThemes}
-          customTastes={customTastes}
           activeSeriesManifest={activeSeriesManifest}
           onResumeClick={() => resumeFileRef.current?.click()}
           isWaitingForStart={isWaitingForStart}
@@ -263,10 +223,10 @@ export default function App() {
             <div className="max-w-[1300px] mx-auto flex flex-col gap-6">
               {episodes.map((ep, idx) => (
             <EpisodeSection 
-              key={ep.internalId || `ep_${ep.id}_${idx}`} ep={ep} aspectRatio={settings.aspectRatio || '1:1'} onGenerateRemaining={handleGenerateRemaining} onBulkVideo={handleBulkVideo} onBulkBrowserVideo={handleBulkBrowserVideo} onExportFullMovie={handleExportFullMovie} onDownloadZip={handleDownloadZip} onAnimateRequest={generateVideo} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onUpdateCut={updateCutWrapped} onBulkRerollTelop={handleBulkRerollTelop} onGenerateCover={generateInfographicCover} onRerollTaste={handleRerollTaste} onRetry={(type, eId, cId) => {
+              key={ep.internalId || `ep_${ep.id}_${idx}`} ep={ep} aspectRatio={settings.aspectRatio || '1:1'} onGenerateRemaining={handleGenerateRemaining} onDownloadZip={handleDownloadZip} onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} onGenerateCover={generateInfographicCover} onRerollTaste={handleRerollTaste} onRetry={(eId, cId) => {
                 const epFound = episodes.find(e => e.id === eId);
                 const cutFound = epFound?.cuts.find(c => c.id === cId);
-                if (type === 'image' && cutFound) {
+                if (cutFound) {
                   const epTaste = epFound?.taste || cutFound.styleKeyUsed || settings.taste;
                   generateImage({ 
                     epId: eId, 
@@ -283,8 +243,6 @@ export default function App() {
                     authenticAttireEn: epFound?.authenticAttireEn,
                     forbiddenKeywordsEn: epFound?.forbiddenKeywordsEn
                   });
-                } else if (type === 'video' && cutFound) {
-                  generateVideo(eId, cId, (cutFound.targetVideoModel === 'none' ? 'omni-flash' : cutFound.targetVideoModel) as VideoModelType);
                 }
               }} 
             />
@@ -310,7 +268,6 @@ export default function App() {
             episodeId={previewingCutData.epId} 
             aspectRatio={settings.aspectRatio || '1:1'}
             currentImageModel={settings.imageModel} 
-            isMvMode={ep?.isMvMode ?? settings.isMvMode} 
             hasPrev={hasPrev}
             hasNext={hasNext}
             onPrev={handlePrev}
@@ -318,10 +275,7 @@ export default function App() {
             currentIndex={currentIndex >= 0 ? currentIndex + 1 : activeCut.id}
             totalCuts={cuts.length}
             onClose={() => setPreviewingCutData(null)} 
-            onAnimate={m => generateVideo(previewingCutData.epId, activeCut.id, m)} 
-            onBrowserAnimate={() => generateBrowserVideo(previewingCutData.epId, activeCut.id)} 
             onUpdateCut={updates => updateCutWrapped(previewingCutData.epId, activeCut.id, updates)} 
-            onBulkRerollTelop={handleBulkRerollTelop}
             onRegenerateImage={(model, prompt, neg) => {
               const epTaste = ep?.taste || activeCut.styleKeyUsed || settings.taste;
               generateImage({ 
@@ -340,21 +294,10 @@ export default function App() {
                 forbiddenKeywordsEn: ep?.forbiddenKeywordsEn
               });
             }}
-            onGenerateEndFrame={(epId, cutId, customPrompt) => generateEndFrame(epId, cutId, customPrompt)}
           />
         );
       })()}
-          
-          
         </div>
-        
-        
-        <React.Suspense fallback={null}>
-          
-          
-          
-          
-        </React.Suspense>
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
       </div>
     </ErrorBoundary>

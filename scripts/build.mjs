@@ -58,6 +58,9 @@ async function runBuild() {
   for (const item of syncItems) {
     const srcPath = path.join(sourceDir, item);
     const destPath = path.join(localBuildDir, item);
+    if (item === 'src' && fs.existsSync(destPath)) {
+      fs.rmSync(destPath, { recursive: true, force: true });
+    }
     if (fs.existsSync(srcPath)) {
       copySync(srcPath, destPath);
     }

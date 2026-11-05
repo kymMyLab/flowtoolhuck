@@ -1,6 +1,5 @@
 import React from 'react';
-import { Cut, VideoModelType, RecommendationModel } from '../types';
-import { VIDEO_MODELS_REGISTRY, resolveVideoModel } from '../config/studioDefinitions';
+import { Cut } from '../types';
 import { formatDataUri } from '../services/utils';
 
 interface CutCardProps {
@@ -8,47 +7,19 @@ interface CutCardProps {
   episodeId: number;
   isMvMode?: boolean;
   aspectRatio?: '9:16' | '1:1' | '16:9';
-  onAnimateRequest: (epId: number, cutId: number, modelType: VideoModelType) => void;
   onPreviewCut: (epId: number, cutId: number) => void;
-  onUpdateSelection: (epId: number, cutId: number, isSelected: boolean) => void;
-  onUpdateModel: (epId: number, cutId: number, model: RecommendationModel) => void;
-  onRetry?: (type: 'image' | 'video', epId: number, cutId: number) => void;
+  onRetry?: (epId: number, cutId: number) => void;
 }
 
 export const CutCard: React.FC<CutCardProps> = React.memo(({ 
-  cut, episodeId, isMvMode, aspectRatio = '1:1', onAnimateRequest, onPreviewCut, onUpdateSelection, onUpdateModel, onRetry 
+  cut, episodeId, isMvMode, aspectRatio = '1:1', onPreviewCut, onRetry 
 }) => {
   const imageSrc = formatDataUri(cut.imageBase64 || (cut as any)?.image);
-  const videoSrc = cut.videoBase64 ? (cut.videoBase64.startsWith('http://') || cut.videoBase64.startsWith('https://') || cut.videoBase64.startsWith('data:') || cut.videoBase64.startsWith('blob:') ? cut.videoBase64 : `data:video/mp4;base64,${cut.videoBase64}`) : null;
 
   const handleRetry = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!onRetry) return;
-    if (!cut.imageBase64) onRetry('image', episodeId, cut.id);
-    else onRetry('video', episodeId, cut.id);
+    if (onRetry) onRetry(episodeId, cut.id);
   };
-
-  const handleToggleSelection = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onUpdateSelection(episodeId, cut.id, !cut.isSelectedForVideo);
-  };
-
-  const cycleModel = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // 定義レジストリから動的にモデルリストを構築（+ 'none'）
-    const modelOptions: RecommendationModel[] = [
-      ...VIDEO_MODELS_REGISTRY.map(m => m.id as RecommendationModel),
-      'none'
-    ];
-    const currentIndex = modelOptions.indexOf(cut.targetVideoModel);
-    const nextIndex = (currentIndex + 1) % modelOptions.length;
-    const nextModel = modelOptions[nextIndex];
-    onUpdateModel(episodeId, cut.id, nextModel);
-    if (nextModel !== 'none') onUpdateSelection(episodeId, cut.id, true);
-    else onUpdateSelection(episodeId, cut.id, false);
-  };
-
-  const getKenBurnsClass = () => "";
 
   const isSquare = aspectRatio === '1:1';
   const isLandscape = aspectRatio === '16:9';
@@ -58,28 +29,18 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
   return (
     <div 
       onClick={() => onPreviewCut(episodeId, cut.id)}
-      className={`flex-shrink-0 ${cardWidthClass} bg-white border rounded-xl overflow-hidden flex flex-col group transition-all relative shadow-lg cursor-pointer ${
-        cut.isSelectedForVideo ? 'border-amber-500/50 shadow-amber-500/10' : 'border-[#333] hover:border-[#969696]'
-      }`}
+      className="flex-shrink-0 bg-white border border-[#333] hover:border-[#969696] rounded-xl overflow-hidden flex flex-col group transition-all relative shadow-lg cursor-pointer"
+      style={{ width: isSquare ? 155 : isLandscape ? 185 : 140 }}
     >
       <div className={`relative ${aspectClass} bg-slate-200 flex items-center justify-center overflow-hidden`}>
-        {videoSrc ? (
-          <video src={videoSrc} className="w-full h-full object-cover" autoPlay loop muted playsInline />
-        ) : imageSrc ? (
+        {imageSrc ? (
           <div className="w-full h-full overflow-hidden">
             <img 
               src={imageSrc} 
               alt={`Cut ${cut.id}`} 
               loading="eager"
-              className={`w-full h-full object-cover transition-opacity duration-300 ${getKenBurnsClass()}`} 
+              className="w-full h-full object-cover transition-opacity duration-300" 
               style={{ opacity: 1 }}
-              onError={(e) => {
-                console.error(`❌ [CutCard img エラー] Cut ${cut.id} 画像の表示に失敗しました`, {
-                  cutId: cut.id,
-                  preview: imageSrc.slice(0, 80),
-                  length: imageSrc.length
-                });
-              }}
             />
           </div>
         ) : (cut.isGeneratingImage || cut.isDirecting) ? (
@@ -104,7 +65,7 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
           <span className="text-slate-900/10 text-[8px] tracking-widest uppercase">Standby</span>
         )}
 
-        {/* 演出バッジ (Shot Scale & Ken Burns & Object & Focal) */}
+        {/* 演出バッジ (Shot Scale & Object & Focal & Panel) */}
         <div className="absolute bottom-1.5 left-1.5 flex flex-wrap items-center gap-1 z-10 max-w-[95%] overflow-hidden">
           {cut.shotScale && (
             <div className="px-1.5 py-0.5 rounded-sm bg-amber-500 text-[7px] font-black text-black uppercase tracking-tighter shadow-lg shrink-0">
@@ -117,12 +78,12 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
             </div>
           )}
           {cut.focalPoint && (
-            <div className="px-1.5 py-0.5 rounded-sm bg-cyan-800/80 border border-cyan-400/30 text-[7px] font-black text-cyan-200 uppercase tracking-tighter shadow-lg shrink-0" title={`注視点: ${cut.focalPoint.focalSubject} (${cut.focalPoint.grid}) [${cut.focalPoint.normalizedCoord.join(',')}]`}>
+            <div className="px-1.5 py-0.5 rounded-sm bg-cyan-800/80 border border-cyan-400/30 text-[7px] font-black text-cyan-200 uppercase tracking-tighter shadow-lg shrink-0">
               🎯 {cut.focalPoint.grid.replace('top-', 'T-').replace('bottom-', 'B-').replace('center', 'CTR').toUpperCase()}
             </div>
           )}
           {cut.panelLayout && cut.panelLayout !== 'single' && (
-            <div className="px-1.5 py-0.5 rounded-sm bg-indigo-600/90 border border-indigo-400/30 text-[7px] font-black text-indigo-100 uppercase tracking-tighter shadow-lg shrink-0 flex items-center gap-0.5" title={`コマ割り構成: ${cut.panelLayout}`}>
+            <div className="px-1.5 py-0.5 rounded-sm bg-indigo-600/90 border border-indigo-400/30 text-[7px] font-black text-indigo-100 uppercase tracking-tighter shadow-lg shrink-0 flex items-center gap-0.5">
               <span>
                 {cut.panelLayout === 'diagonal-slash' ? '⚔️ 斜め' :
                  cut.panelLayout === 'l-shaped' ? '📐 L字3コマ' :
@@ -134,38 +95,13 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
               </span>
             </div>
           )}
-          {cut.endFrameImageBase64 && (
-            <div className="px-1.5 py-0.5 rounded-sm bg-blue-600 text-[7px] font-black text-slate-900 uppercase tracking-tighter shadow-lg shrink-0 flex items-center gap-0.5" title="Veo補間用 After絵（到達点フレーム）生成済">
-              <span>🏁 2F</span>
-            </div>
-          )}
         </div>
-
-
 
         <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10">
-          <div className="flex gap-1">
-            
-            <div className="px-1.5 py-0.5 rounded-sm bg-white/90 text-[8px] font-black text-slate-800 backdrop-blur-md border border-slate-200 flex items-center">
-              C{cut.id.toString().padStart(2, '0')}
-            </div>
+          <div className="px-1.5 py-0.5 rounded-sm bg-white/90 text-[8px] font-black text-slate-800 backdrop-blur-md border border-slate-200 flex items-center">
+            C{cut.id.toString().padStart(2, '0')}
           </div>
-          
-          
         </div>
-
-        {cut.isQueued && (
-          <div className="absolute inset-0 bg-white/90 backdrop-blur-[2px] flex flex-col items-center justify-center">
-             <div className="w-6 h-6 border border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
-          </div>
-        )}
-
-        {cut.isGeneratingVideo && !videoSrc && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2 z-20">
-             <div className="w-8 h-8 border-2 border-slate-200 border-t-white rounded-full animate-spin" />
-             <span className="text-[8px] text-slate-900 font-black animate-pulse uppercase">Baking Video</span>
-          </div>
-        )}
       </div>
 
       <div className="p-2 flex flex-col gap-1.5 bg-gradient-to-b from-[#1a1a1a] to-[#141414]">
@@ -183,16 +119,6 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
             {cut.narrationJp || "脚本策定中..."}
           </p>
         )}
-        
-        <div className="flex items-center justify-between mt-auto pt-1 border-t border-white/5">
-           <span className={`text-[7px] px-1 py-0.5 rounded-sm font-bold uppercase tracking-tighter ${cut.videoModelUsed ? 'bg-slate-100 text-slate-500' : 'text-slate-900/10'}`}>
-             {cut.videoModelUsed ? cut.videoModelUsed.replace('-', ' ') : cut.targetVideoModel !== 'none' ? 'READY' : 'STILL'}
-           </span>
-           <div className="flex gap-0.5">
-              {cut.bgmMediaId && <span className="material-symbols-outlined text-[10px] text-blue-400/50">music_note</span>}
-              {cut.voiceId && <span className="material-symbols-outlined text-[10px] text-amber-400/50">record_voice_over</span>}
-           </div>
-        </div>
       </div>
     </div>
   );

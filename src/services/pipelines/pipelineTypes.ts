@@ -1,6 +1,5 @@
 import { MutableRefObject, Dispatch, SetStateAction } from 'react';
-import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, VideoModelType } from '../../types';
-import { LogEntry } from '../../components/StudioLogs';
+import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, LogEntry } from '../../types';
 
 export interface ProductionPipelineContext {
   settings: GeneratorSettings;
@@ -12,9 +11,6 @@ export interface ProductionPipelineContext {
   updateEpisode: (epId: number, data: Partial<Episode>) => void;
   runTasks: (tasks: GenerationTask[]) => Promise<void>;
   buildCutTasks: (ep: Episode, cuts: Cut[], styleKey?: string) => GenerationTask[];
-  ensureLyricVisualAnalysis?: (ep: Episode) => Promise<void>;
-  generateVideo: (epId: number, cutId: number, modelType: VideoModelType) => Promise<void>;
-  handleBulkVideo: (epId: number) => Promise<void>;
   seriesManifestRef: MutableRefObject<SeriesManifest | null>;
   setActiveSeriesManifest: Dispatch<SetStateAction<SeriesManifest | null>>;
   activeReferenceRef: MutableRefObject<{

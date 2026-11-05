@@ -1,4 +1,4 @@
-import { KenBurnsPreset, VideoModelType } from '../types';
+import { KenBurnsPreset } from '../types';
 
 /**
  * =======================================================================
@@ -50,48 +50,7 @@ export function resolveImageModel(keyOrLabel?: string): ImageModelDefinition {
   return IMAGE_MODELS_REGISTRY.find(m => m.id === keyOrLabel || m.label === keyOrLabel || m.name === keyOrLabel) || defaultModel;
 }
 
-// ── 2. 動画生成モデル定義 ─────────────────────────────────────────────
-export interface VideoModelDefinition {
-  id: VideoModelType;
-  name: string;
-  label: string;
-  defaultDuration: number;
-  costPoints: number;
-  isDefault?: boolean;
-}
-
-export const VIDEO_MODELS_REGISTRY: VideoModelDefinition[] = [
-  { 
-    id: 'veo-fast', 
-    name: 'Veo 3.1 - Fast', 
-    label: 'Veo 3.1 Fast（8秒 / 10pt）🚀高速シネマ★推奨', 
-    defaultDuration: 8, 
-    costPoints: 10,
-    isDefault: true 
-  },
-  { 
-    id: 'veo-lite', 
-    name: 'Veo 3.1 - Lite', 
-    label: 'Veo 3.1 Lite（8秒 / 5pt）★コスパ重視', 
-    defaultDuration: 8, 
-    costPoints: 5 
-  },
-  { 
-    id: 'omni-flash', 
-    name: 'Veo 3.1 - Fast', 
-    label: 'Veo 3.1 Fast（4秒 / 10pt）⚡短尺キメ', 
-    defaultDuration: 4, 
-    costPoints: 10 
-  }
-];
-
-export function resolveVideoModel(idOrName?: string): VideoModelDefinition {
-  const defaultModel = VIDEO_MODELS_REGISTRY.find(m => m.isDefault) || VIDEO_MODELS_REGISTRY[0];
-  if (!idOrName) return defaultModel;
-  return VIDEO_MODELS_REGISTRY.find(m => m.id === idOrName || m.name === idOrName || m.label === idOrName) || defaultModel;
-}
-
-// ── 3. カメラワーク・カメラモーション定義 ──────────────────────────────
+// ── 2. カメラワーク・カメラモーション定義 ──────────────────────────────
 export interface CameraWorkDefinition {
   id: string;
   label: string;
@@ -928,123 +887,8 @@ export const BASELINE_NEGATIVE_TOKENS = {
   renderingQuality: 'lowres, worst quality, text, subtitles, closed captions, caption bar, caption banner, speech bubbles, dialog box, Japanese characters, kanji subtitles, news ticker, text overlay, title text, watermark, signature, blurry, artifact, jpeg artifacts, poorly rendered'
 };
 
-// ── 8. Vook風テロップ演出スタイル＆トランジション定義 ──────────────────────
+// ── 8. テロップ演出推奨ディレクター ──────────────────────
 import { TelopStyle, TelopTransition, TelopPosition } from '../types';
-
-export interface TelopStyleDefinition {
-  id: TelopStyle;
-  name: string;
-  description: string;
-  badgeColor: string;
-  defaultTransition: TelopTransition;
-  defaultPosition: TelopPosition;
-}
-
-export const TELOP_STYLE_REGISTRY: TelopStyleDefinition[] = [
-  {
-    id: 'mv-blur-slide',
-    name: 'ブラースライド (Vook高速演出)',
-    description: '方向性ブラーと急減速イージングで滑らかに流し込むプロ仕様MV演出',
-    badgeColor: '#00E5FF',
-    defaultTransition: 'blur-slide-left',
-    defaultPosition: 'bottom-left'
-  },
-  {
-    id: 'mv-kinetic-pop',
-    name: 'キネティック・タイポ (Ado / リリック躍動)',
-    description: '単語ごとにスタッガーで跳ね上がり、強調語を巨大化させる段違いダイナミック演出',
-    badgeColor: '#FFE600',
-    defaultTransition: 'zoom-in-bounce',
-    defaultPosition: 'center-stagger'
-  },
-  {
-    id: 'mv-neon-glow',
-    name: 'ネオングロー (夜景・サイバー)',
-    description: '光彩拡散ブラーと多重グローで、暗がりや夜景にエモーショナルに溶け込む演出',
-    badgeColor: '#FF2E93',
-    defaultTransition: 'glow-fade',
-    defaultPosition: 'bottom-center'
-  },
-  {
-    id: 'cinema-subtle',
-    name: 'シネマティック・ミニマル (静寂・AOS風)',
-    description: '半透明グラスモーフィズムプレートと繊細な字間による上品な映画字幕演出',
-    badgeColor: '#A78BFA',
-    defaultTransition: 'aos-fade-soft',
-    defaultPosition: 'bottom-center'
-  },
-  {
-    id: 'brush-impact',
-    name: '墨文字・ド迫力インパクト (時代劇・覚醒)',
-    description: '極太フォントと力強い縁取りで、一撃の重みと気迫を伝える大河ドラマ演出',
-    badgeColor: '#F59E0B',
-    defaultTransition: 'blur-slide-right',
-    defaultPosition: 'bottom-center'
-  },
-  {
-    id: 'mv-vertical-lyric',
-    name: 'エモ縦書きリリック (Eve/ヨルシカ・和モダン)',
-    description: 'サイドバーに繊細に流れる縦書きタイポグラフィ。視線を遮らず余白を美しく魅せる',
-    badgeColor: '#34D399',
-    defaultTransition: 'aos-fade-soft',
-    defaultPosition: 'vertical-right'
-  },
-  {
-    id: 'mv-center-climax',
-    name: '画面中央クライマックス (サビ・GSAP特大炸裂)',
-    description: 'サビの決めフレーズを画面中央にズドンと炸裂させる最大インパクト演出',
-    badgeColor: '#EC4899',
-    defaultTransition: 'animista-slide-bck',
-    defaultPosition: 'center-climax'
-  }
-];
-
-export interface TelopTransitionDefinition {
-  id: TelopTransition;
-  name: string;
-  description: string;
-  icon: string;
-}
-
-export const TELOP_TRANSITION_REGISTRY: TelopTransitionDefinition[] = [
-  { id: 'animista-slide-bck', name: 'Animista奥からズームイン (slide-bck)', description: '3D空間の奥から手前にグッと飛び込む迫真モーション', icon: 'filter_tilt_shift' },
-  { id: 'gsap-kinetic-stagger', name: 'GSAP急減速スタッガー (呼吸＆残像)', description: '初速最速・終速ピタ止めと微細な呼吸フローティング', icon: 'speed' },
-  { id: 'aos-fade-soft', name: 'AOS上品ソフトフェード (静寂・映画風)', description: '繊細な浮遊感とソフトな透過で情景を邪魔しない', icon: 'opacity' },
-  { id: 'blur-slide-left', name: '左からブラースライド (Vook高速)', description: '左から横ブラーを伴い高速スライドイン', icon: 'arrow_forward' },
-  { id: 'blur-slide-up', name: '下からブラースライド', description: '下から縦ブラーを伴いフワッと飛び込み', icon: 'arrow_upward' },
-  { id: 'blur-slide-right', name: '右からブラースライド', description: '右から駆け抜けるようにスライドイン', icon: 'arrow_back' },
-  { id: 'zoom-in-bounce', name: 'ズームイン・バウンス', description: '飛び込んで軽く弾むリズミカルな登場', icon: 'fit_screen' },
-  { id: 'glow-fade', name: 'ネオン・グローフェード', description: '光の粒子がにじみ出るように静かに発光', icon: 'flare' },
-  { id: 'glitch-pop', name: 'グリッチ・カットイン', description: 'デジタルなカットインで瞬時に切り替え', icon: 'bolt' }
-];
-
-export interface TelopPositionDefinition {
-  id: TelopPosition;
-  name: string;
-  description: string;
-  icon: string;
-}
-
-export const TELOP_POSITION_REGISTRY: TelopPositionDefinition[] = [
-  { id: 'bottom-left', name: '下部左寄り (左始まり・ステアステップ)', description: '左下から階段状にリズミカルに並ぶ現代MV風レイアウト', icon: 'align_horizontal_left' },
-  { id: 'bottom-right', name: '下部右寄り (右付け・ステアステップ)', description: '右下から内側へ階段状に引き締める端正な右寄せレイアウト', icon: 'align_horizontal_right' },
-  { id: 'top-cinema', name: '上部シネマ (空・天井天吊り)', description: '下部・中央のメイン被写体を避け、上空の余白に上品に浮遊', icon: 'vertical_align_top' },
-  { id: 'vertical-right', name: '右サイド縦書き (和モダン・エモ)', description: '画面右端に縦書きで流すヨルシカ・Eve風の洗練デザイン', icon: 'format_textdirection_r_to_l' },
-  { id: 'vertical-left', name: '左サイド縦書き (雑誌・アンニュイ)', description: '画面左端に縦書きで流す叙情的なタイポグラフィ', icon: 'format_textdirection_l_to_r' },
-  { id: 'bottom-center', name: '下部中央 (安定・映画字幕)', description: '最も視認性が高くどんなシーンにも馴染む王道字幕配置', icon: 'align_horizontal_center' }
-];
-
-export function resolveTelopStyle(styleId?: string): TelopStyleDefinition {
-  return TELOP_STYLE_REGISTRY.find(s => s.id === styleId) || TELOP_STYLE_REGISTRY[0];
-}
-
-export function resolveTelopTransition(transId?: string): TelopTransitionDefinition {
-  return TELOP_TRANSITION_REGISTRY.find(t => t.id === transId) || TELOP_TRANSITION_REGISTRY[0];
-}
-
-export function resolveTelopPosition(posId?: string): TelopPositionDefinition {
-  return TELOP_POSITION_REGISTRY.find(p => p.id === posId) || TELOP_POSITION_REGISTRY[0];
-}
 
 /**
  * カット番号と世界観に基づいてディレクターの推奨テロップ演出を解決

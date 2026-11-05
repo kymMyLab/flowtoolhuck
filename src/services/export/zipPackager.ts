@@ -1,8 +1,7 @@
 import { extractImageBase64 } from '../utils';
 import { SAFE_CHARACTERS } from '../../config/safeCharacters';
 import JSZip from 'jszip';
-import { Episode, SeriesManifest } from '../../types';
-import { LogEntry } from '../../components/StudioLogs';
+import { Episode, SeriesManifest, LogEntry } from '../../types';
 import { extractHighlights } from '../directorService';
 import { generateSRT } from './srtGenerator';
 import { renderCoverCanvas, renderCoverCanvasHorizontal } from './coverRenderer';

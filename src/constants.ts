@@ -1,17 +1,3 @@
-export const COUNTRIES = ['日本'];
-
-export const ERAS = [
-  '江戸時代（泰平の世・長屋・町人文化・職人）',
-  '⚔️ 幕末動乱・黒船来航（新選組・浪人・開国・激動の志士）',
-  '明治時代（文明開化・ハイカラ・激動）',
-  '大正ロマン（モダンガール・文豪・カフェ）',
-  '🗼 戦後復興・三丁目の夕日（闇市・白黒テレビ・下町人情）',
-  '昭和レトロ（高度成長・純喫茶・団地）',
-  '💰 バブル狂乱（ワンレン・札束タクシー・ディスコ・80s後半）',
-  '平成ノスタルジー（ガラケー・90s〜00s・就職氷河期）',
-  '📱 現代・令和（SNS病・港区・マッチングアプリ・タワマン）'
-];
-
 export interface ThemeCategory {
   category: string;
   items: string[];
@@ -302,118 +288,41 @@ export const TASTES: Record<string, string> = {
 
 import {
   IMAGE_MODELS_REGISTRY,
-  VIDEO_MODELS_REGISTRY,
   CAMERA_WORK_REGISTRY,
   MV_THEMES,
   TRIVIA_THEMES,
   QUOTES_THEMES,
   FOLKLORE_THEMES,
   CRAFT_THEMES,
-  TELOP_STYLE_REGISTRY,
-  TELOP_TRANSITION_REGISTRY,
-  TELOP_POSITION_REGISTRY,
   PRODUCTION_MODES_CONFIG,
   PRODUCTION_MODES_LIST,
   getProductionModeConfig,
   resolveImageModel,
-  resolveVideoModel,
   resolveCameraWork,
-  resolveTelopStyle,
-  resolveTelopTransition,
-  resolveTelopPosition,
   resolveRecommendedTelopStaging,
   resolveRecommendedCameraWorkAndKenBurns
 } from './config/studioDefinitions';
 
 export {
   IMAGE_MODELS_REGISTRY,
-  VIDEO_MODELS_REGISTRY,
   CAMERA_WORK_REGISTRY,
   MV_THEMES,
   TRIVIA_THEMES,
   QUOTES_THEMES,
   FOLKLORE_THEMES,
   CRAFT_THEMES,
-  TELOP_STYLE_REGISTRY,
-  TELOP_TRANSITION_REGISTRY,
-  TELOP_POSITION_REGISTRY,
   PRODUCTION_MODES_CONFIG,
   PRODUCTION_MODES_LIST,
   getProductionModeConfig,
   resolveImageModel,
-  resolveVideoModel,
   resolveCameraWork,
-  resolveTelopStyle,
-  resolveTelopTransition,
-  resolveTelopPosition,
   resolveRecommendedTelopStaging,
   resolveRecommendedCameraWorkAndKenBurns
 };
 
 export const PRODUCTION_MODES = PRODUCTION_MODES_LIST;
-
 export const IMAGE_MODELS = IMAGE_MODELS_REGISTRY;
-export const VIDEO_MODELS = VIDEO_MODELS_REGISTRY;
-
-export const VIDEO_RATIO_OPTIONS = [
-  { label: 'なし(0%)', value: 'none' },
-  { label: '2話目のみ', value: 'cut2' },
-  { label: 'キメ(30%)', value: '30%' },
-  { label: '半分(50%)', value: '50%' },
-  { label: '全部(100%)', value: '100%' }
-];
-
-export const KEN_BURNS_PRESETS = [
-  { label: 'なし (None)', value: 'none' },
-  { label: 'ゆっくり寄る (Zoom In)', value: 'zoom-in' },
-  { label: 'ゆっくり引く (Zoom Out)', value: 'zoom-out' },
-  { label: '左へ流す (Pan Left)', value: 'pan-left' },
-  { label: '右へ流す (Pan Right)', value: 'pan-right' },
-  { label: '見上げる (Tilt Up)', value: 'tilt-up' },
-  { label: '見下ろす (Tilt Down)', value: 'tilt-down' }
-];
-
-export const CAMERA_WORK_OPTIONS = CAMERA_WORK_REGISTRY.map(c => ({
-  label: c.label,
-  value: c.motionPrompt
-}));
-
 export const sanitizeFilename = (name: string) => (name || '').replace(/[\\/:*?"<>|]/g, '').trim();
-
-// ── 極彩色ネオンパレット（スタジオ統一定義） ──
-export interface NeonTheme {
-  color: string;
-  glow: string;
-  border: string;
-  shadow: string;
-}
-
-export const STUDIO_NEON_PALETTE: NeonTheme[] = [
-  { color: '#FFE600', glow: '0 0 16px rgba(255, 230, 0, 0.95), 0 0 28px rgba(255, 200, 0, 0.5), 0 2px 5px rgba(0,0,0,0.95)', border: 'border-amber-400/50', shadow: 'shadow-amber-500/25' },
-  { color: '#00F0FF', glow: '0 0 16px rgba(0, 240, 255, 0.95), 0 0 28px rgba(0, 200, 255, 0.5), 0 2px 5px rgba(0,0,0,0.95)', border: 'border-cyan-400/50', shadow: 'shadow-cyan-500/25' },
-  { color: '#FF2A85', glow: '0 0 16px rgba(255, 42, 133, 0.95), 0 0 28px rgba(255, 0, 100, 0.5), 0 2px 5px rgba(0,0,0,0.95)', border: 'border-pink-500/50', shadow: 'shadow-pink-500/25' },
-  { color: '#39FF14', glow: '0 0 16px rgba(57, 255, 20, 0.95), 0 0 28px rgba(40, 220, 0, 0.5), 0 2px 5px rgba(0,0,0,0.95)', border: 'border-emerald-400/50', shadow: 'shadow-emerald-500/25' },
-  { color: '#FF7A00', glow: '0 0 16px rgba(255, 122, 0, 0.95), 0 0 28px rgba(255, 80, 0, 0.5), 0 2px 5px rgba(0,0,0,0.95)', border: 'border-orange-400/50', shadow: 'shadow-orange-500/25' },
-  { color: '#BD00FF', glow: '0 0 16px rgba(189, 0, 255, 0.95), 0 0 28px rgba(160, 0, 240, 0.5), 0 2px 5px rgba(0,0,0,0.95)', border: 'border-purple-400/50', shadow: 'shadow-purple-500/25' }
-];
-
-export function resolveNeonTheme(word: string, highlightIdx: number, cutId: number, customColor?: string): NeonTheme {
-  if (customColor && customColor !== '#FFE600') {
-    return {
-      color: customColor,
-      glow: `0 0 16px ${customColor}, 0 0 28px ${customColor}80, 0 2px 5px rgba(0,0,0,0.95)`,
-      border: 'border-white/40',
-      shadow: 'shadow-white/20'
-    };
-  }
-  let hash = 0;
-  const cleanWord = (word || '').trim();
-  for (let i = 0; i < cleanWord.length; i++) {
-    hash = (hash << 5) - hash + cleanWord.charCodeAt(i);
-  }
-  const idx = Math.abs(hash + highlightIdx * 3 + cutId * 5) % STUDIO_NEON_PALETTE.length;
-  return STUDIO_NEON_PALETTE[idx];
-}
 
 // システム動作に必要なテクニカル定数
 export const STRICT_STYLE_SUFFIX = ' seamless full-bleed vertical 9:16 artwork. Strictly upright vertical perspective. Grounded immersive cinematic human eye-level framing. Absolutely NO drone shots, NO modern aerial drones, NO borders, NO margins, NO text, NO subtitles, NO caption banner, NO speech bubbles, NO kanji, NO numbers, NO year labels, NO signs indicating the year or date, clean edge-to-edge artwork.';

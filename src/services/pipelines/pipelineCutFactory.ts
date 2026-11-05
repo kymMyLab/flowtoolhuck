@@ -4,7 +4,7 @@ import {
   resolveRecommendedTelopStaging 
 } from '../../constants';
 import { getStoryboardPreset } from '../promptEngine';
-import { createDefaultCut, isCutSelectedForVideo } from '../utils';
+import { createDefaultCut } from '../utils';
 import { extractHighlights } from '../directorService';
 
 /**
@@ -21,7 +21,7 @@ export function createPipelineCut(
 ): Cut {
   const narration = cutData.narrationJp || '';
   const plot = cutData.basicPlot || '';
-  const cut = createDefaultCut(cutIndex + 1, narration, plot, isCutSelectedForVideo(cutIndex, settings.videoRatio));
+  const cut = createDefaultCut(cutIndex + 1, narration, plot, false);
 
   // 多彩なマンガコマ割りローテーション（均等スライス完全排除）
   const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];

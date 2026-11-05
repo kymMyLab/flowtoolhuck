@@ -1,21 +1,8 @@
 import { ReferenceAsset } from '../types';
 
-export interface StoryRecord {
-  id?: number;
-  titleJp: string;
-  titleEn: string;
-  country: string;
-  era: string;
-  theme: string;
-  protagonistSummary: string;
-  createdAt: string;
-  metadata?: string;
-}
-
 const DB_NAME = 'EpicTimelineDB';
-const STORE_NAME = 'storyArchive';
 const ASSET_STORE = 'referenceAssets';
-const DB_VERSION = 2; // バージョンアップ
+const DB_VERSION = 2;
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -34,14 +21,6 @@ export const initDB = (): Promise<IDBDatabase> => {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        // Story Archive
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          const store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-          store.createIndex('era', 'era', { unique: false });
-          store.createIndex('theme', 'theme', { unique: false });
-          store.createIndex('createdAt', 'createdAt', { unique: false });
-        }
-        // Reference Assets (New in V2)
         if (!db.objectStoreNames.contains(ASSET_STORE)) {
           db.createObjectStore(ASSET_STORE, { keyPath: 'id', autoIncrement: true });
         }
@@ -52,44 +31,6 @@ export const initDB = (): Promise<IDBDatabase> => {
   });
 };
 
-export const saveStory = async (story: StoryRecord): Promise<number | null> => {
-  if (!story.titleJp || story.titleJp.trim() === '' || story.titleJp === 'undefined') {
-    return null;
-  }
-
-  // ブラウザのIndexedDBクォータ制限超過を防ぐため、誤って巨大なBase64等が混入した場合は除去する
-  const safeStory = { ...story };
-  if (safeStory.metadata && typeof safeStory.metadata === 'string' && safeStory.metadata.length > 1024 * 1024) {
-    safeStory.metadata = JSON.stringify({ warning: 'metadata stripped due to size limit' });
-  }
-
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.add(safeStory);
-    request.onsuccess = () => resolve(request.result as number);
-    request.onerror = () => reject(request.error);
-  });
-};
-
-export const getAllStories = async (): Promise<StoryRecord[]> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.getAll();
-    request.onsuccess = () => {
-      const result = (request.result as StoryRecord[]).sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      resolve(result);
-    };
-    request.onerror = () => reject(request.error);
-  });
-};
-
-// Reference Asset Methods
 export const saveReferenceAsset = async (asset: ReferenceAsset): Promise<number> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
