@@ -128,8 +128,6 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
 
           {isVolumeOpen && (
             <div className="p-3 flex flex-col gap-3 border-t border-slate-200 animate-in fade-in duration-200">
-              <FieldDropdown label="画像モデル" value={settings.imageModel} options={IMAGE_MODELS.map(m => m.label)} onChange={v => setSettings(s => ({ ...s, imageModel: v }))} disabled={isProducing} />
-              
               <div className="flex flex-col gap-1 w-full">
                 <div className="flex items-center justify-between px-0.5">
                   <p className="text-xs font-bold text-slate-600 truncate">生成話数</p>
@@ -216,9 +214,18 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 </div>
               </div>
 
-              {/* 内部固定ステータス表示（並列2 / 指数バックオフ詳細） */}
+              {/* 内部固定ステータス表示（画像モデル / 並列2 / 指数バックオフ詳細） */}
               <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 select-none">
                 <div className="flex items-center justify-between text-[11px] font-bold">
+                  <span className="flex items-center gap-1 text-slate-700">
+                    <span className="material-symbols-outlined text-[14px] text-amber-500">palette</span>
+                    画像モデル
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-black text-[10px]">
+                    🍌 2.1 (429時: Pro/Lite自動切替)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] font-bold pt-1 border-t border-slate-200/60">
                   <span className="flex items-center gap-1 text-slate-700">
                     <span className="material-symbols-outlined text-[14px] text-indigo-500">speed</span>
                     並列処理
