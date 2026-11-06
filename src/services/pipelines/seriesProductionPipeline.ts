@@ -238,7 +238,6 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         isMvMode: isMv,
         taste: settings.taste,
         productionMode: effectiveMode,
-        isMultiPanel: settings.isMultiPanel,
         existingTitles,
         characterId: settings.characterId,
         targetCutCount: settings.previewCutCount,

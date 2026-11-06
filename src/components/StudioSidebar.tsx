@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FieldDropdown, NumberChoice } from './Primitives';
-import { GeneratorSettings, ReferenceAsset, Episode, LogEntry } from '../types';
+import { GeneratorSettings, Episode, LogEntry } from '../types';
 import { IMAGE_MODELS } from '../constants';
 import { SAFE_CHARACTERS } from '../config/safeCharacters';
-import { ReferenceVault } from './ReferenceVault';
-import { getAllReferenceAssets } from '../services/db';
 
 interface StudioSidebarProps {
   settings: GeneratorSettings;
@@ -15,19 +13,8 @@ interface StudioSidebarProps {
 }
 
 export const StudioSidebar: React.FC<StudioSidebarProps> = ({
-  settings, setSettings, isProducing, onAddLog
+  settings, setSettings, isProducing
 }) => {
-  const [referenceAssets, setReferenceAssets] = useState<ReferenceAsset[]>([]);
-
-  const refreshAssets = async () => {
-    const assets = await getAllReferenceAssets();
-    setReferenceAssets(assets);
-  };
-
-  useEffect(() => {
-    refreshAssets();
-  }, []);
-
   const [isWorldOpen, setIsWorldOpen] = useState(true);
   const [isVolumeOpen, setIsVolumeOpen] = useState(true);
 
@@ -64,7 +51,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 max-w-[160px] truncate">
-                {selectedChar ? `${selectedChar.icon} ${selectedChar.nameJa}` : (settings.selectedAssetId ? 'リファレンス適用中' : 'テーマ自動')}
+                {selectedChar ? `${selectedChar.icon} ${selectedChar.nameJa}` : 'テーマ自動'}
               </span>
               <span className={`material-symbols-outlined text-[20px] text-slate-400 transition-transform duration-200 ${isWorldOpen ? 'rotate-180 text-purple-600' : ''}`}>
                 expand_more
@@ -113,36 +100,6 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                     <span className="text-[11px] truncate">テーマ自動</span>
                   </button>
                 </div>
-              </div>
-
-              <ReferenceVault 
-                assets={referenceAssets} 
-                selectedId={settings.selectedAssetId} 
-                onSelect={(id) => setSettings(s => ({ ...s, selectedAssetId: id }))}
-                onRefresh={refreshAssets}
-                onAddLog={onAddLog}
-                disabled={isProducing}
-              />
-
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-purple-50/80 border border-purple-200 text-purple-900 transition-all select-none hover:bg-purple-100">
-                <label className="flex items-center gap-2.5 cursor-pointer flex-1">
-                  <input
-                    type="checkbox"
-                    checked={!!settings.isMultiPanel}
-                    onChange={e => setSettings(s => ({ ...s, isMultiPanel: e.target.checked }))}
-                    disabled={isProducing}
-                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 bg-white cursor-pointer accent-purple-600"
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[16px] text-purple-600">auto_stories</span>
-                      マンガ風コマ割り (Multi-Panel)
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-medium">
-                      AIが1コマ〜変形コマ割りを自由に演出
-                    </span>
-                  </div>
-                </label>
               </div>
             </div>
           )}

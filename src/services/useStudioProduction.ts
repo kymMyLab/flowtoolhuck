@@ -178,7 +178,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         styleKey: styleKey || ep.taste || settings.taste,
         imageModel: settings.imageModel,
         isMvMode: ep.isMvMode,
-        isMultiPanel: settings.isMultiPanel,
         panelLayout: c.panelLayout,
         storyContext: ep.summary || '',
         eraAnalysis: ep.eraAnalysis,
@@ -729,33 +728,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     setIsProducing(true);
     isAbortedRef.current = false;
     addLog(`🎬 【全自動プロデュース開始】モード: ${effectiveSettings.productionMode || '通常'} / 全${effectiveSettings.totalEpisodes || effectiveSettings.episodeCount || 1}話 / テーマ: 「${effectiveSettings.theme || '未設定'}」`, 'process');
-
-    if (effectiveSettings.selectedAssetId && !activeReferenceRef.current) {
-      try {
-        const assets = await getAllReferenceAssets();
-        const asset = assets.find(a => a.id === effectiveSettings.selectedAssetId);
-        if (asset) {
-          currentAssetRef.current = { name: asset.name, base64: asset.base64, mimeType: asset.mimeType };
-          addLog('🔍 キャラクターDNA抽出中...', 'process');
-          const uploadRes = await Flow.upload({ base64: asset.base64, mimeType: asset.mimeType as 'image/png' | 'image/jpeg' | 'image/webp', name: `Ref: ${asset.name}` });
-          const screeningPrompt = buildCharacterScreeningPrompt(effectiveSettings.era, effectiveSettings.country, effectiveSettings.isMvMode, effectiveSettings.theme);
-          const screenRes = await callWithRetry<any>(
-            () => Flow.generate.text(screeningPrompt, { images: [{ base64: asset.base64, mimeType: asset.mimeType }] }),
-            (attempt, max, delay) => addLog(`Retrying DNA Analysis (attempt ${attempt}/${max}) after ${delay} ms...`, 'warning'),
-            5
-          );
-          const screening = safeJsonParse<any>(screenRes.text, { characterDna: '', styleDna: '', antiPoseNegative: '', eraNegative: '' });
-          activeReferenceRef.current = {
-            mediaId: uploadRes.mediaId,
-            characterDna: screening.characterDna,
-            styleDna: screening.styleDna,
-            antiPoseNegative: screening.antiPoseNegative,
-            eraNegative: screening.eraNegative
-          };
-          addLog('✨ DNA確立完了。', 'success');
-        }
-      } catch (err) { addLog('⚠️ DNA解析失敗。', 'warning'); }
-    }
 
     const pipelineContext = {
       settings: effectiveSettings,

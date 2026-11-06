@@ -100,17 +100,12 @@ export async function directShot(
     settings.productionMode
   );
 
-  const isMultiPanelActive = !!(settings.isMultiPanel || task.isMultiPanel);
   const effectiveScale = task.shotScale || preset.scale;
   const effectiveAngle = task.cinematicAngle || preset.angle;
 
   let antiPreviousNegative = buildDynamicAntiPreviousNegative(previousShotInfo, effectiveScale);
   if (settings.isMvMode && !isAllowedEyeContact) {
     antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${MV_ANTI_CAMERA_LOOK_NEGATIVE}` : MV_ANTI_CAMERA_LOOK_NEGATIVE;
-  }
-  if (isMultiPanelActive) {
-    const multiPanelNeg = 'white outer border, page margins, white paper border, blank border, picture frame, overlapping characters, stacked people, people sitting on top of each other, merged humans, duplicate characters overlapping';
-    antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${multiPanelNeg}` : multiPanelNeg;
   }
 
   const hasCameraDirective = prompt.includes('[CAMERA DIRECTIVE:') || prompt.includes('[STRICT') || prompt.includes('[IRONCLAD');
@@ -149,7 +144,6 @@ export interface GenerateSafeScriptOptions {
   isMvMode?: boolean;
   taste?: string;
   productionMode?: string;
-  isMultiPanel?: boolean;
   existingTitles?: string[];
   characterId?: string;
   targetCutCount?: number;
@@ -187,7 +181,7 @@ export interface SafeScriptResult {
 export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions): Promise<SafeScriptResult> {
   const {
     epId, currentPlan, country, theme, era, isMangaMode, isMvMode,
-    taste, productionMode, isMultiPanel, existingTitles, characterId, targetCutCount, abortCheck, addLog
+    taste, productionMode, existingTitles, characterId, targetCutCount, abortCheck, addLog
   } = opts;
   const fixedChar = (characterId && characterId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === characterId) : undefined;
   const fallbackDna = fixedChar
@@ -198,7 +192,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
 
   // 初手から無駄な長文指示を削ぎ落とした軽量骨組みプロンプトを使用（1〜2秒で即座に通す）
   const scriptPrompt = buildCompactScriptPrompt(
-    epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, isMultiPanel, existingTitles, characterId, targetCutCount
+    epId, currentPlan as any, country, theme, era, isMangaMode, isMvMode, taste, productionMode, existingTitles, characterId, targetCutCount
   );
 
   let scriptRes: any;
@@ -262,10 +256,9 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
           ? `Close-up shot of an iconic atmospheric object matching ${theme}, completely deserted with no people, moody lighting`
           : `${fixedChar ? `${fixedChar.dnaPromptEn} in a ` : ''}cinematic high quality visual scene, ${theme}, scene ${j + 1} of ${currentPlan.titleEn}, atmospheric lighting`;
 
-        const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
         return {
           id: j + 1,
-          panelLayout: isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single',
+          panelLayout: 'single',
           isObjectOnly: isObj,
           focalPoint: {
             grid: defaultGrid as any,
@@ -314,14 +307,9 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     const subject = rawFocal.focalSubject || (isObj ? 'symbolic_object' : 'character_face');
     const basicPlot = cutData.basicPlot || cutData.promptEn || cutData.prompt || `${fixedChar && !isObj ? `${fixedChar.dnaPromptEn}, ` : ''}Scene ${j + 1} of ${currentPlan.titleEn}`;
 
-    const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
-    const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
-      ? cutData.panelLayout
-      : (isMultiPanel ? dynamicLayoutCycle[j % dynamicLayoutCycle.length] : 'single');
-
     return {
       id: j + 1,
-      panelLayout: chosenLayout,
+      panelLayout: 'single',
       basicPlot,
       narrationJp: sanitizeForYouTubeSafety(rawNarration),
       highlights: cutData.highlights || parsed.highlightWords || [],

@@ -71,7 +71,6 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       isMvMode: curMode === 'mv',
       taste: settings.taste,
       productionMode: curMode,
-      isMultiPanel: settings.isMultiPanel,
       existingTitles,
       characterId: settings.characterId,
       targetCutCount: settings.previewCutCount,

@@ -223,8 +223,6 @@ export interface GeneratorSettings {
   autoVideo: boolean;
   autoDownload: boolean;
   superBackoff?: boolean;
-  selectedAssetId?: number;
-  isMultiPanel?: boolean;
   aspectRatio?: '9:16' | '1:1' | '16:9';
   characterId?: string;
 
@@ -244,8 +242,6 @@ export interface GenerationTask {
   styleKey: string;
   imageModel: string;
   isMvMode?: boolean;
-  isMultiPanel?: boolean;
-  panelLayout?: string;
   eraAnalysis?: string;
   forbiddenAnachronisms?: string[];
   authenticAttireEn?: string;

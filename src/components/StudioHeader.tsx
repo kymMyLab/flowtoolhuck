@@ -99,10 +99,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           {/* 画風選択 */}
           <FieldDropdown 
             label="" 
-            value={settings.selectedAssetId ? '🎨 参照画像同期中' : settings.taste} 
+            value={settings.taste} 
             options={tasteOptions} 
             onChange={v => setSettings(s => ({ ...s, taste: v }))} 
-            disabled={isProducing || !!settings.selectedAssetId} 
+            disabled={isProducing} 
             className="w-[195px]"
           />
         </div>

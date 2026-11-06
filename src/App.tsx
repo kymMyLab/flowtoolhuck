@@ -14,7 +14,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
-    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: '', videoRatio: 'none', episodeCount: 1, previewCutCount: 2, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, isMultiPanel: false, aspectRatio: '1:1', characterId: 'zundamon',
+    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: '', videoRatio: 'none', episodeCount: 1, previewCutCount: 2, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, aspectRatio: '1:1', characterId: 'zundamon',
     enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: false
   });
 
@@ -236,8 +236,6 @@ export default function App() {
                     styleKey: epTaste, 
                     imageModel: settings.imageModel, 
                     isMvMode: epFound?.isMvMode,
-                    isMultiPanel: settings.isMultiPanel,
-                    panelLayout: cutFound.panelLayout,
                     eraAnalysis: epFound?.eraAnalysis, 
                     forbiddenAnachronisms: epFound?.forbiddenAnachronisms,
                     authenticAttireEn: epFound?.authenticAttireEn,
@@ -285,8 +283,6 @@ export default function App() {
                 styleKey: epTaste, 
                 imageModel: model, 
                 isMvMode: ep?.isMvMode,
-                isMultiPanel: settings.isMultiPanel,
-                panelLayout: activeCut.panelLayout,
                 eraAnalysis: ep?.eraAnalysis, 
                 forbiddenAnachronisms: ep?.forbiddenAnachronisms,
                 authenticAttireEn: ep?.authenticAttireEn,

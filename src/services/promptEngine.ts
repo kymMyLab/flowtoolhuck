@@ -450,59 +450,12 @@ export function buildFinalCinematicPromptAndNegative(
         .join(', ')
     : '';
 
-  // ── マンガ風コマ割り（マルチパネル）動的注入＆競合解消 ──
-  const isMultiPanelActive = !!(settings.isMultiPanel || task.isMultiPanel);
-  const rawPanelLayout = task.panelLayout || 'dynamic-multi';
-
-  // 多彩なマンガコマ割りバリエーション定義（均等な板状分割を完全排除し、プロ漫画のダイナミズムを再現）
-  const MANGA_LAYOUT_PROMPTS: Record<string, string> = {
-    // 1. 斜めスラッシュ分割 (アクション・緊迫・急展開)
-    'diagonal-slash': 'multi-panel modern manga composition with a dramatic diagonal slash gutter dividing the canvas into two sharp, asymmetrical angled kinetic panels, contrasting angles and perspectives, non-uniform dynamic wedge-shaped panels, seamless full-bleed artwork, absolutely NO white outer border, NO margins',
-    // 2. L字型変形3コマ (大ゴマ主役＋横積み2コマ)
-    'l-shaped': 'dynamic Japanese manga 3-panel asymmetric layout: one dominant large vertical hero panel spanning two-thirds of the canvas, paired with two smaller stacked horizontal sub-panels on the opposing side, professional manga storytelling hierarchy, varying panel aspect ratios, seamless full-bleed artwork, absolutely NO white outer border, NO margins',
-    // 3. 上部パノラマ＋下部2分割 (情景提示＋反応)
-    'panoramic-split': 'modern manga multi-panel layout: a wide dramatic panoramic establishing panel spanning the upper half, with two distinct vertical portrait reaction panels placed side-by-side in the lower half, varied panel shapes, non-uniform composition, seamless full-bleed artwork, absolutely NO white outer border, NO margins',
-    // 4. 大ゴマ＋インセットワイプ (心理描写・視線・小物クローズアップ)
-    'inset-reaction': 'cinematic full-bleed manga splash panel featuring a smaller floating inset reaction box frame in the lower corner showing intense detail or facial expression, professional manga visual hierarchy, seamless full-bleed artwork, absolutely NO white outer border, NO margins',
-    // 5. 左右縦割り2分割 (対比・会話・視線)
-    'vertical-split': 'multi-panel manga composition with an asymmetrical vertical division splitting the canvas into two tall side-by-side portrait panels with contrasting perspectives and depths of field, seamless full-bleed artwork, absolutely NO white outer border, NO margins',
-    // 6. アシンメトリー2分割 (上下不均等・メリハリ)
-    'split-2': 'asymmetrical 2-panel dynamic manga layout with non-uniform heights and dramatic perspective contrast (one large panel dominating two-thirds and one narrow panel), clearly separated panels, seamless full-bleed artwork, absolutely NO white outer border, NO margins',
-    // 7. 変形3コマ (不均等なリズム・決して均等スライスではない)
-    'split-3': 'dynamic 3-panel Japanese manga composition with varied panel sizes, one wide hero panel and two unequal complementary panels, rhythmic narrative layout, varying heights and widths, seamless full-bleed artwork, absolutely NO white outer border, NO margins',
-    // 8. 1コマ大ゴマ (決定打・クライマックス)
-    'single': 'single full-bleed epic splash comic panel, high-impact single composition, seamless edge-to-edge artwork, absolutely NO white outer border, NO margins'
-  };
-
-  let effectiveLayout = rawPanelLayout;
-  if (isMultiPanelActive && (!rawPanelLayout || rawPanelLayout === 'dynamic-multi')) {
-    // カットIDやシーンに応じた多彩なローテーション＆ランダムバリエーション
-    const layoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2'];
-    const cycleIndex = ((task.cutId || 1) - 1) % layoutCycle.length;
-    effectiveLayout = layoutCycle[cycleIndex];
-  }
-
-  let multiPanelPrompt = '';
-  if (isMultiPanelActive) {
-    multiPanelPrompt = MANGA_LAYOUT_PROMPTS[effectiveLayout] || MANGA_LAYOUT_PROMPTS['l-shaped'];
-  }
-
-  // 競合解消: マルチパネル時は既存プロンプトや画風定義から "no panels" や "single splash cut" を自動除去
-  let effectiveMasterPrefix = masterStylePrefix;
-  let effectiveMasterPrompt = masterStylePrompt;
-  let effectivePrompt = prompt;
-  if (isMultiPanelActive && effectiveLayout !== 'single') {
-    effectiveMasterPrefix = effectiveMasterPrefix.replace(/no panels,?\s*/gi, '').replace(/single splash cut,?\s*/gi, '');
-    effectiveMasterPrompt = effectiveMasterPrompt.replace(/no panels,?\s*/gi, '').replace(/single splash cut,?\s*/gi, '');
-    effectivePrompt = effectivePrompt.replace(/no panels,?\s*/gi, '').replace(/single splash cut,?\s*/gi, '');
-  }
-
   // 白黒スタイル（「🖋️ 白黒劇画」等）が明示的に選ばれている場合以外は、白黒・モノクロ・スクリーントーン化をネガティブで徹底排除
   const isExplicitMonochrome = (styleKey + ' ' + rawStyle).toLowerCase().includes('monochrome') || 
                                (styleKey + ' ' + rawStyle).toLowerCase().includes('白黒') || 
                                (styleKey + ' ' + rawStyle).toLowerCase().includes('black and white');
   const antiMonochromeNegative = !isExplicitMonochrome && !settings.isMangaMode
-    ? (isMultiPanelActive ? 'monochrome, grayscale, black and white, desaturated, colorless' : 'monochrome, grayscale, black and white, desaturated, colorless, screentone, manga panels')
+    ? 'monochrome, grayscale, black and white, desaturated, colorless, screentone, manga panels'
     : '';
 
   // MVモード専用アンチネガティブ（叫び、劇的な怒り、過剰アクション、および非サビ時のカメラ目線の徹底排除）
@@ -510,11 +463,6 @@ export function buildFinalCinematicPromptAndNegative(
 
   const mvAntiDramaticNegative = isMv 
     ? `violent action, aggressive shouting, screaming mouth wide open, intense crying, dynamic combat, weapons, explosion, exaggerated action pose, heroic flexing${mvAntiCameraLook}`
-    : '';
-
-  // 単調な均等横スライス（3段・2段の均等ボーダー）を徹底排除
-  const multiPanelNegative = isMultiPanelActive
-    ? 'white outer border, page margins, white paper border, blank border, picture frame, matting, outer canvas border, wide margins, cardboard border, overlapping characters, stacked people, people sitting on top of each other, merged humans, intersecting figures, duplicate characters overlapping, cluttered characters, confusing anatomy overlapping across panels, figures blending into each other, equal horizontal stripes, uniform 3 horizontal slices, monotonous horizontal rows, plain strip comic with equal heights, 3 identical rectangular bars, boring venetian blind panels, ruler-straight repetitive horizontal stripes, lazy equal thirds division'
     : '';
 
   // ── 画風特化型ネガティブガード（ハッチングチーク、くすみパステル、フラットセルの品質保証） ──
@@ -547,12 +495,11 @@ export function buildFinalCinematicPromptAndNegative(
     illustrationNegative,
     styleSpecificNegative,
     BASELINE_NEGATIVE_TOKENS.antiFrameAndBorder,
-    multiPanelNegative,
     negativePrompt || '', // 直前構図ネガティブ（最重要）
     BASELINE_NEGATIVE_TOKENS.renderingQuality
   ];
 
-  const panelDirective = multiPanelPrompt ? `[PANEL COMPOSITION: ${multiPanelPrompt}]. ` : '';
+  const panelDirective = '';
 
   // ── キャラクター一貫性（Character Consistency DNA）＆ 物体カット分離 ──
   const rawScale = (task.shotScale || '').toLowerCase();
@@ -560,7 +507,7 @@ export function buildFinalCinematicPromptAndNegative(
   const isObjectCut = !!task.isObjectOnly || rawScale.includes('object') || rawScale.includes('still-life') || rawAngle.includes('still-life') || rawScale.includes('prop');
   const effectiveDna = !isObjectCut ? (task.characterDna || activeReference?.characterDna) : '';
 
-  let cleanActionPrompt = effectivePrompt || '';
+  let cleanActionPrompt = prompt || '';
   if (cleanActionPrompt.includes('[PROTAGONIST DNA]:')) {
     cleanActionPrompt = cleanActionPrompt.replace(/,?\s*\[PROTAGONIST DNA\]:[^,\]]*/gi, '').trim();
   }
@@ -677,7 +624,7 @@ export function buildFinalCinematicPromptAndNegative(
     if (antiPoseNegative) sanitizedNegativeLayers.push(antiPoseNegative);
     if (eraNegative) sanitizedNegativeLayers.push(eraNegative);
     const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
-    const rawFinalPrompt = `${leadingDirective}${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}].${attirePromptPart} ${effectiveMasterPrompt}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
+    const rawFinalPrompt = `${leadingDirective}${panelDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}].${attirePromptPart} ${masterStylePrompt}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
       finalNegative,
@@ -686,7 +633,7 @@ export function buildFinalCinematicPromptAndNegative(
   }
 
   const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
-  const rawFinalPrompt = `${leadingDirective}${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}.${attirePromptPart} ${effectiveMasterPrompt}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
+  const rawFinalPrompt = `${leadingDirective}${panelDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}.${attirePromptPart} ${masterStylePrompt}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
 
   return {
     finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),

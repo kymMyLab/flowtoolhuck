@@ -222,7 +222,6 @@ export function buildCompactScriptPrompt(
   isMvMode?: boolean,
   taste?: string,
   productionMode?: string,
-  isMultiPanel?: boolean,
   existingTitles?: string[],
   characterId?: string,
   targetCutCount?: number
@@ -254,7 +253,6 @@ RULES:
 ${titleRule}
 2. Protagonist: Define "characterDna" in English. All character cuts MUST feature this exact protagonist in "basicPlot".${charDirective}
 3. Object Cut: Cut 6 should be an iconic object without humans ("isObjectOnly": true).
-${isMultiPanel ? '4. Dynamic Manga Panel Layouts: Assign diverse comic panel shapes from: "diagonal-slash", "l-shaped", "panoramic-split", "inset-reaction", "vertical-split", "split-2", or "single".' : ''}
 
 Output ONLY valid JSON:
 {
@@ -266,7 +264,6 @@ Output ONLY valid JSON:
   "cuts": [
     { 
       "id": 1, 
-      ${isMultiPanel ? '"panelLayout": "diagonal-slash", ' : ''}
       "isObjectOnly": false,
       "basicPlot": "Front-three-quarters view of ${fixedChar ? fixedChar.dnaPromptEn : 'protagonist'} in atmospheric scene matching ${plannedTitleEn}", 
       "narrationJp": "${isMvMode ? '曲の歌詞20文字前後' : '日本語ナレーション20文字'}"

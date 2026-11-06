@@ -22,13 +22,7 @@ export function createPipelineCut(
   const narration = cutData.narrationJp || '';
   const plot = cutData.basicPlot || '';
   const cut = createDefaultCut(cutIndex + 1, narration, plot, false);
-
-  // 多彩なマンガコマ割りローテーション（均等スライス完全排除）
-  const dynamicLayoutCycle = ['diagonal-slash', 'l-shaped', 'panoramic-split', 'inset-reaction', 'vertical-split', 'split-2', 'single'];
-  const chosenLayout = (cutData.panelLayout && cutData.panelLayout !== 'split-3' && cutData.panelLayout !== 'dynamic-multi')
-    ? cutData.panelLayout
-    : (settings.isMultiPanel ? dynamicLayoutCycle[cutIndex % dynamicLayoutCycle.length] : 'single');
-  cut.panelLayout = chosenLayout;
+  cut.panelLayout = 'single';
 
   const preset = getStoryboardPreset(cutIndex + 1, isMv, isManga);
   cut.shotScale = preset.scale;
