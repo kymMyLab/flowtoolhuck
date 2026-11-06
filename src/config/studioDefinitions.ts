@@ -50,7 +50,7 @@ export function resolveImageModel(keyOrLabel?: string): ImageModelDefinition {
   return IMAGE_MODELS_REGISTRY.find(m => m.id === keyOrLabel || m.label === keyOrLabel || m.name === keyOrLabel) || defaultModel;
 }
 
-// ── 2. カメラワーク・カメラモーション定義 ──────────────────────────────
+// ── 2. カメラワーク・演出（Webtoon静止画向け固定デフォルト） ──────────
 export interface CameraWorkDefinition {
   id: string;
   label: string;
@@ -58,136 +58,26 @@ export interface CameraWorkDefinition {
   recommendedKenBurns: KenBurnsPreset;
 }
 
-export const CAMERA_WORK_REGISTRY: CameraWorkDefinition[] = [
-  { 
-    id: 'static', 
-    label: '固定（フィックス）', 
-    motionPrompt: 'Static camera, perfectly still cinematic frame, stable perspective',
-    recommendedKenBurns: 'none'
-  },
-  { 
-    id: 'zoom-in', 
-    label: 'ゆっくりズームイン', 
-    motionPrompt: 'Slow cinematic zoom in towards the subject, dramatic emotional tension',
-    recommendedKenBurns: 'zoom-in'
-  },
-  { 
-    id: 'zoom-out', 
-    label: 'ゆっくりズームアウト', 
-    motionPrompt: 'Slow cinematic zoom out revealing the expansive atmosphere and surrounding environment',
-    recommendedKenBurns: 'zoom-out'
-  },
-  { 
-    id: 'pan-left', 
-    label: 'パン（左へ流す）', 
-    motionPrompt: 'Smooth horizontal camera pan movement from right to left',
-    recommendedKenBurns: 'pan-left'
-  },
-  { 
-    id: 'pan-right', 
-    label: 'パン（右へ流す）', 
-    motionPrompt: 'Smooth horizontal camera pan movement from left to right',
-    recommendedKenBurns: 'pan-right'
-  },
-  { 
-    id: 'tilt-up', 
-    label: 'ティルト（見上げる）', 
-    motionPrompt: 'Slow cinematic vertical camera tilt moving upwards towards the sky',
-    recommendedKenBurns: 'tilt-up'
-  },
-  { 
-    id: 'tilt-down', 
-    label: 'ティルト（見下ろす）', 
-    motionPrompt: 'Slow cinematic vertical camera tilt moving downwards from overhead',
-    recommendedKenBurns: 'tilt-down'
-  },
-  { 
-    id: 'handheld', 
-    label: '手持ち風（微細な揺れ）', 
-    motionPrompt: 'Realistic handheld camera style, subtle organic breathing camera shake, cinema verite realism',
-    recommendedKenBurns: 'zoom-in'
-  },
-  { 
-    id: 'tracking', 
-    label: '被写体を追従（トラッキング）', 
-    motionPrompt: 'Dynamic camera tracking shot smoothly following the character in motion',
-    recommendedKenBurns: 'pan-left'
-  }
-];
+export const DEFAULT_CAMERA_WORK: CameraWorkDefinition = { 
+  id: 'static', 
+  label: '固定（静止画マスター）', 
+  motionPrompt: 'Static cinematic frame, stable composition, high quality artwork',
+  recommendedKenBurns: 'none'
+};
 
-export function resolveCameraWork(labelOrMotion?: string): CameraWorkDefinition {
-  if (!labelOrMotion) return CAMERA_WORK_REGISTRY[0];
-  return CAMERA_WORK_REGISTRY.find(c => c.label === labelOrMotion || c.motionPrompt === labelOrMotion || c.id === labelOrMotion) || CAMERA_WORK_REGISTRY[0];
+export const CAMERA_WORK_REGISTRY: CameraWorkDefinition[] = [DEFAULT_CAMERA_WORK];
+
+export function resolveCameraWork(_labelOrMotion?: string): CameraWorkDefinition {
+  return DEFAULT_CAMERA_WORK;
 }
 
-/**
- * 制作モード（全7ジャンル）の特性に応じた最適なカメラワーク＆ケンバーン演出を算出
- */
 export function resolveRecommendedCameraWorkAndKenBurns(
-  cutId: number,
-  mode?: string,
-  isMvMode?: boolean,
-  isMangaMode?: boolean
+  _cutId?: number,
+  _mode?: string,
+  _isMvMode?: boolean,
+  _isMangaMode?: boolean
 ): CameraWorkDefinition {
-  // 1. 漫画モード（isMangaMode）または画風比較（style-matrix）：完全固定（ブレ防止）
-  if (isMangaMode || mode === 'style-matrix') {
-    return resolveCameraWork('static');
-  }
-
-  // 2. 📜 偉人の名言・処方箋（quotes）：文字可読性と厳粛な静寂を優先し「固定（フィックス）」
-  if (mode === 'quotes') {
-    return resolveCameraWork('static');
-  }
-
-  // 3. 💡 衝撃雑学Shorts（trivia）：冒頭2秒のフックとインパクト重視（ズームイン主体）
-  if (mode === 'trivia') {
-    const triviaPool = ['zoom-in', 'zoom-in', 'pan-left', 'tilt-up', 'zoom-in'];
-    const cwId = triviaPool[(cutId - 1) % triviaPool.length];
-    return resolveCameraWork(cwId);
-  }
-
-  // 4. 👻 怪異・未解決事件（folklore）：不穏なスロー移動・見上げるチルト
-  if (mode === 'folklore') {
-    const folklorePool = ['zoom-in', 'tilt-up', 'pan-left', 'zoom-in', 'tilt-down', 'pan-right'];
-    const cwId = folklorePool[(cutId - 1) % folklorePool.length];
-    return resolveCameraWork(cwId);
-  }
-
-  // 5. 🏯 超絶技巧・職人魂（craft）：手元へのクローズアップ・作品鑑賞パン・仰ぐチルト
-  if (mode === 'craft') {
-    const craftPool = ['zoom-in', 'pan-right', 'tilt-up', 'zoom-in', 'pan-left', 'zoom-out'];
-    const cwId = craftPool[(cutId - 1) % craftPool.length];
-    return resolveCameraWork(cwId);
-  }
-
-  // 6. 🎵 音楽MVモード（mv）：楽曲パート展開連動（Aメロ＝静寂・導入、Bメロ＝空間変化・加速、サビ＝最高潮・ダイナミック寄り、アウトロ＝余韻）
-  if (isMvMode || mode === 'mv') {
-    const normCut = ((cutId - 1) % 12) + 1;
-    let cwId = 'zoom-in';
-    if (normCut <= 3) {
-      // Verse A（静寂・導入）: 緩やかなパン・チルト・ズーム
-      const vA = ['pan-left', 'tilt-up', 'zoom-in'];
-      cwId = vA[(normCut - 1) % vA.length];
-    } else if (normCut <= 6) {
-      // Verse B（空間変化・加速）: 右パン・チルトダウン・ズームイン
-      const vB = ['pan-right', 'tilt-down', 'zoom-in'];
-      cwId = vB[(normCut - 4) % vB.length];
-    } else if (normCut <= 9) {
-      // Chorus ★（最高潮・サビ）: ダイナミックなズームイン・ズームアウト
-      const vCh = ['zoom-in', 'zoom-out', 'zoom-in'];
-      cwId = vCh[(normCut - 7) % vCh.length];
-    } else {
-      // Outro（余韻・終幕）: 引きのズームアウト・パン・静寂
-      const vOut = ['zoom-out', 'pan-left', 'zoom-out'];
-      cwId = vOut[(normCut - 10) % vOut.length];
-    }
-    return resolveCameraWork(cwId);
-  }
-
-  // 7. 🎬 ドラマ連番モード（episodes / デフォルト）: 映画的感情曲線ローテーション
-  const dramaPool = ['zoom-in', 'pan-left', 'zoom-out', 'tilt-up', 'zoom-in', 'pan-right'];
-  const cwId = dramaPool[(cutId - 1) % dramaPool.length];
-  return resolveCameraWork(cwId);
+  return DEFAULT_CAMERA_WORK;
 }
 
 // ── 5. アクション・姿勢・小道具の対比ルール（Pose & Props Contrast Rule） ─────────────
@@ -745,144 +635,25 @@ export const BASELINE_NEGATIVE_TOKENS = {
   renderingQuality: 'lowres, worst quality, text, subtitles, closed captions, caption bar, caption banner, speech bubbles, dialog box, Japanese characters, kanji subtitles, news ticker, text overlay, title text, watermark, signature, blurry, artifact, jpeg artifacts, poorly rendered'
 };
 
-// ── 8. テロップ演出推奨ディレクター ──────────────────────
+// ── 8. テロップ演出（Webtoon静止画向け固定デフォルト） ──────────
 import { TelopStyle, TelopTransition, TelopPosition } from '../types';
 
-/**
- * カット番号と世界観に基づいてディレクターの推奨テロップ演出を解決
- * 【鉄則ルール】
- * 1. 2回連続で同じ出し方（トランジション）・同じ配置が出ない完全Anti-Repeat制御
- * 2. 画面中央（メイン被写体）を覆い隠さないため、中央配置を排除し「左始まり」「右付け」「上部」「縦書き」に展開
- * 3. ユーザー絶賛の「左寄りの左始まり」と「右寄りの右付け」をテンポよく交互に展開
- */
-/**
- * カット番号、楽曲構造、直前カット情報に基づいて動的に演出を生成する「無限バリエーションAIディレクター」
- * 【数千本の量産に耐える完全ランダム × 音楽構造連動エンジン】
- * 1. 画面中央（メイン被写体）を覆い隠さない安全レイアウト（下部左、下部右、上部、縦書き）
- * 2. 直前カットの「出し方（トランジション）」と「配置構図」を100%除外するAnti-Repeat保証
- * 3. 楽曲パート（Aメロ＝静、Bメロ＝変、サビ＝動★、アウトロ＝余韻）の情緒と盛り上がりを確実に維持
- */
 export function resolveRecommendedTelopStaging(
-  cutId: number, 
-  isMvMode?: boolean, 
-  isHistorical?: boolean,
-  prevStaging?: { transition?: TelopTransition; position?: TelopPosition; style?: TelopStyle },
-  mode?: string
+  _cutId?: number, 
+  _isMvMode?: boolean, 
+  _isHistorical?: boolean,
+  _prevStaging?: any,
+  _mode?: string
 ): {
   style: TelopStyle;
   transition: TelopTransition;
   position: TelopPosition;
   directorNote: string;
 } {
-  const normCut = ((cutId - 1) % 12) + 1;
-  const pickRandom = <T>(pool: T[], avoid?: T): T => {
-    const valid = avoid ? pool.filter(item => item !== avoid) : pool;
-    const list = valid.length > 0 ? valid : pool;
-    return list[Math.floor(Math.random() * list.length)];
-  };
-
-  // 1. 💡 衝撃雑学・ウラ真実（TikTok/Shorts特化の中央インパクト）
-  if (mode === 'trivia') {
-    const style: TelopStyle = 'mv-center-climax';
-    const transPool: TelopTransition[] = ['zoom-in-bounce', 'animista-slide-bck', 'glitch-pop', 'gsap-kinetic-stagger'];
-    const posPool: TelopPosition[] = ['center-climax', 'bottom-center'];
-    const transition = pickRandom(transPool, prevStaging?.transition);
-    const position = pickRandom(posPool, prevStaging?.position);
-    return {
-      style, transition, position,
-      directorNote: `[💡衝撃雑学Shorts] 画面中央フラッシュテロップ（${position} × ${transition}）。冒頭2秒のフックとオチで視聴者を釘付けにする仕様。`
-    };
-  }
-
-  // 2. 📜 偉人の名言・超訳処方箋（縦書き・厳粛・静寂フェード）
-  if (mode === 'quotes') {
-    const style: TelopStyle = 'traditional-sumi';
-    const transPool: TelopTransition[] = ['aos-fade-soft', 'blur-slide-up', 'glow-fade'];
-    const posPool: TelopPosition[] = ['vertical-left', 'top-cinema', 'bottom-center'];
-    const transition = pickRandom(transPool, prevStaging?.transition);
-    const position = pickRandom(posPool, prevStaging?.position);
-    return {
-      style, transition, position,
-      directorNote: `[📜偉人名言] 厳粛な縦書き／天吊りタイポグラフィ（${position} × ${transition}）。静寂なフェードで言葉の重みを心に刻む保存特化型演出。`
-    };
-  }
-
-  // 3. 👻 歴史の怪異・未解決事件（不穏グリッチ・深紅）
-  if (mode === 'folklore') {
-    const stylePool: TelopStyle[] = ['traditional-sumi', 'mv-neon-glow'];
-    const transPool: TelopTransition[] = ['glitch-pop', 'aos-fade-soft', 'glow-fade'];
-    const posPool: TelopPosition[] = ['bottom-center', 'center-stagger', 'vertical-right'];
-    const transition = pickRandom(transPool, prevStaging?.transition);
-    const position = pickRandom(posPool, prevStaging?.position);
-    const style = pickRandom(stylePool, prevStaging?.style);
-    return {
-      style, transition, position,
-      directorNote: `[👻怪異・考察] 不穏なグリッチと深紅ハイライト（${position} × ${transition}）。恐怖と謎を煽りコメント議論を誘発。`
-    };
-  }
-
-  // 4. 🏯 超絶技巧・職人魂（凛とした伝統墨・和モダン）
-  if (mode === 'craft') {
-    const style: TelopStyle = 'traditional-sumi';
-    const transPool: TelopTransition[] = ['blur-slide-left', 'aos-fade-soft', 'blur-slide-up'];
-    const posPool: TelopPosition[] = ['bottom-left', 'vertical-right', 'bottom-center'];
-    const transition = pickRandom(transPool, prevStaging?.transition);
-    const position = pickRandom(posPool, prevStaging?.position);
-    return {
-      style, transition, position,
-      directorNote: `[🏯職人魂] 凛とした和の墨文字（${position} × ${transition}）。極限の手仕事と美を邪魔しない最高峰の気品ある演出。`
-    };
-  }
-
-  // 5. 🎵 音楽MVモード（Ado風キネティック・ビート同期対向スルー）
-  if (isMvMode || mode === 'mv') {
-    let stylePool: TelopStyle[] = [];
-    let transPool: TelopTransition[] = [];
-    let posPool: TelopPosition[] = [];
-    let sectionName = '';
-    let sectionMood = '';
-
-    if (normCut <= 3) {
-      sectionName = `Verse A${normCut}`; sectionMood = '静寂・導入';
-      stylePool = ['cinema-subtle', 'mv-blur-slide'];
-      transPool = ['aos-fade-soft', 'blur-slide-left', 'blur-slide-up', 'glow-fade'];
-      posPool = ['bottom-left', 'bottom-right'];
-    } else if (normCut <= 6) {
-      sectionName = normCut === 6 ? 'Bridge' : `Verse B${normCut - 3}`; sectionMood = '空間変化・加速';
-      stylePool = ['mv-vertical-lyric', 'mv-blur-slide', 'mv-kinetic-pop'];
-      transPool = ['blur-slide-right', 'zoom-in-bounce', 'aos-fade-soft', 'blur-slide-left', 'animista-slide-bck'];
-      posPool = ['vertical-right', 'vertical-left', 'top-cinema', 'bottom-left', 'bottom-right'];
-    } else if (normCut <= 9) {
-      sectionName = `Chorus ${normCut - 6}★`; sectionMood = '最高潮・爆発';
-      stylePool = ['mv-neon-glow', 'mv-kinetic-pop', 'mv-blur-slide'];
-      transPool = ['animista-slide-bck', 'gsap-kinetic-stagger', 'zoom-in-bounce', 'glitch-pop'];
-      posPool = ['bottom-left', 'bottom-right', 'top-cinema'];
-    } else {
-      sectionName = normCut === 10 ? 'Verse C' : `Outro ${normCut - 10}`; sectionMood = '静寂・余韻';
-      stylePool = ['mv-neon-glow', 'cinema-subtle', 'mv-vertical-lyric'];
-      transPool = ['glow-fade', 'aos-fade-soft', 'blur-slide-left'];
-      posPool = ['bottom-left', 'bottom-right', 'vertical-left', 'vertical-right'];
-    }
-
-    const transition = pickRandom(transPool, prevStaging?.transition);
-    const position = pickRandom(posPool, prevStaging?.position);
-    const style = pickRandom(stylePool, prevStaging?.style);
-    return {
-      style, transition, position,
-      directorNote: `[🎵音楽MV・${sectionName}] キネティックタイポ（${position} × ${transition}）。被写体を遮らず楽曲のグルーヴと完全同期。`
-    };
-  }
-
-  // 6. 🎬 ドラマ連番モード（映画字幕スタイル・台詞没入重視）
-  const stylePool: TelopStyle[] = ['cinema-subtle'];
-  const transPool: TelopTransition[] = ['aos-fade-soft', 'blur-slide-up'];
-  const posPool: TelopPosition[] = ['bottom-center', 'bottom-left'];
-  const transition = pickRandom(transPool, prevStaging?.transition);
-  const position = pickRandom(posPool, prevStaging?.position);
-  const style = pickRandom(stylePool, prevStaging?.style);
-
   return {
-    style, transition, position,
-    directorNote: `[🎬シネマドラマ字幕] 映画館の字幕のように下部（${position}）に上品にフェードイン（${transition}）。ストーリーと俳優の感情を極限まで引き立てる。`
+    style: 'cinema-subtle',
+    transition: 'aos-fade-soft',
+    position: 'bottom-center',
+    directorNote: '[Webtoon字幕] 下部中央配置'
   };
 }
