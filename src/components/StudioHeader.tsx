@@ -1,7 +1,7 @@
 import React from 'react';
 import { FieldDropdown, FieldDropdownOption } from './Primitives';
-import { GeneratorSettings, ProductionMode } from '../types';
-import { PRODUCTION_MODES, THEMES, MV_THEMES, TRIVIA_THEMES, QUOTES_THEMES, CRAFT_THEMES, THEME_CATEGORIES, TASTES } from '../constants';
+import { GeneratorSettings } from '../types';
+import { THEME_CATEGORIES, TASTES } from '../constants';
 
 interface StudioHeaderProps {
   settings: GeneratorSettings;
@@ -17,38 +17,9 @@ interface StudioHeaderProps {
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
   settings, setSettings, isProducing, onStart, onAbort, activeSeriesManifest, onResumeClick, isWaitingForStart = false
 }) => {
-  const availableModes = PRODUCTION_MODES.filter(m => m.value !== 'style-matrix');
-  const currentModeDef = availableModes.find(m => m.value === settings.productionMode) || availableModes[0];
-
-  const handleModeChange = (modeVal: string) => {
-    const matched = availableModes.find(m => m.label === modeVal || m.value === modeVal);
-    const mode = (matched ? matched.value : modeVal) as ProductionMode;
-    let defaultTheme = THEMES[0];
-    if (mode === 'mv') defaultTheme = MV_THEMES[0];
-    else if (mode === 'trivia') defaultTheme = TRIVIA_THEMES[0];
-    else if (mode === 'quotes') defaultTheme = QUOTES_THEMES[0];
-    else if (mode === 'craft') defaultTheme = CRAFT_THEMES[0];
-
-    setSettings(s => ({
-      ...s,
-      productionMode: mode,
-      isMvMode: mode === 'mv',
-      theme: defaultTheme,
-      era: defaultTheme,
-    }));
-  };
-
-  const getThemeConfig = () => {
-    switch (settings.productionMode) {
-      case 'mv': return { options: MV_THEMES, groups: undefined };
-      case 'trivia': return { options: TRIVIA_THEMES, groups: undefined };
-      case 'quotes': return { options: QUOTES_THEMES, groups: undefined };
-      case 'craft': return { options: CRAFT_THEMES, groups: undefined };
-      default: return { options: undefined, groups: THEME_CATEGORIES.map(c => ({ label: c.category, items: c.items })) };
-    }
-  };
-
-  const themeConfig = getThemeConfig();
+  const themeGroups = React.useMemo(() => {
+    return THEME_CATEGORIES.map(c => ({ label: c.category, items: c.items }));
+  }, []);
 
   const tasteOptions: FieldDropdownOption[] = React.useMemo(() => {
     return Object.keys(TASTES).map(k => ({
@@ -68,30 +39,14 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5 p-1 bg-gradient-to-r from-emerald-50/80 via-teal-50/60 to-emerald-50/80 rounded-xl border border-emerald-300/80 shadow-2xs shrink-0 flex-wrap">
-          {/* 制作モード */}
-          <FieldDropdown 
-            label=""
-            value={currentModeDef.label}
-            options={availableModes.map(m => m.label)}
-            onChange={label => {
-              const matched = availableModes.find(m => m.label === label);
-              if (matched) handleModeChange(matched.value);
-            }}
-            disabled={isProducing}
-            className="w-[120px]"
-          />
-
-          <div className="w-px h-5 bg-emerald-200/90 shrink-0" />
-
           {/* テーマ選択 */}
           <FieldDropdown 
             label="" 
             value={settings.theme} 
-            options={themeConfig.options}
-            groups={themeConfig.groups}
+            groups={themeGroups}
             onChange={v => setSettings(s => ({ ...s, theme: v, era: v }))} 
             disabled={isProducing} 
-            className="w-[175px]"
+            className="w-[200px]"
           />
 
           <div className="w-px h-5 bg-emerald-200/90 shrink-0" />
@@ -103,7 +58,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             options={tasteOptions} 
             onChange={v => setSettings(s => ({ ...s, taste: v }))} 
             disabled={isProducing} 
-            className="w-[195px]"
+            className="w-[205px]"
           />
         </div>
       </div>
