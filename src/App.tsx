@@ -1,16 +1,35 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
 import { StudioSidebar } from './components/StudioSidebar';
 import { StudioHeader } from './components/StudioHeader';
 import { EpisodeSection } from './components/EpisodeSection';
 import { Cut, GeneratorSettings, Episode, LogEntry } from './types';
 import { THEMES, TASTES, IMAGE_MODELS } from './constants';
-import { createLogMessage } from './services/utils';
-import { initDB } from './services/db';
-import { downloadZip, savePackageFile } from './services/exportService';
+import { createLogMessage, initDB } from './services/utils';
+import { downloadZip, savePackageFile } from './services/export/zipPackager';
 import { useStudioProduction } from './services/useStudioProduction';
 import { extractHighlights } from './services/directorService';
-import { ErrorBoundary } from './components/ErrorBoundary';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  public state = { hasError: false, error: null };
+  public static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error('Uncaught error:', error, errorInfo); }
+  public render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-screen w-screen bg-slate-50 text-slate-900 select-none items-center justify-center p-8">
+          <div className="bg-white p-8 rounded-2xl border border-red-200 max-w-[600px] w-full text-center">
+            <span className="material-symbols-outlined text-red-500 text-6xl mb-4">error</span>
+            <h1 className="text-2xl font-bold mb-4 text-red-500">予期せぬエラーが発生しました</h1>
+            <p className="text-slate-600 mb-6 text-sm">再読み込みして再度お試しください。<br/>({String(this.state.error)})</p>
+            <button onClick={() => window.location.reload()} className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full transition-all">再読み込み</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({

@@ -1,9 +1,7 @@
-import { Flow } from 'flow-sdk';
-import { Episode } from '../../types';
+import { Episode, ProductionPipelineContext } from '../../types';
 import { resolveImageModel } from '../../constants';
 import { SAFE_CHARACTERS } from '../../config/safeCharacters';
 import { callWithRetry, formatErrorMessage, extractImageBase64, extractMediaId } from '../utils';
-import { ProductionPipelineContext } from './pipelineTypes';
 import { 
   buildCharacterTurnaroundPrompt, 
   buildAdaptiveInfographicCoverPrompt, 

@@ -1,6 +1,6 @@
 import { GeneratorSettings, GenerationTask, TelopStyle, TelopTransition, TelopPosition } from '../types';
 import { STRICT_STYLE_SUFFIX } from '../constants';
-import { resolveTastePrompt } from './tasteStorage';
+import { resolveTastePrompt } from './directorPrompts';
 import { 
   POSE_CONTRAST_RULES, 
   TWELVE_CUT_STORYBOARD_PRESETS, 

@@ -4,9 +4,8 @@
  * 後方互換性を100%維持しながら、内部を徹底的にモジュール分離しています。
  */
 
-export * from './pipelines/pipelineTypes';
-export * from './pipelines/pipelineCutFactory';
 export * from './pipelines/pipelineAssetFactory';
 export * from './pipelines/shortsBatchPipeline';
+export * from './pipelines/seriesProductionPipeline';
 export * from './pipelines/seriesProductionPipeline';
 export * from './pipelines/episodeCompletionModule';

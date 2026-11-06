@@ -6,8 +6,8 @@ import {
   cleanEpisodeTitleEn, 
   sanitizeForYouTubeSafety 
 } from '../directorService';
-import { ProductionPipelineContext, SHORTS_CONFIG_MAP, cleanupEpisodeMemory } from './pipelineTypes';
-import { createPipelineCut } from './pipelineCutFactory';
+import { ProductionPipelineContext, cleanupEpisodeMemory, SHORTS_CONFIG_MAP } from '../../types';
+import { createPipelineCut } from './seriesProductionPipeline';
 import { ensureCharacterTurnaround, ensureInfographicCover } from './pipelineAssetFactory';
 import { finalizeAndProcessEpisode } from './episodeCompletionModule';
 

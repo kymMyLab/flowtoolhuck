@@ -1,17 +1,14 @@
 import { runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensureInfographicCover, ensureCharacterTurnaround } from './productionPipelines';
 import { useRef, useCallback } from 'react';
-import { Flow } from 'flow-sdk';
 import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, LogEntry } from '../types';
 import { SAFE_CHARACTERS } from '../config/safeCharacters';
 import { 
   CUTS_PER_EPISODE, 
   resolveImageModel
 } from '../constants';
-import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId } from './utils';
-import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate, isMvChorusCut } from './promptEngine';
-import { getAllReferenceAssets } from './db';
+import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId, getAllReferenceAssets, saveReferenceAsset } from './utils';
 
-import { renderCoverBase64 } from './exportService';
+import { renderCoverBase64 } from './export/zipPackager';
 import { 
   directShot, 
   buildImagePromptAndNegative, 
@@ -26,7 +23,7 @@ import {
 import { useEpisodeState } from './useEpisodeState';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-import { saveReferenceAsset } from './db';
+import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate, isMvChorusCut } from './promptEngine';
 import { resolveCameraWork } from '../config/studioDefinitions';
 
 

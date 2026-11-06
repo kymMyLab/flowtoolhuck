@@ -1,5 +1,5 @@
-import { ProductionPipelineContext, cleanupEpisodeMemory } from './pipelineTypes';
-import { downloadZip, downloadManifestFile } from '../exportService';
+import { ProductionPipelineContext, cleanupEpisodeMemory } from '../../types';
+import { downloadZip, downloadManifestFile } from '../export/zipPackager';
 import { SeriesManifest } from '../../types';
 
 export interface FinalizeEpisodeOptions {

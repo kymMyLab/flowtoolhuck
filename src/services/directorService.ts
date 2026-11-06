@@ -1,5 +1,4 @@
 import { SAFE_CHARACTERS } from '../config/safeCharacters';
-import { Flow } from 'flow-sdk';
 import { Cut, GenerationTask, GeneratorSettings, KenBurnsPreset, FocalPoint } from '../types';
 import { safeJsonParse, callWithRetry, formatDurationMs } from './utils';
 import { 
@@ -17,17 +16,12 @@ import {
 
 export type { PreviousShotContext as PreviousShotInfo };
 
-// ── テキスト整形・抽出ヘルパー群 ──
+// ── テキスト整形・抽出ヘルパー群 ＆ 映画監督プロンプト生成群 ──
 import {
   cleanEpisodeTitle,
   cleanEpisodeTitleEn,
   checkIsHistorical,
   extractHighlights,
-  sanitizeForYouTubeSafety
-} from './directorTextHelpers';
-
-// ── 映画監督プロンプト生成群 ──
-import {
   buildCharacterTurnaroundPrompt,
   buildCharacterScreeningPrompt,
   buildGrandDesignPrompt,
@@ -37,12 +31,19 @@ import {
   InfographicCoverPromptOptions
 } from './directorPrompts';
 
+export function sanitizeForYouTubeSafety(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/[殺死血狂暴]/g, '★')
+    .replace(/(死ね|殺す|血まみれ|狂気|虐殺)/g, '危険')
+    .trim();
+}
+
 export {
   cleanEpisodeTitle,
   cleanEpisodeTitleEn,
   checkIsHistorical,
   extractHighlights,
-  sanitizeForYouTubeSafety,
   buildCharacterTurnaroundPrompt,
   buildCharacterScreeningPrompt,
   buildGrandDesignPrompt,

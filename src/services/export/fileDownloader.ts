@@ -1,4 +1,3 @@
-import { Flow } from 'flow-sdk';
 import { Episode, SeriesManifest } from '../../types';
 
 /**

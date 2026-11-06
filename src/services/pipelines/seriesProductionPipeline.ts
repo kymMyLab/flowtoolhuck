@@ -1,5 +1,4 @@
-import { Flow } from 'flow-sdk';
-import { Episode, Cut, SeriesEpisodePlan } from '../../types';
+import { Episode, Cut, SeriesEpisodePlan, GeneratorSettings, ProductionPipelineContext, cleanupEpisodeMemory, SHORTS_CONFIG_MAP } from '../../types';
 import { SAFE_CHARACTERS } from '../../config/safeCharacters';
 import { createDefaultCut, safeJsonParse, callWithRetry, formatErrorMessage } from '../utils';
 import { 
@@ -8,12 +7,51 @@ import {
   buildGrandDesignPrompt, 
   buildNextEpisodePlanPrompt, 
   cleanEpisodeTitle, 
-  cleanEpisodeTitleEn 
+  cleanEpisodeTitleEn,
+  extractHighlights
 } from '../directorService';
-import { ProductionPipelineContext, cleanupEpisodeMemory } from './pipelineTypes';
-import { createPipelineCut } from './pipelineCutFactory';
 import { ensureCharacterTurnaround, ensureInfographicCover } from './pipelineAssetFactory';
 import { finalizeAndProcessEpisode } from './episodeCompletionModule';
+import { resolveRecommendedCameraWorkAndKenBurns, resolveRecommendedTelopStaging } from '../../constants';
+import { getStoryboardPreset } from '../promptEngine';
+
+export { cleanupEpisodeMemory, SHORTS_CONFIG_MAP };
+
+export function createPipelineCut(
+  cutIndex: number,
+  cutData: any,
+  sharedScript: any,
+  settings: GeneratorSettings,
+  effectiveMode: string,
+  isMv: boolean,
+  isManga: boolean
+): Cut {
+  const narration = cutData.narrationJp || '';
+  const plot = cutData.basicPlot || '';
+  const cut = createDefaultCut(cutIndex + 1, narration, plot, false);
+  cut.panelLayout = 'single';
+
+  const preset = getStoryboardPreset(cutIndex + 1, isMv, isManga);
+  cut.shotScale = preset.scale;
+  cut.cinematicAngle = preset.angle;
+
+  const cwDef = resolveRecommendedCameraWorkAndKenBurns(cutIndex + 1, effectiveMode, isMv, isManga);
+  cut.cameraWork = cwDef.id;
+  cut.cameraMotion = cwDef.motionPrompt;
+  cut.kenBurnsPreset = cwDef.recommendedKenBurns;
+
+  const dramaStaging = resolveRecommendedTelopStaging(cutIndex + 1, isMv, false, undefined, effectiveMode);
+  Object.assign(cut.telop, dramaStaging);
+  cut.telop.highlights = extractHighlights(narration, cutData.highlights || sharedScript.highlightWords);
+
+  cut.isObjectOnly = settings.enableObjectCut !== false ? (cutData.isObjectOnly || false) : false;
+  cut.focalPoint = cutData.focalPoint;
+  cut.compositionPrompt = cutData.compositionPrompt;
+  cut.veoMotionPrompt = cutData.veoMotionPrompt;
+  cut.endFramePromptEn = cutData.endFramePlot;
+
+  return cut;
+}
 
 /**
  * ── 3. 連続ドラマ・漫画シリーズ（グランドデザイン＆全話プロット展開）制作パイプライン ──
