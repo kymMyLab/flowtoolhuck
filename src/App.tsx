@@ -1,14 +1,115 @@
 import React, { useState, useEffect, useCallback, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
-import { StudioSidebar } from './components/StudioSidebar';
-import { StudioHeader } from './components/StudioHeader';
+import { StudioSidebar, FieldDropdown, FieldDropdownOption } from './components/StudioSidebar';
 import { EpisodeSection } from './components/EpisodeSection';
 import { Cut, GeneratorSettings, Episode, LogEntry } from './types';
-import { THEMES, TASTES, IMAGE_MODELS } from './constants';
+import { THEMES, THEME_CATEGORIES, TASTES, IMAGE_MODELS } from './constants';
 import { createLogMessage, initDB } from './services/utils';
 import { downloadZip, savePackageFile } from './services/export/zipPackager';
 import { useStudioProduction } from './services/useStudioProduction';
 import { extractHighlights } from './services/directorService';
+
+interface StudioHeaderProps {
+  settings: GeneratorSettings;
+  setSettings: React.Dispatch<React.SetStateAction<GeneratorSettings>>;
+  isProducing: boolean;
+  onStart: () => void;
+  onAbort: () => void;
+  activeSeriesManifest?: any;
+  onResumeClick?: () => void;
+  isWaitingForStart?: boolean;
+}
+
+const StudioHeader: React.FC<StudioHeaderProps> = ({
+  settings, setSettings, isProducing, onStart, onAbort, activeSeriesManifest, onResumeClick, isWaitingForStart = false
+}) => {
+  const themeGroups = React.useMemo(() => {
+    return THEME_CATEGORIES.map(c => ({ label: c.category, items: c.items }));
+  }, []);
+
+  const tasteOptions: FieldDropdownOption[] = React.useMemo(() => {
+    return Object.keys(TASTES).map(k => ({
+      value: k,
+      label: k.split(' (')[0],
+      sublabel: k.split(' (')[1]?.replace(')', '')
+    }));
+  }, []);
+
+  return (
+    <header className="bg-white border-b border-slate-200 px-3 py-2 flex items-center justify-between gap-2 shrink-0 z-40 relative shadow-sm flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap min-w-0">
+        <div className="flex items-center gap-1.5 shrink-0 text-slate-800">
+          <span className="material-symbols-outlined text-amber-500 text-xl">movie_edit</span>
+          <h1 className="text-sm font-black italic tracking-tighter uppercase whitespace-nowrap">Studio Pro</h1>
+        </div>
+
+        <div className="flex items-center gap-1.5 p-1 bg-gradient-to-r from-emerald-50/80 via-teal-50/60 to-emerald-50/80 rounded-xl border border-emerald-300/80 shadow-2xs shrink-0 flex-wrap">
+          <FieldDropdown 
+            label="" 
+            value={settings.theme} 
+            groups={themeGroups}
+            onChange={v => setSettings(s => ({ ...s, theme: v, era: v }))} 
+            disabled={isProducing} 
+            className="w-[200px]"
+          />
+
+          <div className="w-px h-5 bg-emerald-200/90 shrink-0" />
+
+          <FieldDropdown 
+            label="" 
+            value={settings.taste} 
+            options={tasteOptions} 
+            onChange={v => setSettings(s => ({ ...s, taste: v }))} 
+            disabled={isProducing} 
+            className="w-[205px]"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0">
+        {isProducing ? (
+          <button 
+            type="button"
+            className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+            onClick={() => onAbort()}
+          >
+            <span className="material-symbols-outlined text-[18px]">stop_circle</span>
+            <span>中止</span>
+          </button>
+        ) : (
+          <button 
+            type="button"
+            disabled={isProducing}
+            onClick={() => onStart()}
+            className={`h-9 px-4 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shrink-0 whitespace-nowrap relative ${
+              isWaitingForStart
+                ? 'ring-4 ring-pink-400 ring-offset-2 animate-pulse shadow-[0_0_25px_rgba(236,72,153,0.8)] brightness-110 !bg-gradient-to-r !from-indigo-600 !via-purple-600 !to-pink-600 text-white hover:brightness-125 hover:scale-105 active:scale-95'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg active:scale-95'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {isWaitingForStart ? 'play_arrow' : 'movie_edit'}
+            </span>
+            <span>作成開始</span>
+          </button>
+        )}
+
+        {activeSeriesManifest && (
+          <button 
+            type="button" 
+            disabled={isProducing}
+            onClick={onResumeClick}
+            className="h-9 px-2.5 text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-2xs"
+            title="中断した連載制作を再開"
+          >
+            <span className="material-symbols-outlined text-[16px]">file_open</span>
+            <span>再開</span>
+          </button>
+        )}
+      </div>
+    </header>
+  );
+};
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   public state = { hasError: false, error: null };

@@ -1,12 +1,12 @@
 import { GeneratorSettings, GenerationTask, TelopStyle, TelopTransition, TelopPosition } from '../types';
 import { STRICT_STYLE_SUFFIX } from '../constants';
-import { resolveTastePrompt } from './directorPrompts';
+import { resolveTastePrompt } from './directorService';
 import { 
   POSE_CONTRAST_RULES, 
   TWELVE_CUT_STORYBOARD_PRESETS, 
   UNIVERSAL_CINE_CYCLE,
   BASELINE_NEGATIVE_TOKENS
-} from '../config/studioDefinitions';
+} from '../constants';
 
 export interface PreviousShotContext {
   scale?: string;

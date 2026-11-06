@@ -1,13 +1,296 @@
 import { extractImageBase64 } from '../utils';
-import { SAFE_CHARACTERS } from '../../config/safeCharacters';
+import { SAFE_CHARACTERS } from '../../constants';
 import JSZip from 'jszip';
 import { Episode, SeriesManifest, LogEntry } from '../../types';
 import { extractHighlights } from '../directorService';
 import { renderCoverCanvas, renderCoverCanvasHorizontal, renderCoverBase64, renderCoverBase64Horizontal } from './coverRenderer';
-import { generateSafeFilenames, savePackageFile, safeJsonStringify, downloadManifestFile } from './fileDownloader';
-import { resolveMasterCategory } from '../../config/masterCategories';
 
-export { savePackageFile, renderCoverBase64, renderCoverBase64Horizontal, downloadManifestFile };
+export { renderCoverBase64, renderCoverBase64Horizontal };
+
+/**
+ * 循環参照やDOMノード・クロスオリジンWindowを確実に排除する安全なJSON文字列化関数
+ */
+export const safeJsonStringify = (obj: any, indent = 2): string => {
+  const seen = new WeakSet();
+  const sanitizeValue = (val: any): any => {
+    if (val === null || val === undefined) return val;
+    if (typeof val === 'function' || typeof val === 'symbol') return undefined;
+    if (typeof val !== 'object') return val;
+    try {
+      if (val === window || (typeof Window !== 'undefined' && val instanceof Window)) return undefined;
+      if (typeof Event !== 'undefined' && val instanceof Event) return undefined;
+      if (typeof val.nodeType === 'number' || val.$$typeof || val.nativeEvent) return undefined;
+    } catch {
+      return undefined;
+    }
+    if (seen.has(val)) return '[Circular]';
+    seen.add(val);
+    if (Array.isArray(val)) {
+      return val.map(item => sanitizeValue(item));
+    }
+    const cleanObj: Record<string, any> = {};
+    for (const k of Object.keys(val)) {
+      try {
+        const child = sanitizeValue(val[k]);
+        if (child !== undefined) {
+          cleanObj[k] = child;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return cleanObj;
+  };
+  try {
+    return JSON.stringify(sanitizeValue(obj), null, indent);
+  } catch (err) {
+    console.warn('safeJsonStringify fallback:', err);
+    return '{}';
+  }
+};
+
+/**
+ * ファイル名を生成（ASCII安全名とサニタイズ表示名の両方を作成）
+ */
+let fileSeqCounter = 0;
+export function generateSafeFilenames(ep: Episode): { asciiFilename: string; displayFilename: string } {
+  fileSeqCounter = (fileSeqCounter + 1) % 1000;
+  const seq = String(fileSeqCounter).padStart(3, '0');
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}_${seq}`;
+  
+  const asciiFilename = `FlowTool_Ep${ep.id}_${timestamp}.zip`;
+
+  const cleanTitle = (ep.titleJp || 'Episode')
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+    .replace(/[\u2600-\u27BF\uE000-\uF8FF]/g, '')
+    .replace(/[「」『』【】（）()［］\[\]・…！？!?,:;~〜\/\:*?"<>|]/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .trim()
+    .slice(0, 30);
+
+  const displayFilename = `${timestamp}_${cleanTitle || `Ep${ep.id}`}.zip`;
+  return { asciiFilename, displayFilename };
+}
+
+/**
+ * あらゆるブラウザ環境・Google Flow sandbox 環境でファイルを確実に保存する統合関数
+ */
+export const savePackageFile = async (
+  blob: Blob,
+  filename: string,
+  addLog?: (msg: string, type?: any) => void,
+  fallbackAsciiFilename?: string
+): Promise<{ success: boolean; method: string }> => {
+  const sizeMb = (blob.size / (1024 * 1024)).toFixed(2);
+  const sizeStr = `${sizeMb} MB`;
+  
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const safeAsciiFilename = fallbackAsciiFilename || `FlowTool_Package_${timestamp}.zip`;
+
+  console.group(`📦 [FlowTool Export] ダウンロード処理開始: ${filename} (${sizeStr})`);
+  console.log('📄 ファイル情報:', { filename, safeAsciiFilename, sizeStr, bytes: blob.size, mimeType: blob.type });
+
+  // 手法 1: File System Access API
+  if (typeof (window as any).showSaveFilePicker === 'function') {
+    try {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: 'ZIP Package Archive',
+          accept: { 'application/zip': ['.zip'] }
+        }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      console.groupEnd();
+      if (addLog) addLog(`✅ ファイル「${filename}」(${sizeStr}) を保存しました (File System Access)。`, 'success');
+      return { success: true, method: 'showSaveFilePicker' };
+    } catch (fsErr: any) {
+      if (fsErr.name === 'AbortError') {
+        console.groupEnd();
+        return { success: false, method: 'user_cancelled' };
+      }
+    }
+  }
+
+  // 手法 2: Google Flow Tools 公式 Flow.download API (.zip -> .zip.txt 自動フォールバック)
+  if (typeof Flow !== 'undefined' && typeof Flow.download === 'function') {
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      const baseClean = filename.replace(/\.zip$/i, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').replace(/[「」『』]/g, '_').trim();
+      const txtFallbackFilename = `${baseClean || 'FlowTool_Package'}.zip.txt`;
+
+      try {
+        await Flow.download({ base64, mimeType: 'application/zip', filename: safeAsciiFilename });
+        console.groupEnd();
+        if (addLog) addLog(`✅ パッケージ「${safeAsciiFilename}」(${sizeStr}) をダウンロードしました (Flow API)。`, 'success');
+        return { success: true, method: 'Flow.download' };
+      } catch (zipErr: any) {
+        console.warn(`⚠️ [Method 2] Flow.download (.zip) 拒否のため、Google Flow 許可形式 (.zip.txt) に切り替えます...`);
+      }
+
+      try {
+        await Flow.download({ base64, mimeType: 'text/plain', filename: txtFallbackFilename });
+        console.groupEnd();
+        if (addLog) {
+          addLog(`✅ パッケージ「${txtFallbackFilename}」(${sizeStr}) をダウンロード完了！`, 'success');
+          addLog(`💡 末尾の「.txt」を消して「.zip」にするだけで、そのままZIPとして解凍できます。`, 'info');
+        }
+        return { success: true, method: 'Flow.download.txt' };
+      } catch (txtErr: any) {
+        console.error(`❌ [Method 2-B] Flow.download (.zip.txt) 失敗:`, txtErr.message || txtErr);
+      }
+    } catch (readErr: any) {
+      console.error('❌ [Method 2] Base64エンコード失敗:', readErr);
+    }
+  }
+
+  // 手法 3: window.open (Blob URL)
+  const blobUrl = URL.createObjectURL(blob);
+  setTimeout(() => {
+    try { URL.revokeObjectURL(blobUrl); } catch (_) {}
+  }, 60000);
+
+  try {
+    const newWindow = window.open(blobUrl, '_blank');
+    if (newWindow) {
+      console.log('🚀 [Method 3] window.open 実行成功。別タブ/ウィンドウ経由で保存が開始されます。');
+    }
+  } catch (winErr: any) {
+    console.warn('⚠️ [Method 3] window.open スキップ:', winErr.message);
+  }
+
+  // 手法 4: DOM <a download>
+  try {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      try {
+        if (a.parentNode) document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } catch (_) {}
+    }, 10000);
+  } catch (domErr: any) {
+    console.error('❌ [Method 4] DOM <a download> 失敗:', domErr);
+  }
+
+  console.groupEnd();
+  if (addLog) addLog(`💾 パッケージ「${filename}」(${sizeStr}) の保存コマンドを送信しました。`, 'info');
+  return { success: true, method: 'dom_dispatched' };
+};
+
+/**
+ * series_manifest.json 単体のダウンロード (レジューム用バックアップ)
+ */
+export const downloadManifestFile = async (manifest: SeriesManifest, addLog: (msg: string, type?: any) => void) => {
+  try {
+    const jsonStr = safeJsonStringify(manifest, 2);
+    const bytes = new TextEncoder().encode(jsonStr);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    const filename = `series_manifest_Ep${manifest.currentEpisodeId}.json`;
+    await Flow.download({ base64, mimeType: 'application/json', filename });
+    addLog(`📄 レジューム用設定ファイル「${filename}」を保存しました。`, 'info');
+  } catch (e: any) {
+    console.warn('Manifest download failed', e);
+  }
+};
+
+/**
+ * 3者統合グランドマスター規格 (v2.1.0-FullProduction) 自動解決
+ */
+const POOLS_REGISTRY: Record<number, { name_ja: string; default_bpm: number; sound_texture: string }> = {
+  10: { name_ja: 'エモーショナル・叙情', default_bpm: 85, sound_texture: 'acoustic, piano, sentimental strings' },
+  20: { name_ja: '日常・青春・ポップ', default_bpm: 120, sound_texture: 'upbeat pop, acoustic guitar, bright synth' },
+  30: { name_ja: '近未来・サイバー', default_bpm: 128, sound_texture: 'cyberpunk synthwave, electronic beat' },
+  40: { name_ja: 'サスペンス・ノワール', default_bpm: 95, sound_texture: 'dark jazz, moody bass, cinematic tension' },
+  50: { name_ja: '歴史・和風', default_bpm: 105, sound_texture: 'traditional japanese instruments, shamisen, koto' },
+  60: { name_ja: '怪異・ホラー', default_bpm: 80, sound_texture: 'eerie ambient, dissonance, creepy soundscape' },
+  70: { name_ja: 'ファンタジー・異世界', default_bpm: 115, sound_texture: 'orchestral fantasy, celtic folk flute' },
+  80: { name_ja: 'バトル・熱血', default_bpm: 145, sound_texture: 'heavy rock, driving drums, electric guitar' },
+  90: { name_ja: '超絶技巧・職人技', default_bpm: 110, sound_texture: 'focused ambient, rhythmic craftsman sounds' },
+};
+
+export function resolveMasterCategory(theme?: string, mode?: string) {
+  const t = (theme || '').toLowerCase();
+  const m = (mode || '').toLowerCase();
+
+  let format_id: 'music_mv' | 'drama_manga' | 'trivia_shorts' = 'drama_manga';
+  if (m === 'mv' || t.includes('mv') || t.includes('音楽') || t.includes('歌')) {
+    format_id = 'music_mv';
+  } else if (m === 'trivia' || t.includes('雑学') || t.includes('解説') || t.includes('shorts')) {
+    format_id = 'trivia_shorts';
+  } else {
+    format_id = 'drama_manga';
+  }
+
+  let pool_code = 20;
+  let style_code = 21;
+
+  if (m === 'craft' || t.includes('職人') || t.includes('工芸') || t.includes('刀鍛冶') || t.includes('陶芸') || t.includes('手仕事') || t.includes('超絶技巧')) {
+    pool_code = 90;
+    style_code = 91;
+  } else if (t.includes('バトル') || t.includes('熱血') || t.includes('格闘') || t.includes('ロック') || t.includes('勝負') || t.includes('対決')) {
+    pool_code = 80;
+    style_code = 81;
+  } else if (t.includes('ファンタジー') || t.includes('異世界') || t.includes('古代遺跡') || t.includes('エルフ') || t.includes('魔法') || t.includes('神話')) {
+    pool_code = 70;
+    style_code = 71;
+  } else if (m === 'folklore' || t.includes('怪異') || t.includes('狂気') || t.includes('ホラー') || t.includes('禁足地') || t.includes('廃村') || t.includes('未解決')) {
+    pool_code = 60;
+    style_code = 61;
+  } else if (t.includes('江戸') || t.includes('大河') || t.includes('和風') || t.includes('城下町') || t.includes('武将') || t.includes('浮世絵') || t.includes('歴史')) {
+    pool_code = 50;
+    style_code = 51;
+  } else if (t.includes('ノワール') || t.includes('探偵') || t.includes('裏路地') || t.includes('ダーク') || t.includes('サスペンス') || t.includes('紫煙')) {
+    pool_code = 40;
+    style_code = 41;
+  } else if (t.includes('サイバー') || t.includes('近未来') || t.includes('電脳') || t.includes('ai') || t.includes('シンセ') || t.includes('ネオン')) {
+    pool_code = 30;
+    style_code = 31;
+  } else if (t.includes('切ない') || t.includes('哀愁') || t.includes('別れ') || t.includes('雨宿り') || t.includes('夕暮れ') || t.includes('涙')) {
+    pool_code = 10;
+    style_code = 11;
+  } else {
+    pool_code = 20;
+    style_code = format_id === 'trivia_shorts' ? 24 : 21;
+  }
+
+  const pool = POOLS_REGISTRY[pool_code] || POOLS_REGISTRY[20];
+  return {
+    pool_code,
+    style_code,
+    format_id,
+    pool: {
+      name_ja: pool.name_ja,
+      audio_contract: {
+        default_bpm: pool.default_bpm,
+        sound_texture: pool.sound_texture
+      }
+    }
+  };
+}
 
 /**
  * SRT形式のタイムコード生成 (HH:MM:SS,mmm)
@@ -48,9 +331,6 @@ export function generateSRT(ep: Episode): string {
   return srt;
 }
 
-/**
- * Canvasメモリ解放ヘルパー
- */
 function cleanupCanvas(canvas: OffscreenCanvas | HTMLCanvasElement) {
   try {
     if (canvas instanceof OffscreenCanvas) {
@@ -69,7 +349,7 @@ function cleanupCanvas(canvas: OffscreenCanvas | HTMLCanvasElement) {
 }
 
 /**
- * エピソード全体のアセット（各カット画像/動画、三面図、SRT字幕、縦横両面看板、script.json、ログ）を同梱したZIPパッケージを作成・保存
+ * エピソード全体のアセットを同梱したZIPパッケージを作成・保存
  */
 export const downloadZip = async (
   ep: Episode, 
@@ -80,18 +360,13 @@ export const downloadZip = async (
   addLog(`📦 Ep.${ep.id} パッケージング中...`, 'process');
   try {
     const { asciiFilename, displayFilename } = generateSafeFilenames(ep);
-
-    // ━━━ REQ-01: ZIP内ルートフォルダ名をタイムスタンプ付きユニーク名にして衝突完全根絶 ━━━
     const uniquePackageFolderName = displayFilename.replace(/\.zip$/i, '');
     const zip = new JSZip();
     const folder = zip.folder(uniquePackageFolderName);
     if (!folder) throw new Error('ZIP creation failed');
 
-    // 1. 各カット素材（Start絵、After絵/到達点フレーム、動画）をすべて同梱
-    // ★Trap 1 是正: 2桁ゼロ埋め（cut_01.png〜cut_12.png, cut_01.mp4）で文字列ソート逆転事故を根絶
     for (const c of ep.cuts) {
       const cutPad = String(c.id || 1).padStart(2, '0');
-      // Start絵
       if (c.imageBase64) {
         try {
           const extImg = extractImageBase64(c.imageBase64) || '';
@@ -101,7 +376,6 @@ export const downloadZip = async (
           console.warn(`Failed to inject start image for cut ${c.id}:`, e);
         }
       }
-      // After絵（Veo補間用 到達点フレーム）
       if (c.endFrameImageBase64) {
         try {
           const cleanEndImg = c.endFrameImageBase64.split('base64,').pop() || c.endFrameImageBase64;
@@ -110,7 +384,6 @@ export const downloadZip = async (
           console.warn(`Failed to inject end frame image for cut ${c.id}:`, e);
         }
       }
-      // 生成動画
       if (c.videoBase64) {
         try {
           const cleanVid = c.videoBase64.split('base64,').pop() || c.videoBase64;
@@ -119,11 +392,9 @@ export const downloadZip = async (
           console.warn(`Failed to inject video for cut ${c.id}:`, e);
         }
       }
-      // Event loop breather to prevent UI freeze and allow GC during heavy batch exports
       await new Promise(resolve => setTimeout(resolve, 0));
     }
 
-    // 2. キャラクター基準マスターアセット（三面図、Cut 1マスターアンカー）
     const turnaroundBase64 = ep.characterTurnaroundBase64 || manifest?.referenceAsset?.base64;
     if (turnaroundBase64) {
       try {
@@ -157,26 +428,22 @@ export const downloadZip = async (
     ].join('\n');
     folder.file('script.txt', scriptTxtLines);
 
-    // ━━━ REQ-03: 看板画像（cover）の縦型（9:16）＆ 横型（16:9）両面同梱 ━━━
     addLog(`🖼️ 看板画像（縦型 cover_v & 横型 cover_h）を合成中...`, 'info');
-    
-    // A. 縦型看板（1080x1920 / 9:16 縦型看板・ショート動画用）
     if (ep.coverBase64) {
       const extCov = extractImageBase64(ep.coverBase64) || '';
       const cleanCover = typeof extCov === 'string' ? (extCov.split('base64,').pop() || extCov) : '';
       folder.file('cover_v.png', cleanCover, { base64: true });
-      folder.file('cover.png', cleanCover, { base64: true }); // 既存後方互換
+      folder.file('cover.png', cleanCover, { base64: true });
     } else {
       const coverVCanvas = await renderCoverCanvas(ep);
       const vBlob = await (coverVCanvas instanceof OffscreenCanvas 
         ? coverVCanvas.convertToBlob({ type: 'image/png' }) 
         : new Promise<Blob>(r => (coverVCanvas as HTMLCanvasElement).toBlob(b => r(b!), 'image/png')));
       folder.file('cover_v.png', vBlob);
-      folder.file('cover.png', vBlob); // 既存後方互換
+      folder.file('cover.png', vBlob);
       cleanupCanvas(coverVCanvas);
     }
 
-    // B. 横型看板（1920x1080 / 16:9 横型看板・YouTube通常動画用）
     try {
       const coverHCanvas = await renderCoverCanvasHorizontal(ep);
       const hBlob = await (coverHCanvas instanceof OffscreenCanvas
@@ -188,12 +455,9 @@ export const downloadZip = async (
       console.warn('Horizontal cover generation skipped:', e);
     }
     
-    // ━━━ 3者統合グランドマスター規格 (v2.1.0-FullProduction) 自動解決 ━━━
     const masterCat = resolveMasterCategory(ep.theme, ep.productionMode);
 
-    // ━━━ REQ-02: script.json トップレベルへの作品・話数メタデータの明記 ━━━
     const scriptJson = {
-      // Proxmox Cluster Unified Standard (v2.1.0)
       pool_code: masterCat.pool_code,
       style_code: masterCat.style_code,
       format_id: masterCat.format_id,
@@ -201,14 +465,12 @@ export const downloadZip = async (
       default_bpm: masterCat.pool.audio_contract.default_bpm,
       sound_texture: masterCat.pool.audio_contract.sound_texture,
 
-      // Media Vault Integration Schema (REQ-02)
       title: ep.titleJp || ep.titleEn || '無題',
       episode_no: ep.id || 1,
       total_episodes: manifest?.totalEpisodes || 1,
       theme: ep.theme || '',
       created_at: new Date().toISOString(),
 
-      // FlowTool Native Properties (100% Backward Compatibility)
       id: ep.id,
       productionMode: ep.productionMode || (ep.isMvMode ? 'mv' : 'episodes'),
       titleJp: ep.titleJp || '無題',
@@ -225,7 +487,6 @@ export const downloadZip = async (
       },
       cuts: ep.cuts.map(c => {
         const narration = c.narrationJp || '';
-
         let hl = c.telop?.highlights || [];
         if (!Array.isArray(hl) || hl.length === 0) {
             hl = extractHighlights(narration);
@@ -238,18 +499,15 @@ export const downloadZip = async (
         })).filter(h => h.word.trim() !== '');
 
         const hlWords = safeHl.map(h => h.word);
-
         const cutPad = String(c.id || 1).padStart(2, '0');
 
         return {
-          // Media Vault Integration Fields (REQ-02 & Trap 1 Fix)
           cut_no: c.id || 1,
           duration_sec: c.duration || 3.0,
           narration: narration,
           image_file: `cut_${cutPad}.png`,
           video_file: `cut_${cutPad}.mp4`,
 
-          // FlowTool Native Fields
           id: c.id || 1,
           dialogue: narration,
           narrationJp: narration,
@@ -306,7 +564,6 @@ export const downloadZip = async (
       }
     }
 
-    // ログの完全収集: 引数 logs が渡されていない場合でも、グローバルログストアから取得
     const globalLogs = (typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || [];
     const effectiveLogs: LogEntry[] = (logs && logs.length > 0) ? logs : globalLogs;
     const logLines = effectiveLogs.map(l => (typeof l.message === 'string' ? l.message : String(l.message || '')));
@@ -314,7 +571,6 @@ export const downloadZip = async (
     folder.file('production_logs.txt', logLines.join('\n'));
 
     addLog(`📦 ZIPアーカイブを圧縮中...`, 'process');
-    // Using compression: 'STORE' to prevent massive memory spikes and crashes during large batch generation
     const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
 
     const filename = displayFilename;
@@ -324,11 +580,9 @@ export const downloadZip = async (
     const blobUrl = URL.createObjectURL(zipBlob);
     setTimeout(() => {
       try { URL.revokeObjectURL(blobUrl); } catch (_) {}
-    }, 30000); // 連続自動保存のため、30秒でメモリ解放
+    }, 30000);
 
-    // 統合保存処理を実行（ASCII安全名 asciiFilename を最優先で Flow.download に渡す）
     const saveRes = await savePackageFile(zipBlob, filename, addLog, asciiFilename);
-
     return { filename, blobUrl, sizeStr, flowSuccess: saveRes.success };
   } catch (err: any) { 
     addLog(`❌ ZIP生成エラー: ${err.message}`, 'error'); 

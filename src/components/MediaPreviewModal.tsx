@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Cut } from '../types';
 import { formatDataUri, callWithRetry } from '../services/utils';
 import { resolveImageModel } from '../constants';
-import { TextInput, SectionLabel, PillButton } from './Primitives';
+import { TextInput, SectionLabel, PillButton } from './StudioSidebar';
 
 export interface MediaPreviewModalProps {
   isOpen: boolean;
