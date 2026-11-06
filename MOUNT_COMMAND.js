@@ -1,1 +1,0 @@
-import('https://esm.sh/gh/kymMyLab/flowtoolhuck@a15b1de57d/dist/bundle.js?raw').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！'); });

@@ -335,4 +335,5 @@ export interface LogEntry {
   id: string;
   message: string;
   type: 'info' | 'process' | 'success' | 'warning' | 'error';
+  timestamp?: string;
 }

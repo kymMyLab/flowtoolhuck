@@ -1,12 +1,33 @@
 import { GeneratorSettings, GenerationTask, TelopStyle, TelopTransition, TelopPosition } from '../types';
-import { STRICT_STYLE_SUFFIX } from '../constants';
-import { resolveTastePrompt } from './directorService';
 import { 
+  STRICT_STYLE_SUFFIX,
+  TASTES,
   POSE_CONTRAST_RULES, 
   TWELVE_CUT_STORYBOARD_PRESETS, 
   UNIVERSAL_CINE_CYCLE,
   BASELINE_NEGATIVE_TOKENS
 } from '../constants';
+
+/**
+ * ── 画風・スタイル解決ヘルパー ──
+ */
+export function resolveTasteKey(tasteKeyOrId: string = ''): string {
+  if (!tasteKeyOrId) return '';
+  const trimmed = tasteKeyOrId.trim();
+  if (TASTES[trimmed]) return trimmed;
+
+  const lower = trimmed.toLowerCase();
+  const partialKey = Object.keys(TASTES).find(
+    k => k.split(' (')[0] === trimmed || k.toLowerCase().includes(lower)
+  );
+  return partialKey || trimmed;
+}
+
+export function resolveTastePrompt(tasteKey: string): string {
+  if (!tasteKey) return '';
+  const fullKey = resolveTasteKey(tasteKey);
+  return TASTES[fullKey] || TASTES[tasteKey] || tasteKey;
+}
 
 export interface PreviousShotContext {
   scale?: string;

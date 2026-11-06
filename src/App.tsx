@@ -5,7 +5,7 @@ import { EpisodeSection } from './components/EpisodeSection';
 import { Cut, GeneratorSettings, Episode, LogEntry } from './types';
 import { THEMES, THEME_CATEGORIES, TASTES, IMAGE_MODELS } from './constants';
 import { createLogMessage, initDB } from './services/utils';
-import { downloadZip, savePackageFile } from './services/export/zipPackager';
+import { downloadZip, savePackageFile } from './services/zipPackager';
 import { useStudioProduction } from './services/useStudioProduction';
 import { extractHighlights } from './services/directorService';
 
@@ -183,7 +183,7 @@ export default function App() {
     console.log('💡 ヘッダー右側の【作成開始】をクリックすると制作が始まります。進行ログはここにもリアルタイム出力されます。');
   }, []);
 
-  const { episodes, setEpisodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleRerollTasteProduction, generateImage, generateInfographicCover, updateCut, updateEpisode } = useStudioProduction({ 
+  const { episodes, setEpisodes, isProducing, startProduction, abortProduction, resumeSeries, activeSeriesManifest, handleGenerateRemaining, handleRerollTasteProduction, generateImage, generateInfographicCover, updateCut, updateEpisode, clearEpisodes } = useStudioProduction({ 
     settings, 
     addLog, 
     logs
@@ -337,7 +337,16 @@ export default function App() {
           isWaitingForStart={isWaitingForStart}
         />
         <div className="flex flex-1 overflow-hidden relative">
-          <StudioSidebar settings={settings} setSettings={setSettings} isProducing={isProducing} onAddLog={addLog} episodes={episodes} />
+          <StudioSidebar 
+            settings={settings} 
+            setSettings={setSettings} 
+            isProducing={isProducing} 
+            onStartProduction={startProduction}
+            onAbortProduction={abortProduction}
+            episodes={episodes}
+            onClearEpisodes={clearEpisodes}
+            logs={logs}
+          />
           
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark-scrollbar relative">
             <div className="max-w-[1300px] mx-auto flex flex-col gap-6">

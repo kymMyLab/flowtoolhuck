@@ -65,15 +65,15 @@ async function main() {
       console.log(`✅ Changes committed: "Deploy FlowTool Bundle: ${timestamp}"`);
     }
 
-    // 最新コミットハッシュを記録した version.json および MOUNT_COMMAND.js を生成・コミット
+    // 最新コミットハッシュを記録した version.json および scripts/mount/MOUNT_COMMAND.js を生成・コミット
     commitSha = run('git rev-parse HEAD').slice(0, 10);
     fs.writeFileSync(path.join(rootDir, 'dist', 'version.json'), JSON.stringify({ commit: commitSha, time: Date.now() }, null, 2));
     const mountCmd = `import('https://esm.sh/gh/kymMyLab/flowtoolhuck@${commitSha}/dist/bundle.js?raw').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！'); });\n`;
-    fs.writeFileSync(path.join(rootDir, 'MOUNT_COMMAND.js'), mountCmd);
-    run('git add dist/version.json MOUNT_COMMAND.js');
+    fs.writeFileSync(path.join(rootDir, 'scripts', 'mount', 'MOUNT_COMMAND.js'), mountCmd);
+    run('git add dist/version.json scripts/mount/MOUNT_COMMAND.js');
     run('git commit --amend --no-edit');
     commitSha = run('git rev-parse HEAD').slice(0, 10);
-    fs.writeFileSync(path.join(rootDir, 'MOUNT_COMMAND.js'), `import('https://esm.sh/gh/kymMyLab/flowtoolhuck@${commitSha}/dist/bundle.js?raw').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！'); });\n`);
+    fs.writeFileSync(path.join(rootDir, 'scripts', 'mount', 'MOUNT_COMMAND.js'), `import('https://esm.sh/gh/kymMyLab/flowtoolhuck@${commitSha}/dist/bundle.js?raw').then(m => { const root = document.getElementById('root') || document.body; root.innerHTML = ''; m.mount(root); console.log('🚀 STUDIO PRO 完全最新版マウント完了！'); });\n`);
     console.log(`📌 Version pinned to commit: ${commitSha}`);
 
     // Push to GitHub

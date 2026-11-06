@@ -1,33 +1,22 @@
 import { runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensureInfographicCover, ensureCharacterTurnaround } from './seriesProductionPipeline';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, LogEntry } from '../types';
-import { 
-  CUTS_PER_EPISODE, 
-  resolveImageModel,
-  SAFE_CHARACTERS
-} from '../constants';
+import { CUTS_PER_EPISODE, resolveImageModel, SAFE_CHARACTERS } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId, getAllReferenceAssets, saveReferenceAsset } from './utils';
-
-import { renderCoverBase64 } from './export/zipPackager';
 import { 
   directShot, 
   buildImagePromptAndNegative, 
-  buildCharacterScreeningPrompt, 
-  extractHighlights,
-  checkIsHistorical,
-  buildAdaptiveInfographicCoverPrompt,
-  cleanEpisodeTitle,
-  cleanEpisodeTitleEn,
-  PreviousShotInfo,
+  cleanEpisodeTitle, 
+  cleanEpisodeTitleEn, 
+  PreviousShotInfo 
 } from './directorService';
+import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate } from './promptEngine';
 
 function useEpisodeState(addLog: (msg: string, type?: any) => void) {
   const [episodes, setEpisodes] = useState<Episode[]>(() => {
     if (typeof window !== 'undefined') {
       const existing = (window as any).__STUDIO_EPISODES__ || (window as any).__STUDIO_EPISODES_BACKUP__;
-      if (Array.isArray(existing) && existing.length > 0) {
-        return existing;
-      }
+      if (Array.isArray(existing) && existing.length > 0) return existing;
     }
     return [];
   });
@@ -35,9 +24,7 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
   const [isProducing, setIsProducing] = useState(false);
   const isAbortedRef = useRef(false);
   const [activeSeriesManifest, setActiveSeriesManifest] = useState<SeriesManifest | null>(() => {
-    if (typeof window !== 'undefined') {
-      return (window as any).__STUDIO_SERIES_MANIFEST__ || null;
-    }
+    if (typeof window !== 'undefined') return (window as any).__STUDIO_SERIES_MANIFEST__ || null;
     return null;
   });
   const seriesManifestRef = useRef<SeriesManifest | null>(activeSeriesManifest);
@@ -57,10 +44,9 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
     }
   }, [episodes]);
 
-  // 初回マウント時に既存セッションから復元された場合はログに通知
   useEffect(() => {
     if (episodes.length > 0) {
-      addLog(`🔄 前回の制作セッションから全${episodes.length}話（生成済み動画・画像含む）を自動復元・維持しました！`, 'success');
+      addLog(`🔄 前回の制作セッションから全${episodes.length}話を自動復元しました！`, 'success');
     }
   }, []);
 
@@ -100,7 +86,7 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
   const abortProduction = useCallback(() => {
     isAbortedRef.current = true;
     setIsProducing(false);
-    addLog('🛑 制作プロセスを中断しました。', 'warning');
+    addLog('🛑 ユーザーによって制作が中断されました。', 'warning');
   }, [addLog]);
 
   return {
@@ -121,9 +107,6 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate, isMvChorusCut } from './promptEngine';
-import { resolveCameraWork } from '../constants';
-
 
 interface UseStudioProductionProps {
   settings: GeneratorSettings;
@@ -132,9 +115,6 @@ interface UseStudioProductionProps {
 }
 
 export function useStudioProduction({ settings, addLog, logs }: UseStudioProductionProps) {
-  const logsRef = useRef(logs);
-  logsRef.current = logs;
-
   const {
     episodes,
     setEpisodes,
@@ -151,41 +131,34 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     abortProduction
   } = useEpisodeState(addLog);
 
+  const logsRef = useRef(logs);
+  useEffect(() => { logsRef.current = logs; }, [logs]);
+
+  const activeReferenceRef = useRef<{ mediaId?: string; characterDna?: string; styleDna?: string; antiPoseNegative?: string; eraNegative?: string } | undefined>(undefined);
+  const currentAssetRef = useRef<any>(undefined);
   const queueRef = useRef<GenerationTask[]>([]);
-  const lastErrorRef = useRef<string>('');
-  const hasRateLimitedBanana2Ref = useRef<boolean>(false);
+  const hasRateLimitedBanana2Ref = useRef(false);
+  const lastErrorRef = useRef<string | null>(null);
+
+  const handleClearEpisodes = useCallback(() => {
+    activeReferenceRef.current = undefined;
+    currentAssetRef.current = undefined;
+    hasRateLimitedBanana2Ref.current = false;
+    clearEpisodes();
+  }, [clearEpisodes]);
 
   const handleAbort = useCallback(() => {
     queueRef.current = [];
     abortProduction();
   }, [abortProduction]);
 
-  const currentAssetRef = useRef<{ name: string; base64: string; mimeType: string } | null>(null);
-
-  const handleClearEpisodes = useCallback(() => {
-    activeReferenceRef.current = null;
-    currentAssetRef.current = null;
-    clearEpisodes();
-  }, [clearEpisodes]);
-
-
-  const activeReferenceRef = useRef<{
-    mediaId: string;
-    characterDna: string;
-    styleDna: string;
-    antiPoseNegative: string;
-    eraNegative: string;
-  } | null>(null);
-
-
-
-  const resumeSeries = useCallback(async (manifest: SeriesManifest, onAssetRestored?: (assetId: number) => void) => {
+  const resumeSeries = async (manifest: SeriesManifest, onAssetRestored?: (assetId: number) => void) => {
+    setActiveSeriesManifest(manifest);
     seriesManifestRef.current = manifest;
-    setActiveSeriesManifest({ ...manifest });
-    addLog(`📂 シリーズ「${manifest.seriesTitle}」の設計図を読込（全${manifest.totalEpisodes}話中 ${manifest.completedEpisodeIds?.length || 0}話完了済み）。`, 'process');
-    
-    const resumedEpisodes: Episode[] = manifest.episodesPlan.map(p => {
-      const isDone = manifest.completedEpisodeIds.includes(p.epNumber);
+    const completedIds = manifest.completedEpisodeIds || [];
+
+    const resumedEpisodes: Episode[] = (manifest.episodesPlan || []).map(p => {
+      const isDone = completedIds.includes(p.epNumber);
       return {
         id: p.epNumber,
         internalId: crypto.randomUUID(),
@@ -197,7 +170,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         isGeneratingRemainingImages: false,
         isBatchGeneratingVideos: false,
         isPreviewDone: isDone,
-        isDone: isDone,
+        isDone,
         taste: manifest.settings?.taste,
         era: manifest.settings?.era,
         theme: manifest.settings?.theme
@@ -206,65 +179,37 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     setEpisodes(resumedEpisodes);
     episodesRef.current = resumedEpisodes;
 
-    if (manifest.referenceAsset && manifest.referenceAsset.base64) {
+    if (manifest.referenceAsset?.base64) {
       try {
         const assets = await getAllReferenceAssets();
         let matched = assets.find(a => a.name === manifest.referenceAsset!.name && a.base64.slice(0, 50) === manifest.referenceAsset!.base64.slice(0, 50));
         let assetId = matched?.id;
         if (!assetId) {
-          assetId = await saveReferenceAsset({
-            name: manifest.referenceAsset.name || 'Restored_Character',
-            base64: manifest.referenceAsset.base64,
-            mimeType: manifest.referenceAsset.mimeType || 'image/png',
-            createdAt: new Date().toISOString()
-          });
-          addLog(`✨ キャラクター画像を保管庫(Vault)に自動復元しました。`, 'success');
+          assetId = await saveReferenceAsset({ name: manifest.referenceAsset.name, base64: manifest.referenceAsset.base64 });
         }
-
-        currentAssetRef.current = {
-          name: manifest.referenceAsset.name || 'Character',
-          base64: manifest.referenceAsset.base64,
-          mimeType: manifest.referenceAsset.mimeType || 'image/png'
-        };
-
-        if (manifest.referenceAsset.characterDna) {
-          const uploadRes = await Flow.upload({
-            base64: manifest.referenceAsset.base64,
-            mimeType: (manifest.referenceAsset.mimeType || 'image/png') as 'image/png' | 'image/jpeg' | 'image/webp',
-            name: `Ref: ${manifest.referenceAsset.name || 'Character'}`
-          });
-          activeReferenceRef.current = {
-            mediaId: uploadRes.mediaId,
-            characterDna: manifest.referenceAsset.characterDna,
-            styleDna: manifest.referenceAsset.styleDna || '',
-            antiPoseNegative: manifest.referenceAsset.antiPoseNegative || '',
-            eraNegative: manifest.referenceAsset.eraNegative || ''
-          };
-          addLog(`✨ キャラクターDNAと画風DNAを完全復元しました。`, 'success');
-        }
-
         if (assetId && onAssetRestored) onAssetRestored(assetId);
-      } catch (err: any) {
-        addLog(`⚠️ 画像・DNAの復元スキップ: ${err.message}`, 'warning');
+        currentAssetRef.current = { id: assetId, name: manifest.referenceAsset.name, base64: manifest.referenceAsset.base64 };
+        activeReferenceRef.current = {
+          characterDna: manifest.referenceAsset.characterDna,
+          styleDna: manifest.referenceAsset.styleDna,
+          antiPoseNegative: manifest.referenceAsset.antiPoseNegative,
+          eraNegative: manifest.referenceAsset.eraNegative
+        };
+      } catch (e) {
+        console.warn('Reference asset restore error:', e);
       }
     }
+    addLog(`📂 シリーズ「${manifest.seriesTitle}」を復元しました（全${manifest.totalEpisodes}話 / 完了: ${completedIds.length}話）`, 'success');
+  };
 
-    const nextEpNumber = (manifest.completedEpisodeIds && manifest.completedEpisodeIds.length > 0)
-      ? Math.max(...manifest.completedEpisodeIds) + 1
-      : 1;
-    addLog(`🚀 第 ${nextEpNumber} 話から自動再開できます。「生成開始」を押してください。`, 'info');
-  }, [addLog]);
+  const buildCutTasks = (ep: Episode, cutsToGenerate: Cut[], styleKey?: string): GenerationTask[] => {
+    const fixedChar = (ep.characterId && ep.characterId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === ep.characterId) : undefined;
+    const refMediaId = ep.characterTurnaroundMediaId || ep.masterAnchorMediaId || (ep.isMvMode ? undefined : activeReferenceRef.current?.mediaId);
 
-  const buildCutTasks = (ep: Episode, cuts: Cut[], styleKey?: string): GenerationTask[] => {
-    const charId = ep.characterId || settings.characterId;
-    const fixedChar = (charId && charId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === charId) : undefined;
-    return cuts.map(c => {
-      const turnaroundMediaId = ep.characterTurnaroundMediaId || (ep.isMvMode ? undefined : activeReferenceRef.current?.mediaId);
-      const refMediaId = c.isObjectOnly
-        ? undefined
-        : (turnaroundMediaId || ep.masterAnchorMediaId);
+    return cutsToGenerate.map(c => {
+      const promptCandidates = [c.cleanImagePrompt, c.promptEn, c.scenePlot, c.narrationJp].filter(Boolean);
+      const effectivePrompt = promptCandidates[0] || 'Cinematic anime visual scene';
 
-      let effectivePrompt = c.promptEn || '';
       return {
         epId: ep.id,
         cutId: c.id,
@@ -295,12 +240,8 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     const ep = episodesRef.current.find(e => e.id === epId);
     if (!ep) return;
 
-    // MVモード未解析ならバッチ画像生成前にGeminiで全体解析（映画的緩急バランス判定）
-
-    // エピソードの三面図が未アップロードなら即座にFlowへ自動アップロード
     if (ep.characterTurnaroundBase64 && !ep.characterTurnaroundMediaId) {
       try {
-        addLog(`📤 Ep.${epId}: 三面図（Character Turnaround）をFlowへ自動アップロード中...`, 'process');
         const uploadRes = await Flow.upload({
           base64: ep.characterTurnaroundBase64,
           mimeType: 'image/png',
@@ -309,10 +250,9 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         if (uploadRes?.mediaId) {
           ep.characterTurnaroundMediaId = uploadRes.mediaId;
           updateEpisode(epId, { characterTurnaroundMediaId: uploadRes.mediaId });
-          addLog(`✅ Ep.${epId}: 三面図のmediaIdを発行・確定しました [${uploadRes.mediaId}]`, 'success');
         }
       } catch (err: any) {
-        addLog(`⚠️ Ep.${epId}: 三面図アップロード失敗: ${err.message}`, 'warning');
+        console.warn('Turnaround upload error:', err);
       }
     }
 
@@ -330,26 +270,23 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     
     if (stillRemaining === 0) {
       updateEpisode(epId, { isGeneratingRemainingImages: false, isDone: true, isPreviewDone: true });
-      addLog(`✅ Ep.${epId}: すべての画像生成（全${ep.cuts.length}カット）が完了しました！`, 'success');
+      addLog(`✅ Ep.${epId}: 全${ep.cuts.length}カットの画像生成が完了しました！`, 'success');
     } else {
       updateEpisode(epId, { isGeneratingRemainingImages: false });
       if (!isAbortedRef.current) {
-        addLog(`⚠️ Ep.${epId}: 一部の画像が未完了（残り ${stillRemaining} 枚）です。もう一度実行して再開できます。`, 'warning');
+        addLog(`⚠️ Ep.${epId}: 一部未完了（残り ${stillRemaining} 枚）です。`, 'warning');
       }
     }
   };
 
-
   const runTasks = async (tasks: GenerationTask[]) => {
-    // ── Phase 1: 演出・構図決定フェーズ（直列連鎖で前カットの構図を完全に追跡＆ネガティブ化） ──
     const preparedTasks: GenerationTask[] = [];
     let previousShotInfo: PreviousShotInfo | undefined = undefined;
 
-    // 最初のタスクの直前カットが既存エピソードにあれば初期値として設定
     if (tasks.length > 0) {
       const firstTask = tasks[0];
       const prevCut = episodesRef.current.find(e => e.id === firstTask.epId)?.cuts.find(c => c.id === firstTask.cutId - 1);
-      if (prevCut && prevCut.shotScale) {
+      if (prevCut?.shotScale) {
         previousShotInfo = {
           scale: prevCut.shotScale,
           angle: prevCut.cinematicAngle,
@@ -359,13 +296,12 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       }
     }
 
-    addLog(`🎬 全 ${tasks.length} カットの映画的対比演出・カメラワークを自動最適化中...`, 'process');
+    addLog(`🎬 全 ${tasks.length} カットの映画的対比演出を自動最適化中...`, 'process');
 
     for (let i = 0; i < tasks.length; i++) {
       if (isAbortedRef.current) break;
       const task = tasks[i];
       const existingCut = episodesRef.current.find(e => e.id === task.epId)?.cuts.find(c => c.id === task.cutId);
-      
       const isCompiledMv = !!(task.isMvMode && (existingCut?.characterPresence || task.characterPresence));
 
       let shotScale = existingCut?.shotScale || task.shotScale || 'Wide';
@@ -378,14 +314,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       let telop = existingCut?.telop;
 
       if (!isCompiledMv) {
-        // 未コンパイルカットのみオンデマンド演出（directShot）を実行
-        const directResult = await directShot(
-          task,
-          settings,
-          activeReferenceRef.current,
-          previousShotInfo
-        );
-
+        const directResult = await directShot(task, settings, activeReferenceRef.current, previousShotInfo);
         shotScale = directResult.shotScale || shotScale;
         cinematicAngle = directResult.cinematicAngle || cinematicAngle;
         promptEn = directResult.promptEn || promptEn;
@@ -395,88 +324,51 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         kenBurnsPreset = directResult.kenBurnsPreset || kenBurnsPreset;
         telop = directResult.telop ? { ...existingCut?.telop, ...directResult.telop } : existingCut?.telop;
       } else if (previousShotInfo) {
-        // コンパイル済みMVカット: directShotでの演出破壊をスキップし、直前対比ネガティブのみを動的注入
         const dynamicAnti = buildDynamicAntiPreviousNegative(previousShotInfo, shotScale);
         if (dynamicAnti) {
           antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${dynamicAnti}` : dynamicAnti;
         }
       }
 
-      // 🛡️ [Tier 2 構図被り防止ガード: フェイスアップ連続の絶対遮断]
       if (previousShotInfo && isFaceMacroScale(previousShotInfo.scale, previousShotInfo.angle) && isFaceMacroScale(shotScale, cinematicAngle)) {
-        addLog(`🛡️ [構図被り防止ガード] Ep.${task.epId} C${task.cutId.toString().padStart(2, '0')}: 顔面アップの連続（直前: ${previousShotInfo.scale}）を検知。バストアップ構図へ自動シフトしました`, 'info');
+        addLog(`🛡️ [構図被り防止] Ep.${task.epId} C${task.cutId}: 顔面アップ連続を検知。バストアップ構図へ自動シフト`, 'info');
         shotScale = 'Medium Bust Shot';
-        cinematicAngle = 'Candid cinematic chest-up framing capturing authentic posture, upper-body clothing, and natural atmospheric presence within the environment, unposed natural aesthetic, rich rim lighting, rule-of-thirds composition, head and shoulders visible with comfortable breathing room';
+        cinematicAngle = 'Candid cinematic chest-up framing capturing authentic posture, rich rim lighting, rule-of-thirds';
       }
 
       updateCut(task.epId, task.cutId, { 
-        promptEn,
-        shotScale,
-        cinematicAngle,
-        cameraWork,
-        cameraMotion,
-        kenBurnsPreset,
-        telop,
-        negativePrompt: antiPreviousNegative
+        promptEn, shotScale, cinematicAngle, cameraWork, cameraMotion, kenBurnsPreset, telop, negativePrompt: antiPreviousNegative
       });
 
-      previousShotInfo = {
-        scale: shotScale,
-        angle: cinematicAngle,
-        prompt: promptEn,
-        tag: cameraWork,
-        telop
-      };
-
-      preparedTasks.push({
-        ...task,
-        prompt: promptEn,
-        negativePrompt: antiPreviousNegative,
-        shotScale,
-        cinematicAngle,
-        camera: cameraWork
-      });
+      previousShotInfo = { scale: shotScale, angle: cinematicAngle, prompt: promptEn, tag: cameraWork, telop };
+      preparedTasks.push({ ...task, prompt: promptEn, negativePrompt: antiPreviousNegative, shotScale, cinematicAngle, camera: cameraWork });
     }
 
     if (isAbortedRef.current) return;
 
-    addLog(`🎬 全 ${preparedTasks.length} カットの対比構図演出を確定（並列画像生成を開始します）`, 'process');
-
-    // ── Phase 2: 画像生成フェーズ（確定したプロンプト＆直前構図ネガティブで並列実行） ──
-    // 👑 マスターアンカー先行確定ガード:
-    // Cut 1 が未生成（masterAnchorMediaId未確定）の場合、まず Cut 1 を単独で先行生成する。
-    // Cut 1 の決定版ポートレートが完成・アンカーロックされてから Cut 2 以降を並列ワーカーで一斉稼働させることで、
-    // Cut 2 が Cut 1 より先に走ってキャラがブレる事故を物理的に完全根絶！
+    // Cut 1先行アンカー確定
     const epId = preparedTasks[0]?.epId;
     const currentEp = episodesRef.current.find(e => e.id === epId);
     const cut1Index = preparedTasks.findIndex(t => t.cutId === 1);
-
-    // MVモード（または三面図が存在する場合）は、純白背景の三面図が唯一の絶対アンカーとなるため、Cut 1のアンカー先行待機は不要
     const needsCut1Anchor = !currentEp?.isMvMode && !currentEp?.characterTurnaroundMediaId && !currentEp?.masterAnchorMediaId;
     if (cut1Index !== -1 && needsCut1Anchor) {
       const cut1Task = preparedTasks.splice(cut1Index, 1)[0];
-      addLog(`👑 Ep.${epId}: まず Cut 1（マスターアンカー）を単独先行生成してキャラクター基準を確立します...`, 'process');
+      addLog(`👑 Ep.${epId}: Cut 1（マスターアンカー）を先行生成中...`, 'process');
       await generateImage(cut1Task);
       if (isAbortedRef.current) return;
     }
 
     queueRef.current = [...preparedTasks];
-    // 並列度はユーザー設定（デフォルト2）を尊重し、ユーザーの意思で増減可能
     const concurrency = Math.max(1, settings.parallelCount || 2);
     const workers = Array(concurrency).fill(null).map(async (_, workerIdx) => {
-      // ワーカー間で開始時間をスタッガー（時間差5.0秒）させ、同時リクエスト集中による429/503を防止
-      if (workerIdx > 0) {
-        await sleep(workerIdx * 5000);
-      }
+      if (workerIdx > 0) await sleep(workerIdx * 5000);
       while (queueRef.current.length > 0) {
         if (isAbortedRef.current) break;
         const task = queueRef.current.shift();
         if (!task) break;
         await generateImage(task);
-        // タスク完了後は 10秒〜15秒 のクールダウン（＋ランダムゆらぎ）をしっかり挟んでAPIレートリミット（動的RPM減衰）を回避
         if (queueRef.current.length > 0 && !isAbortedRef.current) {
-          const cooldownMs = 10000 + Math.random() * 5000;
-          await sleep(cooldownMs);
+          await sleep(10000 + Math.random() * 5000);
         }
       }
     });
@@ -488,15 +380,11 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     const { epId, cutId } = task;
     updateCut(epId, cutId, { isGeneratingImage: true });
 
-    // 定義レジストリから完全解決（キー、ラベル、表示名のいずれからでも確実に解決）
     const modelDef = resolveImageModel(task.imageModel || settings.imageModel);
-
     addLog(`🎨 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成中 [${modelDef.label}]...`, 'process');
 
     try {
       const ep = episodesRef.current.find(e => e.id === epId);
-
-      // 三面図が未アップロードなら画像生成直前にも確実にアップロードして救済
       if (ep?.characterTurnaroundBase64 && !ep.characterTurnaroundMediaId) {
         try {
           const uploadRes = await Flow.upload({
@@ -508,12 +396,9 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             ep.characterTurnaroundMediaId = uploadRes.mediaId;
             updateEpisode(epId, { characterTurnaroundMediaId: uploadRes.mediaId });
           }
-        } catch (e) {
-          console.warn('Turnaround upload error:', e);
-        }
+        } catch (_) {}
       }
 
-      // 三面図が利用可能なら人物カットで確実にバインド（純白背景の三面図のみを渡し、Cut 01の夕暮れ汚染を物理排除）
       const currentCutObj = ep?.cuts.find(c => c.id === cutId);
       const isAnchorExcluded = task.isObjectOnly || 
         currentCutObj?.characterPresence === '4_hands_or_feet_detail' || 
@@ -523,7 +408,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       const fallbackAnchor = ep?.isMvMode ? undefined : ep?.masterAnchorMediaId;
       const refMediaId = isAnchorExcluded ? undefined : (turnaroundMediaId || task.referenceImageMediaId || fallbackAnchor);
 
-      // ★ ユーザー設計規範: 直近カット（直前1〜2カット）のプロンプト・構図を動的ネガティブプロンプトとして完全バインド
       let effectiveNegative = task.negativePrompt || '';
       let positiveMandate = '';
       if (cutId > 1) {
@@ -536,11 +420,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             tag: c.cameraWork
           }));
           const antiPrev = buildDynamicAntiPreviousNegative(prevContexts, task.shotScale);
-          if (antiPrev) {
-            effectiveNegative = effectiveNegative ? `${effectiveNegative}, ${antiPrev}` : antiPrev;
-            addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 直近カット対比ネガティブ注入 [構図・ポーズ・小道具・視線の重複排除]`, 'info');
-          }
-          // ★ 第2段セーフティ: 直前構図反復禁止のポジティブ指令も生成！
+          if (antiPrev) effectiveNegative = effectiveNegative ? `${effectiveNegative}, ${antiPrev}` : antiPrev;
           positiveMandate = buildPositiveAntiPreviousMandate(prevContexts);
         }
       }
@@ -569,7 +449,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
 
       const safeAspectRatio = '1:1';
       let safePrompt = finalPrompt && /[a-zA-Z0-9]/.test(finalPrompt) ? finalPrompt : 'Cinematic scene, high quality';
-      safePrompt += ', balanced centered composition, ample negative space around subject, safe for 16:9 and 9:16 cropping';
+      safePrompt += ', balanced centered composition, ample negative space';
       const primaryModelName = modelDef?.name || '🍌 Nano Banana 2';
 
       let res: any;
@@ -584,9 +464,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             let currentNegative = finalNegative;
             let currentRefIds = referenceImageMediaIds;
 
-            // 👑 独立別枠クォータへの自動昇格:
-            // 既にBanana 2のレート上限を経験しているか、直前エラーが上限(429/RESOURCE_EXHAUSTED)の場合、
-            // 完全に独立した別枠クォータを持つ「🍌 Nano Banana Pro」へ自動フェイルオーバー！
             const isRateLimitError = lastErrorRef.current && (
               lastErrorRef.current.includes('使用量の上限') || 
               lastErrorRef.current.includes('429') || 
@@ -599,8 +476,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
               currentModelName = '🍌 Nano Banana Pro';
             }
 
-            // ⚡ プロンプト軽量化はポリシー違反・セーフティ起因の時のみ発動させ、
-            // 「使用量上限（429/レートリミット）」の時は元の高品質プロンプト・三面図・モデルを100%維持！
             const isPolicyIssue = lastErrorRef.current && (
               lastErrorRef.current.includes('SAFETY') || 
               lastErrorRef.current.includes('BLOCKED') || 
@@ -609,33 +484,9 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             );
 
             if (isPolicyIssue) {
-              // 抽出: マスターアートスタイルアンカーを維持
-              const masterStyleMatch = safePrompt.match(/\[MASTER ART STYLE:[^\]]+\]/);
-              const masterStylePrefix = masterStyleMatch ? masterStyleMatch[0] + ' ' : '';
-
-              if (attemptCount === 2) {
-                const sanitized = sanitizePromptForGoogleSafety(safePrompt);
-                let trimmed = sanitized.slice(0, 1000).replace(/,[^,]*$/, '').trim();
-                if (masterStyleMatch && !trimmed.includes('[MASTER ART STYLE')) {
-                  trimmed = masterStylePrefix + trimmed;
-                }
-                currentPrompt = trimmed;
-              } else if (attemptCount >= 3) {
-                currentModelName = '🍌 Nano Banana 2 Lite';
-                const sanitized = sanitizePromptForGoogleSafety(safePrompt);
-                let trimmed = sanitized.slice(0, 800).replace(/,[^,]*$/, '').trim();
-                if (masterStyleMatch && !trimmed.includes('[MASTER ART STYLE')) {
-                  trimmed = masterStylePrefix + trimmed;
-                }
-                currentPrompt = trimmed;
-
-                // Keep negative prompt strong if it includes photo exclusion
-                if (finalNegative.includes('photorealistic')) {
-                  // Keep essential exclusions
-                  currentNegative = 'photorealistic, realistic photo, 35mm photograph, DSLR, raw photograph, 3d render, cgi';
-                }
-                // Do NOT set currentRefIds to undefined here to preserve turnaround sheet
-              }
+              const sanitized = sanitizePromptForGoogleSafety(safePrompt);
+              currentPrompt = sanitized.slice(0, 800).replace(/,[^,]*$/, '').trim();
+              if (attemptCount >= 3) currentModelName = '🍌 Nano Banana 2 Lite';
             }
 
             return await Flow.generate.image({ 
@@ -654,84 +505,44 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
 
             if (isRateLimit && !hasRateLimitedBanana2Ref.current) {
               hasRateLimitedBanana2Ref.current = true;
-              addLog(`👑 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [別枠クォータ自動昇格] Banana 2の上限を検知！独立した別枠クォータを持つ「🍌 Nano Banana Pro」へ自動昇格して次回試行より続行します！`, 'success');
+              addLog(`👑 Ep.${epId} C${cutId}: [自動昇格] 独立別枠クォータを持つ「🍌 Nano Banana Pro」へ自動昇格します！`, 'success');
             }
 
             if (isSuper) {
-              addLog(`🌙 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [超指数バックオフ ${attempt - 5}/4] 深夜帯サーバー高負荷のため ${waitStr}待機して自動再開します... (理由: ${errMsg})`, 'warning');
+              addLog(`🌙 Ep.${epId} C${cutId}: [超指数バックオフ] 高負荷待機中 (${waitStr})...`, 'warning');
             } else if (isRateLimit) {
-              addLog(`⏳ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [クォータ回復＆Pro昇格待機] 品質を維持したまま ${waitStr}待機して再開 (${attempt}/${max})... (理由: ${errMsg})`, 'warning');
-            } else if (attempt >= 2) {
-              addLog(`⚡ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [セーフティ回避] プロンプト安全化モードで再試行 (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
+              addLog(`⏳ Ep.${epId} C${cutId}: [クォータ回復待機] ${waitStr}待機中 (${attempt}/${max})...`, 'warning');
             } else {
-              addLog(`⚠️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像リトライ (${attempt}/${max}) ${waitStr}後... (理由: ${errMsg})`, 'warning');
+              addLog(`⚠️ Ep.${epId} C${cutId}: 画像リトライ (${attempt}/${max}) ${waitStr}後...`, 'warning');
             }
           },
-          {
-            maxRetries: 5,
-            timeoutMs: 90000,
-            timeoutLabel: '画像生成',
-            superBackoff: settings.superBackoff,
-            abortCheck: () => isAbortedRef.current
-          }
+          { maxRetries: 5, timeoutMs: 90000, timeoutLabel: '画像生成', superBackoff: settings.superBackoff, abortCheck: () => isAbortedRef.current }
         );
       } catch (firstErr: any) {
-        const errMsg = formatErrorMessage(firstErr);
-        const isPolicyError = errMsg.includes('ポリシー') || errMsg.includes('POLICY') || errMsg.includes('SAFETY') || errMsg.includes('BLOCKED');
-        
         if (!isAbortedRef.current) {
-          addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: サーバー過負荷・セーフティ保護をバイパスするため、極小救済プロンプト＆超軽量モデルで最終生成を実行します...`, 'warning');
-          
-          // 骨子のみの最小安全プロンプトで最終救済
-          const masterStyleMatch = safePrompt.match(/\[MASTER ART STYLE:[^\]]+\]/);
-          const masterStylePrefix = masterStyleMatch ? masterStyleMatch[0] + ' ' : '';
-
-          let rescuePrompt = sanitizePromptForGoogleSafety(safePrompt)
-            .replace(/\b(seductive|seductively|adult|intimate|childlike|sensual|erotic|provocative|naked|nude)\b/gi, 'artistic')
-            .slice(0, 500)
-            .replace(/,[^,]*$/, '')
-            .trim() + ', cinematic masterpiece, aesthetic';
-
-          if (masterStyleMatch && !rescuePrompt.includes('[MASTER ART STYLE')) {
-            rescuePrompt = masterStylePrefix + rescuePrompt;
-          }
-
-          try {
-            res = await callWithRetry<any>(
-              () => Flow.generate.image({ 
-                prompt: rescuePrompt,
-                negativePrompt: '',
-                modelDisplayName: '🍌 Nano Banana 2 Lite',
-                aspectRatio: safeAspectRatio as any
-              }),
-              (attempt, max, delay, err) => {
-                addLog(`🛡️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 救済モード再試行中 (${attempt}/${max})...`, 'warning');
-              },
-              {
-                maxRetries: 2,
-                timeoutMs: 90000,
-                timeoutLabel: '救済プロンプト画像生成',
-                abortCheck: () => isAbortedRef.current
-              }
-            );
-          } catch (rescueErr) {
-            throw firstErr;
-          }
+          addLog(`🛡️ Ep.${epId} C${cutId}: 救済プロンプト＆超軽量モデルで最終生成を実行中...`, 'warning');
+          const rescuePrompt = sanitizePromptForGoogleSafety(safePrompt).slice(0, 400) + ', cinematic aesthetic';
+          res = await callWithRetry<any>(
+            () => Flow.generate.image({ 
+              prompt: rescuePrompt,
+              negativePrompt: '',
+              modelDisplayName: '🍌 Nano Banana 2 Lite',
+              aspectRatio: safeAspectRatio as any
+            }),
+            undefined,
+            { maxRetries: 2, timeoutMs: 90000, abortCheck: () => isAbortedRef.current }
+          );
         } else {
           throw firstErr;
         }
       }
+
       let finalBase64 = extractImageBase64(res);
       const finalMediaId = extractMediaId(res);
       if (!finalBase64 && finalMediaId && typeof (Flow as any)?.media?.getBase64 === 'function') {
         try { finalBase64 = extractImageBase64(await (Flow as any).media.getBase64(finalMediaId)); } catch (_) {}
       }
-      console.log(`🖼️ [Ep.${epId} C${cutId} 画像抽出結果]`, {
-        hasBase64: !!finalBase64,
-        base64Length: finalBase64?.length,
-        mediaId: finalMediaId,
-        rawKeys: Object.keys(res || {})
-      });
+
       updateCut(epId, cutId, { 
         imageMediaId: finalMediaId, 
         imageBase64: finalBase64, 
@@ -739,29 +550,16 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         error: undefined
       });
 
-      // Cut 1 の画像が完成した場合:
-      // MVモードでは背景（夕暮れ空・坂道）の引きずり・金太郎飴化を防止するため、Cut 1 をマスターアンカーに設定せず三面図のみを信託する！
       if (cutId === 1 && !ep?.isMvMode && !ep?.characterTurnaroundMediaId) {
-        updateEpisode(epId, {
-          masterAnchorMediaId: finalMediaId,
-          masterAnchorBase64: finalBase64
-        });
+        updateEpisode(epId, { masterAnchorMediaId: finalMediaId, masterAnchorBase64: finalBase64 });
         addLog(`👑 Ep.${epId}: Cut 1 の決定版ポートレートをマスターアンカーとして固定しました`, 'success');
       }
 
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');
-
-      // ユーザー指示: After絵の参照がモーフィング崩壊の害悪となるため自動生成を無効化
-      // （※Start絵1枚からプロンプトだけでAfter状態へ導く仕様に変更）
-      /*
-      if (settings.enableEndFrames !== false) {
-        await generateEndFrame(epId, cutId);
-      }
-      */
     } catch (err) {
       const errorMsg = formatErrorMessage(err);
       updateCut(epId, cutId, { isGeneratingImage: false, error: errorMsg });
-      addLog(`❌ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像失敗 - ${errorMsg}`, 'error');
+      addLog(`❌ Ep.${epId} C${cutId}: 画像失敗 - ${errorMsg}`, 'error');
     }
   };
 
@@ -789,40 +587,22 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
 
   const startProduction = async (overrideSettings?: Partial<GeneratorSettings>) => {
     if (isProducing) {
-      console.warn('⚠️ [FlowTool Studio] すでに制作プロセスが実行中です。');
+      console.warn('⚠️ 制作プロセス実行中です。');
       return;
     }
     const isValidOverride =
       overrideSettings &&
       typeof overrideSettings === 'object' &&
       !('nativeEvent' in (overrideSettings as any)) &&
-      !('target' in (overrideSettings as any)) &&
-      !('preventDefault' in (overrideSettings as any));
+      !('target' in (overrideSettings as any));
     const effectiveSettings: GeneratorSettings = {
       ...settings,
       ...(isValidOverride ? overrideSettings : {})
     };
 
-    console.log(
-      '%c🎬 ▶️ 【全自動プロデュース】処理が開始されました！',
-      'background: #10b981; color: #fff; font-weight: bold; font-size: 13px; padding: 4px 8px; border-radius: 4px;'
-    );
-    console.log('📋 実行パラメータ:', {
-      mode: effectiveSettings.productionMode || '通常',
-      theme: effectiveSettings.theme,
-      totalEpisodes: effectiveSettings.totalEpisodes || effectiveSettings.episodeCount,
-      taste: effectiveSettings.taste,
-      aspectRatio: effectiveSettings.aspectRatio,
-      imageModel: effectiveSettings.imageModel,
-      videoModel: effectiveSettings.defaultVideoModel,
-      autoVideo: effectiveSettings.autoVideo,
-      autoDownload: effectiveSettings.autoDownload,
-      enableEndFrames: effectiveSettings.enableEndFrames
-    });
-
     setIsProducing(true);
     isAbortedRef.current = false;
-    addLog(`🎬 【全自動プロデュース開始】モード: ${effectiveSettings.productionMode || '通常'} / 全${effectiveSettings.totalEpisodes || effectiveSettings.episodeCount || 1}話 / テーマ: 「${effectiveSettings.theme || '未設定'}」`, 'process');
+    addLog(`🎬 【全自動プロデュース開始】モード: ${effectiveSettings.productionMode || '通常'} / 全${effectiveSettings.totalEpisodes || effectiveSettings.episodeCount || 1}話`, 'process');
 
     const pipelineContext = {
       settings: effectiveSettings,
@@ -841,10 +621,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     };
 
     try {
-
-      // ★ 最重要: ①大前提プロデュース設計図（seriesManifestRef.current）が存在する場合
-      // ただし、MVモードまたは音楽インポートによるエピソードがある場合は、
-      // 音楽MVバッチパイプライン（runShortsBatchProduction）を優先して画面上のインポート曲を作画する！
       if (!settings.isMvMode && settings.productionMode !== 'mv' && seriesManifestRef.current && (seriesManifestRef.current.episodesPlan?.length || 0) > 0) {
         await runSeriesProduction(pipelineContext);
         return;
@@ -858,9 +634,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
 
       await runSeriesProduction(pipelineContext);
     } catch (err: any) {
-      console.error('Fatal Production Error:', err);
-      const detail = err.stack ? err.stack.split('\n')[0] + ' (' + err.message + ')' : formatErrorMessage(err);
-      addLog(`❌ 制作エラー: ${detail}`, 'error');
+      addLog(`❌ 制作エラー: ${formatErrorMessage(err)}`, 'error');
     } finally {
       setIsProducing(false);
     }
@@ -879,7 +653,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     addLog(`🎨 第${epId}話: 画風を「${shortName}」に変更し、先行${targetCutCount}カットの再作成を開始します！`, 'process');
     setIsProducing(true);
 
-    // 1. 各カットの画像・動画・過去エラーデータを完全払拭（歌詞・画角・カメラワーク・演出指示・小道具設定は100%保持）
     const resetCuts: Cut[] = ep.cuts.map(c => ({
       ...c,
       imageBase64: undefined,
@@ -913,19 +686,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     setEpisodes(prev => prev.map(e => e.id === epId ? updatedEp : e));
     episodesRef.current = episodesRef.current.map(e => e.id === epId ? updatedEp : e);
 
-    // 各カットのステータスとエラーを個別に完全クリア（UIの「FAILED 失敗」バッジを即時払拭）
-    resetCuts.forEach(c => {
-      updateCut(epId, c.id, {
-        imageBase64: undefined,
-        imageMediaId: undefined,
-        videoBase64: undefined,
-        videoMediaId: undefined,
-        isGeneratingImage: false,
-        isGeneratingVideo: false,
-        error: undefined
-      });
-    });
-
     const pipelineCtx = {
       settings: { ...settings, taste: newTaste },
       addLog,
@@ -943,11 +703,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     };
 
     try {
-      // 1. 先に歌詞ビジュアル解析（楽曲DNA抽出＆Step 3絵コンテコンパイル）を完了させて主人公DNAを確定
-
-      if (isAbortedRef.current) return;
-
-      // 2. 確定した主人公DNAを用いて、新画風での三面図マスター生成
       if (settings.enableTurnaroundSheet !== false) {
         addLog(`🎨 第${epId}話: 新画風「${shortName}」での主人公三面図マスターを設計中...`, 'process');
         const turnaround = await ensureCharacterTurnaround(pipelineCtx as any, updatedEp);
@@ -962,35 +717,43 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       }
 
       if (isAbortedRef.current) return;
-
-      // 3. 先行カット（targetCutCount枚）の画像生成
       const pendingCuts = updatedEp.cuts.slice(0, targetCutCount);
-      addLog(`🎨 第${epId}話: 新画風「${shortName}」で先行${targetCutCount}カットの作画を開始...`, 'process');
-
       await runTasks(buildCutTasks(updatedEp, pendingCuts, newTaste));
-
       if (isAbortedRef.current) return;
 
-      // 4. 新画風でのインフォグラフィック特大扉絵（ポスター）生成
       const freshEp = episodesRef.current.find(e => e.id === epId) || updatedEp;
       await ensureInfographicCover(pipelineCtx as any, freshEp);
 
       const completedCount = freshEp.cuts.slice(0, targetCutCount).filter(c => c.imageBase64 || c.imageMediaId).length;
-      const isAllDone = completedCount >= updatedEp.cuts.length;
-
       updateEpisode(epId, {
         isGenerating: false,
         isPreviewDone: completedCount >= targetCutCount,
-        isDone: isAllDone
+        isDone: completedCount >= updatedEp.cuts.length
       });
 
-      addLog(`✨ 第${epId}話: 画風「${shortName}」への切り替え＆先行${targetCutCount}カット再作成が完了しました！`, 'success');
+      addLog(`✨ 第${epId}話: 画風「${shortName}」への切り替え＆先行${targetCutCount}カット再作成完了！`, 'success');
     } catch (err: any) {
-      addLog(`❌ 画風切り替え再作成エラー: ${formatErrorMessage(err)}`, 'error');
+      addLog(`❌ 画風切り替えエラー: ${formatErrorMessage(err)}`, 'error');
     } finally {
       setIsProducing(false);
     }
   };
 
-  return { episodes, setEpisodes, isProducing, startProduction, abortProduction: handleAbort, resumeSeries, activeSeriesManifest, setActiveSeriesManifest, handleGenerateRemaining, handleRerollTasteProduction, generateImage, generateInfographicCover, updateCut, updateEpisode, clearEpisodes: handleClearEpisodes };
+  return { 
+    episodes, 
+    setEpisodes, 
+    isProducing, 
+    startProduction, 
+    abortProduction: handleAbort, 
+    resumeSeries, 
+    activeSeriesManifest, 
+    setActiveSeriesManifest, 
+    handleGenerateRemaining, 
+    handleRerollTasteProduction, 
+    generateImage, 
+    generateInfographicCover, 
+    updateCut, 
+    updateEpisode, 
+    clearEpisodes: handleClearEpisodes 
+  };
 }

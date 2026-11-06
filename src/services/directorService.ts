@@ -12,41 +12,20 @@ import {
   buildFinalCinematicPromptAndNegative, 
   isMvChorusCut,
   MV_ANTI_CAMERA_LOOK_NEGATIVE,
-  PreviousShotContext 
+  PreviousShotContext,
+  resolveTasteKey,
+  resolveTastePrompt
 } from './promptEngine';
 
 export type { PreviousShotContext as PreviousShotInfo };
-
-/**
- * ── 画風・スタイル解決ヘルパー ──
- */
-export function resolveTasteKey(tasteKeyOrId: string = ''): string {
-  if (!tasteKeyOrId) return '';
-  const trimmed = tasteKeyOrId.trim();
-  if (TASTES[trimmed]) return trimmed;
-
-  const lower = trimmed.toLowerCase();
-  const partialKey = Object.keys(TASTES).find(
-    k => k.split(' (')[0] === trimmed || k.toLowerCase().includes(lower)
-  );
-  return partialKey || trimmed;
-}
-
-export function resolveTastePrompt(tasteKey: string): string {
-  if (!tasteKey) return '';
-  const fullKey = resolveTasteKey(tasteKey);
-  return TASTES[fullKey] || TASTES[tasteKey] || tasteKey;
-}
+export { resolveTasteKey, resolveTastePrompt };
 
 /**
  * ── タイトル・テキスト整形ヘルパー ──
  */
 export function sanitizeForYouTubeSafety(text: string): string {
   if (!text) return '';
-  return text
-    .replace(/[殺死血狂暴]/g, '★')
-    .replace(/(死ね|殺す|血まみれ|狂気|虐殺)/g, '危険')
-    .trim();
+  return text.replace(/[殺死血狂暴]/g, '★').replace(/(死ね|殺す|血まみれ|狂気|虐殺)/g, '危険').trim();
 }
 
 export function cleanEpisodeTitle(title: string): string {
@@ -72,26 +51,10 @@ export function cleanEpisodeTitleEn(title: string): string {
 
 export function checkIsHistorical(era: string = '', theme: string = ''): boolean {
   const combined = `${era} ${theme}`;
-  if (
-    combined.includes('現代') || combined.includes('令和') || combined.includes('平成') || 
-    combined.includes('バブル') || combined.includes('SNS') || combined.includes('ブラック企業') || 
-    combined.includes('社内不倫') || combined.includes('タワマン') || combined.includes('推し活') || 
-    combined.includes('マッチングアプリ')
-  ) {
+  if (['現代', '令和', '平成', 'バブル', 'SNS', 'ブラック企業', '社内不倫', 'タワマン', '推し活', 'マッチングアプリ'].some(k => combined.includes(k))) {
     return false;
   }
-  return (
-    combined.includes('江戸') || combined.includes('幕末') || combined.includes('明治') || 
-    combined.includes('大正') || combined.includes('戦後') || combined.includes('昭和') || 
-    combined.includes('戦国') || combined.includes('平安') || combined.includes('鎌倉') || 
-    combined.includes('室町') || combined.includes('安土桃山') || combined.includes('古代') || 
-    combined.includes('中世') || combined.includes('大河') || combined.includes('吉原') || 
-    combined.includes('新選組') || combined.includes('浪人') || combined.includes('大名') || 
-    combined.includes('武士') || combined.includes('侍') || combined.includes('寺子屋') || 
-    combined.includes('飛脚') || combined.includes('岡っ引き') || combined.includes('火消し') || 
-    combined.includes('屋台めし') || combined.includes('薬売り') || combined.includes('鉄火場') || 
-    combined.includes('鼠小僧')
-  );
+  return ['江戸', '幕末', '明治', '大正', '戦後', '昭和', '戦国', '平安', '鎌倉', '室町', '安土桃山', '古代', '中世', '大河', '吉原', '新選組', '浪人', '大名', '武士', '侍', '寺子屋', '飛脚', '岡っ引き', '火消し', '屋台めし', '薬売り', '鉄火場', '鼠小僧'].some(k => combined.includes(k));
 }
 
 export function extractHighlights(narrationText: string, suggestedWords: string[] = []): Array<{ word: string; color: string; sizeScale: number }> {
@@ -101,44 +64,26 @@ export function extractHighlights(narrationText: string, suggestedWords: string[
 
   for (const rawWord of suggestedWords) {
     const word = (rawWord || '').trim();
-    if (word && narrationText.includes(word) && word.length >= 1 && word.length <= 8) {
+    if (word && narrationText.includes(word) && word.length >= 1 && word.length <= 8 && !validHighlights.some(h => h.word === word)) {
+      validHighlights.push({ word, color: neonColors[validHighlights.length % neonColors.length], sizeScale: 1.15 });
+    }
+  }
+
+  const tryMatch = (pattern: RegExp, minLen = 2, maxLen = 6) => {
+    if (validHighlights.length >= 2) return;
+    const matches = narrationText.match(pattern);
+    if (!matches) return;
+    for (const word of Array.from(new Set(matches)).filter(w => w.length >= minLen && w.length <= maxLen)) {
+      if (validHighlights.length >= 2) break;
       if (!validHighlights.some(h => h.word === word)) {
-        const color = neonColors[validHighlights.length % neonColors.length];
-        validHighlights.push({ word, color, sizeScale: 1.15 });
+        validHighlights.push({ word, color: neonColors[validHighlights.length % neonColors.length], sizeScale: 1.15 });
       }
     }
-  }
+  };
 
-  if (validHighlights.length === 0) {
-    const compoundMatches = narrationText.match(/[\u4e00-\u9faf]{1,3}の[\u4e00-\u9faf]{1,3}/g);
-    if (compoundMatches && compoundMatches.length > 0) {
-      for (const word of Array.from(new Set(compoundMatches)).slice(0, 2)) {
-        const color = neonColors[validHighlights.length % neonColors.length];
-        validHighlights.push({ word, color, sizeScale: 1.15 });
-      }
-    }
-  }
-
-  if (validHighlights.length === 0) {
-    const kanjiMatches = narrationText.match(/[\u4e00-\u9faf]{2,4}/g);
-    if (kanjiMatches && kanjiMatches.length > 0) {
-      const candidates = Array.from(new Set(kanjiMatches)).filter(w => w.length >= 2 && w.length <= 4);
-      for (const word of candidates.slice(0, 2)) {
-        const color = neonColors[validHighlights.length % neonColors.length];
-        validHighlights.push({ word, color, sizeScale: 1.15 });
-      }
-    }
-  }
-
-  if (validHighlights.length === 0) {
-    const katakanaMatches = narrationText.match(/[\u30a1-\u30f6]{2,6}/g);
-    if (katakanaMatches && katakanaMatches.length > 0) {
-      for (const word of Array.from(new Set(katakanaMatches)).slice(0, 2)) {
-        const color = neonColors[validHighlights.length % neonColors.length];
-        validHighlights.push({ word, color, sizeScale: 1.15 });
-      }
-    }
-  }
+  tryMatch(/[\u4e00-\u9faf]{1,3}の[\u4e00-\u9faf]{1,3}/g, 3, 7);
+  tryMatch(/[\u4e00-\u9faf]{2,4}/g, 2, 4);
+  tryMatch(/[\u30a1-\u30f6]{2,6}/g, 2, 6);
 
   return validHighlights;
 }
@@ -162,12 +107,7 @@ export function buildCharacterTurnaroundPrompt(
   const isHist = checkIsHistorical(era, theme);
   let cleanStyle = rawStyle;
   if (!isHist && cleanStyle) {
-    cleanStyle = cleanStyle
-      .replace(/\b(edo period|feudal japan|ancient japan|ancient japanese)\b/gi, '')
-      .replace(/,\s*,/g, ',')
-      .replace(/^\s*,\s*/, '')
-      .replace(/,\s*$/, '')
-      .trim();
+    cleanStyle = cleanStyle.replace(/\b(edo period|feudal japan|ancient japan|ancient japanese)\b/gi, '').replace(/,\s*,/g, ',').trim();
   }
 
   if (fixedChar) {
@@ -182,14 +122,8 @@ CRITICAL MANDATE: EXACTLY THREE VIEWS (front, side, back) of ONE SINGLE INDIVIDU
     ? `Handsome aesthetic anime youth protagonist with neat modern styling.`
     : `Charming elegant anime female protagonist with neat modern school uniform attire.`;
 
-  const protagonistProfile = characterDna 
-    ? `Protagonist design: ${characterDna}.` 
-    : defaultProtagonistDesc;
-
-  const safeThemeDesc = (theme || 'Japanese youth drama')
-    .replace(/(少し着崩した|着崩した|ほどけかけた|乱れた|はだけた)/g, 'stylish')
-    .replace(/[^\w\s,\.\-]/g, ' ')
-    .trim() || 'Japanese school youth';
+  const protagonistProfile = characterDna ? `Protagonist design: ${characterDna}.` : defaultProtagonistDesc;
+  const safeThemeDesc = (theme || 'Japanese youth drama').replace(/(少し着崩した|着崩した|ほどけかけた|乱れた|はだけた)/g, 'stylish').replace(/[^\w\s,\.\-]/g, ' ').trim() || 'Japanese school youth';
 
   return `Master character model sheet, three-view turnaround:
 front view, side profile view, back view of the same single protagonist standing in a neutral pose side-by-side.
@@ -205,37 +139,21 @@ CRITICAL MANDATE: EXACTLY THREE VIEWS (front, side, back) of ONE SINGLE INDIVIDU
  */
 export function buildCharacterScreeningPrompt(era: string = '', country: string = '', isMvMode?: boolean, theme: string = ''): string {
   const isHistorical = checkIsHistorical(era, theme);
-  
-  if (isMvMode) {
-    return `Analyze the character image for an indie aesthetic music video visual set in "${era || 'Modern'}", "${country || 'Japan'}".
+  const contextDesc = isMvMode 
+    ? `an indie aesthetic music video visual set in "${era || 'Modern'}", "${country || 'Japan'}"`
+    : (isHistorical ? `a historical drama set in "${era || 'Historical Japan'}", "${country || 'Japan'}"` : `a visual drama set in "${era || 'Contemporary'}", "${country || 'Japan'}"`);
+
+  const eraNegative = isHistorical 
+    ? 'modern clothing, school uniform, sailor suit, blazer, necktie, modern casual, sneakers, eyeglasses, headphones, wristwatch, smartphone'
+    : 'anachronistic armor, historic kimono in modern setting, out-of-place fantasy props';
+
+  return `Analyze the character image for ${contextDesc}.
 Identify facial features, hairstyles, expression, and distinctive aesthetic characteristics.
 Output JSON: {
   "characterDna": "Description of facial features, hair, eyes, and physical traits",
   "styleDna": "Consistent artistic rendering medium (e.g. anime illustration, cel shading, pop art)",
   "antiPoseNegative": "awkward pose, unnatural anatomy, stiff posture",
-  "eraNegative": "out-of-character fantasy armor, medieval props"
-}`;
-  }
-
-  if (isHistorical) {
-    return `Analyze the character image for a historical drama set in "${era || 'Historical Japan'}", "${country || 'Japan'}".
-Identify facial features, hairstyles, and iconic characteristics.
-Strictly ensure modern attire (school uniform, blazer, necktie, casual wear, sneakers, glasses, headphones) is converted to authentic period clothing for "${era || 'the era'}".
-Output JSON: {
-  "characterDna": "Description of facial features and body traits",
-  "styleDna": "Consistent artistic rendering medium",
-  "antiPoseNegative": "awkward pose, unnatural anatomy, stiff posture",
-  "eraNegative": "modern clothing, school uniform, sailor suit, blazer, necktie, modern casual, sneakers, eyeglasses, headphones, wristwatch, smartphone"
-}`;
-  }
-
-  return `Analyze the character image for a visual drama set in "${era || 'Contemporary'}", "${country || 'Japan'}".
-Identify facial features, hairstyles, clothing style, and iconic characteristics.
-Output JSON: {
-  "characterDna": "Description of facial features, hair, and distinct physical traits",
-  "styleDna": "Consistent artistic rendering medium",
-  "antiPoseNegative": "awkward pose, unnatural anatomy, stiff posture",
-  "eraNegative": "anachronistic armor, historic kimono in modern setting, out-of-place fantasy props"
+  "eraNegative": "${eraNegative}"
 }`;
 }
 
@@ -254,52 +172,38 @@ export function buildGrandDesignPrompt(
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
   const noNumberRule = `CRITICAL RULE FOR TITLES (DO NOT INCLUDE EPISODE NUMBERS):
-- "titleJp" and "titleEn" MUST BE PURE STANDALONE THEMATIC SUBTITLES!
-- NEVER include episode numbers, track numbers, volume prefixes, or acts (e.g. NEVER write "第1話：", "第1話", "第一話", "Episode 1:", "Track 1:", "Vol.1", "起・承", "転・結").
-- Reason: Episodes can be deleted, skipped, or reordered by the creator. Numbered or sequential titles cause broken missing-number gaps (飛び番).
-- GOOD Example: "titleJp": "芳香剤の奥の臭気", "titleEn": "The Scent Beneath the Bleach"
-- BAD Example:  "titleJp": "第1話：芳香剤の奥の臭気（起・承）", "titleEn": "EPISODE 1: THE SCENT BENEATH THE BLEACH"`;
+- "titleJp" and "titleEn" MUST BE PURE STANDALONE THEMATIC SUBTITLES without numbers (NEVER write "第1話：", "Episode 1:").`;
 
   if (isMvMode) {
     return `Create a ${count}-track music video visual series grand design with Concept & Theme: "${worldSetting}".
-Analyze the atmospheric mood, ambient lighting, nostalgic or serene emotion, and visual continuity suitable for an aesthetic music video.
-Keep the mood subdued, ennui, and poetic without dramatic conflicts or chaotic action.
+Analyze atmospheric mood, ambient lighting, nostalgic or serene emotion, and visual continuity.
 ${noNumberRule}
 Output ONLY valid JSON:
 {
   "seriesTitle": "Aesthetic MV Concept Collection",
-  "overallSynopsis": "Overview of the musical and visual atmosphere across all parts",
+  "overallSynopsis": "Overview of musical and visual atmosphere",
   "episodesPlan": [
     { "epNumber": 1, "titleJp": "情景を象徴する詩的な独立タイトル", "titleEn": "Poetic English Subtitle", "summary": "情景と空気感の描写（日本語2〜3行）" }
   ]
-}
-`;
+}`;
   }
-  const mangaInstruction = isMangaMode 
-    ? "Design the pacing and narrative structure specifically for a highly dynamic comic/manga serialization (including dramatic cliffhangers, high-stakes comic paneling, and compelling chapter hooks)." 
-    : "";
+
   const protagonistInstruction = characterDna
-    ? `CENTRAL PROTAGONIST:
-Name: "${characterName || '主人公'}"
-Appearance DNA: "${characterDna}"
-The overarching ${count}-episode epic story MUST revolve around this central protagonist.
-Ensure a classic Four-Act (起承転結: Introduction -> Development -> Crisis/Climax -> Grand Resolution) continuity arc across all ${count} episodes.`
-    : `Ensure a classic Four-Act (起承転結: Introduction -> Development -> Crisis/Climax -> Grand Resolution) continuity arc across all ${count} episodes.`;
+    ? `CENTRAL PROTAGONIST: "${characterName || '主人公'}" (${characterDna}). Overarching story revolves around this central protagonist.`
+    : `Ensure classic Four-Act (起承転結) continuity arc across all ${count} episodes.`;
 
   return `Create a full ${count}-episode serialized story grand design with World Theme & Setting: "${worldSetting}".
-Analyze the authentic era, cultural background, human drama, and visual atmosphere directly from this theme.
 ${protagonistInstruction}
-${mangaInstruction}
+${isMangaMode ? "Design pacing for dynamic comic/manga serialization with dramatic hooks." : ""}
 ${noNumberRule}
 Output ONLY valid JSON:
 {
   "seriesTitle": "Dramatic Series Title",
-  "overallSynopsis": "Overview of the entire narrative arc",
+  "overallSynopsis": "Overview of entire narrative arc",
   "episodesPlan": [
     { "epNumber": 1, "titleJp": "この話独自の具体的サブタイトル（第X話は入れない）", "titleEn": "Standalone English Subtitle without numbers", "summary": "話のあらすじ" }
   ]
-}
-`;
+}`;
 }
 
 /**
@@ -316,30 +220,15 @@ export function buildNextEpisodePlanPrompt(
   isMangaMode?: boolean
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
-  const prevSummary = previousEpisodes
-    .map(p => `第${p.epNumber}話「${cleanEpisodeTitle(p.titleJp)}」: ${p.summary || ''}`)
-    .join('\n');
-  const mangaInstruction = isMangaMode 
-    ? "Design with intense comic/manga cliffhangers, high emotional stakes, and dynamic story pacing." 
-    : "";
+  const prevSummary = previousEpisodes.map(p => `第${p.epNumber}話「${cleanEpisodeTitle(p.titleJp)}」: ${p.summary || ''}`).join('\n');
 
-  return `You are a world-class drama director and screenwriter.
-We are continuing the serialization of the drama series "${seriesTitle}".
-World Theme & Setting: "${worldSetting}".
-Overall Synopsis: "${overallSynopsis}".
-
-Previous Episodes Narrative History:
+  return `You are a world-class drama director and screenwriter continuing serialized drama "${seriesTitle}".
+World Setting: "${worldSetting}". Overall Synopsis: "${overallSynopsis}".
+Previous Narrative History:
 ${prevSummary}
-
-Now, create the compelling story outline for the NEXT episode (Episode ${nextEpId}).
-It must naturally build upon the climax of the previous episodes and introduce exciting developments.
-${mangaInstruction}
-
-CRITICAL RULE FOR TITLES (DO NOT INCLUDE EPISODE NUMBERS):
-- "titleJp" and "titleEn" MUST BE PURE STANDALONE THEMATIC SUBTITLES!
-- NEVER include episode numbers (e.g. NEVER write "第${nextEpId}話", "Episode ${nextEpId}").
-- Provide ONLY the specific dramatic subtitle itself.
-
+Create compelling story outline for NEXT episode (Episode ${nextEpId}).
+${isMangaMode ? "Design with intense comic/manga cliffhangers and pacing." : ""}
+CRITICAL: "titleJp" and "titleEn" must be standalone subtitles WITHOUT episode numbers (NEVER write "第${nextEpId}話").
 Output ONLY valid JSON:
 {
   "epNumber": ${nextEpId},
@@ -370,28 +259,23 @@ export function buildCompactScriptPrompt(
   const effMode = productionMode || (isMvMode ? 'mv' : 'episodes');
   const cutCount = targetCutCount && targetCutCount > 0 ? targetCutCount : (effMode === 'manga' ? 24 : (effMode === 'mv' || isMvMode ? 30 : 12));
   const fixedChar = (characterId && characterId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === characterId) : undefined;
-  const charDirective = fixedChar ? `\nPROTAGONIST LOCK: The protagonist MUST be "${fixedChar.nameJa}" (${fixedChar.dnaPromptEn}). Personality & speaking style in narrationJp: ${fixedChar.personality}. SAFETY GUARDRAIL: Never depict cruel abuse or make ${fixedChar.nameJa} a ruthless murderer/criminal.` : '';
+  const charDirective = fixedChar ? `\nPROTAGONIST LOCK: Protagonist MUST be "${fixedChar.nameJa}" (${fixedChar.dnaPromptEn}). Narration style: ${fixedChar.personality}. SAFETY: Never depict cruel abuse.` : '';
   const defaultCharDna = fixedChar ? fixedChar.dnaPromptEn : 'Consistent single protagonist matching the world setting and narrative';
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
 
   const plannedTitleJp = cleanEpisodeTitle(currentPlan.titleJp || `場面${epId}`);
   const plannedTitleEn = cleanEpisodeTitleEn(currentPlan.titleEn || `Scene ${epId}`);
-
-  const avoidDupClause = (existingTitles && existingTitles.length > 0)
-    ? `AVOID DUPLICATE THEMES: Do NOT repeat these already used concepts: [${existingTitles.join(', ')}]. Create fresh situations!`
-    : '';
-
-  const titleRule = `1. Unique Title: "titleJp" and "titleEn" must be standalone subtitles WITHOUT episode numbers (e.g. "titleJp": "${plannedTitleJp}", "titleEn": "${plannedTitleEn}"). NEVER include "第${epId}話" or "Episode ${epId}".`;
+  const avoidDup = (existingTitles && existingTitles.length > 0) ? `AVOID DUPLICATE THEMES: Do NOT repeat [${existingTitles.join(', ')}].` : '';
 
   return `You are a film director and screenwriter.
-Output a ${cutCount}-cut script for Episode ${epId} of a story in "${worldSetting}".
+Output a ${cutCount}-cut script for Episode ${epId} in "${worldSetting}".
 Episode Concept: "${currentPlan.summary || plannedTitleJp}".
 Art Style: "${taste || ''}" (${rawStyle}).
-${avoidDupClause}
+${avoidDup}
 
 RULES:
-${titleRule}
-2. Protagonist: Define "characterDna" in English. All character cuts MUST feature this exact protagonist in "basicPlot".${charDirective}
+1. "titleJp" and "titleEn" must be standalone subtitles WITHOUT episode numbers (e.g. "titleJp": "${plannedTitleJp}", "titleEn": "${plannedTitleEn}").
+2. Protagonist: Define "characterDna" in English. All character cuts MUST feature this protagonist in "basicPlot".${charDirective}
 3. Object Cut: Cut 6 should be an iconic object without humans ("isObjectOnly": true).
 
 Output ONLY valid JSON:
@@ -437,12 +321,11 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
 } {
   const {
     titleJp,
-    titleEn,
+    titleEn: _titleEn,
     coverCatchphraseJp,
     theme = '',
     era = '',
     taste = '',
-    country = 'Japan',
     productionMode = 'episodes',
     characterDna,
     styleDna,
@@ -452,83 +335,53 @@ export function buildAdaptiveInfographicCoverPrompt(options: InfographicCoverPro
 
   const isHist = checkIsHistorical(era, theme);
   const combinedContext = `${era} ${theme} ${productionMode}`.toLowerCase();
-
   const cleanTitle = cleanEpisodeTitle(titleJp) || titleJp;
-
   let cleanSubtitle = cleanEpisodeTitle(coverCatchphraseJp || '');
-  if (cleanSubtitle === cleanTitle || cleanSubtitle.length < 2) {
-    cleanSubtitle = '';
-  }
+  if (cleanSubtitle === cleanTitle || cleanSubtitle.length < 2) cleanSubtitle = '';
 
-  let mediumInstruction = '';
-  let typographyStyle = '';
-  let extraNegative = '';
+  let mediumInstruction = `Premium cinematic vertical teaser poster, high-CTR commercial infographic design, striking visual hierarchy, professional cinematic color grading`;
+  let typographyStyle = `Striking high-contrast Japanese poster headline typography reading "${cleanTitle}" centered inside floating title plaque in upper portion with safe breathing margin above`;
+  let extraNegative = `cheap low-res flyer, amateur layout, chaotic clutter`;
 
   if (isHist) {
-    mediumInstruction = `Authentic traditional Japanese artistic poster and editorial key visual (modern Ukiyo-e and Nihonga-inspired illustration), cohesive full-bleed scenic atmosphere of the historical era with rich textured details, subtle aged washi texture wash, period architectural elements and lanterns, traditional decorative geometric border trim`;
-    typographyStyle = `Prominent bold sumi-ink Japanese calligraphy plaque elegantly positioned in the upper portion (with a balanced 8% to 12% safe breathing margin below the top border), displaying the exact title "${cleanTitle}" with traditional seal stamp embellishment`;
-    extraNegative = `modern typography, digital fonts, English text overlay, modern glossy plastic, modern digital UI, neon cyberpunk, electronic synthesizers, headphones, sneakers, modern clothing, wristwatch, smartphone, plastic textures`;
-  } else if (productionMode === 'manzai' || combinedContext.includes('漫才') || combinedContext.includes('お笑い') || combinedContext.includes('寄席') || combinedContext.includes('演芸')) {
-    mediumInstruction = `High-energy theatrical entertainment flyer poster (Yose comedy hall poster style), vibrant comedic composition, dramatic stage lighting, warm festive paper lanterns, bold dynamic layout capturing theatrical charisma and expressive performance energy`;
-    typographyStyle = `Dynamic Japanese theatrical headline typography boldly showing "${cleanTitle}" centered inside a floating marquee in the upper portion below a balanced safe top margin`;
-    extraNegative = `dark horror, grim, somber, overly melancholic, scientific graphs, abstract high-tech`;
-  } else if (productionMode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('トリビア') || combinedContext.includes('科学') || combinedContext.includes('解説') || combinedContext.includes('歴史解説')) {
-    mediumInstruction = `Stunning commercial infographic editorial poster, high-CTR visual encyclopedia diagram layout, elegant schematic breakdown elements, clean structured visual hierarchy, captivating focal demonstration, informative magazine cover aesthetic`;
-    typographyStyle = `Bold high-impact Japanese editorial headline typography featuring "${cleanTitle}" centered inside a floating infographic banner in the upper portion with a balanced clear breathing margin above`;
-    extraNegative = `messy collage, cluttered unintelligible scribbles, illegible tiny text, distorted diagrams`;
-  } else if (productionMode === 'craft' || combinedContext.includes('職人') || combinedContext.includes('工芸') || combinedContext.includes('伝統技')) {
-    mediumInstruction = `Artisan master anatomy infographic poster, warm organic textured craft paper, delicate technical cross-section sketches and authentic artisan handiwork schematics, exquisite workshop atmosphere, masterwork craftsmanship`;
-    typographyStyle = `Refined artisan Japanese brushed typography displaying "${cleanTitle}" centered inside a floating artisan plaque in the upper portion with a balanced safe margin above`;
-    extraNegative = `neon, cyberpunk, modern plastic, synthetic futuristic graphics`;
-  } else if (productionMode === 'quotes' || combinedContext.includes('名言') || combinedContext.includes('格言') || combinedContext.includes('哲学')) {
-    mediumInstruction = `Profound minimalist philosophical graphic poster, commanding negative space, striking monumental focal imagery symbolizing deep contemplation, sophisticated artistic duotone or evocative lighting`;
-    typographyStyle = `Monumental Japanese typographic composition prominently presenting the core phrase "${cleanTitle}" centered in the upper zone with expansive negative space around it`;
-    extraNegative = `cluttered graphics, juvenile cartoon elements, chaotic composition`;
-  } else if (productionMode === 'mv' || combinedContext.includes('音楽') || combinedContext.includes('music') || combinedContext.includes('mv')) {
-    mediumInstruction = `Iconic music concept art poster and editorial vinyl single cover design, evocative atmospheric color grading, cinematic emotional visual narrative, stylish audio metadata HUD graphics, subtle equalizer visualizer accents, track title graphic hierarchy`;
-    typographyStyle = `Stylized Japanese music single headline typography reading "${cleanTitle}" elegantly centered inside a sleek floating neon-accented audio plaque in the upper portion, positioned with a balanced 8% to 12% breathing space below the top edge`;
+    mediumInstruction = `Authentic traditional Japanese artistic poster and editorial key visual (modern Ukiyo-e and Nihonga-inspired illustration), full-bleed scenic atmosphere with rich textured details, subtle washi texture, decorative border`;
+    typographyStyle = `Prominent bold sumi-ink Japanese calligraphy plaque positioned in upper portion, displaying exact title "${cleanTitle}" with seal stamp`;
+    extraNegative = `modern typography, digital fonts, English text overlay, plastic, neon cyberpunk, sneakers, modern clothing, wristwatch, smartphone`;
+  } else if (productionMode === 'manzai' || combinedContext.includes('漫才') || combinedContext.includes('お笑い')) {
+    mediumInstruction = `High-energy theatrical entertainment flyer poster (Yose comedy hall style), vibrant comedic composition, warm paper lanterns, bold stage lighting`;
+    typographyStyle = `Dynamic Japanese theatrical headline typography boldly showing "${cleanTitle}" centered in floating marquee`;
+    extraNegative = `dark horror, grim, somber, overly melancholic`;
+  } else if (productionMode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('解説')) {
+    mediumInstruction = `Stunning commercial infographic editorial poster, high-CTR visual encyclopedia diagram layout, structured visual hierarchy, magazine cover aesthetic`;
+    typographyStyle = `Bold high-impact Japanese editorial headline typography featuring "${cleanTitle}" centered in floating banner`;
+    extraNegative = `messy collage, cluttered unintelligible scribbles, distorted diagrams`;
+  } else if (productionMode === 'mv' || combinedContext.includes('音楽') || combinedContext.includes('mv')) {
+    mediumInstruction = `Iconic music concept art poster and vinyl single cover design, evocative color grading, cinematic emotional narrative, subtle audio HUD visualizer accents`;
+    typographyStyle = `Stylized Japanese music single headline typography reading "${cleanTitle}" centered in floating neon-accented audio plaque`;
     extraNegative = `boring layout, flat corporate diagram, low-effort snapshot`;
-  } else {
-    mediumInstruction = `Premium cinematic vertical teaser poster, high-CTR commercial infographic design, striking visual hierarchy, compelling editorial cover layout, professional cinematic color grading`;
-    typographyStyle = `Striking high-contrast Japanese poster headline typography reading "${cleanTitle}" centered inside a floating title block in the upper portion with a balanced clear breathing margin above`;
-    extraNegative = `cheap low-res flyer, amateur layout, chaotic clutter`;
   }
 
-  let focalSubject = '';
-  if (characterDna) {
-    const costumeNote = isHist && authenticAttireEn ? `dressed in authentic ${authenticAttireEn}` : '';
-    focalSubject = `Main focal subject: ${characterDna} ${costumeNote}, captured in a pull-back medium-wide shot (framed comfortably from waist up or seated low), positioned firmly in the lower two-thirds of the vertical canvas. The subject's head is kept comfortably below the floating title plaque, ensuring clean visual separation.`;
-  } else if (theme) {
-    focalSubject = `Key thematic visual: Symbolic central subject embodying the essence of "${theme}", framed comfortably in the lower two-thirds beneath the floating title plaque.`;
-  } else {
-    focalSubject = `Central hero focal visual with striking presence, framed in a pull-back view positioned in the lower two-thirds beneath the floating title area.`;
-  }
+  let focalSubject = characterDna 
+    ? `Main focal subject: ${characterDna} ${isHist && authenticAttireEn ? `dressed in authentic ${authenticAttireEn}` : ''}, captured in medium-wide shot (framed from waist up or seated low) in lower two-thirds of canvas below floating title plaque.`
+    : `Key thematic visual: Symbolic central subject embodying essence of "${theme}", framed in lower two-thirds beneath floating title plaque.`;
 
-  const subtitleClause = cleanSubtitle 
-    ? `Integrated punchy subtitle text accent: "${cleanSubtitle}". (CRITICAL: Do NOT write any episode number digits or "第X話").` 
-    : '';
-
+  const subtitleClause = cleanSubtitle ? `Integrated subtitle accent: "${cleanSubtitle}". (Do NOT write episode number digits).` : '';
   const resolvedTaste = taste ? resolveTastePrompt(taste) : (styleDna || '');
   const styleClause = resolvedTaste ? `Artistic rendering style: ${resolvedTaste}.` : '';
 
   const promptEn = [
     `Vertical 9:16 high-impact editorial cover poster and commercial infographic key visual.`,
     mediumInstruction + `.`,
-    `Poster Layout & Visual Hierarchy: Cohesive full-bleed environmental scene seamlessly spanning the entire canvas from top to bottom. The horizontal title signboard plaque boldly displaying ONLY the exact standalone title "${cleanTitle}" is elegantly positioned in the upper area (centered horizontally, with its top edge floating at a balanced 8% to 12% safe breathing margin below the top canvas border). The atmospheric background scene (architectural ceiling, ambient sky, or room details) naturally flows behind and around the plaque without any awkward blank boxes or empty voids. The plaque maintains clean safe clearance from the top border without touching it. CRITICAL MANDATORY RULE: NEVER write or draw any episode numbers, episode counters, chapter badges, or sequence numbers (e.g. ABSOLUTELY NO "第1話", "第2話", "第3話", "第4話", "Episode 1", "Episode 2", "Vol.1", "起・承", "転・結") anywhere on the signboard, poster, or banner!`,
+    `Poster Layout: Cohesive full-bleed scene. Horizontal title signboard boldly displaying ONLY exact title "${cleanTitle}" positioned in upper area with 8%-12% safe breathing margin below top border. Mandatory: NEVER write episode numbers (NO "第1話", "Episode 1", "Vol.1")!`,
     focalSubject,
     typographyStyle + `.`,
     subtitleClause,
     styleClause,
-    `Camera & Composition: Vertical 9:16 aspect ratio, harmonious professional editorial poster hierarchy. The background scene is unified and full-bleed across the whole canvas. The title plaque is placed in the upper portion with a natural 8% to 12% breathing margin from the top edge. The main character is framed below the title plaque in a medium-wide shot (standing or seated comfortably in the lower two-thirds), with ample visual breathing room between character and title plaque. Unified single-scene composition, no split frames, no giant empty blank areas, crystal clear focal point, professional graphic design, masterpiece, 8k resolution.`
+    `Composition: Vertical 9:16 aspect ratio, harmonious editorial hierarchy. Main character framed below title plaque with ample breathing room. Masterpiece, 8k resolution.`
   ].filter(Boolean).join(' ');
 
-  const baseNegative = `episode number, episode numbers, episode counter, chapter number, "第1話", "第2話", "第3話", "第4話", "Episode 1", "Episode 2", "Episode 3", "Episode 4", "Vol.1", "Vol.2", "起・承", "転・結", numbered badge, numbered plaque, episode header, giant blank void at top, massive empty space at top, plain blank paper section, huge blank area above sign, two-tier split canvas, horizon dividing canvas into blank top and busy bottom, signboard placed in the dead center, empty notepad header, banner touching top edge, signboard touching top border, banner flush with ceiling, text crammed against the ceiling, text cut off at top edge, signboard at very top of frame, zero top margin, cropped title banner, text touching canvas boundary, missing first character, extreme close-up portrait with head at top ceiling, text overlapping character's head, banner colliding with hair, text covering face, cluttered overlap between subject and title, awkwardly placed text, blurry, low resolution, bad anatomy, duplicate character, multiple people when single subject intended, cropped subject, cluttered messy collage, distorted hands, extra limbs, ugly, JPEG artifacts`;
-  const forbiddenAnachStr = forbiddenAnachronisms.length > 0 ? forbiddenAnachronisms.join(', ') : '';
-  const negativePromptEn = [
-    baseNegative,
-    extraNegative,
-    forbiddenAnachStr
-  ].filter(Boolean).join(', ');
+  const baseNegative = `episode number, episode counter, "第1話", "第2話", "Episode 1", "Episode 2", "Vol.1", numbered badge, giant blank void at top, banner touching top edge, text crammed against ceiling, text overlapping character head, blurry, low resolution, bad anatomy, duplicate character, ugly, artifacts`;
+  const negativePromptEn = [baseNegative, extraNegative, forbiddenAnachronisms.join(', ')].filter(Boolean).join(', ');
 
   return { promptEn, negativePromptEn };
 }
@@ -694,11 +547,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
           addLog(`⚠️ 第${epId}話 脚本リトライ (${attempt}/${max}) ${waitStr}後... (サーバー混雑検出)`, 'warning');
         }
       },
-      {
-        maxRetries: 2,
-        superBackoff: false,
-        abortCheck
-      }
+      { maxRetries: 2, superBackoff: false, abortCheck }
     );
     if (addLog) {
       const elapsed = ((Date.now() - scriptStartTime) / 1000).toFixed(1);
@@ -773,11 +622,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   const normalizedCuts = Array.from({ length: targetLength }, (_, j) => {
     const cutData = rawCuts[j] || {};
     const rawNarration = cutData.narrationJp || cutData.narration || (isMvMode ? `歌詞${j + 1}` : `場面${j + 1}`);
-    
-    const isObj = cutData.isObjectOnly !== undefined 
-      ? Boolean(cutData.isObjectOnly) 
-      : (j === 5);
-
+    const isObj = cutData.isObjectOnly !== undefined ? Boolean(cutData.isObjectOnly) : (j === 5);
     const rawFocal = cutData.focalPoint || {};
     const grid = rawFocal.grid || (isObj ? 'center' : 'top-center');
     const coord: [number, number] = Array.isArray(rawFocal.normalizedCoord) && rawFocal.normalizedCoord.length === 2
@@ -793,11 +638,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
       narrationJp: sanitizeForYouTubeSafety(rawNarration),
       highlights: cutData.highlights || parsed.highlightWords || [],
       isObjectOnly: isObj,
-      focalPoint: {
-        grid,
-        normalizedCoord: coord,
-        focalSubject: subject
-      },
+      focalPoint: { grid, normalizedCoord: coord, focalSubject: subject },
       compositionPrompt: cutData.compositionPrompt || (isObj 
         ? 'Centered still-life composition of prop/object, rule of thirds, completely empty of people' 
         : 'Subject framed at upper-third, face centered at top-center, rule of thirds composition'),

@@ -12,23 +12,18 @@ export interface CoverPalette {
   id: string;
   name: string;
   genre: 'mv' | 'historical' | 'trivia' | 'manzai' | 'cinema';
-  // 9:16 縦型看板グラデーション
   vPanelStart: string;
   vPanelEnd: string;
-  // 16:9 横型看板グラデーション
   hPanelStart: string;
   hPanelMid: string;
   hPanelEnd: string;
-  // アクセントボーダー [start, mid, end]
   borderColors: [string, string, string];
-  // キャッチコピーリボン [start, end]
   ribbonColors: [string, string];
-  // バッジ文字色
   badgeColor: string;
 }
 
 export const COVER_PALETTES: Record<string, CoverPalette> = {
-  // --- 🎵 MVモード用（セッションごとに上品に変奏） ---
+  // --- 🎵 MVモード用 ---
   mv_violet: {
     id: 'mv_violet',
     name: 'Classic Violet (王道ネオン紫)',
@@ -94,137 +89,6 @@ export const COVER_PALETTES: Record<string, CoverPalette> = {
     ribbonColors: ['#991B1B', '#450A0A'],
     badgeColor: '#FB7185'
   },
-  mv_sakura: {
-    id: 'mv_sakura',
-    name: 'Sakura Dream (桜花スプリング・淡紅ピンク)',
-    genre: 'mv',
-    vPanelStart: '#1A0A14',
-    vPanelEnd: '#2E1024',
-    hPanelStart: 'rgba(46, 16, 36, 0.98)',
-    hPanelMid: 'rgba(26, 10, 20, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#F472B6', '#FB7185', '#FDE047'],
-    ribbonColors: ['#DB2777', '#9D174D'],
-    badgeColor: '#F9A8D4'
-  },
-  mv_gold: {
-    id: 'mv_gold',
-    name: 'Champagne Gold (黄金アンバー・琥珀)',
-    genre: 'mv',
-    vPanelStart: '#140F05',
-    vPanelEnd: '#261C08',
-    hPanelStart: 'rgba(38, 28, 8, 0.98)',
-    hPanelMid: 'rgba(20, 15, 5, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#F59E0B', '#FBBF24', '#FEF08A'],
-    ribbonColors: ['#D97706', '#92400E'],
-    badgeColor: '#FDE047'
-  },
-  mv_midnight: {
-    id: 'mv_midnight',
-    name: 'Midnight Aurora (極夜オーロラ・深青＆紫)',
-    genre: 'mv',
-    vPanelStart: '#060B1C',
-    vPanelEnd: '#101538',
-    hPanelStart: 'rgba(16, 21, 56, 0.98)',
-    hPanelMid: 'rgba(6, 11, 28, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#38BDF8', '#818CF8', '#C084FC'],
-    ribbonColors: ['#2563EB', '#4F46E5'],
-    badgeColor: '#818CF8'
-  },
-  mv_neon_lime: {
-    id: 'mv_neon_lime',
-    name: 'Acid Cyber Lime (電解ネオンライム・蛍光黄緑)',
-    genre: 'mv',
-    vPanelStart: '#0A1405',
-    vPanelEnd: '#15290A',
-    hPanelStart: 'rgba(21, 41, 10, 0.98)',
-    hPanelMid: 'rgba(10, 20, 5, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#84CC16', '#A3E635', '#22C55E'],
-    ribbonColors: ['#65A30D', '#3F6212'],
-    badgeColor: '#BEF264'
-  },
-  mv_monochrome: {
-    id: 'mv_monochrome',
-    name: 'Monochrome Platinum (漆黒モノクローム・白銀)',
-    genre: 'mv',
-    vPanelStart: '#0A0A0C',
-    vPanelEnd: '#18181C',
-    hPanelStart: 'rgba(24, 24, 28, 0.98)',
-    hPanelMid: 'rgba(10, 10, 12, 0.95)',
-    hPanelEnd: 'rgba(5, 5, 6, 0.9)',
-    borderColors: ['#F8FAFC', '#94A3B8', '#475569'],
-    ribbonColors: ['#475569', '#1E293B'],
-    badgeColor: '#E2E8F0'
-  },
-  mv_candy: {
-    id: 'mv_candy',
-    name: 'Candy Future (原宿フューチャー・ピンク＆シアン)',
-    genre: 'mv',
-    vPanelStart: '#140514',
-    vPanelEnd: '#290A29',
-    hPanelStart: 'rgba(41, 10, 41, 0.98)',
-    hPanelMid: 'rgba(20, 5, 20, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#EC4899', '#06B6D4', '#F43F5E'],
-    ribbonColors: ['#DB2777', '#0891B2'],
-    badgeColor: '#F472B6'
-  },
-  mv_vintage: {
-    id: 'mv_vintage',
-    name: 'Vintage Lo-Fi (喫茶セピア・レトロ暖色)',
-    genre: 'mv',
-    vPanelStart: '#160E08',
-    vPanelEnd: '#2A1A10',
-    hPanelStart: 'rgba(42, 26, 16, 0.98)',
-    hPanelMid: 'rgba(22, 14, 8, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#D97706', '#EA580C', '#A16207'],
-    ribbonColors: ['#B45309', '#78350F'],
-    badgeColor: '#FDBA74'
-  },
-  mv_cyber_magenta: {
-    id: 'mv_cyber_magenta',
-    name: 'Cyberpunk Neon (サイバーパンク・電脳マゼンタ)',
-    genre: 'mv',
-    vPanelStart: '#180518',
-    vPanelEnd: '#300B30',
-    hPanelStart: 'rgba(48, 11, 48, 0.98)',
-    hPanelMid: 'rgba(24, 5, 24, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#FF007F', '#D946EF', '#06B6D4'],
-    ribbonColors: ['#C026D3', '#701A75'],
-    badgeColor: '#F472B6'
-  },
-  mv_abyss_aqua: {
-    id: 'mv_abyss_aqua',
-    name: 'Deep Ocean Aqua (深海アクア・透光マリン)',
-    genre: 'mv',
-    vPanelStart: '#04121A',
-    vPanelEnd: '#092534',
-    hPanelStart: 'rgba(9, 37, 52, 0.98)',
-    hPanelMid: 'rgba(4, 18, 26, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#06B6D4', '#22D3EE', '#38BDF8'],
-    ribbonColors: ['#0891B2', '#164E63'],
-    badgeColor: '#67E8F9'
-  },
-  mv_sunset_amethyst: {
-    id: 'mv_sunset_amethyst',
-    name: 'Twilight Amethyst (夕映えアメジスト・暮色バイオレット)',
-    genre: 'mv',
-    vPanelStart: '#180B1A',
-    vPanelEnd: '#2D1432',
-    hPanelStart: 'rgba(45, 20, 50, 0.98)',
-    hPanelMid: 'rgba(24, 11, 26, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#C084FC', '#F43F5E', '#FB923C'],
-    ribbonColors: ['#9333EA', '#581C87'],
-    badgeColor: '#E879F9'
-  },
-
   // --- 🏮 時代劇・歴史用 ---
   hist_gold: {
     id: 'hist_gold',
@@ -265,7 +129,6 @@ export const COVER_PALETTES: Record<string, CoverPalette> = {
     ribbonColors: ['#C2410C', '#7C2D12'],
     badgeColor: '#FB923C'
   },
-
   // --- 💡 雑学・解説用 ---
   trivia_blue: {
     id: 'trivia_blue',
@@ -280,20 +143,6 @@ export const COVER_PALETTES: Record<string, CoverPalette> = {
     ribbonColors: ['#0369A1', '#0C4A6E'],
     badgeColor: '#38BDF8'
   },
-  trivia_teal: {
-    id: 'trivia_teal',
-    name: 'サイエンスティール',
-    genre: 'trivia',
-    vPanelStart: '#031414',
-    vPanelEnd: '#072626',
-    hPanelStart: 'rgba(7, 38, 38, 0.98)',
-    hPanelMid: 'rgba(3, 20, 20, 0.95)',
-    hPanelEnd: 'rgba(8, 8, 10, 0.9)',
-    borderColors: ['#14B8A6', '#2DD4BF', '#0F766E'],
-    ribbonColors: ['#0D9488', '#115E59'],
-    badgeColor: '#2DD4BF'
-  },
-
   // --- 🎙️ 漫才用 ---
   manzai_crimson: {
     id: 'manzai_crimson',
@@ -308,7 +157,6 @@ export const COVER_PALETTES: Record<string, CoverPalette> = {
     ribbonColors: ['#B91C1C', '#881337'],
     badgeColor: '#FB7185'
   },
-
   // --- 🎬 通常シネマ用 ---
   cinema_indigo: {
     id: 'cinema_indigo',
@@ -355,43 +203,24 @@ export function resolveCoverPalette(ep: Episode): CoverPalette {
   if (ep.coverThemeVariant && COVER_PALETTES[ep.coverThemeVariant]) {
     return COVER_PALETTES[ep.coverThemeVariant];
   }
-
   const isMv = !!ep.isMvMode || (ep.titleJp || '').startsWith('🎵') || ep.productionMode === 'mv';
   const isHist = checkIsHistorical(ep.era, ep.theme);
   const mode = ep.productionMode || (isMv ? 'mv' : 'episodes');
   const combinedContext = `${ep.era || ''} ${ep.theme || ''} ${mode}`.toLowerCase();
-  const isTrivia = mode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('トリビア') || combinedContext.includes('科学') || combinedContext.includes('解説');
-  const isManzai = mode === 'manzai' || combinedContext.includes('漫才') || combinedContext.includes('お笑い') || combinedContext.includes('寄席');
+  const isTrivia = mode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('解説');
+  const isManzai = mode === 'manzai' || combinedContext.includes('漫才');
 
   let candidates: CoverPalette[];
   if (isMv) {
-    candidates = [
-      COVER_PALETTES.mv_violet,
-      COVER_PALETTES.mv_cyan,
-      COVER_PALETTES.mv_amber,
-      COVER_PALETTES.mv_emerald,
-      COVER_PALETTES.mv_crimson
-    ];
+    candidates = [COVER_PALETTES.mv_violet, COVER_PALETTES.mv_cyan, COVER_PALETTES.mv_amber, COVER_PALETTES.mv_emerald, COVER_PALETTES.mv_crimson];
   } else if (isHist) {
-    candidates = [
-      COVER_PALETTES.hist_gold,
-      COVER_PALETTES.hist_indigo,
-      COVER_PALETTES.hist_vermilion
-    ];
+    candidates = [COVER_PALETTES.hist_gold, COVER_PALETTES.hist_indigo, COVER_PALETTES.hist_vermilion];
   } else if (isTrivia) {
-    candidates = [
-      COVER_PALETTES.trivia_blue,
-      COVER_PALETTES.trivia_teal
-    ];
+    candidates = [COVER_PALETTES.trivia_blue];
   } else if (isManzai) {
-    candidates = [
-      COVER_PALETTES.manzai_crimson
-    ];
+    candidates = [COVER_PALETTES.manzai_crimson];
   } else {
-    candidates = [
-      COVER_PALETTES.cinema_indigo,
-      COVER_PALETTES.cinema_purple
-    ];
+    candidates = [COVER_PALETTES.cinema_indigo, COVER_PALETTES.cinema_purple];
   }
 
   const seed = `${ep.theme || ''}_${ep.taste || ''}_${ep.era || ''}`;
@@ -399,23 +228,15 @@ export function resolveCoverPalette(ep: Episode): CoverPalette {
   return candidates[idx];
 }
 
-/**
- * カバー用の自然なタイトル改行分割ロジック（9:16縦型・16:9横型共通）
- * 括弧、コロン、スペース、単語境界を優先し、英単語の途中でぶつ切りになるのを防ぐ
- */
 export function splitTitleForCover(
   rawTitle: string, 
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, 
   maxW: number
 ): string[] {
-  if (ctx.measureText(rawTitle).width <= maxW) {
-    return [rawTitle];
-  }
+  if (ctx.measureText(rawTitle).width <= maxW) return [rawTitle];
 
-  // 1. 括弧（丸括弧、角括弧、全角半角）の前で自然に分割できるか？
-  const parenRegex = /[\s　]*([(\[（【].+)$/;
-  const parenMatch = rawTitle.match(parenRegex);
-  if (parenMatch && parenMatch.index && parenMatch.index > 0) {
+  const parenMatch = rawTitle.match(/[\s　]*([(\[（【].+)$/);
+  if (parenMatch?.index && parenMatch.index > 0) {
     const mainPart = rawTitle.slice(0, parenMatch.index).trim();
     const subPart = parenMatch[0].trim();
     if (ctx.measureText(mainPart).width <= maxW && ctx.measureText(subPart).width <= maxW) {
@@ -423,9 +244,7 @@ export function splitTitleForCover(
     }
   }
 
-  // 2. コロン、ハイフン、スラッシュなどの区切り文字で分割
-  const delims = [' - ', ' — ', ' : ', ': ', ' / ', '〜', '～'];
-  for (const d of delims) {
+  for (const d of [' - ', ' — ', ' : ', ': ', ' / ', '〜', '～']) {
     const idx = rawTitle.indexOf(d);
     if (idx > 0 && idx < rawTitle.length - 1) {
       const p1 = rawTitle.slice(0, idx).trim();
@@ -436,7 +255,6 @@ export function splitTitleForCover(
     }
   }
 
-  // 3. 半角スペースなどの単語区切りで、1行目に収まる限界を探す（英単語途中で切れないように）
   const words = rawTitle.split(/(\s+)/);
   if (words.length > 2) {
     let currentLine = '';
@@ -453,13 +271,10 @@ export function splitTitleForCover(
     if (breakIdx > 0) {
       const l1 = words.slice(0, breakIdx).join('').trim();
       const l2 = words.slice(breakIdx).join('').trim();
-      if (l1 && l2 && ctx.measureText(l2).width <= maxW) {
-        return [l1, l2];
-      }
+      if (l1 && l2 && ctx.measureText(l2).width <= maxW) return [l1, l2];
     }
   }
 
-  // 4. 日本語文字列など単語区切りがない場合：maxWに収まる最大文字数で分割（ただし末尾が半角英字なら単語境界まで巻き戻す）
   let bestCut = 1;
   for (let i = 1; i <= rawTitle.length; i++) {
     const sub = rawTitle.slice(0, i);
@@ -469,29 +284,29 @@ export function splitTitleForCover(
       break;
     }
   }
-  if (bestCut < rawTitle.length && /[a-zA-Z0-9]/.test(rawTitle[bestCut]) && /[a-zA-Z0-9]/.test(rawTitle[bestCut - 1])) {
-    const lastSpace = rawTitle.lastIndexOf(' ', bestCut);
-    if (lastSpace > 0) {
-      bestCut = lastSpace;
-    }
-  }
+  return [rawTitle.slice(0, bestCut).trim(), rawTitle.slice(bestCut).trim()];
+}
 
-  const l1 = rawTitle.slice(0, bestCut).trim();
-  const l2 = rawTitle.slice(bestCut).trim();
-  return [l1, l2];
+function loadImage(src: string): Promise<HTMLImageElement | ImageBitmap> {
+  if (typeof Image === 'undefined') {
+    return fetch(src).then(res => res.blob()).then(blob => createImageBitmap(blob));
+  }
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(e);
+    img.src = src;
+  });
 }
 
 /**
- * 世界観適応型 レイヤー合成インフォグラフィック扉絵（9:16特大ポスター）
- * Cut 1のキメ絵を下部に下げて配置し、上部に世界観（MV・江戸・雑学・漫才等）に応じた
- * インフォグラフィック看板プレートをドッキング合成する（物理的被りゼロ保証）
+ * 9:16 縦型看板（1440x2560 2K超高精細）レンダリング
  */
 export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | HTMLCanvasElement> {
-  const width = 1080;
-  const height = 1920;
-  const canvas = (typeof OffscreenCanvas !== 'undefined')
-    ? new OffscreenCanvas(width, height)
-    : document.createElement('canvas');
+  const width = 1440;
+  const height = 2560;
+  const canvas = (typeof OffscreenCanvas !== 'undefined') ? new OffscreenCanvas(width, height) : document.createElement('canvas');
   if (!(canvas instanceof OffscreenCanvas)) {
     canvas.width = width;
     canvas.height = height;
@@ -499,223 +314,126 @@ export async function renderCoverCanvas(ep: Episode): Promise<OffscreenCanvas | 
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
   if (!ctx) throw new Error('Canvas context failed');
 
-  // 世界観・モード判定（江戸に拘らずどんな画風でも動的適応）
   const isMv = !!ep.isMvMode || (ep.titleJp || '').startsWith('🎵') || ep.productionMode === 'mv';
   const isHist = checkIsHistorical(ep.era, ep.theme);
-  const mode = ep.productionMode || (isMv ? 'mv' : 'episodes');
-  const combinedContext = `${ep.era || ''} ${ep.theme || ''} ${mode}`.toLowerCase();
-  const isTrivia = mode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('トリビア') || combinedContext.includes('科学') || combinedContext.includes('解説');
-  const isManzai = mode === 'manzai' || combinedContext.includes('漫才') || combinedContext.includes('お笑い') || combinedContext.includes('寄席');
-  const isCraft = mode === 'craft' || combinedContext.includes('職人') || combinedContext.includes('工芸');
+  const palette = resolveCoverPalette(ep);
 
-  // 背景ベース色
-  ctx.fillStyle = '#08080A';
+  ctx.fillStyle = '#0a0a0c';
   ctx.fillRect(0, 0, width, height);
 
-  // 1. Cut 1の確定キメ絵（またはマスターアンカー）を下部に下げて配置
-  const cut1Base64 = ep.masterAnchorBase64 || ep.cuts[0]?.imageBase64;
-  const headerHeight = 520; // 看板専用エリア（上部約27%）
-
-  if (cut1Base64) {
+  const keyBase64 = ep.masterAnchorBase64 || ep.cuts?.[0]?.imageBase64;
+  if (keyBase64) {
     try {
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const i = new Image();
-        i.crossOrigin = "anonymous";
-        i.onload = () => resolve(i);
-        i.onerror = () => reject(new Error('Image load failed'));
-        i.src = cut1Base64.startsWith('data:') ? cut1Base64 : `data:image/png;base64,${cut1Base64}`;
-      });
-
-      // 絵を下部（headerHeight から下）にゆったり配置
-      // キャラクターの顔・頭部が看板と絶対に衝突しないように、オフセット配置
-      const imgTargetY = headerHeight - 40; 
-      const imgTargetH = height - imgTargetY;
-      const imgScale = Math.max(width / img.width, imgTargetH / img.height);
-      const scaledW = img.width * imgScale;
-      const scaledH = img.height * imgScale;
-      const imgOffsetX = (width - scaledW) / 2;
-      const imgOffsetY = imgTargetY + (imgTargetH - scaledH) / 2;
-
-      ctx.save();
-      // 上部看板エリアと境界をぼかすグラデーションマスク
-      ctx.drawImage(img, imgOffsetX, imgOffsetY, scaledW, scaledH);
-      
-      // 暗幕グラデーション（下部の安定化 ＆ 上部看板とのシームレス接続）
-      const scrim = ctx.createLinearGradient(0, headerHeight - 80, 0, headerHeight + 120);
-      scrim.addColorStop(0, '#08080A');
-      scrim.addColorStop(0.5, 'rgba(8, 8, 10, 0.85)');
-      scrim.addColorStop(1, 'rgba(8, 8, 10, 0)');
-      ctx.fillStyle = scrim;
-      ctx.fillRect(0, headerHeight - 80, width, 200);
-
-      // 底部シネマシャドウ
-      const bottomScrim = ctx.createLinearGradient(0, height - 250, 0, height);
-      bottomScrim.addColorStop(0, 'rgba(8, 8, 10, 0)');
-      bottomScrim.addColorStop(1, 'rgba(8, 8, 10, 0.95)');
-      ctx.fillStyle = bottomScrim;
-      ctx.fillRect(0, height - 250, width, 250);
-
-      ctx.restore();
+      const src = keyBase64.startsWith('data:') ? keyBase64 : `data:image/png;base64,${keyBase64}`;
+      const img = await loadImage(src);
+      const iw = (img as HTMLImageElement).width || (img as ImageBitmap).width;
+      const ih = (img as HTMLImageElement).height || (img as ImageBitmap).height;
+      const s = Math.max(width / iw, height / ih);
+      const dw = iw * s;
+      const dh = ih * s;
+      const dx = (width - dw) / 2;
+      const dy = (height - dh) / 2;
+      ctx.drawImage(img as any, dx, dy, dw, dh);
     } catch (e) {
-      console.warn('Cover image render fallback', e);
+      console.warn('[CoverRenderer] Failed to load key visual:', e);
     }
   }
 
-  // 2. 最上部ヘッダー（特大インフォグラフィック看板プレート）
+  // 映画的シネマグラデーション
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+  bgGrad.addColorStop(0, 'rgba(5, 5, 8, 0.85)');
+  bgGrad.addColorStop(0.35, 'rgba(5, 5, 8, 0.25)');
+  bgGrad.addColorStop(0.65, 'rgba(5, 5, 8, 0.4)');
+  bgGrad.addColorStop(1, 'rgba(5, 5, 8, 0.95)');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // 看板パネルエリア
+  const panelX = 80;
+  const panelY = 120;
+  const panelW = width - 160;
+  const panelH = 540;
+
   ctx.save();
-  const palette = resolveCoverPalette(ep);
-  
-  // 看板ベースプレート（グラスモーフィズム高級パネル）
-  const panelGrad = ctx.createLinearGradient(0, 0, 0, headerHeight);
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+  ctx.shadowBlur = 40;
+  ctx.shadowOffsetY = 20;
+
+  const panelGrad = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelH);
   panelGrad.addColorStop(0, palette.vPanelStart);
   panelGrad.addColorStop(1, palette.vPanelEnd);
   ctx.fillStyle = panelGrad;
-  ctx.fillRect(0, 0, width, headerHeight);
 
-  // 金・銀・ネオンの装飾アクセントボーダー（下部境界ライン）
-  const borderGrad = ctx.createLinearGradient(0, 0, width, 0);
-  borderGrad.addColorStop(0, palette.borderColors[0]);
-  borderGrad.addColorStop(0.5, palette.borderColors[1]);
-  borderGrad.addColorStop(1, palette.borderColors[2]);
-  ctx.fillStyle = borderGrad;
-  ctx.fillRect(0, headerHeight - 4, width, 4);
-
-  // 3. 看板内テキストのレイアウト（超ド迫力・完全被りゼロ）
-  
-  // A. トップバッジ（話数 または ジャンルバッジ）
-  const badgeY = 70;
-  const epLabel = isMv 
-    ? '🎵 OFFICIAL MUSIC VIDEO' 
-    : isTrivia 
-    ? '💡 歴史・雑学アカデミー' 
-    : isManzai 
-    ? '🎙️ 爆笑！上方・江戸寄席' 
-    : isHist 
-    ? `🏮 時代劇長編大作 [第${ep.id}幕]` 
-    : `🎬 STUDIO PRO PRODUCTION [EPISODE ${ep.id}]`;
-
-  ctx.font = 'bold 26px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillStyle = palette.badgeColor;
-  ctx.fillText(epLabel, width / 2, badgeY);
-
-  // B. メインタイトル（超極太・大迫力2行折り返し対応）
-  const cleanEpTitle = cleanTitle(ep.titleJp || '無題');
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-  ctx.shadowBlur = 16;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 4;
-
-  let titleFontSize = 68;
-  if (cleanEpTitle.length > 18) titleFontSize = 54;
-  if (cleanEpTitle.length > 26) titleFontSize = 46;
-  ctx.font = `900 ${titleFontSize}px "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif`;
-
-  // タイトルが長い場合はスマート2行分割（括弧・単語境界・区切り記号を優先）
-  const maxTitleWidth = width - 120;
-  const titleLines = splitTitleForCover(cleanEpTitle, ctx, maxTitleWidth);
-  if (titleLines.length === 1) {
-    ctx.fillText(titleLines[0], width / 2, 200);
-  } else {
-    ctx.fillText(titleLines[0], width / 2, 175);
-    ctx.fillText(titleLines[1], width / 2, 175 + titleFontSize + 12);
-  }
-
-  // C. 英語サブタイトル
-  if (ep.titleEn) {
-    ctx.font = '600 22px sans-serif';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(ep.titleEn.toUpperCase(), width / 2, 275);
-  }
-
-  // D. キャッチコピー大型リボン（帯プレート）
-  const catchphrase = ep.coverCatchphraseJp || ep.summary?.slice(0, 36) || '時代を駆け抜けた魂の物語';
-  const ribbonY = 320;
-  const ribbonH = 76;
-  const ribbonW = width - 100;
-  const ribbonX = (width - ribbonW) / 2;
-
-  // リボン背景
-  ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-  ctx.shadowBlur = 20;
-  ctx.shadowOffsetY = 8;
-  
-  const ribbonGrad = ctx.createLinearGradient(ribbonX, ribbonY, ribbonX + ribbonW, ribbonY);
-  ribbonGrad.addColorStop(0, palette.ribbonColors[0]);
-  ribbonGrad.addColorStop(1, palette.ribbonColors[1]);
-  ctx.fillStyle = ribbonGrad;
-  
   // 角丸四角形
-  const r = 16;
+  const r = 24;
   ctx.beginPath();
-  ctx.moveTo(ribbonX + r, ribbonY);
-  ctx.lineTo(ribbonX + ribbonW - r, ribbonY);
-  ctx.quadraticCurveTo(ribbonX + ribbonW, ribbonY, ribbonX + ribbonW, ribbonY + r);
-  ctx.lineTo(ribbonX + ribbonW, ribbonY + ribbonH - r);
-  ctx.quadraticCurveTo(ribbonX + ribbonW, ribbonY + ribbonH, ribbonX + ribbonW - r, ribbonY + ribbonH);
-  ctx.lineTo(ribbonX + r, ribbonY + ribbonH);
-  ctx.quadraticCurveTo(ribbonX, ribbonY + ribbonH, ribbonX, ribbonY + ribbonH - r);
-  ctx.lineTo(ribbonX, ribbonY + r);
-  ctx.quadraticCurveTo(ribbonX, ribbonY, ribbonX + r, ribbonY);
+  ctx.moveTo(panelX + r, panelY);
+  ctx.lineTo(panelX + panelW - r, panelY);
+  ctx.arcTo(panelX + panelW, panelY, panelX + panelW, panelY + r, r);
+  ctx.lineTo(panelX + panelW, panelY + panelH - r);
+  ctx.arcTo(panelX + panelW, panelY + panelH, panelX + panelW - r, panelY + panelH, r);
+  ctx.lineTo(panelX + r, panelY + panelH);
+  ctx.arcTo(panelX, panelY + panelH, panelX, panelY + panelH - r, r);
+  ctx.lineTo(panelX, panelY + r);
+  ctx.arcTo(panelX, panelY, panelX + r, panelY, r);
   ctx.closePath();
   ctx.fill();
 
-  // リボン枠線
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+  // ボーダー線
+  const borderGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY + panelH);
+  borderGrad.addColorStop(0, palette.borderColors[0]);
+  borderGrad.addColorStop(0.5, palette.borderColors[1]);
+  borderGrad.addColorStop(1, palette.borderColors[2]);
+  ctx.strokeStyle = borderGrad;
+  ctx.lineWidth = 4;
   ctx.stroke();
   ctx.restore();
 
-  // キャッチコピー文字
-  ctx.font = 'bold 30px "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif';
-  ctx.fillStyle = '#FFFFFF';
+  // 看板内テキスト
+  const titleText = cleanTitle(ep.titleJp || '無題');
+  ctx.save();
   ctx.textAlign = 'center';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-  ctx.shadowBlur = 8;
-  ctx.fillText(`“ ${catchphrase} ”`, width / 2, ribbonY + 48);
 
-  // E. メタデータタグ群（時代・テーマ・テイスト）
-  const tagsY = 440;
-  const tags: string[] = [];
-  if (ep.era) tags.push(ep.era);
-  if (ep.theme) tags.push(ep.theme);
-  if (ep.taste) tags.push(ep.taste);
-  if (isMv) tags.push('4K CINEMATIC MV');
+  // バッジ
+  const badgeText = isMv ? '🎵 ORIGINAL MUSIC VIDEO' : (isHist ? '🏮 時代劇シネマ' : '🎬 STUDIO PRO DIRECT');
+  ctx.font = 'bold 36px sans-serif';
+  ctx.fillStyle = palette.badgeColor;
+  ctx.fillText(badgeText, width / 2, panelY + 90);
 
-  if (tags.length > 0) {
-    ctx.font = 'bold 20px sans-serif';
-    ctx.textAlign = 'center';
-    const tagString = tags.map(t => `#${t}`).join('   •   ');
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(tagString, width / 2, tagsY);
+  // タイトル
+  ctx.font = 'bold 76px sans-serif';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+  ctx.shadowBlur = 15;
+  const lines = splitTitleForCover(titleText, ctx, panelW - 120);
+  if (lines.length === 1) {
+    ctx.fillText(lines[0], width / 2, panelY + 240);
+  } else {
+    ctx.fillText(lines[0], width / 2, panelY + 210);
+    ctx.fillText(lines[1], width / 2, panelY + 310);
   }
 
-  // 4. 最下部フッター（ブランド透かし ＆ 著作権表示）
-  ctx.font = '600 18px monospace';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-  ctx.textAlign = 'center';
-  ctx.fillText('STUDIO PRO PRODUCTION  |  ULTRA DIRECT CINEMA', width / 2, height - 35);
+  // サブタイトル / キャッチコピー
+  const subText = ep.coverCatchphraseJp || ep.summary || '';
+  if (subText) {
+    ctx.font = 'bold 40px sans-serif';
+    ctx.fillStyle = '#FDE047';
+    ctx.shadowBlur = 10;
+    const subClean = subText.length > 28 ? subText.slice(0, 27) + '…' : subText;
+    ctx.fillText(subClean, width / 2, panelY + panelH - 80);
+  }
   ctx.restore();
 
   return canvas;
 }
 
 /**
- * 横型看板（16:9, 1920x1080）
- * YouTube通常動画サムネイル・Media Vault横型看板用
- * 左側にシネマインフォグラフィック看板、右側にキメ絵をシームレス融合配置
+ * 16:9 横型看板（1920x1080）レンダリング
  */
 export async function renderCoverCanvasHorizontal(ep: Episode): Promise<OffscreenCanvas | HTMLCanvasElement> {
   const width = 1920;
   const height = 1080;
-  const canvas = (typeof OffscreenCanvas !== 'undefined')
-    ? new OffscreenCanvas(width, height)
-    : document.createElement('canvas');
+  const canvas = (typeof OffscreenCanvas !== 'undefined') ? new OffscreenCanvas(width, height) : document.createElement('canvas');
   if (!(canvas instanceof OffscreenCanvas)) {
     canvas.width = width;
     canvas.height = height;
@@ -723,264 +441,86 @@ export async function renderCoverCanvasHorizontal(ep: Episode): Promise<Offscree
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
   if (!ctx) throw new Error('Canvas context failed');
 
-  // 世界観・モード判定
-  const isMv = !!ep.isMvMode || (ep.titleJp || '').startsWith('🎵') || ep.productionMode === 'mv';
-  const isHist = checkIsHistorical(ep.era, ep.theme);
-  const mode = ep.productionMode || (isMv ? 'mv' : 'episodes');
-  const combinedContext = `${ep.era || ''} ${ep.theme || ''} ${mode}`.toLowerCase();
-  const isTrivia = mode === 'trivia' || combinedContext.includes('雑学') || combinedContext.includes('トリビア') || combinedContext.includes('科学') || combinedContext.includes('解説');
-  const isManzai = mode === 'manzai' || combinedContext.includes('漫才') || combinedContext.includes('お笑い') || combinedContext.includes('寄席');
-
-  // 背景ベース色
-  ctx.fillStyle = '#08080A';
+  const palette = resolveCoverPalette(ep);
+  ctx.fillStyle = '#0a0a0c';
   ctx.fillRect(0, 0, width, height);
 
-  // 1. 右側：キメ絵（またはマスターアンカー）を配置
-  const cut1Base64 = ep.masterAnchorBase64 || ep.cuts[0]?.imageBase64;
-  const textPanelWidth = 840; // 左側文字エリア幅
-
-  if (cut1Base64) {
+  const keyBase64 = ep.masterAnchorBase64 || ep.cuts?.[0]?.imageBase64;
+  if (keyBase64) {
     try {
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const i = new Image();
-        i.crossOrigin = "anonymous";
-        i.onload = () => resolve(i);
-        i.onerror = () => reject(new Error('Image load failed'));
-        i.src = cut1Base64.startsWith('data:') ? cut1Base64 : `data:image/png;base64,${cut1Base64}`;
-      });
-
-      const imgTargetX = 640;
-      const imgTargetW = width - imgTargetX;
-      const imgScale = Math.max(imgTargetW / img.width, height / img.height);
-      const scaledW = img.width * imgScale;
-      const scaledH = img.height * imgScale;
-      const imgOffsetX = imgTargetX + (imgTargetW - scaledW) / 2;
-      const imgOffsetY = (height - scaledH) / 2;
-
-      ctx.save();
-      ctx.drawImage(img, imgOffsetX, imgOffsetY, scaledW, scaledH);
-
-      // 左側文字エリアとのブレンド暗幕グラデーション（右向きフェード）
-      const leftFade = ctx.createLinearGradient(imgTargetX - 100, 0, imgTargetX + 450, 0);
-      leftFade.addColorStop(0, '#08080A');
-      leftFade.addColorStop(0.4, 'rgba(8, 8, 10, 0.92)');
-      leftFade.addColorStop(0.8, 'rgba(8, 8, 10, 0.4)');
-      leftFade.addColorStop(1, 'rgba(8, 8, 10, 0)');
-      ctx.fillStyle = leftFade;
-      ctx.fillRect(imgTargetX - 100, 0, 550, height);
-
-      // 上下シネマシャドウ
-      const topBottomScrim = ctx.createLinearGradient(0, 0, 0, 160);
-      topBottomScrim.addColorStop(0, 'rgba(8, 8, 10, 0.85)');
-      topBottomScrim.addColorStop(1, 'rgba(8, 8, 10, 0)');
-      ctx.fillStyle = topBottomScrim;
-      ctx.fillRect(imgTargetX, 0, imgTargetW, 160);
-
-      const btmScrim = ctx.createLinearGradient(0, height - 160, 0, height);
-      btmScrim.addColorStop(0, 'rgba(8, 8, 10, 0)');
-      btmScrim.addColorStop(1, 'rgba(8, 8, 10, 0.85)');
-      ctx.fillStyle = btmScrim;
-      ctx.fillRect(imgTargetX, height - 160, imgTargetW, 160);
-
-      ctx.restore();
+      const src = keyBase64.startsWith('data:') ? keyBase64 : `data:image/png;base64,${keyBase64}`;
+      const img = await loadImage(src);
+      const iw = (img as HTMLImageElement).width || (img as ImageBitmap).width;
+      const ih = (img as HTMLImageElement).height || (img as ImageBitmap).height;
+      const s = Math.max(width / iw, height / ih);
+      const dw = iw * s;
+      const dh = ih * s;
+      ctx.drawImage(img as any, (width - dw) / 2, (height - dh) / 2, dw, dh);
     } catch (e) {
-      console.warn('Horizontal cover image render fallback', e);
+      console.warn('[CoverRendererH] Failed to load key visual:', e);
     }
   }
 
-  // 2. 左側：高級看板プレート（背景グラデーション）
+  const hGrad = ctx.createLinearGradient(0, 0, width, 0);
+  hGrad.addColorStop(0, palette.hPanelStart);
+  hGrad.addColorStop(0.5, palette.hPanelMid);
+  hGrad.addColorStop(1, palette.hPanelEnd);
+  ctx.fillStyle = hGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  const titleText = cleanTitle(ep.titleJp || '無題');
   ctx.save();
-  const palette = resolveCoverPalette(ep);
-  const panelGrad = ctx.createLinearGradient(0, 0, textPanelWidth, 0);
-  panelGrad.addColorStop(0, palette.hPanelStart);
-  panelGrad.addColorStop(0.8, palette.hPanelMid);
-  panelGrad.addColorStop(1, palette.hPanelEnd);
-  ctx.fillStyle = panelGrad;
-  ctx.fillRect(0, 0, textPanelWidth, height);
+  ctx.textAlign = 'left';
 
-  // 境界アクセントライン
-  const lineGrad = ctx.createLinearGradient(0, 0, 0, height);
-  lineGrad.addColorStop(0, palette.borderColors[0]);
-  lineGrad.addColorStop(0.5, palette.borderColors[1]);
-  lineGrad.addColorStop(1, palette.borderColors[2]);
-  ctx.fillStyle = lineGrad;
-  ctx.fillRect(textPanelWidth - 4, 0, 4, height);
-
-  // 3. 左側タイポグラフィレイアウト
-  const leftMargin = 80;
-
-  // A. モード＆エピソードバッジ
-  ctx.save();
-  const badgeY = 110;
-  const badgeText = isMv ? '🎵 CINEMATIC MUSIC VIDEO' : isHist ? '📜 HISTORICAL DRAMA' : isTrivia ? '💡 KNOWLEDGE SHORTS' : isManzai ? '🎙️ COMEDY MANZAI' : '🎬 EPISODIC CINEMA';
-  ctx.font = '900 18px "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif';
+  ctx.font = 'bold 32px sans-serif';
   ctx.fillStyle = palette.badgeColor;
-  ctx.textAlign = 'left';
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
-  ctx.shadowBlur = 8;
-  ctx.fillText(badgeText, leftMargin, badgeY);
+  ctx.fillText('FEATURE SPECIAL PRODUCTION', 120, 240);
 
-  const epBadgeText = `EPISODE ${String(ep.id).padStart(2, '0')}`;
-  ctx.font = '800 16px monospace';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillText(`|   ${epBadgeText}`, leftMargin + ctx.measureText(badgeText).width + 20, badgeY);
-  ctx.restore();
-
-  // B. メインタイトル（特大・2行まで自動分割）
-  ctx.save();
-  const rawTitle = cleanTitle(ep.titleJp || '無題');
-  ctx.textAlign = 'left';
+  ctx.font = 'bold 72px sans-serif';
   ctx.fillStyle = '#FFFFFF';
   ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-  ctx.shadowBlur = 18;
-  ctx.shadowOffsetY = 6;
-
-  let titleFontSize = 64;
-  if (rawTitle.length > 24) titleFontSize = 44;
-  else if (rawTitle.length > 16) titleFontSize = 50;
-  else if (rawTitle.length > 10) titleFontSize = 56;
-  ctx.font = `900 ${titleFontSize}px "Hiragino Mincho ProN", "Yu Mincho", serif`;
-
-  const maxTitleW = textPanelWidth - leftMargin - 60;
-  const titleY = 240;
-
-  // スマートタイトル分割（括弧・単語境界・区切り記号を優先して美しく改行）
-  const titleLines = splitTitleForCover(rawTitle, ctx, maxTitleW);
-  if (titleLines.length === 1) {
-    ctx.fillText(titleLines[0], leftMargin, titleY);
+  ctx.shadowBlur = 15;
+  const lines = splitTitleForCover(titleText, ctx, 1000);
+  if (lines.length === 1) {
+    ctx.fillText(lines[0], 120, 360);
   } else {
-    ctx.fillText(titleLines[0], leftMargin, titleY - 20);
-    ctx.fillText(titleLines[1], leftMargin, titleY + titleFontSize + 5);
-  }
-  ctx.restore();
-
-  // C. キャッチコピーリボン
-  const catchphrase = ep.coverCatchphraseJp || ep.summary || '';
-  if (catchphrase) {
-    ctx.save();
-    const ribbonY = 460;
-    const ribbonH = 70;
-    const ribbonW = textPanelWidth - leftMargin - 60;
-
-    const rGrad = ctx.createLinearGradient(leftMargin, ribbonY, leftMargin + ribbonW, ribbonY);
-    rGrad.addColorStop(0, palette.ribbonColors[0]);
-    rGrad.addColorStop(1, palette.ribbonColors[1]);
-    ctx.fillStyle = rGrad;
-    ctx.beginPath();
-    ctx.roundRect(leftMargin, ribbonY, ribbonW, ribbonH, 14);
-    ctx.fill();
-
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.stroke();
-
-    ctx.font = 'bold 24px "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif';
-    ctx.fillStyle = '#FFFFFF';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-    ctx.shadowBlur = 8;
-    const cleanCatch = catchphrase.length > 28 ? catchphrase.slice(0, 27) + '…' : catchphrase;
-    ctx.fillText(`“ ${cleanCatch} ”`, leftMargin + ribbonW / 2, ribbonY + 45);
-    ctx.restore();
+    ctx.fillText(lines[0], 120, 330);
+    ctx.fillText(lines[1], 120, 430);
   }
 
-  // D. メタデータタグ群（右側画像領域への突き抜けを完全防止）
-  ctx.save();
-  const tagsY = 620;
-  const rawTags: string[] = [];
-  if (ep.era) rawTags.push(ep.era);
-  if (ep.theme) rawTags.push(ep.theme);
-  if (ep.taste) rawTags.push(ep.taste);
-  if (isMv) rawTags.push('4K CINEMATIC MV');
-
-  // 長大なプロンプト補足（括弧やカンマ）をクリーンアップし、すっきりした商用ハッシュタグにする
-  const cleanTags = rawTags.map(t => {
-    const stripped = t.replace(/[\(（].*?[\)）]/g, '').trim();
-    return stripped.length > 16 ? stripped.slice(0, 15) + '…' : stripped;
-  }).filter(t => t.length > 0);
-
-  if (cleanTags.length > 0) {
-    ctx.font = 'bold 20px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.shadowBlur = 4;
-    
-    // maxTitleW を超えないよう動的に調整
-    const maxTagW = textPanelWidth - leftMargin - 60;
-    const separator = '   •   ';
-    let tagString = cleanTags.map(t => `#${t}`).join(separator);
-    
-    while (ctx.measureText(tagString).width > maxTagW && cleanTags.length > 1) {
-      cleanTags.pop();
-      tagString = cleanTags.map(t => `#${t}`).join(separator);
-    }
-    if (ctx.measureText(tagString).width > maxTagW) {
-      while (ctx.measureText(tagString).width > maxTagW && tagString.length > 5) {
-        tagString = tagString.slice(0, -2) + '…';
-      }
-    }
-    
-    ctx.fillText(tagString, leftMargin, tagsY);
+  const subText = ep.coverCatchphraseJp || ep.summary || '';
+  if (subText) {
+    ctx.font = 'bold 36px sans-serif';
+    ctx.fillStyle = '#FDE047';
+    ctx.fillText(subText.length > 35 ? subText.slice(0, 34) + '…' : subText, 120, 560);
   }
-  ctx.restore();
-
-  // E. 最下部ブランド透かし
-  ctx.save();
-  ctx.font = '600 16px monospace';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-  ctx.textAlign = 'left';
-  ctx.fillText('STUDIO PRO PRODUCTION  |  16:9 MASTER COVER', leftMargin, height - 60);
   ctx.restore();
 
   return canvas;
 }
 
-/**
- * 扉絵（縦型 9:16）をBase64文字列（PNG）として取得
- */
 export async function renderCoverBase64(ep: Episode): Promise<string> {
   const canvas = await renderCoverCanvas(ep);
-  return canvasToBase64(canvas);
+  if ('convertToBlob' in canvas) {
+    const blob = await (canvas as OffscreenCanvas).convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  }
+  return (canvas as HTMLCanvasElement).toDataURL('image/jpeg', 0.92);
 }
 
-/**
- * 扉絵（横型 16:9）をBase64文字列（PNG）として取得
- */
 export async function renderCoverBase64Horizontal(ep: Episode): Promise<string> {
   const canvas = await renderCoverCanvasHorizontal(ep);
-  return canvasToBase64(canvas);
-}
-
-async function canvasToBase64(canvas: OffscreenCanvas | HTMLCanvasElement): Promise<string> {
-  try {
-    if (canvas instanceof OffscreenCanvas) {
-      const blob = await canvas.convertToBlob({ type: 'image/png' });
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const res = reader.result as string;
-          resolve(res.split('base64,').pop() || res);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } else {
-      const res = (canvas as HTMLCanvasElement).toDataURL('image/png');
-      return res.split('base64,').pop() || res;
-    }
-  } finally {
-    if (canvas instanceof OffscreenCanvas) {
-      const coverCtx = canvas.getContext('2d');
-      if (coverCtx) coverCtx.clearRect(0, 0, canvas.width, canvas.height);
-      canvas.width = 0;
-      canvas.height = 0;
-    } else {
-      const cvs = canvas as HTMLCanvasElement;
-      const coverCtx = cvs.getContext('2d');
-      if (coverCtx) coverCtx.clearRect(0, 0, cvs.width, cvs.height);
-      cvs.width = 0;
-      cvs.height = 0;
-    }
+  if ('convertToBlob' in canvas) {
+    const blob = await (canvas as OffscreenCanvas).convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
   }
+  return (canvas as HTMLCanvasElement).toDataURL('image/jpeg', 0.92);
 }
-

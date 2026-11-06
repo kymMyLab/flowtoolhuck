@@ -94,15 +94,12 @@ export async function ensureCharacterTurnaround(
   if (!ep.isMvMode && !settings.isMvMode && activeReferenceRef.current?.mediaId) {
     return { mediaId: activeReferenceRef.current.mediaId };
   }
-
-  if (settings.enableTurnaroundSheet === false) {
-    return {};
-  }
+  if (settings.enableTurnaroundSheet === false) return {};
 
   try {
     const charId = ep.characterId || settings.characterId;
     const fixedChar = (charId && charId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === charId) : undefined;
-    addLog(`🎨 【三面図マスター生成】360度キャラ一貫性を保証する主人公（${fixedChar ? fixedChar.nameJa : '主人公'}）の三面図を設計中...`, 'process');
+    addLog(`🎨 【三面図マスター生成】主人公（${fixedChar ? fixedChar.nameJa : '主人公'}）の三面図を設計中...`, 'process');
     const turnaroundPrompt = buildCharacterTurnaroundPrompt(
       ep.theme || settings.theme,
       settings.country,
@@ -113,7 +110,7 @@ export async function ensureCharacterTurnaround(
     );
 
     const modelDef = resolveImageModel(settings.imageModel);
-    let safePrompt = turnaroundPrompt && /[a-zA-Z0-9]/.test(turnaroundPrompt) ? turnaroundPrompt : 'Character turnaround sheet, front side back views';
+    const safePrompt = turnaroundPrompt && /[a-zA-Z0-9]/.test(turnaroundPrompt) ? turnaroundPrompt : 'Character turnaround sheet, front side back views';
     let safeModelName = modelDef?.name || '🍌 Nano Banana 2';
 
     let res: any;
@@ -128,12 +125,12 @@ export async function ensureCharacterTurnaround(
           const errMsg = formatErrorMessage(err);
           if (errMsg.includes('使用量の上限') || errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
             safeModelName = '🍌 Nano Banana Pro';
-            addLog(`👑 【三面図】Banana 2の上限を検知！独立枠の「🍌 Nano Banana Pro」へ自動昇格します`, 'success');
+            addLog(`👑 【三面図】上限検知！「🍌 Nano Banana Pro」へ自動昇格します`, 'success');
           }
         },
         3
       );
-    } catch (firstErr) {
+    } catch (_) {
       safeModelName = '🍌 Nano Banana Pro';
       res = await Flow.generate.image({
         prompt: safePrompt,
@@ -168,7 +165,6 @@ export async function ensureInfographicCover(
   force = false
 ): Promise<{ mediaId?: string; base64?: string; promptEn?: string }> {
   const { settings, addLog, isAbortedRef, activeReferenceRef, updateEpisode, episodesRef, setEpisodes } = ctx;
-
   if (isAbortedRef.current) return {};
 
   const freshEp = episodesRef.current.find(e => e.id === ep.id) || ep;
@@ -177,7 +173,7 @@ export async function ensureInfographicCover(
   }
 
   try {
-    addLog(`🎨 Ep.${freshEp.id}: 【扉絵自動生成】世界観適応インフォグラフィック扉絵（9:16特大ポスター）を描画中...`, 'process');
+    addLog(`🎨 Ep.${freshEp.id}: 【扉絵自動生成】世界観適応インフォグラフィック扉絵を描画中...`, 'process');
     updateEpisode(freshEp.id, { isGeneratingCover: true });
 
     const charId = freshEp.characterId || settings.characterId;
@@ -208,7 +204,7 @@ export async function ensureInfographicCover(
     }
 
     const modelDef = resolveImageModel(settings.imageModel);
-    let safePrompt = coverPromptObj.promptEn && /[a-zA-Z0-9]/.test(coverPromptObj.promptEn) ? coverPromptObj.promptEn : 'Cinematic poster, high quality';
+    const safePrompt = coverPromptObj.promptEn && /[a-zA-Z0-9]/.test(coverPromptObj.promptEn) ? coverPromptObj.promptEn : 'Cinematic poster, high quality';
     let safeModelName = modelDef?.name || '🍌 Nano Banana 2';
 
     let res: any;
@@ -225,12 +221,12 @@ export async function ensureInfographicCover(
           const errMsg = formatErrorMessage(err);
           if (errMsg.includes('使用量の上限') || errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
             safeModelName = '🍌 Nano Banana Pro';
-            addLog(`👑 【扉絵】Banana 2の上限を検知！独立枠の「🍌 Nano Banana Pro」へ自動昇格します`, 'success');
+            addLog(`👑 【扉絵】上限検知！「🍌 Nano Banana Pro」へ自動昇格します`, 'success');
           }
         },
         3
       );
-    } catch (firstErr) {
+    } catch (_) {
       safeModelName = '🍌 Nano Banana Pro';
       res = await Flow.generate.image({
         prompt: safePrompt,
@@ -249,32 +245,32 @@ export async function ensureInfographicCover(
 
     if (coverMediaId || coverBase64) {
       updateEpisode(freshEp.id, {
-        coverMediaId: coverMediaId,
-        coverBase64: coverBase64,
+        coverMediaId,
+        coverBase64,
         coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       });
       episodesRef.current = episodesRef.current.map(e => e.id === freshEp.id ? {
         ...e,
-        coverMediaId: coverMediaId,
-        coverBase64: coverBase64,
+        coverMediaId,
+        coverBase64,
         coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       } : e);
       setEpisodes(prev => prev.map(e => e.id === freshEp.id ? {
         ...e,
-        coverMediaId: coverMediaId,
-        coverBase64: coverBase64,
+        coverMediaId,
+        coverBase64,
         coverPromptEn: coverPromptObj.promptEn,
         isGeneratingCover: false
       } : e));
 
-      addLog(`✨ Ep.${freshEp.id}: 【扉絵自動生成完了】世界観適応インフォグラフィック扉絵が完成しました！（被りゼロ本格ポスター）`, 'success');
+      addLog(`✨ Ep.${freshEp.id}: 【扉絵完成】世界観適応インフォグラフィック扉絵が完成しました！`, 'success');
       return { mediaId: coverMediaId, base64: coverBase64, promptEn: coverPromptObj.promptEn };
     }
   } catch (err: any) {
     updateEpisode(freshEp.id, { isGeneratingCover: false });
-    addLog(`⚠️ Ep.${freshEp.id}: 扉絵の自動生成スキップ: ${formatErrorMessage(err)}`, 'warning');
+    addLog(`⚠️ Ep.${freshEp.id}: 扉絵生成スキップ: ${formatErrorMessage(err)}`, 'warning');
   }
 
   return {};
@@ -297,34 +293,24 @@ export async function finalizeAndProcessEpisode(
 ): Promise<void> {
   const { settings, addLog, isAbortedRef, episodesRef, setEpisodes, updateEpisode } = ctx;
   const unitLabel = options?.unitLabel || '話';
-  
   if (isAbortedRef.current) return;
 
   const currentEp = episodesRef.current.find(e => Number(e.id) === Number(epId));
   if (!currentEp) return;
   const epTitle = options?.title || currentEp.titleJp || `第${epId}${unitLabel}`;
 
-  updateEpisode(epId, {
+  const stateUpdate = {
     isGenerating: false,
     isBatchGeneratingVideos: false,
     isPreviewDone: true,
     isDone: true
-  });
+  };
+  updateEpisode(epId, stateUpdate);
   episodesRef.current = episodesRef.current.map(e => Number(e.id) === Number(epId) ? {
-    ...e,
-    isGenerating: false,
-    isBatchGeneratingVideos: false,
-    isPreviewDone: true,
-    isDone: true,
-    cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
+    ...e, ...stateUpdate, cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
   } : e);
   setEpisodes(prev => prev.map(e => Number(e.id) === Number(epId) ? {
-    ...e,
-    isGenerating: false,
-    isBatchGeneratingVideos: false,
-    isPreviewDone: true,
-    isDone: true,
-    cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
+    ...e, ...stateUpdate, cuts: e.cuts.map(c => ({ ...c, isGeneratingVideo: false }))
   } : e));
 
   const manifest = options?.manifest || ctx.seriesManifestRef?.current;
@@ -335,15 +321,13 @@ export async function finalizeAndProcessEpisode(
       ctx.setActiveSeriesManifest({ ...manifest });
     }
     if (settings.autoDownload && !isAbortedRef.current) {
-      try {
-        await downloadManifestFile(manifest, addLog);
-      } catch (_) {}
+      try { await downloadManifestFile(manifest, addLog); } catch (_) {}
     }
   }
 
   const freshEp = episodesRef.current.find(e => Number(e.id) === Number(epId)) || currentEp;
   if (settings.autoDownload && !isAbortedRef.current) {
-    addLog(`📦 【第${epId}${unitLabel}】『${epTitle}』の完了時自動ダウンロード（ZIP生成）を実行中...`, 'process');
+    addLog(`📦 【第${epId}${unitLabel}】『${epTitle}』の完了時自動ダウンロードを実行中...`, 'process');
     const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
     try {
       const res = await downloadZip(freshEp, addLog, manifest || undefined, currentLogs);
@@ -363,12 +347,12 @@ export async function finalizeAndProcessEpisode(
       }
     } catch (zipErr) {
       console.error(`Failed to auto-download zip for episode ${epId}:`, zipErr);
-      addLog(`⚠️ 第${epId}${unitLabel}の自動ダウンロード中に一時的エラーが発生しました（後から個別DL可能です）`, 'warning');
+      addLog(`⚠️ 第${epId}${unitLabel}の自動ダウンロード中に一時的エラーが発生しました`, 'warning');
     }
   }
 
   cleanupEpisodeMemory();
-  addLog(`🏁 【第${epId}${unitLabel}】『${epTitle}』全パイプライン完結！次へ進みます。`, 'info');
+  addLog(`🏁 【第${epId}${unitLabel}】『${epTitle}』全パイプライン完結！`, 'info');
 }
 
 /**
@@ -384,21 +368,15 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
   const existingMaxId = completedEpisodes.length > 0 ? Math.max(...completedEpisodes.map(e => e.id)) : 0;
   const startEpIndex = existingMaxId + 1;
   const endEpIndex = existingMaxId + totalEpCount;
-  const isContinuing = existingMaxId > 0;
 
-  if (isContinuing) {
-    addLog(`${modeInfo.icon} 【${modeInfo.label}モード】既存 ${existingMaxId} ${modeInfo.unit}を保持したまま、追加で全 ${totalEpCount} ${modeInfo.unit}（第${startEpIndex}〜${endEpIndex}${modeInfo.unit}）の制作を開始します！[世界観: ${settings.theme}]`, 'process');
-  } else {
-    addLog(`${modeInfo.icon} 【${modeInfo.label}モード】全 ${totalEpCount} ${modeInfo.unit}の制作を開始します！[世界観: ${settings.theme}]`, 'process');
-  }
-
+  addLog(`${modeInfo.icon} 【${modeInfo.label}モード】全 ${totalEpCount} ${modeInfo.unit}（第${startEpIndex}〜${endEpIndex}${modeInfo.unit}）の制作を開始します！`, 'process');
   const baseRawTitle = settings.theme.split('（')[0].replace(/^[^\w\s一-龯]+/, '').trim() || '情景の記録';
   const defaultEnTitle = 'Cinematic Story';
 
   for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
     const currentBatchStep = epIndex - startEpIndex + 1;
     if (isAbortedRef.current) {
-      addLog(`🛑 制作が中断されました（今回作成: ${currentBatchStep - 1}/${totalEpCount}${modeInfo.unit}完了）`, 'warning');
+      addLog(`🛑 制作が中断されました（${currentBatchStep - 1}/${totalEpCount}${modeInfo.unit}完了）`, 'warning');
       break;
     }
 
@@ -409,8 +387,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       .map(e => e.titleJp.replace(/^[^\w\s一-龯]+/, '').trim())
       .filter(Boolean);
 
-    addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit} / 今回制作: ${currentBatchStep}${modeInfo.unit}目（全${totalEpCount}${modeInfo.unit}）】「${baseRawTitle}」第${epIndex}弾のお題＆脚本をAIが考案中...`, 'process');
-
+    addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit}】脚本をAIが考案中...`, 'process');
     const curPlan = {
       epNumber: epIndex,
       titleJp: rawTitle,
@@ -445,10 +422,8 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     const cleanParsedTitle = cleanEpisodeTitle(parsed.titleJp || '');
     const safeTopicJp = sanitizeForYouTubeSafety(cleanParsedTitle && cleanParsedTitle !== baseRawTitle ? cleanParsedTitle : `情景の断章`);
     const displayTitleJp = `${modeInfo.icon} ${safeTopicJp}`;
-
     const cleanParsedEn = cleanEpisodeTitleEn(parsed.titleEn || '');
-    const cleanTopicEn = cleanParsedEn && cleanParsedEn !== defaultEnTitle ? cleanParsedEn : 'Cinematic Story';
-    const displayTitleEn = cleanTopicEn;
+    const displayTitleEn = cleanParsedEn && cleanParsedEn !== defaultEnTitle ? cleanParsedEn : 'Cinematic Story';
 
     const newEpisode: Episode = {
       id: epIndex, internalId: crypto.randomUUID(),
@@ -465,7 +440,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     };
 
     if (!newEpisode.isMvMode && !settings.isMvMode) {
-       ctx.activeReferenceRef.current = undefined;
+      ctx.activeReferenceRef.current = undefined;
     }
 
     const turnaround = await ensureCharacterTurnaround(ctx, newEpisode);
@@ -476,7 +451,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
 
     setEpisodes(prev => [...prev.filter(e => e.id !== epIndex), newEpisode]);
     episodesRef.current = [...episodesRef.current.filter(e => e.id !== epIndex), newEpisode];
-    addLog(`✨ 第${epIndex}${modeInfo.unit}のお題決定！『${newEpisode.titleJp}』全${cutsCount}カットの情景演出が確定！描画を開始します...`, 'success');
+    addLog(`✨ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』全${cutsCount}カットの情景演出が確定！描画を開始します...`, 'success');
 
     const targetCutCount = Math.min(settings.previewCutCount, cutsCount);
     await runTasks(buildCutTasks(newEpisode, newEpisode.cuts.slice(0, targetCutCount)));
@@ -500,8 +475,6 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     if (isPreviewSuccessful) {
       addLog(`✅ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！`, 'success');
       await ensureInfographicCover(ctx, freshNewEp);
-    } else {
-      addLog(`⚠️ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』画像生成が一部未完了（${completedCount}/${targetCutCount}カット）です。右側の「未生成カットを生成」から再開できます。`, 'warning');
     }
 
     await finalizeAndProcessEpisode(ctx, epIndex, {
@@ -511,7 +484,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
   }
 
   if (!isAbortedRef.current) {
-    addLog(`🎉 全 ${totalEpCount} ${modeInfo.unit}の${modeInfo.label}制作がすべて完了しました！`, 'success');
+    addLog(`🎉 全 ${totalEpCount} ${modeInfo.unit}の${modeInfo.label}制作が完了しました！`, 'success');
   }
 }
 
@@ -544,7 +517,8 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     const isManga = settings.isMangaMode || settings.productionMode === 'manga';
     const genreLabel = isMv ? '音楽MVシリーズ' : isManga ? '漫画シリーズ' : isHist ? '大河ドラマ' : '連続ドラマ';
     const totalEps = settings.totalEpisodes || settings.episodeCount || 1;
-    addLog(`📜 全${totalEps}話の${genreLabel}グランドデザインをAIに策定依頼中... [世界観・テーマ: ${settings.theme}]`, 'process');
+    addLog(`📜 全${totalEps}話の${genreLabel}グランドデザインをAIに策定依頼中... [世界観: ${settings.theme}]`, 'process');
+    
     const designPrompt = buildGrandDesignPrompt(
       totalEps,
       settings.country,
@@ -555,27 +529,15 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       fixedChar?.dnaPromptEn,
       fixedChar?.nameJa
     );
-    const designStartTime = Date.now();
-    let designHeartbeat: any = setInterval(() => {
-      const elapsed = Math.round((Date.now() - designStartTime) / 1000);
-      addLog(`⏳ シリーズ設計図をAI思考中...（${elapsed}秒経過: 全${totalEps}話の伏線・プロットを構成中）`, 'process');
-    }, 5000);
 
     let designRes: any;
     try {
-      designRes = await callWithRetry<any>(
-        () => Flow.generate.text(designPrompt),
-        (attempt, max, delay) => addLog(`Retrying Grand Design (attempt ${attempt}/${max}) after ${delay} ms...`, 'warning'),
-        2
-      );
-      const elapsed = ((Date.now() - designStartTime) / 1000).toFixed(1);
-      addLog(`📥 シリーズ設計図のAI応答を受信（応答時間: ${elapsed}秒）`, 'process');
-    } catch (designErr) {
-      addLog(`⚠️ シリーズ設計図API混雑のため、標準プロット構成で即座に制作を開始します！`, 'warning');
+      designRes = await callWithRetry<any>(() => Flow.generate.text(designPrompt), undefined, 2);
+    } catch (_) {
+      addLog(`⚠️ シリーズ設計図フォールバック: 標準構成で制作を開始します`, 'warning');
       designRes = { text: '' };
-    } finally {
-      clearInterval(designHeartbeat);
     }
+
     const baseThemeTitle = settings.theme.split('（')[0].replace(/^[^\w\s一-龯]+/, '').trim() || '物語の記録';
     const fallbackPlans: SeriesEpisodePlan[] = Array.from({ length: totalEps }, (_, idx) => ({
       epNumber: idx + 1,
@@ -602,7 +564,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         antiPoseNegative: activeReferenceRef.current?.antiPoseNegative,
         eraNegative: activeReferenceRef.current?.eraNegative
       } : undefined,
-      settings: settings
+      settings
     };
     setActiveSeriesManifest({ ...seriesManifestRef.current });
 
@@ -624,11 +586,10 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     }));
     setEpisodes(initialEpisodes);
     episodesRef.current = initialEpisodes;
-    addLog(`🏛️ シリーズ設計図「${design.seriesTitle}」策定完了！（全${design.episodesPlan.length}話のプロット確定）`, 'success');
+    addLog(`🏛️ シリーズ設計図「${design.seriesTitle}」策定完了！（全${design.episodesPlan.length}話プロット確定）`, 'success');
   }
 
   const manifest = seriesManifestRef.current!;
-
   const completedIds = manifest.completedEpisodeIds || [];
   const nextEpId = completedIds.length > 0 ? Math.max(...completedIds) + 1 : 1;
   const existingPlanCount = manifest.episodesPlan?.length || 0;
@@ -638,7 +599,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     manifest.episodesPlan = manifest.episodesPlan || [];
     for (let epNum = existingPlanCount + 1; epNum <= targetMaxEpId; epNum++) {
       if (isAbortedRef.current) break;
-      addLog(`📖 【第${epNum}話】これまでの展開を踏まえた続編プロットをAIに策定依頼中...`, 'process');
+      addLog(`📖 【第${epNum}話】続編プロットをAIに策定依頼中...`, 'process');
 
       const nextPlanPrompt = buildNextEpisodePlanPrompt(
         epNum,
@@ -653,56 +614,33 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
 
       let newPlan: SeriesEpisodePlan;
       try {
-        const planRes = await callWithRetry<any>(
-          () => Flow.generate.text(nextPlanPrompt),
-          undefined, 4
-        );
+        const planRes = await callWithRetry<any>(() => Flow.generate.text(nextPlanPrompt), undefined, 4);
         const rawPlan = safeJsonParse<SeriesEpisodePlan>(planRes.text, {
-          epNumber: epNum,
-          titleJp: '運命の分岐点',
-          titleEn: 'Turning Point',
-          summary: `これまでの物語から続く新たなドラマと波乱の展開`
+          epNumber: epNum, titleJp: '運命の分岐点', titleEn: 'Turning Point', summary: '波乱の展開'
         });
         newPlan = {
           ...rawPlan,
           titleJp: cleanEpisodeTitle(rawPlan.titleJp) || '運命の分岐点',
           titleEn: cleanEpisodeTitleEn(rawPlan.titleEn) || 'Turning Point'
         };
-      } catch (e) {
-        newPlan = {
-          epNumber: epNum,
-          titleJp: '運命の継承',
-          titleEn: 'Destiny',
-          summary: `第${epNum - 1}話から続く物語`
-        };
+      } catch (_) {
+        newPlan = { epNumber: epNum, titleJp: '運命の継承', titleEn: 'Destiny', summary: `第${epNum - 1}話から続く物語` };
       }
 
       manifest.episodesPlan.push(newPlan);
       manifest.totalEpisodes = manifest.episodesPlan.length;
 
       const newEpisodeCard: Episode = {
-        id: epNum,
-        internalId: crypto.randomUUID(),
-        titleJp: cleanEpisodeTitle(newPlan.titleJp),
-        titleEn: cleanEpisodeTitleEn(newPlan.titleEn),
+        id: epNum, internalId: crypto.randomUUID(),
+        titleJp: cleanEpisodeTitle(newPlan.titleJp), titleEn: cleanEpisodeTitleEn(newPlan.titleEn),
         summary: newPlan.summary,
         cuts: Array.from({ length: settings.previewCutCount || 2 }, (_, j) => createDefaultCut(j + 1, '脚本策定待ち...', '', false)),
-        isGenerating: false,
-        isGeneratingRemainingImages: false,
-        isBatchGeneratingVideos: false,
-        isPreviewDone: false,
-        isDone: false,
-        taste: settings.taste,
-        era: settings.era,
-        theme: settings.theme
+        isGenerating: false, isGeneratingRemainingImages: false, isBatchGeneratingVideos: false,
+        isPreviewDone: false, isDone: false, taste: settings.taste, era: settings.era, theme: settings.theme
       };
 
-      setEpisodes(prev => {
-        if (prev.some(e => e.id === epNum)) return prev;
-        return [...prev, newEpisodeCard];
-      });
+      setEpisodes(prev => prev.some(e => e.id === epNum) ? prev : [...prev, newEpisodeCard]);
       episodesRef.current = [...episodesRef.current.filter(e => e.id !== epNum), newEpisodeCard];
-      addLog(`✨ 【第${epNum}話】プロット策定完了: 『${newPlan.titleJp}』`, 'success');
     }
     setActiveSeriesManifest({ ...manifest });
   }
@@ -723,7 +661,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       .filter(Boolean);
 
     try {
-      addLog(`📖 【第${epId}${unitLabel}】「${currentPlan.titleJp}」の脚本・演出構成をAIに執筆依頼中...`, 'process');
+      addLog(`📖 【第${epId}${unitLabel}】「${currentPlan.titleJp}」の脚本・演出構成を執筆中...`, 'process');
       updateEpisode(epId, { isGenerating: true });
 
       const sharedScript = await generateSafeEpisodeScript({
@@ -743,8 +681,6 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         abortCheck: () => isAbortedRef.current,
         addLog
       });
-
-      addLog(`✨ 【第${epId}${unitLabel}】脚本＆演出構成が完成！（考証: ${sharedScript.eraAnalysisJp?.slice(0, 24) || '完了'}...）`, 'success');
 
       const seriesCutsCount = settings.previewCutCount || 2;
       const episodeCuts: Cut[] = Array.from({ length: seriesCutsCount }, (_, j) => {
@@ -788,13 +724,22 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         titleEn: finalTitleEn, 
         summary: currentPlan.summary || sharedScript.summary,
         characterDna: sharedScript.characterDna,
-        eraAnalysis: sharedScript.eraAnalysisJp, forbiddenAnachronisms: sharedScript.forbiddenAnachronisms,
-        authenticAttireEn: sharedScript.authenticAttireEn, forbiddenKeywordsEn: sharedScript.forbiddenKeywordsEn,
-        coverCatchphraseJp: sharedScript.coverCatchphraseJp, coverCatchphraseEn: sharedScript.coverCatchphraseEn,
-        highlightWords: sharedScript.highlightWords || [], cuts: episodeCuts,
+        eraAnalysis: sharedScript.eraAnalysisJp,
+        forbiddenAnachronisms: sharedScript.forbiddenAnachronisms,
+        authenticAttireEn: sharedScript.authenticAttireEn,
+        forbiddenKeywordsEn: sharedScript.forbiddenKeywordsEn,
+        coverCatchphraseJp: sharedScript.coverCatchphraseJp,
+        coverCatchphraseEn: sharedScript.coverCatchphraseEn,
+        highlightWords: sharedScript.highlightWords || [],
+        cuts: episodeCuts,
         characterTurnaroundMediaId: turnaroundMediaId,
         characterTurnaroundBase64: turnaroundBase64,
-        characterId: settings.characterId, taste: settings.taste, era: settings.era, theme: settings.theme, productionMode: effectiveMode, isMvMode: isMv
+        characterId: settings.characterId,
+        taste: settings.taste,
+        era: settings.era,
+        theme: settings.theme,
+        productionMode: effectiveMode,
+        isMvMode: isMv
       });
 
       addLog(`🎨 【第${epId}${unitLabel}】先行プレビュー ${settings.previewCutCount} カットの描画タスクを開始...（並列度: ${settings.parallelCount}）`, 'process');
@@ -810,21 +755,7 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         manifest
       });
     } catch (epErr: any) {
-      addLog(`⚠️ 第 ${epId} 話の生成中にエラーが発生しました。スキップして次へ進みます: ${formatErrorMessage(epErr)}`, 'warning');
-      episodesRef.current = episodesRef.current.map(e => e.id === epId ? {
-        ...e,
-        isGenerating: false,
-        isBatchGeneratingVideos: false,
-        error: '生成中断',
-        cuts: e.cuts.map(c => ({ ...c, isGeneratingImage: false, isGeneratingVideo: false, isGeneratingEndFrame: false }))
-      } : e);
-      setEpisodes(prev => prev.map(e => e.id === epId ? {
-        ...e,
-        isGenerating: false,
-        isBatchGeneratingVideos: false,
-        error: '生成中断',
-        cuts: e.cuts.map(c => ({ ...c, isGeneratingImage: false, isGeneratingVideo: false, isGeneratingEndFrame: false }))
-      } : e));
+      addLog(`⚠️ 第 ${epId} 話の生成中にエラーが発生しました: ${formatErrorMessage(epErr)}`, 'warning');
       cleanupEpisodeMemory();
       continue;
     }

@@ -4,7 +4,7 @@ import { Episode, Cut, VideoModelType } from '../types';
 import { PillButton } from './StudioSidebar';
 import { getProductionModeConfig } from '../constants';
 import { cleanEpisodeTitle, cleanEpisodeTitleEn } from '../services/directorService';
-import { renderCoverBase64Horizontal } from '../services/export/coverRenderer';
+import { renderCoverBase64Horizontal } from '../services/coverService';
 import { formatDataUri } from '../services/utils';
 
 interface CutCardProps {
@@ -155,9 +155,10 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
   }, [previewImage]);
 
   return (
-    <div className={`border rounded-xl transition-all duration-300 ${
-      isMv ? 'bg-purple-950/20 border-purple-500/30' : 'bg-white/5 border-slate-200'
-    } ${isExpanded ? 'p-4 flex flex-col gap-4' : 'px-3.5 py-2'}`}>
+    <div 
+      className="border border-slate-300 rounded-xl transition-all duration-300 bg-white shadow-xs px-3.5 py-2.5"
+      style={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1' }}
+    >
       {previewImage && typeof document !== 'undefined' && createPortal(
         <div 
           className="fixed inset-0 z-[999999] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 select-none animate-in fade-in duration-200"
@@ -214,27 +215,27 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className={`material-symbols-outlined text-lg shrink-0 ${isMv ? 'text-purple-400' : 'text-amber-400'}`}>
+          <span className={`material-symbols-outlined text-lg shrink-0 ${isMv ? 'text-purple-600' : 'text-amber-500'}`}>
             {cardIcon}
           </span>
-          <h3 className="text-xs font-black tracking-wider uppercase text-slate-800 shrink-0">
+          <h3 className="text-xs font-black tracking-wider uppercase text-slate-800 shrink-0" style={{ color: '#1e293b' }}>
             {cardTitle}
           </h3>
           
-          {/* 共通設定バッジ（横1行に収まるようコンパクト表示） */}
+          {/* 共通設定バッジ */}
           <div className="hidden sm:flex items-center gap-1.5 overflow-hidden">
             {isMv && (
-              <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] font-bold rounded-full border border-purple-500/40 shrink-0">
+              <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-bold rounded-full border border-purple-300 shrink-0">
                 🎵 MV
               </span>
             )}
             {ep.taste && (
-              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] font-bold rounded-full border border-blue-500/30 truncate max-w-[150px]">
+              <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-full border border-blue-300 truncate max-w-[150px]">
                 {ep.taste.split(' (')[0].trim()}
               </span>
             )}
             {ep.theme && (
-              <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-bold rounded-full border border-amber-500/30 truncate max-w-[180px]">
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full border border-amber-300 truncate max-w-[180px]">
                 {ep.theme.split('（')[0].trim()}
               </span>
             )}
@@ -507,34 +508,34 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
   const isPending = !ep.isGenerating && !ep.isDone && !ep.isPreviewDone;
 
   return (
-    <section className={`flex flex-col gap-5 animate-slide-in transition-opacity duration-700 ${isPending ? 'opacity-30' : 'opacity-100'}`}>
-      <div className="flex flex-col border-b border-slate-200 pb-4 gap-3">
-        {/* 最上段: 上にタイトル（全幅でゆったり表示）、下にアクションボタン群を整列 */}
+    <section className={`flex flex-col gap-5 animate-slide-in transition-opacity duration-700 ${isPending ? 'opacity-80' : 'opacity-100'}`}>
+      <div className="flex flex-col border-b border-slate-300 pb-4 gap-3">
+        {/* 最上段: タイトル（濃いダークスレート）、下に高コントラストボタン群 */}
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="font-black italic uppercase tracking-tight text-slate-900 leading-tight text-lg sm:text-xl md:text-2xl break-words">
+              <h2 className="font-black italic uppercase tracking-tight text-slate-900 leading-tight text-xl sm:text-2xl md:text-3xl break-words" style={{ color: '#0f172a' }}>
                 {cleanEpisodeTitle(ep.titleJp) || '無題'}
               </h2>
-              {ep.isDone && <span className="material-symbols-outlined text-green-500 font-bold text-lg" title="制作完了">check_circle</span>}
+              {ep.isDone && <span className="material-symbols-outlined text-emerald-600 font-bold text-xl" title="制作完了">check_circle</span>}
               {ep.isGenerating && <div className="w-4 h-4 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin shrink-0" />}
             </div>
             {ep.titleEn && (
-              <span className="text-[11px] text-slate-500 uppercase tracking-widest font-mono">
+              <span className="text-xs text-slate-600 uppercase tracking-widest font-mono font-bold" style={{ color: '#475569' }}>
                 {cleanEpisodeTitleEn(ep.titleEn)}
               </span>
             )}
           </div>
           
-          {/* アクションボタン群（下段にゆったり横並び配置） */}
+          {/* アクションボタン群（ライトテーマで視認性の高い配色） */}
           <div className="flex items-center gap-2 flex-wrap">
             {onGenerateCover && (
               <PillButton 
                 variant="outline" 
-                className={`h-8 px-3 border-teal-500/40 text-teal-300 hover:text-teal-100 hover:border-teal-400 hover:bg-teal-950/30 font-bold text-xs whitespace-nowrap shrink-0 transition-colors ${ep.coverBase64 ? 'bg-teal-950/20' : ''}`}
+                className={`h-8 px-3.5 border border-teal-500 text-teal-800 hover:text-teal-950 hover:bg-teal-100 font-bold text-xs whitespace-nowrap shrink-0 transition-colors shadow-2xs ${ep.coverBase64 ? 'bg-teal-100/80 font-black' : 'bg-teal-50/80'}`}
                 disabled={ep.isGeneratingCover || ep.isGenerating || isPending} 
                 onClick={() => onGenerateCover(ep.id)} 
-                icon={ep.isGeneratingCover ? <div className="w-3.5 h-3.5 border-2 border-teal-400/20 border-t-teal-400 rounded-full animate-spin" /> : <span className="material-symbols-outlined text-teal-400 text-sm">auto_stories</span>}
+                icon={ep.isGeneratingCover ? <div className="w-3.5 h-3.5 border-2 border-teal-600/20 border-t-teal-600 rounded-full animate-spin" /> : <span className="material-symbols-outlined text-teal-600 text-sm">auto_stories</span>}
                 title="世界観・時代・ジャンルに完全適応した9:16インフォグラフィック扉絵（ポスター）を生成"
               >
                 {ep.coverBase64 ? '扉絵再生成' : '扉絵生成 (インフォ)'}
@@ -543,10 +544,10 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
             {onRerollTaste && (
               <PillButton 
                 variant="outline" 
-                className="h-8 px-3 border-emerald-500/40 text-emerald-400 hover:text-emerald-200 hover:border-emerald-400 hover:bg-emerald-950/30 font-black text-xs whitespace-nowrap shrink-0 transition-colors shadow-2xs" 
+                className="h-8 px-3.5 border border-emerald-500 bg-emerald-50 text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100 font-black text-xs whitespace-nowrap shrink-0 transition-colors shadow-2xs" 
                 disabled={ep.isGenerating || isPending} 
                 onClick={() => onRerollTaste(ep.id)} 
-                icon={<span className="material-symbols-outlined text-emerald-400 text-sm">palette</span>}
+                icon={<span className="material-symbols-outlined text-emerald-600 text-sm">palette</span>}
                 title="ヘッダーで選択中の画風を適用し、3面図・先行カット・扉絵を最初から再作成（歌詞や構図設定は保持）"
               >
                 画風を変えて全再生成
@@ -555,20 +556,20 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
             
             <PillButton 
               variant="outline" 
-              className="h-8 px-3 border-slate-200 hover:border-white/30 text-slate-500 hover:text-slate-900 font-bold text-xs whitespace-nowrap shrink-0" 
+              className="h-8 px-3.5 border border-indigo-300 bg-indigo-50/60 hover:bg-indigo-100 text-indigo-800 font-bold text-xs whitespace-nowrap shrink-0 shadow-2xs" 
               disabled={ep.isGeneratingRemainingImages || ep.isGenerating || isPending} 
               onClick={() => onGenerateRemaining(ep.id)} 
-              icon={ep.isGeneratingRemainingImages ? <div className="w-3.5 h-3.5 border-2 border-slate-200 border-t-white rounded-full animate-spin" /> : <span className="material-symbols-outlined text-sm">palette</span>}
+              icon={ep.isGeneratingRemainingImages ? <div className="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" /> : <span className="material-symbols-outlined text-indigo-600 text-sm">palette</span>}
             >
               残り描画
             </PillButton>
             
             <PillButton 
               variant="outline" 
-              className="h-8 px-3 border-slate-200 hover:border-white/40 text-slate-600 hover:text-slate-900 font-bold text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer" 
+              className="h-8 px-3.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer shadow-2xs" 
               disabled={isPending}
               onClick={() => onDownloadZip(ep)} 
-              icon={<span className="material-symbols-outlined text-sm">download</span>}
+              icon={<span className="material-symbols-outlined text-slate-700 text-sm">download</span>}
               title="素材パッケージ（画像・字幕・スクリプト）を一括ダウンロード"
             >
               パッケージ

@@ -1,4 +1,4 @@
-import { KenBurnsPreset, ProductionMode, TelopStyle, TelopTransition, TelopPosition } from './types';
+import { KenBurnsPreset, ProductionMode, TelopStyle, TelopTransition, TelopPosition, GeneratorSettings } from './types';
 
 // ── 🎙️ YouTube収益化安全キャラクター定義（VOICEVOX / 東北ずん子プロジェクト等） ──
 export interface SafeCharacter {
@@ -1635,3 +1635,29 @@ export const IMAGE_MODELS = IMAGE_MODELS_REGISTRY;
 export const STRICT_STYLE_SUFFIX = ' seamless full-bleed square 1:1 artwork. Grounded immersive cinematic framing. Absolutely NO drone shots, NO modern aerial drones, NO borders, NO margins, NO text, NO subtitles, NO caption banner, NO speech bubbles, NO kanji, NO numbers, NO year labels, NO signs indicating the year or date, clean edge-to-edge artwork.';
 export const CUTS_PER_EPISODE = 12;
 export const DEFAULT_ASPECT_RATIO = '1:1';
+
+export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
+  productionMode: 'episodes',
+  country: '日本',
+  theme: THEMES[0],
+  taste: Object.keys(TASTES)[0],
+  imageModel: IMAGE_MODELS_REGISTRY[1].label,
+  defaultVideoModel: '',
+  videoRatio: 'none',
+  episodeCount: 1,
+  previewCutCount: 2,
+  parallelCount: 2,
+  autoVideo: false,
+  autoDownload: true,
+  superBackoff: true,
+  isMvMode: false,
+  aspectRatio: '1:1',
+  characterId: 'zundamon',
+  enableTurnaroundSheet: true,
+  autoApproveTurnaround: true,
+  enableObjectCut: true,
+  enableEndFrames: false
+};
+
+export const DEFAULT_IMAGE_MODEL = IMAGE_MODELS_REGISTRY[1].label;
+export const PRODUCTION_MODE_OPTIONS = PRODUCTION_MODES_LIST;
