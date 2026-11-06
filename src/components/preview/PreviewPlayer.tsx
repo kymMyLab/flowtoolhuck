@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Cut } from '../../types';
 import { formatDataUri } from '../../services/utils';
 
@@ -27,6 +27,7 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
   onToggleTelop,
   isRewriting = false
 }) => {
+  const [isZoomed, setIsZoomed] = useState(false);
   const startImageSrc = cut.imageBase64 ? formatDataUri(cut.imageBase64) : null;
   const rawText = (cut.telop?.fullText || cut.narrationJp || '').trim();
 
@@ -67,8 +68,18 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({
 
         <div className="relative h-full max-h-full aspect-square shadow-2xl rounded-2xl overflow-hidden border border-white/10 group bg-[#111] flex items-center justify-center">
           {startImageSrc ? (
-            <div className="w-full h-full overflow-hidden flex items-center justify-center">
-              <img src={startImageSrc} className="w-full h-full object-contain block" alt={`Cut ${cut.id}`} />
+            <div 
+              className={`w-full h-full overflow-hidden flex items-center justify-center cursor-zoom-in transition-all ${isZoomed ? 'cursor-zoom-out' : ''}`}
+              onClick={() => setIsZoomed(!isZoomed)}
+              title={isZoomed ? "クリックで縮小" : "クリックで原寸/拡大表示"}
+            >
+              <img 
+                src={startImageSrc} 
+                className={`transition-transform duration-300 select-none ${
+                  isZoomed ? 'scale-[1.8] cursor-zoom-out' : 'w-full h-full object-contain block'
+                }`} 
+                alt={`Cut ${cut.id}`} 
+              />
             </div>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-white/20 gap-3 uppercase tracking-widest text-[11px] font-bold">
