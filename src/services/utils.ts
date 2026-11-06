@@ -186,10 +186,10 @@ export async function callWithRetry<T>(
     maxRetries = maxRetriesOrOptions;
   }
 
-  // デフォルト待機スケジュール: 5s, 10s, 20s, 40s, 80s
-  const standardDelays = [5000, 10000, 20000, 40000, 80000];
-  // 超指数バックオフ用スケジュール: 10分, 20分, 30分, 60分 (計4回・最大約2時間耐久)
-  const superDelays = [10 * 60 * 1000, 20 * 60 * 1000, 30 * 60 * 1000, 60 * 60 * 1000];
+  // デフォルト待機スケジュール: 5s, 30s, 60s, 120s
+  const standardDelays = [5000, 30000, 60000, 120000];
+  // 超指数バックオフ用スケジュール: 10分, 20分, 40分 (夜間放置完走用)
+  const superDelays = [10 * 60 * 1000, 20 * 60 * 1000, 40 * 60 * 1000];
 
   const delays = effectiveSuperBackoff
     ? [...standardDelays, ...superDelays]

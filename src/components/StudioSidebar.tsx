@@ -130,46 +130,43 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             <div className="p-3 flex flex-col gap-3 border-t border-slate-200 animate-in fade-in duration-200">
               <FieldDropdown label="画像モデル" value={settings.imageModel} options={IMAGE_MODELS.map(m => m.label)} onChange={v => setSettings(s => ({ ...s, imageModel: v }))} disabled={isProducing} />
               
-              <div className="grid grid-cols-2 gap-2.5">
-                <NumberChoice label="並列数" value={settings.parallelCount} options={[1, 2, 3, 4]} onChange={v => setSettings(s => ({ ...s, parallelCount: v }))} />
-                <div className="flex flex-col gap-1 w-full">
-                  <div className="flex items-center justify-between px-0.5">
-                    <p className="text-xs font-bold text-slate-600 truncate">生成話数</p>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-slate-400 font-medium">指定:</span>
-                      <input 
-                        type="number" 
-                        min="1" 
-                        max="999"
-                        value={settings.episodeCount || 1}
-                        onChange={e => {
-                          const val = parseInt(e.target.value, 10);
-                          if (!isNaN(val) && val > 0) {
-                            setSettings(s => ({ ...s, episodeCount: Math.min(val, 999) }));
-                          }
-                        }}
-                        className="w-12 h-5 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-indigo-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-inner"
-                      />
-                      <span className="text-[10px] font-bold text-slate-500">話</span>
-                    </div>
+              <div className="flex flex-col gap-1 w-full">
+                <div className="flex items-center justify-between px-0.5">
+                  <p className="text-xs font-bold text-slate-600 truncate">生成話数</p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-slate-400 font-medium">指定:</span>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      max="999"
+                      value={settings.episodeCount || 1}
+                      onChange={e => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val) && val > 0) {
+                          setSettings(s => ({ ...s, episodeCount: Math.min(val, 999) }));
+                        }
+                      }}
+                      className="w-12 h-5 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-indigo-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-inner"
+                    />
+                    <span className="text-[10px] font-bold text-slate-500">話</span>
                   </div>
+                </div>
 
-                  <div className="flex w-full items-center border border-slate-300 rounded-xl overflow-x-auto no-scrollbar bg-slate-100 p-0.5">
-                    {episodeOptions.map((opt) => (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => setSettings(s => ({ ...s, episodeCount: opt }))}
-                        className={`flex-1 min-w-[36px] flex items-center justify-center h-[30px] text-xs font-bold transition-all cursor-pointer rounded-lg px-1 shrink-0 ${
-                          settings.episodeCount === opt 
-                            ? 'bg-indigo-600 text-white shadow-sm font-black' 
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                        }`}
-                      >
-                        <span className="truncate">{opt}話</span>
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex w-full items-center border border-slate-300 rounded-xl overflow-x-auto no-scrollbar bg-slate-100 p-0.5">
+                  {episodeOptions.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setSettings(s => ({ ...s, episodeCount: opt }))}
+                      className={`flex-1 min-w-[36px] flex items-center justify-center h-[30px] text-xs font-bold transition-all cursor-pointer rounded-lg px-1 shrink-0 ${
+                        settings.episodeCount === opt 
+                          ? 'bg-indigo-600 text-white shadow-sm font-black' 
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      }`}
+                    >
+                      <span className="truncate">{opt}話</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -216,6 +213,29 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* 内部固定ステータス表示（並列2 / 指数バックオフ詳細） */}
+              <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 select-none">
+                <div className="flex items-center justify-between text-[11px] font-bold">
+                  <span className="flex items-center gap-1 text-slate-700">
+                    <span className="material-symbols-outlined text-[14px] text-indigo-500">speed</span>
+                    並列処理
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-black">2並列（最適化固定）</span>
+                </div>
+                <div className="flex flex-col gap-0.5 pt-1 border-t border-slate-200/60 text-[10px]">
+                  <div className="flex items-center justify-between font-bold text-slate-700">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[13px] text-amber-500">published_with_changes</span>
+                      指数バックオフ待機
+                    </span>
+                    <span className="text-emerald-700 font-extrabold">常時有効 (夜間放置完走)</span>
+                  </div>
+                  <span className="text-slate-500 font-mono text-[9.5px] mt-0.5 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                    5秒 → 30秒 → 60秒 → 120秒 → 10分 → 20分 → 40分
+                  </span>
                 </div>
               </div>
             </div>
