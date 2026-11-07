@@ -64,10 +64,15 @@
       currentCode = (codeContainer.innerText || '').trim();
     }
 
-    if (currentCode.length > 0) {
+    // エディタの行番号（単独の数字行: 1, 2, 3...）を除去して美しい純コードにする
+    const cleanCode = currentCode.split(/\r?\n/)
+      .filter(line => !/^\d+$/.test(line.trim()))
+      .join('\n');
+
+    if (cleanCode.length > 0) {
       lastCode = currentCode;
-      collected.push({ name: rawName, code: currentCode });
-      console.log('%c✔ 回収成功: ' + rawName + ' (' + currentCode.length + '文字)', 'color: #10b981;');
+      collected.push({ name: rawName, code: cleanCode });
+      console.log('%c✔ 回収成功: ' + rawName + ' (' + cleanCode.length + '文字, 行番号自動除去済)', 'color: #10b981;');
     } else {
       console.warn('%c⚠ スキップ: ' + rawName + ' (コードが空です)', 'color: #ef4444;');
     }
