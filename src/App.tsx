@@ -3,7 +3,7 @@ import { MediaPreviewModal } from './components/MediaPreviewModal';
 import { StudioSidebar, FieldDropdown, FieldDropdownOption } from './components/StudioSidebar';
 import { EpisodeSection } from './components/EpisodeSection';
 import { Cut, GeneratorSettings, Episode, LogEntry } from './types';
-import { THEMES, THEME_CATEGORIES, TASTES, IMAGE_MODELS } from './constants';
+import { THEMES, THEME_CATEGORIES, TASTES, IMAGE_MODELS, RANDOM_SELECT_VALUE } from './constants';
 import { createLogMessage, initDB } from './services/utils';
 import { downloadZip, savePackageFile } from './services/zipPackager';
 import { useStudioProduction } from './services/useStudioProduction';
@@ -24,15 +24,25 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   settings, setSettings, isProducing, onStart, onAbort, activeSeriesManifest, onResumeClick, isWaitingForStart = false
 }) => {
   const themeGroups = React.useMemo(() => {
-    return THEME_CATEGORIES.map(c => ({ label: c.category, items: c.items }));
+    return [
+      { label: '🎲 おまかせ', items: [RANDOM_SELECT_VALUE] },
+      ...THEME_CATEGORIES.map(c => ({ label: c.category, items: c.items }))
+    ];
   }, []);
 
   const tasteOptions: FieldDropdownOption[] = React.useMemo(() => {
-    return Object.keys(TASTES).map(k => ({
-      value: k,
-      label: k.split(' (')[0],
-      sublabel: k.split(' (')[1]?.replace(')', '')
-    }));
+    return [
+      {
+        value: RANDOM_SELECT_VALUE,
+        label: RANDOM_SELECT_VALUE,
+        sublabel: '制作開始時に自動抽選'
+      },
+      ...Object.keys(TASTES).map(k => ({
+        value: k,
+        label: k.split(' (')[0],
+        sublabel: k.split(' (')[1]?.replace(')', '')
+      }))
+    ];
   }, []);
 
   return (
@@ -134,7 +144,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
-    productionMode: 'episodes', country: '日本', theme: THEMES[0], taste: Object.keys(TASTES)[0], imageModel: IMAGE_MODELS[1].label, defaultVideoModel: '', videoRatio: 'none', episodeCount: 1, previewCutCount: 2, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, aspectRatio: '1:1', characterId: 'zundamon',
+    productionMode: 'episodes', country: '日本', theme: RANDOM_SELECT_VALUE, taste: RANDOM_SELECT_VALUE, imageModel: IMAGE_MODELS[1].label, defaultVideoModel: '', videoRatio: 'none', episodeCount: 1, previewCutCount: 2, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, aspectRatio: '1:1', characterId: 'zundamon',
     enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: false
   });
 
@@ -199,9 +209,42 @@ export default function App() {
     handleRerollTasteProduction(epId, targetTaste);
   }, [episodes, settings.taste, handleRerollTasteProduction]);
 
-  // ヘッダー等で画風（taste）が変更された際、画像未生成のエピソード群のtasteも即座に同期
+  // 【作成開始】ランダム設定時はこの瞬間にテーマ・画風を抽選・確定して制作突入
+  const handleStartProduction = useCallback(async () => {
+    let chosenTheme = settings.theme;
+    let chosenTaste = settings.taste;
+    let didRandomize = false;
+
+    if (!chosenTheme || chosenTheme === RANDOM_SELECT_VALUE || chosenTheme === 'random') {
+      const pool = THEMES.length > 0 ? THEMES : ['放課後の教室と夕暮れ'];
+      chosenTheme = pool[Math.floor(Math.random() * pool.length)];
+      didRandomize = true;
+    }
+
+    if (!chosenTaste || chosenTaste === RANDOM_SELECT_VALUE || chosenTaste === 'random') {
+      const pool = Object.keys(TASTES);
+      chosenTaste = pool[Math.floor(Math.random() * pool.length)];
+      didRandomize = true;
+    }
+
+    const resolvedSettings: GeneratorSettings = {
+      ...settings,
+      theme: chosenTheme,
+      era: chosenTheme,
+      taste: chosenTaste
+    };
+
+    if (didRandomize) {
+      addLog(`🎲 【ランダム決定】テーマ: 「${chosenTheme}」 / 画風: 「${chosenTaste.split(' (')[0]}」 に確定しました！`, 'process');
+      setSettings(resolvedSettings);
+    }
+
+    await startProduction(resolvedSettings);
+  }, [settings, setSettings, startProduction, addLog]);
+
+  // ヘッダー等で画風（taste）が変更された際、画像未生成のエピソード群のtasteも即座に同期（ランダム設定時はスキップ）
   useEffect(() => {
-    if (!settings.taste) return;
+    if (!settings.taste || settings.taste === RANDOM_SELECT_VALUE) return;
     setEpisodes(prev => {
       let changed = false;
       const next = prev.map(ep => {
@@ -330,7 +373,7 @@ export default function App() {
           settings={settings}
           setSettings={setSettings}
           isProducing={isProducing}
-          onStart={startProduction}
+          onStart={handleStartProduction}
           onAbort={abortProduction}
           activeSeriesManifest={activeSeriesManifest}
           onResumeClick={() => resumeFileRef.current?.click()}
@@ -341,7 +384,7 @@ export default function App() {
             settings={settings} 
             setSettings={setSettings} 
             isProducing={isProducing} 
-            onStartProduction={startProduction}
+            onStartProduction={handleStartProduction}
             onAbortProduction={abortProduction}
             episodes={episodes}
             onClearEpisodes={clearEpisodes}

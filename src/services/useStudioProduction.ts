@@ -1,7 +1,7 @@
 import { runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensureInfographicCover, ensureCharacterTurnaround } from './seriesProductionPipeline';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, LogEntry } from '../types';
-import { CUTS_PER_EPISODE, resolveImageModel, SAFE_CHARACTERS } from '../constants';
+import { CUTS_PER_EPISODE, resolveImageModel, SAFE_CHARACTERS, THEMES, TASTES, RANDOM_SELECT_VALUE } from '../constants';
 import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId, getAllReferenceAssets, saveReferenceAsset } from './utils';
 import { 
   directShot, 
@@ -595,9 +595,27 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       typeof overrideSettings === 'object' &&
       !('nativeEvent' in (overrideSettings as any)) &&
       !('target' in (overrideSettings as any));
-    const effectiveSettings: GeneratorSettings = {
+    const rawEffective: GeneratorSettings = {
       ...settings,
       ...(isValidOverride ? overrideSettings : {})
+    };
+
+    let effectiveTheme = rawEffective.theme;
+    let effectiveTaste = rawEffective.taste;
+    if (!effectiveTheme || effectiveTheme === RANDOM_SELECT_VALUE || effectiveTheme === 'random') {
+      const pool = THEMES.length > 0 ? THEMES : ['放課後の教室と夕暮れ'];
+      effectiveTheme = pool[Math.floor(Math.random() * pool.length)];
+    }
+    if (!effectiveTaste || effectiveTaste === RANDOM_SELECT_VALUE || effectiveTaste === 'random') {
+      const pool = Object.keys(TASTES);
+      effectiveTaste = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    const effectiveSettings: GeneratorSettings = {
+      ...rawEffective,
+      theme: effectiveTheme,
+      era: effectiveTheme,
+      taste: effectiveTaste
     };
 
     setIsProducing(true);

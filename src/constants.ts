@@ -1636,11 +1636,13 @@ export const STRICT_STYLE_SUFFIX = ' seamless full-bleed square 1:1 artwork. Gro
 export const CUTS_PER_EPISODE = 12;
 export const DEFAULT_ASPECT_RATIO = '1:1';
 
+export const RANDOM_SELECT_VALUE = '🎲 ランダム（おまかせ）';
+
 export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
   productionMode: 'episodes',
   country: '日本',
-  theme: THEMES[0],
-  taste: Object.keys(TASTES)[0],
+  theme: RANDOM_SELECT_VALUE,
+  taste: RANDOM_SELECT_VALUE,
   imageModel: IMAGE_MODELS_REGISTRY[1].label,
   defaultVideoModel: '',
   videoRatio: 'none',

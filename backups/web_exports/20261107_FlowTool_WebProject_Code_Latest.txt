@@ -1,0 +1,2181 @@
+// ========================================================
+// Flow Tool Web Project Complete Source Dump
+// Export Date: 2026-11-06T23:53:00.612Z
+// Total Files: 20
+// ========================================================
+
+/* ========================================================
+   FILE: types.ts
+======================================================== */
+1
+export type VideoModelType = 'veo-lite' | 'omni-flash' | 'veo-fast' | 'browser-0pt';
+2
+export type ProductionMode = 'episodes' | 'manga' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix' | 'manzai';
+3
+export type RecommendationModel = VideoModelType | 'none';
+4
+export type VideoRatio = 'none' | 'cut2' | '30%' | '50%' | '100%';
+5
+6
+export type KenBurnsPreset = 'none' | 'zoom-in' | 'zoom-out' | 'pan-left' | 'pan-right' | 'tilt-up' | 'tilt-down';
+7
+8
+export type TelopStyle = 'mv-blur-slide' | 'mv-kinetic-pop' | 'mv-neon-glow' | 'cinema-subtle' | 'traditional-sumi' | 'brush-impact' | 'mv-vertical-lyric' | 'mv-center-climax';
+9
+export type TelopTransition = 'blur-slide-left' | 'blur-slide-up' | 'blur-slide-right' | 'zoom-in-bounce' | 'glow-fade' | 'glitch-pop' | 'animista-slide-bck' | 'aos-fade-soft' | 'gsap-kinetic-stagger';
+10
+export type TelopPosition = 'bottom-left' | 'bottom-center' | 'center-stagger' | 'bottom-right' | 'top-cinema' | 'vertical-right' | 'vertical-left' | 'center-climax';
+11
+12
+export interface TelopConfig {
+13
+  fullText: string;
+14
+  highlights?: Array<{ word: string; color: string; sizeScale: number }>;
+15
+  style?: TelopStyle;
+16
+  transition?: TelopTransition;
+17
+  position?: TelopPosition;
+18
+  directorNote?: string;
+19
+}
+20
+21
+export interface ReferenceAsset {
+22
+  id?: number;
+23
+  name: string;
+24
+  base64: string;
+25
+  mimeType: string;
+26
+  mediaId?: string; 
+27
+  styleAnalysis?: string;
+28
+  characterAnalysis?: string;
+29
+  createdAt: string;
+30
+}
+31
+32
+export type ComicPanelLayout = 'splash' | 'vertical-split' | 'horizontal-split' | 'focus-grid' | 'standard';
+33
+34
+export interface ComicPanelMeta {
+35
+  layout: ComicPanelLayout;
+36
+  isDoublePageSplash?: boolean;
+37
+  sfxOnomatopoeia?: string;
+38
+  dialogueType?: 'monologue' | 'shout' | 'whisper' | 'narration';
+39
+}
+40
+41
+export type CompositionGrid = 
+42
+  | 'top-left' | 'top-center' | 'top-right'
+43
+  | 'center-left' | 'center' | 'center-right'
+44
+  | 'bottom-left' | 'bottom-center' | 'bottom-right';
+45
+46
+export interface FocalPoint {
+47
+  grid: CompositionGrid;
+48
+  normalizedCoord: [number, number]; // [x, y] 0.0〜1.0 (例: [0.5, 0.28])
+49
+  focalSubject: string;
+50
+}
+51
+52
+export interface Cut {
+53
+  id: number;
+54
+  promptEn: string;
+55
+  narrationJp: string;
+56
+  narrationEn?: string;
+57
+  negativePrompt?: string; 
+58
+  duration?: number;
+59
+  
+60
+  shotScale?: string;
+61
+  cinematicAngle?: string;
+62
+  cameraWork?: string;
+63
+  scenePlot?: string;
+64
+  cleanAction?: string;
+65
+  cleanImagePrompt?: string;
+66
+  cleanLighting?: string;
+67
+  cleanComposition?: string;
+68
+  panelLayout?: 'single' | 'split-2' | 'split-3' | 'diagonal-slash' | 'l-shaped' | 'panoramic-split' | 'inset-reaction' | 'vertical-split' | 'dynamic-multi' | string;
+69
+  comicPanel?: ComicPanelMeta;
+70
+71
+  kenBurnsPreset?: KenBurnsPreset; 
+72
+  cameraMotion?: string;
+73
+74
+  focalPoint?: FocalPoint;
+75
+  compositionPrompt?: string;
+76
+  isObjectOnly?: boolean;
+77
+78
+  veoMotionPrompt?: string;
+79
+  endFramePromptEn?: string;
+80
+  endFrameImageMediaId?: string;
+81
+  endFrameImageBase64?: string;
+82
+  isGeneratingEndFrame?: boolean;
+83
+84
+  summary?: string;
+85
+  isKeyScene?: boolean;
+86
+87
+  imageMediaId?: string;
+88
+  imageBase64?: string;
+89
+  videoMediaId?: string;
+90
+  videoBase64?: string;
+91
+  videoModelUsed?: string;
+92
+  videoDuration?: number;
+93
+94
+  telop?: TelopConfig;
+95
+96
+  isDirecting: boolean; 
+97
+  isGeneratingImage: boolean;
+98
+  isGeneratingVideo: boolean;
+99
+  isQueued: boolean;
+100
+  isSelectedForVideo: boolean;
+101
+  targetVideoModel: RecommendationModel;
+102
+  error?: string;
+103
+  bgmMediaId?: string;
+104
+  voiceId?: string;
+105
+  isMvMode?: boolean;
+106
+  finalPromptUsed?: string;
+107
+  finalNegativeUsed?: string;
+108
+  geminiVisualPrompt?: string;
+109
+  stagingType?: 'character_with_props' | 'character_focused' | 'scenic_prop_insert';
+110
+  characterPresence?: CharacterPresenceType;
+111
+  veoPriorityRank?: number;
+112
+  styleKeyUsed?: string;
+113
+  imageModelUsed?: string;
+114
+}
+115
+116
+export type CharacterPresenceType =
+117
+  | '1_protagonist_solo_focus'
+118
+  | '2_protagonist_or_pair_wide'
+119
+  | '3_two_characters_asymmetric'
+120
+  | '4_hands_or_feet_detail'
+121
+  | '5_scenic_or_still_life';
+122
+123
+export interface ExtractedSongDna {
+124
+  protagonistDna: string;
+125
+  protagonistWardrobeDna?: string;
+126
+  partnerDna?: string;
+127
+  keyPropsDna?: string;
+128
+}
+129
+130
+export interface Episode {
+131
+  id: number;
+132
+  internalId: string;
+133
+  titleJp: string;
+134
+  titleEn: string;
+135
+  summary?: string;
+136
+  eraAnalysis?: string;
+137
+  forbiddenAnachronisms?: string[];
+138
+  authenticAttireEn?: string;
+139
+  forbiddenKeywordsEn?: string;
+140
+  highlightWords?: string[];
+141
+142
+  coverCatchphraseJp?: string;
+143
+  coverCatchphraseEn?: string;
+144
+  coverBase64?: string;
+145
+  coverMediaId?: string;
+146
+  coverPromptEn?: string;
+147
+  coverThemeVariant?: string;
+148
+  isGeneratingCover?: boolean;
+149
+150
+  characterDna?: string;
+151
+  extractedSongDna?: ExtractedSongDna;
+152
+  characterTurnaroundMediaId?: string;
+153
+  characterTurnaroundBase64?: string;
+154
+  characterTurnaroundPrompt?: string;
+155
+  masterAnchorMediaId?: string;
+156
+  masterAnchorBase64?: string;
+157
+  
+158
+  cuts: Cut[];
+159
+  isGenerating: boolean;
+160
+  isGeneratingRemainingImages: boolean;
+161
+  isLyricAnalyzed?: boolean;
+162
+  isBatchGeneratingVideos: boolean;
+163
+  isExportingMovie?: boolean; 
+164
+  fullMovieBase64?: string;   
+165
+  isPreviewDone: boolean;
+166
+  isDone: boolean;
+167
+  error?: string;
+168
+169
+  characterId?: string;
+170
+  taste?: string;
+171
+  era?: string;
+172
+  theme?: string;
+173
+  isMvMode?: boolean;
+174
+  productionMode?: ProductionMode;
+175
+176
+  packageZipBlobUrl?: string;
+177
+  packageZipFilename?: string;
+178
+  packageZipSizeStr?: string;
+179
+180
+  soundPrompt?: string;
+181
+  musicStyle?: string;
+182
+  instrumentalTrack?: unknown;
+183
+}
+184
+185
+export interface GeneratorSettings {
+186
+  productionMode: ProductionMode; 
+187
+  country: string;
+188
+  customCountry?: string;
+189
+  era?: string;
+190
+  customEra?: string;
+191
+  theme: string;
+192
+  customTheme?: string;
+193
+  taste: string;
+194
+  customTaste?: string;
+195
+  isMangaMode?: boolean;
+196
+  isMvMode?: boolean;
+197
+  imageModel: string;
+198
+  defaultVideoModel: string;
+199
+  videoModel?: string;
+200
+  videoRatio: VideoRatio;
+201
+  episodeCount: number;
+202
+  totalEpisodes?: number;
+203
+  previewCutCount: number; 
+204
+  parallelCount: number;
+205
+  autoVideo: boolean;
+206
+  autoDownload: boolean;
+207
+  superBackoff?: boolean;
+208
+  aspectRatio?: '9:16' | '1:1' | '16:9';
+209
+  characterId?: string;
+210
+211
+  enableTurnaroundSheet?: boolean;
+212
+  autoApproveTurnaround?: boolean;
+213
+  enableObjectCut?: boolean;
+214
+  enableEndFrames?: boolean;
+215
+}
+216
+217
+export interface GenerationTask {
+218
+  id?: string | number;
+219
+  epId: number;
+220
+  cutId: number;
+221
+  prompt: string;
+222
+  negativePrompt?: string;
+223
+  styleKey: string;
+224
+  imageModel: string;
+225
+  isMvMode?: boolean;
+226
+  eraAnalysis?: string;
+227
+  forbiddenAnachronisms?: string[];
+228
+  authenticAttireEn?: string;
+229
+  forbiddenKeywordsEn?: string;
+230
+  referenceImageMediaId?: string;
+231
+  storyContext?: string;
+232
+  characterDna?: string;
+233
+  isObjectOnly?: boolean;
+234
+  characterPresence?: CharacterPresenceType;
+235
+  extractedSongDna?: ExtractedSongDna;
+236
+  focalSubject?: string;
+237
+  isEndFrame?: boolean;
+238
+  endFrameCameraDirective?: string;
+239
+  shotScale?: string;
+240
+  cinematicAngle?: string;
+241
+  camera?: string;
+242
+  previousContexts?: any;
+243
+  antiPreviousMandate?: string;
+244
+}
+245
+246
+export interface ProductionPipelineContext {
+247
+  settings: GeneratorSettings;
+248
+  addLog: (message: string, type?: LogEntry['type']) => void;
+249
+  logsRef?: any;
+250
+  isAbortedRef: any;
+251
+  episodesRef: any;
+252
+  setEpisodes: any;
+253
+  updateEpisode: (epId: number, data: Partial<Episode>) => void;
+254
+  runTasks: (tasks: GenerationTask[]) => Promise<void>;
+255
+  buildCutTasks: (ep: Episode, cuts: Cut[], styleKey?: string) => GenerationTask[];
+256
+  seriesManifestRef: any;
+257
+  setActiveSeriesManifest: any;
+258
+  activeReferenceRef: any;
+259
+  currentAssetRef: any;
+260
+}
+261
+262
+export const SHORTS_CONFIG_MAP: Record<string, { label: string; unit: string; icon: string }> = {
+263
+  mv: { label: '音楽MV', unit: '曲', icon: '🎵' },
+264
+  trivia: { label: '衝撃雑学Shorts', unit: '本', icon: '💡' },
+265
+  quotes: { label: '偉人名言Shorts', unit: '本', icon: '📜' },
+266
+  folklore: { label: '怪異・未解決Shorts', unit: '本', icon: '👻' },
+267
+  craft: { label: '職人魂ショート', unit: '本', icon: '🏯' }
+268
+};
+269
+270
+export function cleanupEpisodeMemory() {
+271
+  if (typeof window !== 'undefined' && (window as any).gc) {
+272
+    try { (window as any).gc(); } catch (e) {}
+273
+  }
+274
+}
+275
+276
+export interface SeriesEpisodePlan {
+277
+  epNumber: number;
+278
+  titleJp: string;
+279
+  titleEn: string;
+280
+  summary: string;
+281
+}
+282
+283
+export interface SeriesManifest {
+284
+  seriesTitle: string;
+285
+  totalEpisodes: number;
+286
+  currentEpisodeId: number;
+287
+  completedEpisodeIds: number[];
+288
+  overallSynopsis: string;
+289
+  episodesPlan: SeriesEpisodePlan[];
+290
+  referenceAsset?: {
+291
+    name: string;
+292
+    base64: string;
+293
+    mimeType: string;
+294
+    characterDna?: string;
+295
+    styleDna?: string;
+296
+    antiPoseNegative?: string;
+297
+    eraNegative?: string;
+298
+    characterTurnaroundMediaId?: string;
+299
+    characterTurnaroundBase64?: string;
+300
+  };
+301
+  settings?: Partial<GeneratorSettings>;
+302
+}
+303
+304
+export interface LogEntry {
+305
+  id: string;
+306
+  message: string;
+307
+  type: 'info' | 'process' | 'success' | 'warning' | 'error';
+308
+}
+
+/* ========================================================
+   FILE: constants.ts
+======================================================== */
+15
+export const SAFE_CHARACTERS: SafeCharacter[] = [
+
+/* ========================================================
+   FILE: StudioSidebar
+======================================================== */
+6
+export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+
+/* ========================================================
+   FILE: EpisodeSection
+======================================================== */
+8
+import { formatDataUri } from '../services/utils';
+
+/* ========================================================
+   FILE: App.tsx
+======================================================== */
+ありがとうございます！それでは各ファイルを1つずつ本格的な実装コードに更新していきます。
+
+まずは【Step 1】として、全機能の基盤となる型定義「types.ts」を以下の完全版コードで上書き（更新）してください：
+
+```typescript
+// ── Google Flow SDK グローバル型宣言 ──
+declare global {
+  const Flow: any;
+}
+
+export type VideoModelType = 'veo-lite' | 'omni-flash' | 'veo-fast' | 'browser-0pt';
+export type ProductionMode = 'episodes' | 'manga' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix' | 'manzai';
+export type RecommendationModel = VideoModelType | 'none';
+export type VideoRatio = 'none' | 'cut2' | '30%' | '50%' | '100%';
+
+export type KenBurnsPreset = 'none' | 'zoom-in' | 'zoom-out' | 'pan-left' | 'pan-right' | 'tilt-up' | 'tilt-down';
+
+export type TelopStyle = 'mv-blur-slide' | 'mv-kinetic-pop' | 'mv-neon-glow' | 'cinema-subtle' | 'traditional-sumi' | 'brush-impact' | 'mv-vertical-lyric' | 'mv-center-climax';
+export type TelopTransition = 'blur-slide-left' | 'blur-slide-up' | 'blur-slide-right' | 'zoom-in-bounce' | 'glow-fade' | 'glitch-pop' | 'animista-slide-bck' | 'aos-fade-soft' | 'gsap-kinetic-stagger';
+export type TelopPosition = 'bottom-left' | 'bottom-center' | 'center-stagger' | 'bottom-right' | 'top-cinema' | 'vertical-right' | 'vertical-left' | 'center-climax';
+
+export interface TelopConfig {
+  fullText: string;
+  highlights?: Array<{ word: string; color: string; sizeScale: number }>;
+  style?: TelopStyle;
+  transition?: TelopTransition;
+  position?: TelopPosition;
+  directorNote?: string;
+}
+
+export interface ReferenceAsset {
+  id?: number;
+  name: string;
+  base64: string;
+  mimeType: string;
+  mediaId?: string; 
+  styleAnalysis?: string;
+  characterAnalysis?: string;
+  createdAt: string;
+}
+
+export type ComicPanelLayout = 'splash' | 'vertical-split' | 'horizontal-split' | 'focus-grid' | 'standard';
+
+export interface ComicPanelMeta {
+  layout: ComicPanelLayout;
+  isDoublePageSplash?: boolean;
+  sfxOnomatopoeia?: string;
+  dialogueType?: 'monologue' | 'shout' | 'whisper' | 'narration';
+}
+
+export type CompositionGrid = 
+  | 'top-left' | 'top-center' | 'top-right'
+  | 'center-left' | 'center' | 'center-right'
+  | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
+export interface FocalPoint {
+  grid: CompositionGrid;
+  normalizedCoord: [number, number]; // [x, y] 0.0〜1.0 (例: [0.5, 0.28])
+  focalSubject: string;
+}
+
+export interface Cut {
+  id: number;
+  promptEn: string;
+  narrationJp: string;
+  narrationEn?: string;
+  negativePrompt?: string; 
+  duration?: number;
+  
+  shotScale?: string;
+  cinematicAngle?: string;
+  cameraWork?: string;
+  scenePlot?: string;
+  cleanAction?: string;
+  cleanImagePrompt?: string;
+  cleanLighting?: string;
+  cleanComposition?: string;
+  panelLayout?: 'single' | 'split-2' | 'split-3' | 'diagonal-slash' | 'l-shaped' | 'panoramic-split' | 'inset-reaction' | 'vertical-split' | 'dynamic-multi' | string;
+  comicPanel?: ComicPanelMeta;
+
+  kenBurnsPreset?: KenBurnsPreset; 
+  cameraMotion?: string;
+
+  focalPoint?: FocalPoint;
+  compositionPrompt?: string;
+  isObjectOnly?: boolean;
+
+  veoMotionPrompt?: string;
+  endFramePromptEn?: string;
+  endFrameImageMediaId?: string;
+  endFrameImageBase64?: string;
+  isGeneratingEndFrame?: boolean;
+
+  summary?: string;
+  isKeyScene?: boolean;
+
+  imageMediaId?: string;
+  imageBase64?: string;
+  videoMediaId?: string;
+  videoBase64?: string;
+  videoModelUsed?: string;
+  videoDuration?: number;
+
+  telop?: TelopConfig;
+
+  isDirecting: boolean; 
+  isGeneratingImage: boolean;
+  isGeneratingVideo: boolean;
+  isQueued: boolean;
+  isSelectedForVideo: boolean;
+  targetVideoModel: RecommendationModel;
+  error?: string;
+  bgmMediaId?: string;
+  voiceId?: string;
+  isMvMode?: boolean;
+  finalPromptUsed?: string;
+  finalNegativeUsed?: string;
+  geminiVisualPrompt?: string;
+  stagingType?: 'character_with_props' | 'character_focused' | 'scenic_prop_insert';
+  characterPresence?: CharacterPresenceType;
+  veoPriorityRank?: number;
+  styleKeyUsed?: string;
+  imageModelUsed?: string;
+}
+
+export type CharacterPresenceType =
+  | '1_protagonist_solo_focus'
+  | '2_protagonist_or_pair_wide'
+  | '3_two_characters_asymmetric'
+  | '4_hands_or_feet_detail'
+  | '5_scenic_or_still_life';
+
+export interface ExtractedSongDna {
+  protagonistDna: string;
+  protagonistPartialWardrobeDna: string;
+  partnerDna: string;
+  keyPropsDna: string;
+}
+
+export interface Episode {
+  id: number;
+  internalId: string;
+  titleJp: string;
+  titleEn: string;
+  summary?: string;
+  eraAnalysis?: string;
+  forbiddenAnachronisms?: string[];
+  authenticAttireEn?: string;
+  forbiddenKeywordsEn?: string;
+  highlightWords?: string[];
+
+  coverCatchphraseJp?: string;
+  coverCatchphraseEn?: string;
+  coverBase64?: string;
+  coverMediaId?: string;
+  coverPromptEn?: string;
+  coverThemeVariant?: string;
+  isGeneratingCover?: boolean;
+
+  characterDna?: string;
+  extractedSongDna?: ExtractedSongDna;
+  characterTurnaroundMediaId?: string;
+  characterTurnaroundBase64?: string;
+  characterTurnaroundPrompt?: string;
+  masterAnchorMediaId?: string;
+  masterAnchorBase64?: string;
+  
+  cuts: Cut[];
+  isGenerating: boolean;
+  isGeneratingRemainingImages: boolean;
+  isLyricAnalyzed?: boolean;
+  isBatchGeneratingVideos: boolean;
+  isExportingMovie?: boolean; 
+  fullMovieBase64?: string;   
+  isPreviewDone: boolean;
+  isDone: boolean;
+  error?: string;
+
+  characterId?: string;
+  taste?: string;
+  era?: string;
+  theme?: string;
+  isMvMode?: boolean;
+  productionMode?: ProductionMode;
+
+  packageZipBlobUrl?: string;
+  packageZipFilename?: string;
+  packageZipSizeStr?: string;
+
+  soundPrompt?: string;
+  musicStyle?: string;
+  instrumentalTrack?: unknown;
+}
+
+export interface GeneratorSettings {
+  productionMode: ProductionMode; 
+  country: string;
+  customCountry?: string;
+  era?: string;
+  customEra?: string;
+  theme: string;
+  customTheme?: string;
+  taste: string;
+  customTaste?: string;
+  isMangaMode?: boolean;
+  isMvMode?: boolean;
+  imageModel: string;
+  defaultVideoModel: string;
+  videoModel?: string;
+  videoRatio: VideoRatio;
+  episodeCount: number;
+  totalEpisodes?: number;
+  previewCutCount: number; 
+  parallelCount: number;
+  autoVideo: boolean;
+  autoDownload: boolean;
+  superBackoff?: boolean;
+  aspectRatio?: '9:16' | '1:1' | '16:9';
+  characterId?: string;
+
+  enableTurnaroundSheet?: boolean;
+  autoApproveTurnaround?: boolean;
+  enableObjectCut?: boolean;
+  enableEndFrames?: boolean;
+}
+
+export interface GenerationTask {
+  id?: string | number;
+  epId: number;
+  cutId: number;
+  prompt: string;
+  negativePrompt?: string;
+  styleKey: string;
+  imageModel: string;
+  isMvMode?: boolean;
+  eraAnalysis?: string;
+  forbiddenAnachronisms?: string[];
+  authenticAttireEn?: string;
+  forbiddenKeywordsEn?: string;
+  referenceImageMediaId?: string;
+  storyContext?: string;
+  characterDna?: string;
+  isObjectOnly?: boolean;
+  characterPresence?: CharacterPresenceType;
+  extractedSongDna?: ExtractedSongDna;
+  focalSubject?: string;
+  isEndFrame?: boolean;
+  endFrameCameraDirective?: string;
+  shotScale?: string;
+  cinematicAngle?: string;
+  camera?: string;
+  previousContexts?: any;
+  antiPreviousMandate?: string;
+}
+
+export interface ProductionPipelineContext {
+  settings: GeneratorSettings;
+  addLog: (message: string, type?: LogEntry['type']) => void;
+  logsRef?: any;
+  isAbortedRef: any;
+  episodesRef: any;
+  setEpisodes: any;
+  updateEpisode: (epId: number, data: Partial<Episode>) => void;
+  runTasks: (tasks: GenerationTask[]) => Promise<void>;
+  buildCutTasks: (ep: Episode, cuts: Cut[], styleKey?: string) => GenerationTask[];
+  seriesManifestRef: any;
+  setActiveSeriesManifest: any;
+  activeReferenceRef: any;
+  currentAssetRef: any;
+}
+
+export const SHORTS_CONFIG_MAP: Record<string, { label: string; unit: string; icon: string }> = {
+  mv: { label: '音楽MV', unit: '曲', icon: '🎵' },
+  trivia: { label: '衝撃雑学Shorts', unit: '本', icon: '💡' },
+  quotes: { label: '偉人名言Shorts', unit: '本', icon: '📜' },
+  folklore: { label: '怪異・未解決Shorts', unit: '本', icon: '👻' },
+  craft: { label: '職人魂ショート', unit: '本', icon: '🏯' }
+};
+
+export function cleanupEpisodeMemory() {
+  if (typeof window !== 'undefined' && (window as any).gc) {
+    try { (window as any).gc(); } catch (e) {}
+  }
+}
+
+export interface SeriesEpisodePlan {
+  epNumber: number;
+  titleJp: string;
+  titleEn: string;
+  summary: string;
+}
+
+export interface SeriesManifest {
+  seriesTitle: string;
+  totalEpisodes: number;
+  currentEpisodeId: number;
+  completedEpisodeIds: number[];
+  overallSynopsis: string;
+  episodesPlan: SeriesEpisodePlan[];
+  referenceAsset?: {
+    name: string;
+    base64: string;
+    mimeType: string;
+    characterDna?: string;
+    styleDna?: string;
+    antiPoseNegative?: string;
+    eraNegative?: string;
+    characterTurnaroundMediaId?: string;
+    characterTurnaroundBase64?: string;
+  };
+  settings?: Partial<GeneratorSettings>;
+}
+
+export interface LogEntry {
+  id: string;
+  message: string;
+  type: 'info' | 'process' | 'success' | 'warning' | 'error';
+}
+```
+
+/* ========================================================
+   FILE: CutCard
+======================================================== */
+1
+import React from 'react';
+2
+import { Cut } from '../types';
+3
+4
+interface CutCardProps {
+5
+  cut: Cut;
+6
+  cutIndex: number;
+7
+  onPreview: (cut: Cut) => void;
+8
+  onGenerateImage?: (cut: Cut) => void;
+9
+  onGenerateVideo?: (cut: Cut) => void;
+10
+}
+11
+12
+export const CutCard: React.FC<CutCardProps> = ({
+13
+  cut,
+14
+  cutIndex,
+15
+  onPreview,
+16
+  onGenerateImage,
+17
+  onGenerateVideo,
+18
+}) => {
+19
+  return (
+20
+    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col group hover:border-slate-700 transition-all shadow-md">
+21
+      {/* プレビューエリア */}
+22
+      <div
+23
+        onClick={() => onPreview(cut)}
+24
+        className="relative aspect-video bg-slate-950 border-b border-slate-800/80 flex items-center justify-center cursor-pointer group-hover:bg-slate-900/60 transition-colors overflow-hidden"
+25
+      >
+26
+        {cut.imageBase64 ? (
+27
+          <img
+28
+            src={`data:image/png;base64,${cut.imageBase64}`}
+29
+            alt={`Cut ${cut.id}`}
+30
+            className="w-full h-full object-cover"
+31
+          />
+32
+        ) : (
+33
+          <div className="flex flex-col items-center gap-1 text-slate-600">
+34
+            <span className="material-symbols-outlined text-2xl">movie</span>
+35
+            <span className="text-[11px] font-mono">未生成カット</span>
+36
+          </div>
+37
+        )}
+38
+39
+        {/* カット番号バッジ */}
+40
+        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur text-[10px] font-mono text-slate-300 border border-white/10">
+41
+          CUT #{String(cutIndex + 1).padStart(2, '0')}
+42
+        </div>
+43
+44
+        {/* カメラ・アングルバッジ */}
+45
+        {cut.cinematicAngle && (
+46
+          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur text-[10px] text-slate-400 border border-white/10">
+47
+            {cut.cinematicAngle}
+48
+          </div>
+49
+        )}
+50
+51
+        {/* 生成ステータスインジケーター */}
+52
+        {(cut.isGeneratingImage || cut.isGeneratingVideo) && (
+53
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center gap-2">
+54
+            <span className="material-symbols-outlined animate-spin text-indigo-400 text-lg">
+55
+              progress_activity
+56
+            </span>
+57
+            <span className="text-xs font-mono text-indigo-300">
+58
+              {cut.isGeneratingImage ? '画像生成中...' : '動画生成中...'}
+59
+            </span>
+60
+          </div>
+61
+        )}
+62
+      </div>
+63
+64
+      {/* 詳細・演出テキスト */}
+65
+      <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+66
+        <div className="space-y-1.5">
+67
+          <p className="text-xs text-slate-200 font-medium line-clamp-2 leading-relaxed">
+68
+            {cut.narrationJp || cut.scenePlot || '演出指示が設定されていません'}
+69
+          </p>
+70
+71
+          {cut.telop?.fullText && (
+72
+            <div className="text-[11px] text-indigo-300 bg-indigo-950/40 border border-indigo-900/30 rounded px-2 py-1">
+73
+              <span className="text-[10px] text-indigo-400 block font-semibold mb-0.5">テロップ:</span>
+74
+              「{cut.telop.fullText}」
+75
+            </div>
+76
+          )}
+77
+        </div>
+78
+79
+        {/* コントロール・フッター */}
+80
+        <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
+81
+          <span className="text-slate-500 font-mono">
+82
+            {cut.duration ? `${cut.duration}s` : 'Auto'}
+83
+          </span>
+84
+85
+          <div className="flex items-center gap-1.5">
+86
+            {onGenerateImage && (
+87
+              <button
+88
+                disabled={cut.isGeneratingImage}
+89
+                onClick={(e) => {
+90
+                  e.stopPropagation();
+91
+                  onGenerateImage(cut);
+92
+                }}
+93
+                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] transition-colors border border-slate-700 disabled:opacity-50"
+94
+              >
+95
+                画像生成
+96
+              </button>
+97
+            )}
+98
+            {onGenerateVideo && (
+99
+              <button
+100
+                disabled={cut.isGeneratingVideo}
+101
+                onClick={(e) => {
+102
+                  e.stopPropagation();
+103
+                  onGenerateVideo(cut);
+104
+                }}
+105
+                className="px-2 py-1 rounded bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 text-[10px] transition-colors border border-indigo-500/40 disabled:opacity-50"
+106
+              >
+107
+                動画化
+108
+              </button>
+109
+            )}
+110
+          </div>
+111
+        </div>
+112
+      </div>
+113
+    </div>
+114
+  );
+115
+};
+
+/* ========================================================
+   FILE: CutInspector
+======================================================== */
+1
+import React from 'react';
+2
+import { Cut } from '../types';
+3
+4
+interface CutInspectorModalProps {
+5
+  cut: Cut | null;
+6
+  onClose: () => void;
+7
+}
+8
+9
+export const CutInspectorModal: React.FC<CutInspectorModalProps> = ({ cut, onClose }) => {
+10
+  if (!cut) return null;
+11
+12
+  return (
+13
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+14
+      <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+15
+        {/* モーダルヘッダー */}
+16
+        <div className="p-4 border-b border-slate-800 flex items-center justify-between shrink-0">
+17
+          <div className="flex items-center gap-2">
+18
+            <span className="text-xs font-mono font-bold text-indigo-400">
+19
+              CUT #{cut.id}
+20
+            </span>
+21
+            <span className="text-sm font-semibold text-slate-200">カット詳細インスペクター</span>
+22
+          </div>
+23
+          <button
+24
+            onClick={onClose}
+25
+            className="text-slate-400 hover:text-slate-200 transition-colors p-1"
+26
+          >
+27
+            <span className="material-symbols-outlined text-lg">close</span>
+28
+          </button>
+29
+        </div>
+30
+31
+        {/* モーダルコンテンツ */}
+32
+        <div className="p-5 space-y-4 overflow-y-auto">
+33
+          {cut.imageBase64 && (
+34
+            <div className="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 aspect-video flex items-center justify-center">
+35
+              <img
+36
+                src={`data:image/png;base64,${cut.imageBase64}`}
+37
+                alt={`Cut ${cut.id}`}
+38
+                className="max-h-full max-w-full object-contain"
+39
+              />
+40
+            </div>
+41
+          )}
+42
+43
+          <div className="space-y-1">
+44
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+45
+              演出・ナレーション（JP）
+46
+            </label>
+47
+            <div className="text-xs text-slate-200 bg-slate-950 p-2.5 rounded border border-slate-800 leading-relaxed">
+48
+              {cut.narrationJp || '未設定'}
+49
+            </div>
+50
+          </div>
+51
+52
+          <div className="grid grid-cols-2 gap-3">
+53
+            <div className="space-y-1">
+54
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+55
+                カメラアングル
+56
+              </label>
+57
+              <div className="text-xs text-slate-300 bg-slate-950 p-2 rounded border border-slate-800">
+58
+                {cut.cinematicAngle || '標準アングル'}
+59
+              </div>
+60
+            </div>
+61
+            <div className="space-y-1">
+62
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+63
+                ショットスケール
+64
+              </label>
+65
+              <div className="text-xs text-slate-300 bg-slate-950 p-2 rounded border border-slate-800">
+66
+                {cut.shotScale || 'ミディアムショット'}
+67
+              </div>
+68
+            </div>
+69
+          </div>
+70
+71
+          {cut.telop && (
+72
+            <div className="space-y-1">
+73
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+74
+                テロップ設計
+75
+              </label>
+76
+              <div className="text-xs text-indigo-300 bg-indigo-950/30 p-2.5 rounded border border-indigo-900/40">
+77
+                「{cut.telop.fullText}」
+78
+                {cut.telop.style && (
+79
+                  <span className="block text-[10px] text-indigo-400/80 mt-1 font-mono">
+80
+                    スタイル: {cut.telop.style} | 配置: {cut.telop.position || '標準'}
+81
+                  </span>
+82
+                )}
+83
+              </div>
+84
+            </div>
+85
+          )}
+86
+87
+          <div className="space-y-1">
+88
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+89
+              英語プロンプト (Prompt EN)
+90
+            </label>
+91
+            <div className="text-xs font-mono text-slate-300 bg-slate-950 p-2.5 rounded border border-slate-800 whitespace-pre-wrap leading-relaxed">
+92
+              {cut.promptEn || '（未設定）'}
+93
+            </div>
+94
+          </div>
+95
+96
+          {cut.veoMotionPrompt && (
+97
+            <div className="space-y-1">
+98
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+99
+                動画モーション指示 (Motion Prompt)
+100
+              </label>
+101
+              <div className="text-xs font-mono text-cyan-300/90 bg-slate-950 p-2.5 rounded border border-cyan-900/30 whitespace-pre-wrap">
+102
+                {cut.veoMotionPrompt}
+103
+              </div>
+104
+            </div>
+105
+          )}
+106
+        </div>
+107
+108
+        {/* フッター */}
+109
+        <div className="p-4 border-t border-slate-800 bg-slate-950/50 flex justify-end shrink-0">
+110
+          <button
+111
+            onClick={onClose}
+112
+            className="px-4 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition-colors"
+113
+          >
+114
+            閉じる
+115
+          </button>
+116
+        </div>
+117
+      </div>
+118
+    </div>
+119
+  );
+120
+};
+
+/* ========================================================
+   FILE: utils.ts
+======================================================== */
+1
+export function safeJsonParse<T>(raw: any, defaultValue: T = {} as T): T {
+2
+  if (!raw) return defaultValue;
+3
+4
+  if (typeof raw === 'object' && raw !== null && !('text' in raw)) {
+5
+    return raw as T;
+6
+  }
+7
+8
+  let text = '';
+9
+  if (typeof raw === 'string') {
+10
+    text = raw;
+11
+  } else if (typeof raw === 'object' && raw !== null && typeof raw.text === 'string') {
+12
+    text = raw.text;
+13
+  } else {
+14
+    try {
+15
+      text = String(raw);
+16
+    } catch {
+17
+      return defaultValue;
+18
+    }
+19
+  }
+20
+21
+  if (!text || typeof text !== 'string' || !text.trim()) {
+22
+    return defaultValue;
+23
+  }
+24
+25
+  const cleanText = text.replace(/```json\n?|```/g, '').trim();
+26
+27
+  const firstBrace = cleanText.indexOf('{');
+28
+  const firstBracket = cleanText.indexOf('[');
+29
+30
+  if (firstBrace === -1 && firstBracket === -1) {
+31
+    return defaultValue;
+32
+  }
+33
+34
+  try {
+35
+    if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+36
+      const lastBracket = cleanText.lastIndexOf(']');
+37
+      if (lastBracket > firstBracket) {
+38
+        const jsonStr = cleanText.slice(firstBracket, lastBracket + 1);
+39
+        return JSON.parse(jsonStr) as T;
+40
+      }
+41
+    }
+42
+43
+    if (firstBrace !== -1) {
+44
+      const lastBrace = cleanText.lastIndexOf('}');
+45
+      if (lastBrace > firstBrace) {
+46
+        const jsonStr = cleanText.slice(firstBrace, lastBrace + 1);
+47
+        return JSON.parse(jsonStr) as T;
+48
+      }
+49
+    }
+50
+  } catch (err) {
+51
+    console.warn('JSON Parse Error:', err);
+52
+  }
+53
+54
+  return defaultValue;
+55
+}
+56
+57
+export function formatErrorMessage(err: any): string {
+58
+  if (!err) return 'Unknown error';
+59
+  if (typeof err === 'string') return err;
+60
+  
+61
+  const parts: string[] = [];
+62
+  if (err?.status) parts.push(`[Status ${err.status}]`);
+63
+  if (err?.code) parts.push(`[Code ${err.code}]`);
+64
+  
+65
+  const mainMsg = err?.error?.message || err?.message || err?.statusText;
+66
+  if (mainMsg) parts.push(String(mainMsg));
+67
+68
+  if (err?.error && typeof err.error === 'string') parts.push(err.error);
+69
+  if (err?.details) {
+70
+    try {
+71
+      const detailsStr = typeof err.details === 'string' ? err.details : JSON.stringify(err.details);
+72
+      parts.push(`(Details: ${detailsStr})`);
+73
+    } catch (_) {}
+74
+  }
+75
+  
+76
+  if (parts.length > 0) return parts.join(' ');
+77
+  
+78
+  try {
+79
+    const json = JSON.stringify(err);
+80
+    if (json && json !== '{}') return json;
+81
+  } catch (_) {}
+82
+  
+83
+  return String(err);
+84
+}
+85
+86
+export function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label = '処理'): Promise<T> {
+87
+  return Promise.race([
+88
+    promise,
+89
+    new Promise<T>((_, reject) =>
+90
+      setTimeout(() => reject(new Error(`${label}がタイムアウト（${Math.round(timeoutMs / 1000)}秒経過）しました`)), timeoutMs)
+91
+    )
+92
+  ]);
+93
+}
+94
+95
+export interface RetryOptions {
+96
+  maxRetries?: number;
+97
+  timeoutMs?: number;
+98
+  timeoutLabel?: string;
+99
+  superBackoff?: boolean;
+100
+  abortCheck?: () => boolean;
+101
+}
+102
+103
+export function formatDurationMs(ms: number): string {
+104
+  if (ms >= 60000) {
+105
+    const mins = Math.round(ms / 60000);
+106
+    return `${mins}分間`;
+107
+  }
+108
+  return `${Math.round(ms / 1000)}秒`;
+109
+}
+110
+111
+export async function sleepWithAbortCheck(durationMs: number, abortCheck?: () => boolean): Promise<boolean> {
+112
+  if (durationMs <= 0) return true;
+113
+  return new Promise((resolve) => {
+114
+    if (abortCheck && abortCheck()) {
+115
+      return resolve(false);
+116
+    }
+117
+    
+118
+    let timer: any;
+119
+    let timeout: any;
+120
+    
+121
+    const cleanup = () => {
+122
+      if (timer) clearInterval(timer);
+123
+      if (timeout) clearTimeout(timeout);
+124
+    };
+125
+126
+    timer = setInterval(() => {
+127
+      if (abortCheck && abortCheck()) {
+128
+        cleanup();
+129
+        resolve(false);
+130
+      }
+131
+    }, 100);
+132
+133
+    timeout = setTimeout(() => {
+134
+      cleanup();
+135
+      resolve(true);
+136
+    }, durationMs);
+137
+  });
+138
+}
+139
+140
+/** 
+141
+ * 堅牢な指数バックオフ・リトライ（5s → 30s → 60s → 120s → 10m → 20m → 40m）
+142
+ */
+143
+export async function callWithRetry<T>(
+144
+  fn: () => Promise<T>,
+145
+  onRetry?: (attempt: number, maxRetries: number, delayMs: number, err: any, isSuperBackoff?: boolean) => void,
+146
+  maxRetriesOrOptions: number | RetryOptions = 5,
+147
+  timeoutMs?: number,
+148
+  timeoutLabel = 'API呼び出し',
+149
+  superBackoff = false,
+150
+  abortCheck?: () => boolean
+151
+): Promise<T> {
+152
+  let maxRetries = 5;
+153
+  let effectiveTimeoutMs = timeoutMs;
+154
+  let effectiveTimeoutLabel = timeoutLabel;
+155
+  let effectiveSuperBackoff = superBackoff;
+156
+  let effectiveAbortCheck = abortCheck;
+157
+158
+  if (typeof maxRetriesOrOptions === 'object' && maxRetriesOrOptions !== null) {
+159
+    maxRetries = maxRetriesOrOptions.maxRetries ?? 5;
+160
+    effectiveTimeoutMs = maxRetriesOrOptions.timeoutMs;
+161
+    effectiveTimeoutLabel = maxRetriesOrOptions.timeoutLabel ?? 'API呼び出し';
+162
+    effectiveSuperBackoff = !!maxRetriesOrOptions.superBackoff;
+163
+    effectiveAbortCheck = maxRetriesOrOptions.abortCheck;
+164
+  } else if (typeof maxRetriesOrOptions === 'number') {
+165
+    maxRetries = maxRetriesOrOptions;
+166
+  }
+167
+168
+  const standardDelays = [5000, 30000, 60000, 120000];
+169
+  const superDelays = [10 * 60 * 1000, 20 * 60 * 1000, 40 * 60 * 1000];
+170
+171
+  const delays = effectiveSuperBackoff
+172
+    ? [...standardDelays, ...superDelays]
+173
+    : standardDelays.slice(0, maxRetries);
+174
+175
+  const totalMaxAttempts = delays.length;
+176
+177
+  for (let attempt = 0; attempt <= totalMaxAttempts; attempt++) {
+178
+    if (effectiveAbortCheck && effectiveAbortCheck()) {
+179
+      throw new Error('処理が中断されました (Aborted)');
+180
+    }
+181
+182
+    try {
+183
+      const p = fn();
+184
+      return effectiveTimeoutMs ? await withTimeout(p, effectiveTimeoutMs, effectiveTimeoutLabel) : await p;
+185
+    } catch (err: any) {
+186
+      const msg = formatErrorMessage(err).toUpperCase();
+187
+      
+188
+      if (
+189
+        msg.includes('SAFETY') || 
+190
+        msg.includes('BLOCKED') || 
+191
+        msg.includes('ポリシー') || 
+192
+        msg.includes('POLICY') || 
+193
+        msg.includes('違反') || 
+194
+        msg.includes('INVALID_ARGUMENT') || 
+195
+        msg.includes('PERMISSION_DENIED') ||
+196
+        (msg.includes(' 400 ') || msg.includes('[STATUS 400]') || msg.includes('[CODE 400]') || msg.includes('400 Bad Request'))
+197
+      ) {
+198
+        throw err;
+199
+      }
+200
+201
+      if (attempt === totalMaxAttempts) throw err;
+202
+      
+203
+      let baseDelay = delays[attempt] ?? 80000;
+204
+205
+      const isActivityThrottle = msg.includes('通常とは異なるアクティビティ') || 
+206
+        msg.includes('アクティビティ') || 
+207
+        msg.includes('429') || 
+208
+        msg.includes('RESOURCE_EXHAUSTED') || 
+209
+        msg.includes('RATE_LIMIT') || 
+210
+        msg.includes('使用量の上限');
+211
+212
+      const throttleDelays = [60000, 120000, 180000, 240000, 300000];
+213
+      if (isActivityThrottle) {
+214
+        baseDelay = throttleDelays[Math.min(attempt, throttleDelays.length - 1)];
+215
+      }
+216
+217
+      const isSuper = effectiveSuperBackoff && attempt >= standardDelays.length;
+218
+      const jitter = isSuper ? Math.random() * 5000 : (isActivityThrottle ? Math.random() * 5000 : Math.random() * 1000);
+219
+      const roundedDelay = Math.round(baseDelay + jitter);
+220
+      
+221
+      if (onRetry) {
+222
+        onRetry(attempt + 1, totalMaxAttempts, roundedDelay, err, isSuper);
+223
+      }
+224
+      
+225
+      const completed = await sleepWithAbortCheck(roundedDelay, effectiveAbortCheck);
+226
+      if (!completed) {
+227
+        throw new Error('処理が中断されました (Aborted)');
+228
+      }
+229
+    }
+230
+  }
+231
+  throw new Error('Maximum retries reached');
+232
+}
+233
+234
+export function createLogMessage(message: string): string {
+235
+  const now = new Date();
+236
+  const time = now.toLocaleTimeString('ja-JP', { hour12: false });
+237
+  return `[${time}] ${message}`;
+238
+}
+239
+240
+// ── IndexedDB ヘルパー ──
+241
+let dbInstance: IDBDatabase | null = null;
+242
+const DB_NAME = 'EpicTimelineDB';
+243
+const ASSET_STORE = 'referenceAssets';
+244
+245
+export const initDB = (): Promise<IDBDatabase> => {
+246
+  if (dbInstance) return Promise.resolve(dbInstance);
+247
+  return new Promise((resolve, reject) => {
+248
+    try {
+249
+      const request = indexedDB.open(DB_NAME, 2);
+250
+      request.onerror = () => reject(request.error);
+251
+      request.onsuccess = () => {
+252
+        dbInstance = request.result;
+253
+        resolve(dbInstance);
+254
+      };
+255
+      request.onupgradeneeded = (event) => {
+256
+        const db = (event.target as IDBOpenDBRequest).result;
+257
+        if (!db.objectStoreNames.contains(ASSET_STORE)) {
+258
+          db.createObjectStore(ASSET_STORE, { keyPath: 'id', autoIncrement: true });
+259
+        }
+260
+      };
+261
+    } catch (e) {
+262
+      reject(e);
+263
+    }
+264
+  });
+265
+};
+266
+267
+export const saveReferenceAsset = async (asset: any): Promise<number> => {
+268
+  const db = await initDB();
+269
+  return new Promise((resolve, reject) => {
+270
+    const transaction = db.transaction(ASSET_STORE, 'readwrite');
+271
+    const store = transaction.objectStore(ASSET_STORE);
+272
+    const request = store.add(asset);
+273
+    request.onsuccess = () => resolve(request.result as number);
+274
+    request.onerror = () => reject(request.error);
+275
+  });
+276
+};
+277
+278
+export const getAllReferenceAssets = async (): Promise<any[]> => {
+279
+  const db = await initDB();
+280
+  return new Promise((resolve, reject) => {
+281
+    const transaction = db.transaction(ASSET_STORE, 'readonly');
+282
+    const store = transaction.objectStore(ASSET_STORE);
+283
+    const request = store.getAll();
+284
+    request.onsuccess = () => resolve(request.result as any[]);
+285
+    request.onerror = () => reject(request.error);
+286
+  });
+287
+};
+288
+289
+export function createDefaultCut(id: number, narration = '', prompt = '', isSelected = false): any {
+290
+  return {
+291
+    id,
+292
+    promptEn: prompt,
+293
+    narrationJp: narration,
+294
+    narrationEn: '',
+295
+    telop: {
+296
+      fullText: narration,
+297
+      highlights: [],
+298
+      style: 'cinema-subtle',
+299
+      transition: 'aos-fade-soft',
+300
+      position: 'bottom-center',
+301
+      directorNote: '[Webtoon字幕] 下部中央配置'
+302
+    },
+303
+    isDirecting: false,
+304
+    isGeneratingImage: false,
+305
+    isGeneratingVideo: false,
+306
+    isQueued: false,
+307
+    targetVideoModel: 'omni-flash',
+308
+    isSelectedForVideo: isSelected
+309
+  };
+310
+}
+311
+312
+export function extractImageBase64(res: any): string | undefined {
+313
+  if (!res) return undefined;
+314
+  if (typeof res === 'string') {
+315
+    const s = res.trim();
+316
+    return s.length > 0 ? s : undefined;
+317
+  }
+318
+  if (typeof res.base64 === 'string' && res.base64.trim()) {
+319
+    return res.base64.trim();
+320
+  }
+321
+  if (res.image) {
+322
+    if (typeof res.image === 'string' && res.image.trim()) return res.image.trim();
+323
+    if (typeof res.image.base64 === 'string' && res.image.base64.trim()) return res.image.base64.trim();
+324
+    if (typeof res.image.imageBytes === 'string' && res.image.imageBytes.trim()) return res.image.imageBytes.trim();
+325
+    if (typeof res.image.url === 'string' && res.image.url.trim()) return res.image.url.trim();
+326
+  }
+327
+  if (typeof res.imageBytes === 'string' && res.imageBytes.trim()) {
+328
+    return res.imageBytes.trim();
+329
+  }
+330
+  if (typeof res.data === 'string' && res.data.trim()) {
+331
+    return res.data.trim();
+332
+  }
+333
+  if (typeof res.url === 'string' && res.url.trim()) {
+334
+    return res.url.trim();
+335
+  }
+336
+  return undefined;
+337
+}
+338
+339
+export function extractMediaId(res: any): string | undefined {
+340
+  if (!res) return undefined;
+341
+  if (typeof res.mediaId === 'string' && res.mediaId.trim()) return res.mediaId.trim();
+342
+  if (res.image && typeof res.image.mediaId === 'string' && res.image.mediaId.trim()) return res.image.mediaId.trim();
+343
+  if (typeof res.id === 'string' && res.id.trim()) return res.id.trim();
+344
+  return undefined;
+345
+}
+346
+347
+export function formatDataUri(raw?: any): string {
+348
+  if (!raw) return '';
+349
+  let str = '';
+350
+  if (typeof raw === 'string') {
+351
+    str = raw.trim();
+352
+  } else if (typeof raw === 'object') {
+353
+    str = (raw.base64 || raw.image?.base64 || raw.url || raw.image?.url || '').trim();
+354
+  }
+355
+  if (!str || str === '[object Object]') return '';
+356
+  
+357
+  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('blob:')) {
+358
+    return str;
+359
+  }
+360
+361
+  if (str.startsWith('/9j/') || str.startsWith('/9j')) {
+362
+    return `data:image/jpeg;base64,${str}`;
+363
+  }
+364
+  if (str.startsWith('UklG')) {
+365
+    return `data:image/webp;base64,${str}`;
+366
+  }
+367
+  if (str.startsWith('PHN2') || str.startsWith('PD94') || str.startsWith('<svg')) {
+368
+    return `data:image/svg+xml;base64,${str}`;
+369
+  }
+370
+371
+  if (str.startsWith('/') && str.length < 500 && (str.includes('.png') || str.includes('.jpg') || str.includes('.jpeg') || str.includes('.webp') || str.includes('.svg') || str.includes('?'))) {
+372
+    return str;
+373
+  }
+374
+375
+  return `data:image/png;base64,${str}`;
+376
+}
+
+/* ========================================================
+   FILE: promptEngine
+======================================================== */
+14
+export function resolveTasteKey(tasteKeyOrId: string = ''): string {
+
+/* ========================================================
+   FILE: directorService
+======================================================== */
+21
+export type { PreviousShotContext as PreviousShotInfo };
+
+/* ========================================================
+   FILE: coverService
+======================================================== */
+7
+export const cleanTitle = (title: string): string => {
+
+/* ========================================================
+   FILE: CoverPreview
+======================================================== */
+12
+export const CoverPreviewModal: React.FC<CoverPreviewModalProps> = ({
+
+/* ========================================================
+   FILE: zipPackager
+======================================================== */
+7
+export { renderCoverBase64, renderCoverBase64Horizontal };
+
+/* ========================================================
+   FILE: seriesProduction
+======================================================== */
+42
+export { cleanupEpisodeMemory, SHORTS_CONFIG_MAP };
+
+/* ========================================================
+   FILE: useStudioProduct
+======================================================== */
+16
+function useEpisodeState(addLog: (msg: string, type?: any) => void) {
+
+/* ========================================================
+   FILE: MediaPreview
+======================================================== */
+4
+import { resolveImageModel } from '../constants';
+
+/* ========================================================
+   FILE: style.css
+======================================================== */
+4
+import { resolveImageModel } from '../constants';
+
+/* ========================================================
+   FILE: index.tsx
+======================================================== */
+4
+import { resolveImageModel } from '../constants';
+
+/* ========================================================
+   FILE: services/pipelineService.ts
+======================================================== */
+4
+import { resolveImageModel } from '../constants';
+
+/* ========================================================
+   FILE: manifest.json
+======================================================== */
+4
+import { resolveImageModel } from '../constants';
+

@@ -178,6 +178,30 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-5 dark-scrollbar min-h-0 pb-14">
+            {/* 構図・演出メタデータバッジ群 */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {cut.shotScale && (
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+                  {cut.shotScale}
+                </span>
+              )}
+              {cut.cinematicAngle && (
+                <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-bold border border-blue-500/30">
+                  {cut.cinematicAngle}
+                </span>
+              )}
+              {cut.focalPoint && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                  注視: {cut.focalPoint.focalSubject || cut.focalPoint.grid}
+                </span>
+              )}
+              {cut.isObjectOnly && (
+                <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-500/30">
+                  OBJ専有
+                </span>
+              )}
+            </div>
+
             <div className="flex flex-col gap-4">
               <TextInput label="ナレーション / セリフ (JP)" value={cut.narrationJp || ''} onChange={v => onUpdateCut({ narrationJp: v })} />
               <label className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 cursor-pointer select-none">
@@ -208,7 +232,28 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                 </div>
               </div>
 
-              <TextInput label="画像プロンプト (EN)" value={cut.promptEn || ''} onChange={v => onUpdateCut({ promptEn: v })} />
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white/70">画像プロンプト (EN)</span>
+                  {cut.promptEn && (
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(cut.promptEn)}
+                      className="text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer transition-colors"
+                      title="プロンプトをコピー"
+                    >
+                      <span className="material-symbols-outlined text-xs">content_copy</span>
+                      <span>コピー</span>
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  value={cut.promptEn || ''}
+                  onChange={e => onUpdateCut({ promptEn: e.target.value })}
+                  rows={4}
+                  className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-xs font-mono text-white/90 outline-none focus:border-amber-500/80 leading-relaxed resize-none"
+                />
+              </div>
             </div>
           </div>
 

@@ -100,12 +100,12 @@ export interface Cut {
 
   telop?: TelopConfig;
 
-  isDirecting: boolean; 
+  isDirecting?: boolean; 
   isGeneratingImage: boolean;
-  isGeneratingVideo: boolean;
+  isGeneratingVideo?: boolean;
   isQueued: boolean;
-  isSelectedForVideo: boolean;
-  targetVideoModel: RecommendationModel;
+  isSelectedForVideo?: boolean;
+  targetVideoModel?: RecommendationModel;
   error?: string;
   bgmMediaId?: string;
   voiceId?: string;
@@ -179,7 +179,7 @@ export interface Episode {
   isGenerating: boolean;
   isGeneratingRemainingImages: boolean;
   isLyricAnalyzed?: boolean;
-  isBatchGeneratingVideos: boolean;
+  isBatchGeneratingVideos?: boolean;
   isExportingMovie?: boolean; 
   fullMovieBase64?: string;   
   isPreviewDone: boolean;
@@ -218,14 +218,14 @@ export interface GeneratorSettings {
   isMangaMode?: boolean;
   isMvMode?: boolean;
   imageModel: string;
-  defaultVideoModel: string;
+  defaultVideoModel?: string;
   videoModel?: string;
-  videoRatio: VideoRatio;
+  videoRatio?: VideoRatio;
   episodeCount: number;
   totalEpisodes?: number;
   previewCutCount: number; 
   parallelCount: number;
-  autoVideo: boolean;
+  autoVideo?: boolean;
   autoDownload: boolean;
   superBackoff?: boolean;
   aspectRatio?: '9:16' | '1:1' | '16:9';
