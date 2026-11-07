@@ -60,7 +60,13 @@ export function generateSafeFilenames(ep: Episode): { asciiFilename: string; dis
   const pad = (n: number) => String(n).padStart(2, '0');
   const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}_${seq}`;
   
-  const asciiFilename = `FlowTool_Ep${ep.id}_${timestamp}.zip`;
+  // ★ 全カット描画完了（_full）か先行プレビュー（_preview）かを判定
+  const cuts = ep.cuts || [];
+  const readyCount = cuts.filter(c => !!(c.imageBase64 || (c as any).imageMediaId)).length;
+  const isFull = cuts.length > 0 && readyCount >= cuts.length;
+  const statusSuffix = isFull ? '_full' : '_preview';
+
+  const asciiFilename = `FlowTool_Ep${ep.id}_${timestamp}${statusSuffix}.zip`;
 
   const cleanTitle = (ep.titleJp || 'Episode')
     .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
@@ -71,7 +77,7 @@ export function generateSafeFilenames(ep: Episode): { asciiFilename: string; dis
     .trim()
     .slice(0, 30);
 
-  const displayFilename = `${timestamp}_${cleanTitle || `Ep${ep.id}`}.zip`;
+  const displayFilename = `${timestamp}_${cleanTitle || `Ep${ep.id}`}${statusSuffix}.zip`;
   return { asciiFilename, displayFilename };
 }
 
@@ -457,6 +463,14 @@ export const downloadZip = async (
     
     const masterCat = resolveMasterCategory(ep.theme, ep.productionMode);
 
+    const VOICE_MAP: Record<string, string> = {
+      zundamon: 'voicevox:3',   // ずんだもん (ノーマル)
+      metan: 'voicevox:2',      // 四国めたん (ノーマル)
+      tsumugi: 'voicevox:8',    // 春日部つむぎ
+      himari: 'voicevox:14',    // 冥鳴ひまり
+    };
+    const resolvedVoiceName = VOICE_MAP[ep.characterId || ''] || 'voicevox:3';
+
     const scriptJson = {
       pool_code: masterCat.pool_code,
       style_code: masterCat.style_code,
@@ -469,6 +483,8 @@ export const downloadZip = async (
       episode_no: ep.id || 1,
       total_episodes: manifest?.totalEpisodes || 1,
       theme: ep.theme || '',
+      voice_name: resolvedVoiceName,
+      speaker: ep.characterId || 'zundamon',
       created_at: new Date().toISOString(),
 
       id: ep.id,
@@ -504,12 +520,16 @@ export const downloadZip = async (
         return {
           cut_no: c.id || 1,
           duration_sec: c.duration || 3.0,
+          duration: c.duration || 3.0,
           narration: narration,
+          dialogue: narration,
+          tts_text: narration,
+          visual_prompt: c.promptEn || '',
           image_file: `cut_${cutPad}.png`,
           video_file: `cut_${cutPad}.mp4`,
 
           id: c.id || 1,
-          dialogue: narration,
+          cutNumber: c.id || 1,
           narrationJp: narration,
           narrationEn: c.narrationEn || '',
           prompt: c.promptEn || '',
