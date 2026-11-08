@@ -1,6 +1,6 @@
 // ========================================================
 // Flow Tool Web Project Complete Source Dump
-// Export Date: 2026-11-07T16:33:19.756Z
+// Export Date: 2026-11-08T04:36:02.114Z
 // Total Files: 16
 // ========================================================
 
@@ -355,37 +355,76 @@ export interface ThemeCategory {
 }
 export const THEME_CATEGORIES: ThemeCategory[] = [
   {
-    category: '日常・青春・アオハル',
+    category: '🎒 日常・青春・アオハル',
     items: [
       '🏫 放課後の教室と夕暮れ（教室に残る二人・夕日の差し込む窓・伸びる影）',
       '🚲 海沿いの坂道と通学路（潮風・並んで漕ぐ自転車・青空と入道雲）',
       '🌧️ 昇降口の雨宿り（突然のスコール・一つのビニール傘・かすかな緊張感）',
-      '🥤 屋上のサマータイム（炭酸飲料・風に揺れるカーテン・フェンス越しの街）'
+      '🥤 屋上のサマータイム（炭酸飲料・風に揺れるカーテン・フェンス越しの街）',
+      '☕ 雨の日の純喫茶（曇った窓ガラス・温かい珈琲の湯気・琥珀色の読書）',
+      '🎶 レコードが鳴る古民家カフェ（針のプチプチ音・埃が踊る午後の日差し）',
+      '🌃 深夜2時の部屋（薄暗い間接照明・青白いPC画面・ベッドサイドのチル）',
+      '🧺 深夜のコインランドリー（回る洗濯ドラム・漂う洗剤の香り・蛍光灯と外の雨）',
+      '🚉 改札口で名残惜しい夕方（行っちゃう電車・見送る視線・あと一本待つ口実）',
+      '🎆 浴衣で歩く夏祭りの帰り道（りんご飴・カランコロン鳴る下駄・人混みで握る手）'
     ]
   },
   {
-    category: '怪異・ミステリー・ホラー',
+    category: '⛩️ 怪異・民俗学・禁足地・都市伝説',
     items: [
-      '👻 誰もいない深夜の旧校舎（軋む廊下・赤く光る非常口・消えない足音）',
       '🏚️ 廃村の立ち入り禁止看板（生い茂る蔦・風化し歪んだ鳥居・濃い霧）',
+      '⛩️ 日本各地の絶対不可侵・禁足地（結界・神域・風化した注連縄・侵食される境界）',
+      '👻 誰もいない深夜の旧校舎（軋む廊下・赤く光る非常口・消えない足音）',
+      '🚂 幻の無人駅・境界線伝説（霧のプラットフォーム・戻れない線路・異界の気配）',
+      '⛰️ 山岳の怪異と異界の掟（吹雪に消える山小屋・古の祠・山の神の視線）',
+      '🌲 樹海深奥の隠れ里（巨木に囲まれた孤立集落・外界を拒む風習・神楽鈴の音）',
+      '🕳️ 地下空間の秘密軍事壕（冷たいコンクリート・錆びた鉄扉・途切れた配線）',
       '🏮 黄昏時の路地裏と百鬼夜行（現世と常世の狭間・怪しい影・狐面の笑み）',
-      '📵 圏外のトンネル（途切れた通話・バックミラーに映る人影・暗闇）'
+      '🌊 夜の防波堤と潮騒の怪異（漆黒の海・揺れる常夜灯・深海からの誘い）',
+      '📻 昭和オカルト・深夜の乱数放送（ざらつく砂嵐・途切れるアナウンス・謎の暗号）'
     ]
   },
   {
-    category: '近未来・サイバーパンク',
+    category: '🏮 歴史・大河・帝都浪漫・時代劇',
+    items: [
+      '🏮 江戸大河・天下泰平の影と群像劇（幕府・町衆・忍びの暗闘と50年の興亡）',
+      '⚔️ 幕末動乱・新時代を拓く志士と守護者（維新回天・思想と剣の激突）',
+      '🎩 大正モダン・帝都浪漫と怪異事件帖（ガス灯の夜・華やかな社交界の裏に蠢く闇）',
+      '👑 帝都華族と新興財閥の愛憎劇（旧体制の誇りと近代化の荒波・血脈の闘争）',
+      '🗡️ 妖刀伝説・鍛冶師の祈りと呪詛（炎と鉄の錬金術・血を吸う白刃）',
+      '🌾 諸藩財政再建記・知恵と改革の大名改革（破綻寸前の小藩を立て直す男たち）',
+      '👘 華麗なる大奥・美しき権謀術数（御台所・側室・女中たちの権力闘争）',
+      '☕ カフェーの女給と貧乏画家（大正浪漫・琥珀色の珈琲と交わらない恋）',
+      '🍣 江戸の屋台めし・職人魂（握り寿司・蕎麦・うなぎの誕生と賑わう河岸）',
+      '🏯 名城防衛戦・難攻不落の要塞（石垣・狭間からの射撃・包囲された本丸）'
+    ]
+  },
+  {
+    category: '🌃 近未来・サイバーパンク・SF',
     items: [
       '🌃 雨煙るネオン街の裏路地（紫と青の反射光・ホログラム広告・サイバー義肢）',
       '🤖 電脳空間のダイブ（流れ落ちる緑のコード・記憶のアーカイブ・光の回廊）',
-      '🚁 摩天楼のランディングパッド（夜景を見下ろす高層ビル・飛来するドローン）'
+      '🚗 深夜の首都高・湾岸トワイライト（流れるテールランプ・エンジン音・疾走するネオン）',
+      '🚁 摩天楼のランディングパッド（夜景を見下ろす高層ビル・飛来するドローン）',
+      '🛰️ 軌道エレベーターと星の海（大気圏を貫くタワー・見下ろす蒼い地球）',
+      '🔌 スラム街の闇医師とサイバネティクス（ガラクタ配線・生体パーツ・密売組織）',
+      '🌐 巨大AIマザーフレームの沈黙（点滅する無数のラック・冷気の霧・意志の芽生え）',
+      '🚀 廃棄宇宙船のサルベージ（無重力の残骸・漏れ出す液体酸素・孤独な船外活動）',
+      '🏭 巨大サイバーメガフロート（海上に浮かぶ工場島・煙突の炎・錆びたデッキ）'
     ]
   },
   {
-    category: 'ファンタジー・異世界',
+    category: '🏰 ファンタジー・古代遺跡・スチームパンク',
     items: [
       '🏰 古代遺跡と光る水晶（苔むした石柱・浮遊する魔法鉱石・神秘の泉）',
       '🌳 精霊が宿る大樹の森（巨大な樹根の階段・舞い踊る光の胞子・エルフの集落）',
-      '⚔️ 竜の谷の黄昏（広がる雲海・聳え立つ岩山・風を切り裂く飛翔）'
+      '🚂 雲海を駆ける蒸気機関列車（真鍮の計器・吹き出す蒸気・果てしない大空）',
+      '⚔️ 竜の谷の黄昏（広がる雲海・聳え立つ岩山・風を切り裂く飛翔）',
+      '🌌 星降る天文台と時計塔（巨大な真鍮歯車・天球儀・夜空を貫く望遠鏡）',
+      '🛡️ 騎士団の城塞都市（石畳の広場・はためく紋章旗・ステンドグラスの大聖堂）',
+      '🏜️ 砂漠に埋もれた機巧都市（砂嵐・露出した歯車仕掛け・古代の自動人形）',
+      '🧙‍♀️ 薬草香る森の魔女の隠れ家（吊るされた乾燥ハーブ・煮えたぎる大釜・使い魔の黒猫）',
+      '🌊 幻の海底神殿と蒼の秘宝（差し込む陽光のカーテン・泳ぐウミガメ・眠るレリーフ）'
     ]
   }
 ];
@@ -784,16 +823,16 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
   imageModel: IMAGE_MODELS_REGISTRY[1]?.label || '🍌 Nano Banana 2.1',
   defaultVideoModel: '',
   videoRatio: 'none',
-  episodeCount: 1,
+  episodeCount: 5,
   cutCount: 12,
-  previewCutCount: 2,
+  previewCutCount: 12,
   parallelCount: 2,
   autoVideo: false,
   autoDownload: true,
   superBackoff: true,
   isMvMode: false,
   aspectRatio: '1:1',
-  characterId: 'zundamon',
+  characterId: 'random',
   enableTurnaroundSheet: true,
   autoApproveTurnaround: true,
   enableObjectCut: true,
@@ -805,7 +844,7 @@ export const PRODUCTION_MODE_OPTIONS = PRODUCTION_MODES_LIST;
 /* ========================================================
    FILE: components/StudioSidebar.tsx
 ======================================================== */
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { GeneratorSettings, Episode, LogEntry } from '../types';
 import { SAFE_CHARACTERS } from '../constants';
 // ── UI 基本プリミティブ ──────────────────────────────────────
@@ -991,13 +1030,13 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   setSettings,
   onUpdateSettings,
   isProducing = false,
-  onStartProduction = () => {},
   onAbortProduction = () => {},
   episodes = [],
   onClearEpisodes,
   logs = []
 }) => {
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
   const applySettingsUpdate = (updater: (prev: GeneratorSettings) => GeneratorSettings) => {
     if (setSettings) {
@@ -1011,17 +1050,55 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
   }, [logs]);
+  // 全ログをクリップボードにコピーする処理
+  const handleCopyLogs = useCallback(async () => {
+    if (logs.length === 0) return;
+    try {
+      const fullLogText = logs.map(l => l.message).join('\n');
+      await navigator.clipboard.writeText(fullLogText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy logs to clipboard:', err);
+    }
+  }, [logs]);
   const cutPresetOptions = [
     { label: '先行2カット', value: 2 },
     { label: '先行5カット', value: 5 },
     { label: '全カット一括', value: settings.cutCount || 12 }
   ];
+  const isRandomChar = settings.characterId === 'random' || !settings.characterId;
   return (
     <div className="w-[320px] bg-white border-r border-slate-200 flex flex-col h-full shrink-0 shadow-sm z-30 select-none">
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0">
         {/* 1. 主人公キャラクター選択 */}
         <div className="flex flex-col gap-1.5 shrink-0">
           <SectionLabel>🎙️ 主人公キャラクター (VOICEVOX / 東北)</SectionLabel>
+          
+          {/* 🎲 ランダム（おまかせ）全幅ボタン */}
+          <button
+            type="button"
+            onClick={() => applySettingsUpdate(s => ({ ...s, characterId: 'random' }))}
+            className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+              isRandomChar
+                ? 'border-indigo-500 bg-indigo-50/90 shadow-xs ring-1 ring-indigo-500 text-indigo-950'
+                : 'border-slate-200 hover:border-slate-300 bg-white text-slate-800'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xl shrink-0">🎲</span>
+              <div className="flex flex-col min-w-0">
+                <span className={`text-xs font-bold truncate ${isRandomChar ? 'text-indigo-900' : 'text-slate-800'}`}>
+                  ランダム（おまかせ）
+                </span>
+                <span className="text-[9.5px] text-slate-500 truncate">制作開始時に4人から自動選出</span>
+              </div>
+            </div>
+            {isRandomChar && (
+              <span className="material-symbols-outlined text-[18px] text-indigo-600 shrink-0">check_circle</span>
+            )}
+          </button>
+          {/* 4キャラクターのグリッド */}
           <div className="grid grid-cols-2 gap-1.5">
             {SAFE_CHARACTERS.map(char => {
               const isSelected = settings.characterId === char.id;
@@ -1030,7 +1107,6 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                   key={char.id}
                   type="button"
                   onClick={() => applySettingsUpdate(s => ({ ...s, characterId: char.id }))}
-                  disabled={isProducing}
                   className={`p-2 rounded-xl border text-left transition-all flex items-center gap-2 cursor-pointer ${
                     isSelected
                       ? 'border-indigo-500 bg-indigo-50/80 shadow-xs ring-1 ring-indigo-500'
@@ -1059,7 +1135,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 type="number" 
                 min="1" 
                 max="9999"
-                value={settings.previewCutCount || 2}
+                value={settings.previewCutCount || 12}
                 onChange={e => {
                   const val = parseInt(e.target.value, 10);
                   if (!isNaN(val) && val > 0) {
@@ -1091,37 +1167,30 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             })}
           </div>
         </div>
-        {/* 3. アクションボタン群 */}
-        <div className="flex flex-col gap-2 pt-1 border-t border-slate-100 shrink-0">
-          {isProducing ? (
-            <PillButton
-              variant="filled"
-              onClick={onAbortProduction}
-              className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 h-10 shadow-md animate-pulse"
-              icon={<span className="material-symbols-outlined text-[18px]">stop_circle</span>}
-            >
-              制作プロセスを停止
-            </PillButton>
-          ) : (
-            <PillButton
-              variant="filled"
-              onClick={onStartProduction}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 h-10 shadow-md font-black text-sm"
-              icon={<span className="material-symbols-outlined text-[20px]">smart_display</span>}
-            >
-              🚀 全自動スタジオ制作を開始
-            </PillButton>
-          )}
-          {episodes.length > 0 && onClearEpisodes && !isProducing && (
-            <button
-              type="button"
-              onClick={onClearEpisodes}
-              className="text-xs text-slate-500 hover:text-red-600 text-center py-0.5 transition-colors cursor-pointer"
-            >
-              制作データを消去
-            </button>
-          )}
-        </div>
+        {/* 3. 制作中停止 / 制作データ消去コントロール */}
+        {(isProducing || (episodes.length > 0 && onClearEpisodes)) && (
+          <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100 shrink-0">
+            {isProducing && (
+              <PillButton
+                variant="filled"
+                onClick={onAbortProduction}
+                className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 h-9 shadow-md animate-pulse"
+                icon={<span className="material-symbols-outlined text-[18px]">stop_circle</span>}
+              >
+                制作プロセスを停止
+              </PillButton>
+            )}
+            {episodes.length > 0 && onClearEpisodes && !isProducing && (
+              <button
+                type="button"
+                onClick={onClearEpisodes}
+                className="text-xs text-slate-500 hover:text-red-600 text-center py-1 transition-colors cursor-pointer"
+              >
+                制作データを消去
+              </button>
+            )}
+          </div>
+        )}
         {/* 4. エンジン仕様・指数バックオフ情報（折りたたみアコーディオン） */}
         <div className="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden shrink-0">
           <button
@@ -1174,20 +1243,39 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         </div>
         {/* 5. ライブ進行ログ（下部常時表示・flex-1 min-h-[220px]） */}
         <div className="flex-1 min-h-[220px] flex flex-col rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner">
-          <div className="px-2.5 py-1 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+          <div className="px-2.5 py-1.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
             <span className="text-[10px] font-mono font-bold text-slate-400 flex items-center gap-1">
               <span className="material-symbols-outlined text-[13px] text-indigo-400">terminal</span>
               進行ログ
             </span>
-            {logs.length > 0 && (
-              <span className="px-1.5 py-0.2 bg-indigo-950 text-indigo-300 border border-indigo-800/60 rounded-full text-[9px] font-mono font-bold">
-                {logs.length}
-              </span>
-            )}
+            <div className="flex items-center gap-1.5">
+              {logs.length > 0 && (
+                <span className="px-1.5 py-0.2 bg-indigo-950 text-indigo-300 border border-indigo-800/60 rounded-full text-[9px] font-mono font-bold">
+                  {logs.length}
+                </span>
+              )}
+              {/* ワンクリック全ログコピーボタン */}
+              <button
+                type="button"
+                onClick={handleCopyLogs}
+                disabled={logs.length === 0}
+                className={`px-2 py-0.5 rounded text-[9.5px] font-bold font-mono transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isCopied
+                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 active:scale-95'
+                }`}
+                title="全ログをクリップボードにコピー"
+              >
+                <span className="material-symbols-outlined text-[12px]">
+                  {isCopied ? 'check' : 'content_copy'}
+                </span>
+                <span>{isCopied ? 'コピー済' : 'コピー'}</span>
+              </button>
+            </div>
           </div>
           <div 
             ref={logContainerRef} 
-            className="flex-1 overflow-y-auto p-2 font-mono text-[10px] flex flex-col gap-1 text-slate-200 dark-scrollbar"
+            className="flex-1 overflow-y-auto p-2 font-mono text-[10px] flex flex-col gap-1 text-slate-200 dark-scrollbar select-text"
           >
             {logs.length === 0 ? (
               <div className="text-slate-600 text-center py-8">ログ待機中...</div>
@@ -1784,7 +1872,7 @@ import { MediaPreviewModal } from './components/MediaPreviewModal';
 import { StudioSidebar, FieldDropdown, FieldDropdownOption } from './components/StudioSidebar';
 import { EpisodeSection } from './components/EpisodeSection';
 import { Cut, GeneratorSettings, Episode, LogEntry } from './types';
-import { THEMES, THEME_CATEGORIES, TASTES, IMAGE_MODELS, RANDOM_SELECT_OPTION } from './constants';
+import { THEMES, THEME_CATEGORIES, TASTES, IMAGE_MODELS, RANDOM_SELECT_OPTION, SAFE_CHARACTERS } from './constants';
 import { createLogMessage, initDB } from './services/utils';
 import { downloadZip, savePackageFile } from './services/zipPackager';
 import { useStudioProduction } from './services/useStudioProduction';
@@ -1793,6 +1881,7 @@ interface StudioHeaderProps {
   settings: GeneratorSettings;
   setSettings: React.Dispatch<React.SetStateAction<GeneratorSettings>>;
   isProducing: boolean;
+  queuedSeriesCount?: number;
   onStart: () => void;
   onAbort: () => void;
   activeSeriesManifest?: any;
@@ -1800,7 +1889,7 @@ interface StudioHeaderProps {
   isWaitingForStart?: boolean;
 }
 const StudioHeader: React.FC<StudioHeaderProps> = ({
-  settings, setSettings, isProducing, onStart, onAbort, activeSeriesManifest, onResumeClick, isWaitingForStart = false
+  settings, setSettings, isProducing, queuedSeriesCount = 0, onStart, onAbort, activeSeriesManifest, onResumeClick, isWaitingForStart = false
 }) => {
   const themeGroups = React.useMemo(() => {
     return [
@@ -1838,7 +1927,6 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
             value={settings.theme} 
             groups={themeGroups}
             onChange={v => setSettings(s => ({ ...s, theme: v, era: v }))} 
-            disabled={isProducing} 
             className="w-[195px]"
           />
           <div className="w-px h-5 bg-emerald-200/90 shrink-0" />
@@ -1847,11 +1935,10 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
             value={settings.taste} 
             options={tasteOptions} 
             onChange={v => setSettings(s => ({ ...s, taste: v }))} 
-            disabled={isProducing} 
             className="w-[200px]"
           />
         </div>
-        {/* 2. トータル話数 ＆ トータルCut数の数値入力UI */}
+        {/* トータル話数 ＆ トータルCut数の数値入力UI */}
         <div className="flex items-center gap-2 shrink-0 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 shadow-2xs">
           <div className="flex items-center gap-1">
             <span className="text-[10px] font-bold text-slate-500">話数</span>
@@ -1859,15 +1946,14 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               type="number" 
               min={1} 
               max={50}
-              value={settings.episodeCount || 1}
-              disabled={isProducing}
+              value={settings.episodeCount || 5}
               onChange={e => {
                 const val = parseInt(e.target.value, 10);
                 if (!isNaN(val) && val >= 1) {
                   setSettings(s => ({ ...s, episodeCount: Math.min(50, val) }));
                 }
               }}
-              className="w-12 h-6 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+              className="w-12 h-6 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
             <span className="text-[11px] font-bold text-slate-600">話</span>
           </div>
@@ -1879,50 +1965,54 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               min={2} 
               max={100}
               value={settings.cutCount || 12}
-              disabled={isProducing}
               onChange={e => {
                 const val = parseInt(e.target.value, 10);
                 if (!isNaN(val) && val >= 2) {
                   setSettings(s => ({ ...s, cutCount: Math.min(100, val) }));
                 }
               }}
-              className="w-12 h-6 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+              className="w-12 h-6 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
             <span className="text-[11px] font-bold text-slate-600">Cut</span>
           </div>
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        {isProducing ? (
+        {/* 制作中は赤の中止ボタンを表示 */}
+        {isProducing && (
           <button 
             type="button"
-            className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+            className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer transition-colors active:scale-95"
             onClick={() => onAbort()}
           >
             <span className="material-symbols-outlined text-[18px]">stop_circle</span>
             <span>中止</span>
           </button>
-        ) : (
-          <button 
-            type="button"
-            disabled={isProducing}
-            onClick={() => onStart()}
-            className={`h-9 px-4 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shrink-0 whitespace-nowrap relative ${
-              isWaitingForStart
+        )}
+        {/* 作成開始 / 追加投入ボタン（制作中も常時クリック可能） */}
+        <button 
+          type="button"
+          onClick={() => onStart()}
+          className={`h-9 px-4 rounded-xl flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all select-none cursor-pointer shrink-0 whitespace-nowrap relative ${
+            isProducing
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg active:scale-95'
+              : isWaitingForStart
                 ? 'ring-4 ring-pink-400 ring-offset-2 animate-pulse shadow-[0_0_25px_rgba(236,72,153,0.8)] brightness-110 !bg-gradient-to-r !from-indigo-600 !via-purple-600 !to-pink-600 text-white hover:brightness-125 hover:scale-105 active:scale-95'
                 : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg active:scale-95'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              {isWaitingForStart ? 'play_arrow' : 'movie_edit'}
-            </span>
-            <span>作成開始</span>
-          </button>
-        )}
-        {activeSeriesManifest && (
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">
+            {isProducing ? 'add_circle' : (isWaitingForStart ? 'play_arrow' : 'movie_edit')}
+          </span>
+          <span>
+            {isProducing
+              ? `追加投入${queuedSeriesCount ? ` (予約:${queuedSeriesCount})` : ''}`
+              : '作成開始'}
+          </span>
+        </button>
+        {activeSeriesManifest && !isProducing && (
           <button 
             type="button" 
-            disabled={isProducing}
             onClick={onResumeClick}
             className="h-9 px-2.5 text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-2xs"
             title="中断した連載制作を再開"
@@ -1957,28 +2047,18 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 export default function App() {
   const [settings, setSettings] = useState<GeneratorSettings>({
-    productionMode: 'episodes', country: '日本', theme: RANDOM_SELECT_OPTION, taste: RANDOM_SELECT_OPTION, imageModel: IMAGE_MODELS[1]?.label || '🍌 Nano Banana 2.1', defaultVideoModel: '', videoRatio: 'none', episodeCount: 1, cutCount: 12, previewCutCount: 2, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, aspectRatio: '1:1', characterId: 'zundamon',
+    productionMode: 'episodes', country: '日本', theme: RANDOM_SELECT_OPTION, taste: RANDOM_SELECT_OPTION, imageModel: IMAGE_MODELS[1]?.label || '🍌 Nano Banana 2.1', defaultVideoModel: '', videoRatio: 'none', episodeCount: 5, cutCount: 12, previewCutCount: 12, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, aspectRatio: '1:1', characterId: 'random',
     enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: false
   });
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const addLog = useCallback((message: string, type: LogEntry['type'] = 'info') => {
-    const colors: Record<string, string> = {
-      info: '#3b82f6',
-      process: '#8b5cf6',
-      success: '#10b981',
-      warning: '#f59e0b',
-      error: '#ef4444'
-    };
-    const color = colors[type] || '#3b82f6';
-    const tag = `[FlowTool ${type.toUpperCase()}]`;
-    const consoleFn = type === 'error' ? console.error : type === 'warning' ? console.warn : console.log;
-    consoleFn(
-      `%c${tag}%c ${message}`,
-      `background: ${color}; color: #ffffff; font-weight: bold; padding: 2px 4px; border-radius: 3px; font-size: 10px;`,
-      'color: inherit; font-size: 11px;'
-    );
+    const formattedMessage = createLogMessage(message);
     setLogs(prev => {
-      const next = [...prev.slice(-9999), { id: Math.random().toString(36).substr(2, 9), message: createLogMessage(message), type }];
+      const next = [...prev.slice(-499), { 
+        id: Math.random().toString(36).substr(2, 9), 
+        message: formattedMessage, 
+        type 
+      }];
       if (typeof window !== 'undefined') {
         (window as any).__STUDIO_LOGS__ = next;
       }
@@ -1988,18 +2068,13 @@ export default function App() {
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
   useEffect(() => {
-    console.log(
-      '%c🚀 [FlowTool Studio Pro] スタジオマウント完了！待機中 (Standby)',
-      'background: linear-gradient(90deg, #2563eb, #7c3aed); color: #fff; font-weight: bold; font-size: 13px; padding: 4px 8px; border-radius: 4px;'
-    );
-    console.log(
-      `🎬 制作プリセット: 【モード: ${settings.productionMode || '通常'}】 / 【テーマ: ${settings.theme}】 / 【画風: ${settings.taste}】 / 【全${settings.totalEpisodes || settings.episodeCount || 1}話】 / 【総カット数: ${settings.cutCount || 12}Cut】`
-    );
+    // 起動時の初期化
   }, []);
   const { 
     episodes, 
     setEpisodes, 
     isProducing, 
+    queuedSeriesCount,
     startProduction, 
     abortProduction, 
     resumeSeries, 
@@ -2009,7 +2084,7 @@ export default function App() {
     generateImage, 
     generateInfographicCover, 
     updateCut, 
-    updateEpisode,
+    updateEpisode, 
     clearEpisodes 
   } = useStudioProduction({ 
     settings, 
@@ -2063,7 +2138,7 @@ export default function App() {
         await savePackageFile(blob, filename, addLog, `FlowTool_Ep${ep.id}_Package.zip`);
         return;
       } catch (err: any) {
-        console.warn('[FlowTool] 作成済みBlob URLの取得失敗、再パッケージングを実行:', err);
+        // Blob URLの取得失敗時はフォールバック
       }
     }
     const res = await downloadZip(ep, addLog, activeSeriesManifest || undefined, logs);
@@ -2132,12 +2207,14 @@ export default function App() {
     return readyCount < targetCount;
   });
   const isWaitingForStart = !isProducing && hasPendingCuts;
-  // 🎲 制作開始前のランダム解決ハンドラ
+  // 🎲 制作開始前のランダム解決ハンドラ（UIの「🎲 ランダム」選択状態は破壊せず、startProductionへ抽選結果のみを渡す）
   const handleStartProductionWithRandomCheck = useCallback(() => {
     let chosenTheme = settings.theme;
     let chosenTaste = settings.taste;
+    let chosenChar = settings.characterId;
     const isThemeRandom = !chosenTheme || chosenTheme === RANDOM_SELECT_OPTION;
     const isTasteRandom = !chosenTaste || chosenTaste === RANDOM_SELECT_OPTION;
+    const isCharRandom = !chosenChar || chosenChar === 'random';
     if (isThemeRandom) {
       chosenTheme = THEMES[Math.floor(Math.random() * THEMES.length)];
     }
@@ -2145,23 +2222,24 @@ export default function App() {
       const tasteKeys = Object.keys(TASTES);
       chosenTaste = tasteKeys[Math.floor(Math.random() * tasteKeys.length)];
     }
+    if (isCharRandom) {
+      const charIds = SAFE_CHARACTERS.map(c => c.id);
+      chosenChar = charIds[Math.floor(Math.random() * charIds.length)];
+      const foundChar = SAFE_CHARACTERS.find(c => c.id === chosenChar);
+      addLog(`🎲 キャラクター自動選出: 【${foundChar?.icon || ''} ${foundChar?.nameJa || chosenChar}】で制作を開始します！`, 'success');
+    }
     if (isThemeRandom || isTasteRandom) {
       const themeDisplay = chosenTheme.split('（')[0].trim();
       const tasteDisplay = chosenTaste.split(' (')[0].trim();
       addLog(`🎲 ランダム抽選: テーマ【${themeDisplay}】 / 画風【${tasteDisplay}】に決定！`, 'success');
-      setSettings(s => ({
-        ...s,
-        theme: chosenTheme,
-        era: chosenTheme,
-        taste: chosenTaste
-      }));
     }
     startProduction({
       theme: chosenTheme,
       era: chosenTheme,
-      taste: chosenTaste
+      taste: chosenTaste,
+      characterId: chosenChar
     });
-  }, [settings.theme, settings.taste, addLog, startProduction]);
+  }, [settings.theme, settings.taste, settings.characterId, addLog, startProduction]);
   return (
     <ErrorBoundary>
       <div className="flex flex-col h-screen w-screen bg-slate-50 text-slate-900 select-none overflow-hidden relative">
@@ -2169,6 +2247,7 @@ export default function App() {
           settings={settings}
           setSettings={setSettings}
           isProducing={isProducing}
+          queuedSeriesCount={queuedSeriesCount}
           onStart={handleStartProductionWithRandomCheck}
           onAbort={abortProduction}
           activeSeriesManifest={activeSeriesManifest}
@@ -2180,14 +2259,13 @@ export default function App() {
             settings={settings} 
             setSettings={setSettings} 
             isProducing={isProducing} 
-            onStartProduction={handleStartProductionWithRandomCheck}
             onAbortProduction={abortProduction}
             episodes={episodes}
             onClearEpisodes={clearEpisodes}
             logs={logs}
           />
           
-          {/* メインコンテンツ領域（横幅100%フル活用: w-full px-4） */}
+          {/* メインコンテンツ領域（横幅100%フル活用） */}
           <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark-scrollbar relative">
             <div className="w-full flex flex-col gap-5">
               {episodes.map((ep, idx) => (
@@ -2216,7 +2294,7 @@ export default function App() {
                         forbiddenAnachronisms: epFound?.forbiddenAnachronisms,
                         authenticAttireEn: epFound?.authenticAttireEn,
                         forbiddenKeywordsEn: epFound?.forbiddenKeywordsEn
-                      });
+                      }, true);
                     }
                   }} 
                 />
@@ -2266,7 +2344,7 @@ export default function App() {
                     forbiddenAnachronisms: ep?.forbiddenAnachronisms,
                     authenticAttireEn: ep?.authenticAttireEn,
                     forbiddenKeywordsEn: ep?.forbiddenKeywordsEn
-                  });
+                  }, true);
                 }}
               />
             );
@@ -2627,36 +2705,34 @@ export async function sleepWithAbortCheck(durationMs: number, abortCheck?: () =>
   });
 }
 /** 
- * 堅牢な指数バックオフ・リトライ（5s → 30s → 60s → 120s → 10m → 20m → 40m）
+ * 軽快なスマート・リトライ＆同時衝突防止ジッター
+ * standardDelays: [8000, 18000, 30000] (最大3回)
+ * throttleDelays: [15000, 30000, 45000]
+ * jitter: 5000 + Math.random() * 15000
  */
 export async function callWithRetry<T>(
   fn: () => Promise<T>,
   onRetry?: (attempt: number, maxRetries: number, delayMs: number, err: any, isSuperBackoff?: boolean) => void,
-  maxRetriesOrOptions: number | RetryOptions = 5,
+  maxRetriesOrOptions: number | RetryOptions = 3,
   timeoutMs?: number,
   timeoutLabel = 'API呼び出し',
   superBackoff = false,
   abortCheck?: () => boolean
 ): Promise<T> {
-  let maxRetries = 5;
+  let maxRetries = 3;
   let effectiveTimeoutMs = timeoutMs;
   let effectiveTimeoutLabel = timeoutLabel;
-  let effectiveSuperBackoff = superBackoff;
   let effectiveAbortCheck = abortCheck;
   if (typeof maxRetriesOrOptions === 'object' && maxRetriesOrOptions !== null) {
-    maxRetries = maxRetriesOrOptions.maxRetries ?? 5;
+    maxRetries = maxRetriesOrOptions.maxRetries ?? 3;
     effectiveTimeoutMs = maxRetriesOrOptions.timeoutMs;
     effectiveTimeoutLabel = maxRetriesOrOptions.timeoutLabel ?? 'API呼び出し';
-    effectiveSuperBackoff = !!maxRetriesOrOptions.superBackoff;
     effectiveAbortCheck = maxRetriesOrOptions.abortCheck;
   } else if (typeof maxRetriesOrOptions === 'number') {
     maxRetries = maxRetriesOrOptions;
   }
-  const standardDelays = [5000, 30000, 60000, 120000];
-  const superDelays = [10 * 60 * 1000, 20 * 60 * 1000, 40 * 60 * 1000];
-  const delays = effectiveSuperBackoff
-    ? [...standardDelays, ...superDelays]
-    : standardDelays.slice(0, maxRetries);
+  const standardDelays = [8000, 18000, 30000];
+  const delays = standardDelays.slice(0, Math.min(maxRetries, 3));
   const totalMaxAttempts = delays.length;
   for (let attempt = 0; attempt <= totalMaxAttempts; attempt++) {
     if (effectiveAbortCheck && effectiveAbortCheck()) {
@@ -2682,23 +2758,23 @@ export async function callWithRetry<T>(
       }
       if (attempt === totalMaxAttempts) throw err;
       
-      let baseDelay = delays[attempt] ?? 80000;
+      let baseDelay = delays[attempt] ?? 30000;
       const isActivityThrottle = msg.includes('通常とは異なるアクティビティ') || 
         msg.includes('アクティビティ') || 
         msg.includes('429') || 
         msg.includes('RESOURCE_EXHAUSTED') || 
         msg.includes('RATE_LIMIT') || 
         msg.includes('使用量の上限');
-      const throttleDelays = [60000, 120000, 180000, 240000, 300000];
+      const throttleDelays = [15000, 30000, 45000];
       if (isActivityThrottle) {
         baseDelay = throttleDelays[Math.min(attempt, throttleDelays.length - 1)];
       }
-      const isSuper = effectiveSuperBackoff && attempt >= standardDelays.length;
-      const jitter = isSuper ? Math.random() * 5000 : (isActivityThrottle ? Math.random() * 5000 : Math.random() * 1000);
+      // 2ワーカーの同時リトライ衝突（ボット検知）を防ぐため、5秒〜20秒のランダム時間差ジッターを付与
+      const jitter = 5000 + Math.random() * 15000;
       const roundedDelay = Math.round(baseDelay + jitter);
       
       if (onRetry) {
-        onRetry(attempt + 1, totalMaxAttempts, roundedDelay, err, isSuper);
+        onRetry(attempt + 1, totalMaxAttempts, roundedDelay, err, false);
       }
       
       const completed = await sleepWithAbortCheck(roundedDelay, effectiveAbortCheck);
@@ -2709,10 +2785,24 @@ export async function callWithRetry<T>(
   }
   throw new Error('Maximum retries reached');
 }
+/**
+ * ログメッセージ生成（Base64等の生データ排除＆1行最大300文字制限）
+ */
 export function createLogMessage(message: string): string {
   const now = new Date();
   const time = now.toLocaleTimeString('ja-JP', { hour12: false });
-  return `[${time}] ${message}`;
+  
+  if (!message) return `[${time}] `;
+  // 1. Base64・長大画像データの置換
+  let cleanMsg = String(message)
+    .replace(/data:image\/[a-zA-Z0-9.+_-]+;base64,[a-zA-Z0-9+/=]+/g, '[画像データ省略]')
+    .replace(/data:application\/[a-zA-Z0-9.+_-]+;base64,[a-zA-Z0-9+/=]+/g, '[バイナリデータ省略]')
+    .replace(/[a-zA-Z0-9+/]{200,}={0,2}/g, '[長大データ省略]');
+  // 2. 1行あたり最大300文字制限
+  if (cleanMsg.length > 300) {
+    cleanMsg = cleanMsg.slice(0, 297) + '...';
+  }
+  return `[${time}] ${cleanMsg}`;
 }
 // ── IndexedDB ヘルパー ──
 let dbInstance: IDBDatabase | null = null;
@@ -3638,11 +3728,9 @@ export function buildCompactScriptChunkPrompt(
   const isFirstChunk = startCut === 1;
   const isFinalChunk = endCut >= totalCutCount;
   const chunkCount = endCut - startCut + 1;
-  // ■ 2. 途中バッチにおける「早期完結」防止の厳格プロンプト指示
   const pacingDirective = !isFinalChunk
     ? `\n【重要・物語の進行に関する絶対指示】現在は全${totalCutCount}カット中の第${startCut}〜${endCut}カット目（物語の途中・展開中）です。ここで絶対に物語を完結させず、次のカット（Cut ${endCut + 1}以降）へ続く展開のままバトンを渡してください。事件の完全解決や総括の結びに入らず、次へ続く緊張感や新たな事態の発生を描いてください。結末（オチ・解決）は最終カット（Cut ${totalCutCount}）でのみ描かれます。`
     : `\n【最終バッチ指示】現在は全${totalCutCount}カットのクライマックスおよび結末部（Cut ${startCut}〜${endCut}）です。これまでの展開を受け止め、第${totalCutCount}カット目で見事な結末・オチ・余韻を描いてストーリーを美しく完結させてください。`;
-  // ■ 3. 累積ヘッダ情報の超軽量化（1行テキストのみで構成）
   const relayHistoryClause = previousCutsSummary
     ? `\n--- PREVIOUS CUTS CONTEXT (Cut 1 to ${startCut - 1}) ---\n${previousCutsSummary}\nCRITICAL: Continue the story chronologically from Cut ${endCut < totalCutCount ? startCut : startCut}. Do not restart or repeat previous scenes.`
     : '';
@@ -3692,7 +3780,7 @@ export interface InfographicCoverPromptOptions {
   styleDna?: string;
   forbiddenAnachronisms?: string[];
   authenticAttireEn?: string;
-  isHorizontal?: boolean; // true の場合は 16:9 横型マスターカバー
+  isHorizontal?: boolean;
 }
 /**
  * 世界観・時代・ジャンルに完全適応するインフォグラフィック扉絵・16:9看板プロンプトを構築
@@ -3920,7 +4008,6 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
   const accumulatedCuts: SafeScriptResult['cuts'] = [];
   for (let chunkIdx = 0; chunkIdx < chunkCount; chunkIdx++) {
     if (abortCheck && abortCheck()) break;
-    // ■ 2. チャンク間の2000msウェイト（APIレート制限回避・過密防止）
     if (chunkIdx > 0) {
       if (addLog) addLog(`☕ 次バッチ（Cut ${chunkIdx * CHUNK_SIZE + 1}〜）準備中（API安定のため2秒待機）...`, 'info');
       const rested = await sleepWithAbortCheck(2000, abortCheck);
@@ -3929,7 +4016,6 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     const startCut = chunkIdx * CHUNK_SIZE + 1;
     const endCut = Math.min((chunkIdx + 1) * CHUNK_SIZE, totalCuts);
     const isFirstChunk = chunkIdx === 0;
-    // ■ 3. 累積ヘッダ情報の超軽量化: "#Cut番号: 30文字以内の短い場面要約" の1行テキストのみに圧縮
     let previousCutsSummary = '';
     if (!isFirstChunk && accumulatedCuts.length > 0) {
       previousCutsSummary = accumulatedCuts.map(c => {
@@ -4004,8 +4090,6 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
         if (parsed.coverCatchphraseEn) episodeMetadata.coverCatchphraseEn = parsed.coverCatchphraseEn;
         if (Array.isArray(parsed.highlightWords)) episodeMetadata.highlightWords = parsed.highlightWords;
       }
-      // ■ 2. 端数チャンク（残り1〜数個）のJSON抽出強化
-      // 配列、{ cuts: [...] }、{ scenes: [...] }、単一オブジェクト {...} から確実に配列へ展開
       if (Array.isArray(parsed.cuts)) {
         parsedCuts = parsed.cuts;
       } else if (Array.isArray(parsed.scenes)) {
@@ -4022,8 +4106,6 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     }
     const expectedChunkCount = endCut - startCut + 1;
     for (let cIdx = 0; cIdx < expectedChunkCount; cIdx++) {
-      // ■ 1. リレー生成時の「Cut番号（ID）の強制連番振り直し」（ID重複防止）
-      // AIが返した id は信用せず、必ず globalCutId (= startCut + cIdx) を強制付与
       const globalCutId = startCut + cIdx;
       const rawCutData = parsedCuts.find((c: any) => c && Number(c.id) === globalCutId) || parsedCuts[cIdx] || {};
       const isObj = rawCutData.isObjectOnly !== undefined ? Boolean(rawCutData.isObjectOnly) : (globalCutId % 6 === 0);
@@ -4034,7 +4116,7 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
         ? `Atmospheric iconic object or landscape matching ${theme}, completely empty of people, cinematic still-life`
         : `${fixedChar ? `${fixedChar.dnaPromptEn}, ` : ''}cinematic scene ${globalCutId} of ${currentPlan.titleEn}, atmospheric lighting`;
       accumulatedCuts.push({
-        id: globalCutId, // 強制通し番号を付与
+        id: globalCutId,
         panelLayout: 'single',
         basicPlot: rawCutData.basicPlot || rawCutData.promptEn || defaultPlot,
         narrationJp: sanitizeForYouTubeSafety(rawNarration),
@@ -4054,7 +4136,6 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
       addLog(`✅ 【第${epId}話】リレー完了 [${chunkIdx + 1}/${chunkCount}]: Cut ${startCut}〜${endCut} (${accumulatedCuts.length}/${totalCuts}カット確定)`, 'success');
     }
   }
-  // 最終確認: 念のため globalIndex + 1 で全カットの ID を完全連番に再補正
   accumulatedCuts.forEach((cut, idx) => {
     cut.id = idx + 1;
   });
@@ -4336,6 +4417,7 @@ import { extractImageBase64 } from './utils';
 import JSZip from 'jszip';
 import { Episode, SeriesManifest, LogEntry } from '../types';
 import { renderCoverBase64, renderCoverBase64Horizontal } from './coverService';
+import { SAFE_CHARACTERS } from '../constants';
 import { Flow } from 'flow-sdk';
 export { renderCoverBase64, renderCoverBase64Horizontal };
 /**
@@ -4375,7 +4457,6 @@ export const safeJsonStringify = (obj: any, indent = 2): string => {
   try {
     return JSON.stringify(sanitizeValue(obj), null, indent);
   } catch (err) {
-    console.warn('safeJsonStringify fallback:', err);
     return '{}';
   }
 };
@@ -4412,16 +4493,34 @@ export function generateSrtContent(ep: Episode, cutDurationSeconds = 4): string 
 }
 /**
  * ファイル名を生成（ASCII安全名とサニタイズ表示名の両方を作成）
+ * ファイル名の先頭に主人公キャラクター名とシリーズ共通4桁ハッシュ（例: [ずんだもん]_A7F2_001_...）を付与
+ * ファイル名先頭の3桁連番は実際のエピソード番号（ep.id）に基づく
+ * 全カット画像が揃っている場合は「_full」、未生成カットがある場合は「_preview」を付与
  */
-let fileSeqCounter = 0;
 export function generateSafeFilenames(ep: Episode): { asciiFilename: string; displayFilename: string } {
-  fileSeqCounter = (fileSeqCounter + 1) % 1000;
-  const seq = String(fileSeqCounter).padStart(3, '0');
+  const charId = ep.characterId || 'zundamon';
+  const foundChar = SAFE_CHARACTERS.find(c => c.id === charId);
+  const charNameJa = foundChar?.nameJa || (charId === 'zundamon' ? 'ずんだもん' : charId);
+  const hashChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let seriesHash = (ep as any).seriesHash || (typeof window !== 'undefined' ? (window as any).__STUDIO_SERIES_HASH__ : '');
+  if (!seriesHash) {
+    seriesHash = Array.from({ length: 4 }, () => hashChars[Math.floor(Math.random() * hashChars.length)]).join('');
+    if (typeof window !== 'undefined') {
+      (window as any).__STUDIO_SERIES_HASH__ = seriesHash;
+    }
+  }
+  const charPrefix = `[${charNameJa}]_${seriesHash}_`;
+  const charAsciiPrefix = `[${foundChar?.id || charId}]_${seriesHash}_`;
+  // 実際のエピソード番号（String(ep.id).padStart(3, '0')）を使用
+  const epNumStr = String(ep.id || 1).padStart(3, '0');
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
-  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}_${seq}`;
+  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   
-  const asciiFilename = `FlowTool_Ep${ep.id}_${timestamp}.zip`;
+  const cuts = ep.cuts || [];
+  const isFull = cuts.length > 0 && cuts.every(c => !!(c.imageBase64 || c.imageMediaId));
+  const completionSuffix = isFull ? '_full' : '_preview';
+  const asciiFilename = `${charAsciiPrefix}Ep${epNumStr}_${timestamp}${completionSuffix}.zip`;
   const cleanTitle = (ep.titleJp || 'Episode')
     .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
     .replace(/[\u2600-\u27BF\uE000-\uF8FF]/g, '')
@@ -4430,7 +4529,7 @@ export function generateSafeFilenames(ep: Episode): { asciiFilename: string; dis
     .replace(/_+/g, '_')
     .trim()
     .slice(0, 30);
-  const displayFilename = `${timestamp}_${cleanTitle || `Ep${ep.id}`}.zip`;
+  const displayFilename = `${charPrefix}${epNumStr}_${timestamp}_${cleanTitle || `Ep${ep.id}`}${completionSuffix}.zip`;
   return { asciiFilename, displayFilename };
 }
 /**
@@ -4444,12 +4543,6 @@ export const savePackageFile = async (
 ): Promise<{ success: boolean; method: string }> => {
   const sizeMb = (blob.size / (1024 * 1024)).toFixed(2);
   const sizeStr = `${sizeMb} MB`;
-  
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  const safeAsciiFilename = fallbackAsciiFilename || `FlowTool_Package_${timestamp}.zip`;
-  console.group(`📦 [FlowTool Export] ダウンロード処理開始: ${filename} (${sizeStr})`);
   // 手法 1: File System Access API
   if (typeof (window as any).showSaveFilePicker === 'function') {
     try {
@@ -4463,17 +4556,15 @@ export const savePackageFile = async (
       const writable = await handle.createWritable();
       await writable.write(blob);
       await writable.close();
-      console.groupEnd();
       if (addLog) addLog(`✅ ファイル「${filename}」(${sizeStr}) を保存しました (File System Access)。`, 'success');
       return { success: true, method: 'showSaveFilePicker' };
     } catch (fsErr: any) {
       if (fsErr.name === 'AbortError') {
-        console.groupEnd();
         return { success: false, method: 'user_cancelled' };
       }
     }
   }
-  // 手法 2: Google Flow Tools 公式 Flow.download API (.zip -> .zip.txt 自動フォールバック)
+  // 手法 2: Google Flow Tools 公式 Flow.download API (text/plain .zip.txt で直接ダウンロード)
   if (typeof Flow !== 'undefined' && typeof Flow.download === 'function') {
     try {
       const reader = new FileReader();
@@ -4484,28 +4575,12 @@ export const savePackageFile = async (
       });
       const baseClean = filename.replace(/\.zip$/i, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').replace(/[「」『』]/g, '_').trim();
       const txtFallbackFilename = `${baseClean || 'FlowTool_Package'}.zip.txt`;
-      try {
-        await Flow.download({ base64, mimeType: 'application/zip' as any, filename: safeAsciiFilename });
-        console.groupEnd();
-        if (addLog) addLog(`✅ パッケージ「${safeAsciiFilename}」(${sizeStr}) をダウンロードしました (Flow API)。`, 'success');
-        return { success: true, method: 'Flow.download' };
-      } catch (zipErr: any) {
-        console.warn(`⚠️ Flow.download (.zip) 拒否のため、Google Flow 許可形式 (.zip.txt) に切り替えます...`, zipErr);
+      await Flow.download({ base64, mimeType: 'text/plain', filename: txtFallbackFilename });
+      if (addLog) {
+        addLog(`✅ パッケージ「${txtFallbackFilename}」(${sizeStr}) をダウンロード完了！`, 'success');
       }
-      try {
-        await Flow.download({ base64, mimeType: 'text/plain', filename: txtFallbackFilename });
-        console.groupEnd();
-        if (addLog) {
-          addLog(`✅ パッケージ「${txtFallbackFilename}」(${sizeStr}) をダウンロード完了！`, 'success');
-          addLog(`💡 末尾の「.txt」を消して「.zip」にするだけで、そのままZIPとして解凍できます。`, 'info');
-        }
-        return { success: true, method: 'Flow.download.txt' };
-      } catch (txtErr: any) {
-        console.error(`❌ Flow.download (.zip.txt) 失敗:`, txtErr?.message || txtErr);
-      }
-    } catch (readErr: any) {
-      console.error('❌ Base64エンコード失敗:', readErr);
-    }
+      return { success: true, method: 'Flow.download.txt' };
+    } catch (_) {}
   }
   // 手法 3: DOM <a download>
   try {
@@ -4524,10 +4599,7 @@ export const savePackageFile = async (
         URL.revokeObjectURL(blobUrl);
       } catch (_) {}
     }, 10000);
-  } catch (domErr: any) {
-    console.error('❌ DOM <a download> 失敗:', domErr);
-  }
-  console.groupEnd();
+  } catch (_) {}
   if (addLog) addLog(`💾 パッケージ「${filename}」(${sizeStr}) の保存コマンドを送信しました。`, 'info');
   return { success: true, method: 'dom_dispatched' };
 };
@@ -4564,7 +4636,7 @@ export async function packageEpisodeToZip(
       folder.file(`cut_${cutNum}_end.png`, cleanEnd, { base64: true });
     }
   }
-  // 2. カバー画像の整理：多重重複出力を解消し、cover_v.png（9:16縦）と cover_h.png（16:9横）に統一して出力
+  // 2. カバー画像の整理：cover_v.png（9:16縦）と cover_h.png（16:9横）
   const coverVRaw = ep.coverBase64 || ep.masterAnchorBase64 || ep.cuts?.[0]?.imageBase64;
   if (coverVRaw) {
     const cleanCoverV = coverVRaw.split('base64,').pop() || coverVRaw;
@@ -4590,6 +4662,15 @@ export async function packageEpisodeToZip(
     scriptText += `【英語プロンプト】${c.promptEn || ''}\n\n`;
   }
   folder.file('scenario.txt', scriptText);
+  // 🎙️ VOICEVOX スピーカーID（voice_name）のメタデータ解決
+  const VOICE_MAP: Record<string, string> = {
+    zundamon: 'voicevox:3',   // ずんだもん (ノーマル)
+    metan: 'voicevox:2',      // 四国めたん (ノーマル)
+    tsumugi: 'voicevox:8',    // 春日部つむぎ
+    himari: 'voicevox:14',    // 冥鳴ひまり
+  };
+  const resolvedVoiceName = VOICE_MAP[ep.characterId || ''] || 'voicevox:3';
+  const resolvedSpeaker = ep.characterId || 'zundamon';
   // 5. 後段ツール・動画化スクリプト連携用 構造化スクリプト (script.json)
   const structuredScript = {
     episodeId: ep.id,
@@ -4600,6 +4681,8 @@ export async function packageEpisodeToZip(
     era: ep.era,
     productionMode: ep.productionMode,
     characterDna: ep.characterDna,
+    voice_name: resolvedVoiceName,
+    speaker: resolvedSpeaker,
     cuts: cuts.map((c, idx) => ({
       cutNumber: c.id || idx + 1,
       narrationJp: c.narrationJp || '',
@@ -4609,7 +4692,13 @@ export async function packageEpisodeToZip(
       cinematicAngle: c.cinematicAngle || '',
       isObjectOnly: Boolean(c.isObjectOnly),
       durationSeconds: c.duration || 4,
-      telop: c.telop || { fullText: c.narrationJp || '' }
+      telop: c.telop || { fullText: c.narrationJp || '' },
+      cut_no: c.id || idx + 1,
+      narration: c.narrationJp || '',
+      dialogue: c.narrationJp || '',
+      tts_text: c.narrationJp || '',
+      visual_prompt: c.promptEn || '',
+      duration: c.duration || 4
     }))
   };
   folder.file('script.json', safeJsonStringify(structuredScript, 2));
@@ -4626,6 +4715,8 @@ export async function packageEpisodeToZip(
     productionMode: ep.productionMode,
     cutsCount: cuts.length,
     characterDna: ep.characterDna,
+    voice_name: resolvedVoiceName,
+    speaker: resolvedSpeaker,
     createdAt: new Date().toISOString()
   };
   folder.file('series_manifest.json', safeJsonStringify(manifestData, 2));
@@ -4655,8 +4746,7 @@ export const downloadZip = async (
       sizeStr: `${(blob.size / 1024 / 1024).toFixed(2)} MB`,
       flowSuccess: result.success
     };
-  } catch (err: any) {
-    console.error('downloadZip error:', err);
+  } catch (_) {
     return null;
   }
 };
@@ -5477,11 +5567,33 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
     setEpisodes([]);
     setActiveSeriesManifest(null);
     seriesManifestRef.current = null;
+    if (typeof window !== 'undefined') {
+      delete (window as any).__STUDIO_EPISODES__;
+      delete (window as any).__STUDIO_EPISODES_BACKUP__;
+      delete (window as any).__STUDIO_SERIES_MANIFEST__;
+      delete (window as any).__STUDIO_SERIES_HASH__;
+    }
     addLog('🧹 制作データを全消去しました。', 'info');
   }, [addLog]);
   const abortProduction = useCallback(() => {
     isAbortedRef.current = true;
     setIsProducing(false);
+    const resetEp = (ep: Episode): Episode => {
+      const hasContent = ep.cuts.some(c => !!(c.promptEn || c.imageBase64 || c.imageMediaId));
+      return {
+        ...ep,
+        isGenerating: false,
+        isGeneratingRemainingImages: false,
+        isPreviewDone: ep.isPreviewDone || hasContent,
+        cuts: ep.cuts.map(c => ({
+          ...c,
+          isGeneratingImage: false,
+          isDirecting: false
+        }))
+      };
+    };
+    episodesRef.current = episodesRef.current.map(resetEp);
+    setEpisodes(prev => prev.map(resetEp));
     addLog('🛑 ユーザーによって制作が中断されました。', 'warning');
   }, [addLog]);
   return {
@@ -5527,16 +5639,23 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
   const activeReferenceRef = useRef<{ mediaId?: string; characterDna?: string; styleDna?: string; antiPoseNegative?: string; eraNegative?: string } | undefined>(undefined);
   const currentAssetRef = useRef<any>(undefined);
   const queueRef = useRef<GenerationTask[]>([]);
+  const seriesQueueRef = useRef<GeneratorSettings[]>([]);
+  const [queuedSeriesCount, setQueuedSeriesCount] = useState(0);
+  const isProducingRef = useRef(false);
   const hasRateLimitedBanana2Ref = useRef(false);
   const lastErrorRef = useRef<string | null>(null);
   const handleClearEpisodes = useCallback(() => {
     activeReferenceRef.current = undefined;
     currentAssetRef.current = undefined;
-    hasRateLimitedBanana2Ref.current = false;
+    seriesQueueRef.current = [];
+    setQueuedSeriesCount(0);
     clearEpisodes();
   }, [clearEpisodes]);
   const handleAbort = useCallback(() => {
     queueRef.current = [];
+    seriesQueueRef.current = [];
+    setQueuedSeriesCount(0);
+    isProducingRef.current = false;
     abortProduction();
   }, [abortProduction]);
   const resumeSeries = async (manifest: SeriesManifest, onAssetRestored?: (assetId: number) => void) => {
@@ -5587,7 +5706,9 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     addLog(`📂 シリーズ「${manifest.seriesTitle}」を復元しました（全${manifest.totalEpisodes}話 / 完了: ${completedIds.length}話）`, 'success');
   };
   const buildCutTasks = (ep: Episode, cutsToGenerate: Cut[], styleKey?: string): GenerationTask[] => {
-    const fixedChar = (ep.characterId && ep.characterId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === ep.characterId) : undefined;
+    const fixedChar = (ep.characterId && ep.characterId !== 'auto' && ep.characterId !== 'random') 
+      ? SAFE_CHARACTERS.find(c => c.id === ep.characterId) 
+      : undefined;
     const refMediaId = ep.characterTurnaroundMediaId || ep.masterAnchorMediaId || (ep.isMvMode ? undefined : activeReferenceRef.current?.mediaId);
     return cutsToGenerate.map(c => {
       const promptCandidates = [c.cleanImagePrompt, c.promptEn, c.scenePlot, c.narrationJp].filter(Boolean);
@@ -5616,7 +5737,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       };
     });
   };
-  // ■ 4. 残り描画完了時のZIP自動保存
   const handleGenerateRemaining = async (epId: number) => {
     isAbortedRef.current = false;
     const ep = episodesRef.current.find(e => e.id === epId);
@@ -5651,7 +5771,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     if (stillRemaining === 0) {
       updateEpisode(epId, { isGeneratingRemainingImages: false, isDone: true, isPreviewDone: true });
       addLog(`✅ Ep.${epId}: 全${ep.cuts.length}カットの画像生成がすべて完了しました！`, 'success');
-      // 全カットが揃った時点で完成版ZIPパッケージを自動生成・自動ダウンロード
       if (settings.autoDownload && !isAbortedRef.current) {
         addLog(`📦 【第${epId}話】全カット描画完了に伴い、完成版ZIPパッケージを自動保存中...`, 'process');
         const currentLogs = logsRef.current || [];
@@ -5733,7 +5852,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       preparedTasks.push({ ...task, prompt: promptEn, negativePrompt: antiPreviousNegative, shotScale, cinematicAngle, camera: cameraWork });
     }
     if (isAbortedRef.current) return;
-    // Cut 1先行マスターアンカー
     const epId = preparedTasks[0]?.epId;
     const currentEp = episodesRef.current.find(e => e.id === epId);
     const cut1Index = preparedTasks.findIndex(t => t.cutId === 1);
@@ -5760,7 +5878,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     });
     await Promise.all(workers);
   };
-  const generateImage = async (task: GenerationTask) => {
+  const generateImage = async (task: GenerationTask, isManualRetry = false) => {
+    if (isManualRetry) {
+      isAbortedRef.current = false;
+    }
     if (isAbortedRef.current) return;
     const { epId, cutId } = task;
     updateCut(epId, cutId, { isGeneratingImage: true });
@@ -5805,7 +5926,9 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         }
       }
       const charId = ep?.characterId || settings.characterId;
-      const fixedChar = (charId && charId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === charId) : undefined;
+      const fixedChar = (charId && charId !== 'auto' && charId !== 'random') 
+        ? SAFE_CHARACTERS.find(c => c.id === charId) 
+        : undefined;
       const taskWithAntiPrevious: GenerationTask = {
         ...task,
         characterDna: fixedChar?.dnaPromptEn || task.characterDna || ep?.characterDna,
@@ -5830,6 +5953,12 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       const primaryModelName = modelDef?.name || '🍌 Nano Banana 2.1';
       let res: any;
       let attemptCount = 0;
+      const retryVariations = [
+        'masterpiece cinematic composition, atmospheric depth, fine details',
+        'authentic visual storytelling, balanced framing, natural lighting',
+        'vivid cinematic scene, rich environmental texture, dramatic perspective',
+        'expressive anime cinematography, clean linework, harmonious color palette'
+      ];
       try {
         res = await callWithRetry<any>(
           async () => {
@@ -5847,6 +5976,19 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             if ((hasRateLimitedBanana2Ref.current || isRateLimitError) && !currentModelName.includes('Pro')) {
               hasRateLimitedBanana2Ref.current = true;
               currentModelName = '🍌 Nano Banana Pro';
+            }
+            // attemptCount > 1（2回目以降のトライ）のプロンプトリフレッシュ＆ハッシュロック回避
+            if (attemptCount > 1) {
+              const variation = retryVariations[(attemptCount - 2) % retryVariations.length];
+              const sanitized = sanitizePromptForGoogleSafety(safePrompt);
+              const maxLen = Math.max(400, 900 - attemptCount * 100);
+              const trimmed = sanitized.slice(0, maxLen).replace(/,[^,]*$/, '').trim();
+              currentPrompt = `${variation}, ${trimmed}`;
+              if (attemptCount === 2 && !currentModelName.includes('Pro')) {
+                currentModelName = '🍌 Nano Banana Pro';
+              } else if (attemptCount >= 3) {
+                currentModelName = '🍌 Nano Banana 2 Lite';
+              }
             }
             const isPolicyIssue = lastErrorRef.current && (
               lastErrorRef.current.includes('SAFETY') || 
@@ -5867,7 +6009,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
               referenceImageMediaIds: currentRefIds 
             });
           },
-          (attempt, max, delay, err, isSuper) => {
+          (attempt, max, delay, err) => {
             const waitStr = formatDurationMs(delay);
             const errMsg = formatErrorMessage(err);
             lastErrorRef.current = errMsg;
@@ -5876,15 +6018,13 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
               hasRateLimitedBanana2Ref.current = true;
               addLog(`👑 Ep.${epId} C${cutId}: [自動昇格] 独立別枠クォータを持つ「🍌 Nano Banana Pro」へ自動昇格します！`, 'success');
             }
-            if (isSuper) {
-              addLog(`🌙 Ep.${epId} C${cutId}: [超指数バックオフ] 高負荷待機中 (${waitStr})...`, 'warning');
-            } else if (isRateLimit) {
+            if (isRateLimit) {
               addLog(`⏳ Ep.${epId} C${cutId}: [クォータ回復待機] ${waitStr}待機中 (${attempt}/${max})...`, 'warning');
             } else {
               addLog(`⚠️ Ep.${epId} C${cutId}: 画像リトライ (${attempt}/${max}) ${waitStr}後...`, 'warning');
             }
           },
-          { maxRetries: 5, timeoutMs: 90000, timeoutLabel: '画像生成', superBackoff: settings.superBackoff, abortCheck: () => isAbortedRef.current }
+          { maxRetries: 3, timeoutMs: 90000, timeoutLabel: '画像生成', superBackoff: false, abortCheck: () => isAbortedRef.current }
         );
       } catch (firstErr: any) {
         if (!isAbortedRef.current) {
@@ -5948,10 +6088,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     await ensureInfographicCover(pipelineContext, ep, true);
   }, [settings, addLog, updateEpisode]);
   const startProduction = async (overrideSettings?: Partial<GeneratorSettings>) => {
-    if (isProducing) {
-      console.warn('⚠️ 制作プロセス実行中です。');
-      return;
-    }
     const isValidOverride =
       overrideSettings &&
       typeof overrideSettings === 'object' &&
@@ -5961,38 +6097,114 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       ...settings,
       ...(isValidOverride ? overrideSettings : {})
     };
+    // 🎲 characterId が 'random' の場合、4人の中からランダム自動選出
+    if (!effectiveSettings.characterId || effectiveSettings.characterId === 'random') {
+      const charIds = SAFE_CHARACTERS.map(c => c.id);
+      const chosenCharId = charIds[Math.floor(Math.random() * charIds.length)];
+      const chosenChar = SAFE_CHARACTERS.find(c => c.id === chosenCharId);
+      effectiveSettings.characterId = chosenCharId;
+      addLog(`🎲 キャラクター自動抽選: 【${chosenChar?.icon || ''} ${chosenChar?.nameJa || chosenCharId}】に決定！`, 'success');
+    }
+    // 制作中に押された場合は予約キューに追加して即座に戻る
+    if (isProducingRef.current) {
+      seriesQueueRef.current.push({ ...effectiveSettings });
+      setQueuedSeriesCount(seriesQueueRef.current.length);
+      const foundChar = SAFE_CHARACTERS.find(c => c.id === effectiveSettings.characterId);
+      const themeShort = (effectiveSettings.theme || '').split('（')[0].trim();
+      addLog(`📥 【連続投入】次シリーズ予約を追加しました！（待機キュー: ${seriesQueueRef.current.length}件目 / キャラ: ${foundChar?.nameJa || effectiveSettings.characterId} / テーマ: ${themeShort}）`, 'success');
+      return;
+    }
+    isProducingRef.current = true;
     setIsProducing(true);
     isAbortedRef.current = false;
-    addLog(`🎬 【全自動プロデュース開始】モード: ${effectiveSettings.productionMode || '通常'} / 全${effectiveSettings.totalEpisodes || effectiveSettings.episodeCount || 1}話`, 'process');
-    const pipelineContext = {
-      settings: effectiveSettings,
-      addLog,
-      logsRef,
-      isAbortedRef,
-      episodesRef,
-      setEpisodes,
-      updateEpisode,
-      runTasks,
-      buildCutTasks,
-      seriesManifestRef,
-      setActiveSeriesManifest,
-      activeReferenceRef,
-      currentAssetRef
-    };
+    let currentRunSettings: GeneratorSettings | undefined = effectiveSettings;
+    let isFirstSeries = true;
     try {
-      if (!settings.isMvMode && settings.productionMode !== 'mv' && seriesManifestRef.current && (seriesManifestRef.current.episodesPlan?.length || 0) > 0) {
-        await runSeriesProduction(pipelineContext);
-        return;
+      while (currentRunSettings && !isAbortedRef.current) {
+        // ── 前回の制作データクリア判定 ──
+        const existingEps = episodesRef.current;
+        const prevEp = existingEps[0];
+        const prevChar = prevEp?.characterId || (seriesManifestRef.current as any)?.characterId;
+        const prevTheme = prevEp?.theme || seriesManifestRef.current?.settings?.theme || seriesManifestRef.current?.seriesTitle;
+        const isCharChanged = Boolean(prevChar && currentRunSettings.characterId && prevChar !== currentRunSettings.characterId);
+        const isThemeChanged = Boolean(prevTheme && currentRunSettings.theme && prevTheme !== currentRunSettings.theme && currentRunSettings.theme !== '🎲 ランダム（おまかせ）');
+        const isAllPreviousCompleted = existingEps.length > 0 && existingEps.every(ep => {
+          const cuts = ep.cuts || [];
+          return cuts.length > 0 && cuts.every(c => !!(c.imageBase64 || c.imageMediaId));
+        });
+        if (!isFirstSeries || (existingEps.length > 0 && (isCharChanged || isThemeChanged || isAllPreviousCompleted))) {
+          const reasonMsg = !isFirstSeries
+            ? '連続投入・次シリーズ開始'
+            : isAllPreviousCompleted 
+              ? '前回の全エピソード完了（全カット描画済）' 
+              : isCharChanged 
+                ? 'キャラクター変更' 
+                : 'テーマ変更';
+          addLog(`🔄 【新シリーズ自動検出】${reasonMsg}を検出したため、前回の制作データを自動クリアし新規第1話からクリーンスタートします。`, 'process');
+          episodesRef.current = [];
+          setEpisodes([]);
+          setActiveSeriesManifest(null);
+          seriesManifestRef.current = null;
+          activeReferenceRef.current = undefined;
+          currentAssetRef.current = undefined;
+          hasRateLimitedBanana2Ref.current = false;
+          if (typeof window !== 'undefined') {
+            delete (window as any).__STUDIO_EPISODES__;
+            delete (window as any).__STUDIO_EPISODES_BACKUP__;
+            delete (window as any).__STUDIO_SERIES_MANIFEST__;
+            delete (window as any).__STUDIO_SERIES_HASH__;
+          }
+        }
+        // 新しい4桁シリーズハッシュの生成・登録
+        if (typeof window !== 'undefined' && (episodesRef.current.length === 0 || !(window as any).__STUDIO_SERIES_HASH__)) {
+          const hashChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+          const newSeriesHash = Array.from({ length: 4 }, () => hashChars[Math.floor(Math.random() * hashChars.length)]).join('');
+          (window as any).__STUDIO_SERIES_HASH__ = newSeriesHash;
+        }
+        addLog(`🎬 【全自動プロデュース開始】モード: ${currentRunSettings.productionMode || '通常'} / 全${currentRunSettings.totalEpisodes || currentRunSettings.episodeCount || 1}話`, 'process');
+        const pipelineContext = {
+          settings: currentRunSettings,
+          addLog,
+          logsRef,
+          isAbortedRef,
+          episodesRef,
+          setEpisodes,
+          updateEpisode,
+          runTasks,
+          buildCutTasks,
+          seriesManifestRef,
+          setActiveSeriesManifest,
+          activeReferenceRef,
+          currentAssetRef
+        };
+        try {
+          if (!currentRunSettings.isMvMode && currentRunSettings.productionMode !== 'mv' && seriesManifestRef.current && (seriesManifestRef.current.episodesPlan?.length || 0) > 0) {
+            await runSeriesProduction(pipelineContext);
+          } else {
+            const curMode = currentRunSettings.productionMode || (currentRunSettings.isMvMode ? 'mv' : 'episodes');
+            if (curMode in SHORTS_CONFIG_MAP) {
+              await runShortsBatchProduction(pipelineContext, curMode);
+            } else {
+              await runSeriesProduction(pipelineContext);
+            }
+          }
+        } catch (err: any) {
+          addLog(`❌ 制作エラー: ${formatErrorMessage(err)}`, 'error');
+        }
+        isFirstSeries = false;
+        // 次のキューがあるかチェック
+        if (!isAbortedRef.current && seriesQueueRef.current.length > 0) {
+          const nextSettings = seriesQueueRef.current.shift()!;
+          setQueuedSeriesCount(seriesQueueRef.current.length);
+          addLog(`⏭️ 【連続投入キュー実行】待機していた次シリーズの制作を5秒後に自動開始します（残り待機: ${seriesQueueRef.current.length}件）...`, 'success');
+          await sleep(5000);
+          currentRunSettings = nextSettings;
+        } else {
+          currentRunSettings = undefined;
+        }
       }
-      const curMode = settings.productionMode || (settings.isMvMode ? 'mv' : 'episodes');
-      if (curMode in SHORTS_CONFIG_MAP) {
-        await runShortsBatchProduction(pipelineContext, curMode);
-        return;
-      }
-      await runSeriesProduction(pipelineContext);
-    } catch (err: any) {
-      addLog(`❌ 制作エラー: ${formatErrorMessage(err)}`, 'error');
     } finally {
+      isProducingRef.current = false;
       setIsProducing(false);
     }
   };
@@ -6087,6 +6299,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     episodes, 
     setEpisodes, 
     isProducing, 
+    queuedSeriesCount,
     startProduction, 
     abortProduction: handleAbort, 
     resumeSeries, 

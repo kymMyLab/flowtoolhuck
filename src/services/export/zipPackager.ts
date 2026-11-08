@@ -51,14 +51,35 @@ export const safeJsonStringify = (obj: any, indent = 2): string => {
 
 /**
  * ファイル名を生成（ASCII安全名とサニタイズ表示名の両方を作成）
+ * 形式: [キャラ名_4桁シリーズハッシュ]_001_YYYYMMDD_HHMMSS_タイトル_full.zip
  */
-let fileSeqCounter = 0;
+const SERIES_HASH_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+export function getOrGenerateSeriesHash(forceNew = false): string {
+  if (typeof window !== 'undefined') {
+    if (!forceNew && (window as any).__STUDIO_SERIES_HASH__) {
+      return (window as any).__STUDIO_SERIES_HASH__;
+    }
+    const newHash = Array.from({ length: 4 }, () =>
+      SERIES_HASH_CHARS[Math.floor(Math.random() * SERIES_HASH_CHARS.length)]
+    ).join('');
+    (window as any).__STUDIO_SERIES_HASH__ = newHash;
+    return newHash;
+  }
+  return 'A1B2';
+}
+
 export function generateSafeFilenames(ep: Episode): { asciiFilename: string; displayFilename: string } {
-  fileSeqCounter = (fileSeqCounter + 1) % 1000;
-  const seq = String(fileSeqCounter).padStart(3, '0');
+  const charId = ep.characterId || 'zundamon';
+  const foundChar = SAFE_CHARACTERS.find(c => c.id === charId);
+  const charNameJa = foundChar?.nameJa || (charId === 'zundamon' ? 'ずんだもん' : charId);
+  const seriesHash = (ep as any).seriesHash || getOrGenerateSeriesHash(false);
+  const charPrefix = `[${charNameJa}]_${seriesHash}_`;
+  const charAsciiPrefix = `[${foundChar?.id || charId}]_${seriesHash}_`;
+
+  const epNumStr = String(ep.id || 1).padStart(3, '0');
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
-  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}_${seq}`;
+  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   
   // ★ 全カット描画完了（_full）か先行プレビュー（_preview）かを判定
   const cuts = ep.cuts || [];
@@ -66,7 +87,7 @@ export function generateSafeFilenames(ep: Episode): { asciiFilename: string; dis
   const isFull = cuts.length > 0 && readyCount >= cuts.length;
   const statusSuffix = isFull ? '_full' : '_preview';
 
-  const asciiFilename = `FlowTool_Ep${ep.id}_${timestamp}${statusSuffix}.zip`;
+  const asciiFilename = `${charAsciiPrefix}Ep${epNumStr}_${timestamp}${statusSuffix}.zip`;
 
   const cleanTitle = (ep.titleJp || 'Episode')
     .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
@@ -77,7 +98,7 @@ export function generateSafeFilenames(ep: Episode): { asciiFilename: string; dis
     .trim()
     .slice(0, 30);
 
-  const displayFilename = `${timestamp}_${cleanTitle || `Ep${ep.id}`}${statusSuffix}.zip`;
+  const displayFilename = `${charPrefix}${epNumStr}_${timestamp}_${cleanTitle || `Ep${ep.id}`}${statusSuffix}.zip`;
   return { asciiFilename, displayFilename };
 }
 

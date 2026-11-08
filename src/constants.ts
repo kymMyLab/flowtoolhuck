@@ -1,5 +1,6 @@
 import { KenBurnsPreset, ProductionMode, TelopStyle, TelopTransition, TelopPosition, GeneratorSettings } from './types';
-
+// ── 🎲 ランダム（おまかせ）定数 ──
+export const RANDOM_SELECT_OPTION = '🎲 ランダム（おまかせ）';
 // ── 🎙️ YouTube収益化安全キャラクター定義（VOICEVOX / 東北ずん子プロジェクト等） ──
 export interface SafeCharacter {
   id: string;
@@ -11,7 +12,6 @@ export interface SafeCharacter {
   turnaroundPromptEn: string;
   recommendedTastes: string[];
 }
-
 export const SAFE_CHARACTERS: SafeCharacter[] = [
   {
     id: 'zundamon',
@@ -50,949 +50,115 @@ export const SAFE_CHARACTERS: SafeCharacter[] = [
     icon: '🔮',
     personality: '死神見習い。ミステリアスで落ち着いたダウナー系ボイス。怪異や死後の世界、都市伝説の語り手・案内人。',
     dnaPromptEn: 'meimei himari, mysterious gothic reaper anime girl, dark purple ombre hair, cool violet eyes, wearing a black hood cape and gothic dark dress with skull motif accessories, enigmatic mysterious aura',
-    turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of meimei himari with dark purple ombre hair, black gothic hooded dress, reaper style, clean character sheet',
-    recommendedTastes: ['ダークゴシック童話・黒髪ノスタルジー', '昭和レトロ活版・劇画', '江戸大河・天下泰平の影と群像劇']
-  },
-  {
-    id: 'ryusei',
-    nameJa: '青山龍星',
-    speakerCredit: 'VOICEVOX:青山龍星 (VirVox Project)',
-    icon: '🕶️',
-    personality: '低音の渋い声。ハードボイルドな探偵、怪事件を追うルポライター、あるいは怪異を見守る語り部。',
-    dnaPromptEn: 'aoyama ryusei, rugged handsome middle-aged Japanese man, dark disheveled hair, slight stubble on jawline, piercing sharp dark eyes, wearing a classic worn beige trench coat with dark suit and tie underneath, cinematic detective noir aesthetic',
-    turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of rugged detective man in beige trench coat, clean character sheet',
-    recommendedTastes: ['劇画・ヴィンテージ昭和', 'ダークゴシック童話・黒髪ノスタルジー', '90年代セル画・サイバーパンク']
+    turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of meimei himari with purple hair, gothic black cloak, clean character model sheet',
+    recommendedTastes: ['ダークファンタジー・重厚陰影', 'ダークゴシック童話・黒髪ノスタルジー']
   }
 ];
-
+// ── 🎨 テーマカテゴリー定義 ──
 export interface ThemeCategory {
   category: string;
   items: string[];
 }
-
 export const THEME_CATEGORIES: ThemeCategory[] = [
   {
-    category: '🏮 江戸・幕末・大河群像劇 (天下泰平と動乱の50年)',
+    category: '🎒 日常・青春・アオハル',
+    items: [
+      '🏫 放課後の教室と夕暮れ（教室に残る二人・夕日の差し込む窓・伸びる影）',
+      '🚲 海沿いの坂道と通学路（潮風・並んで漕ぐ自転車・青空と入道雲）',
+      '🌧️ 昇降口の雨宿り（突然のスコール・一つのビニール傘・かすかな緊張感）',
+      '🥤 屋上のサマータイム（炭酸飲料・風に揺れるカーテン・フェンス越しの街）',
+      '☕ 雨の日の純喫茶（曇った窓ガラス・温かい珈琲の湯気・琥珀色の読書）',
+      '🎶 レコードが鳴る古民家カフェ（針のプチプチ音・埃が踊る午後の日差し）',
+      '🌃 深夜2時の部屋（薄暗い間接照明・青白いPC画面・ベッドサイドのチル）',
+      '🧺 深夜のコインランドリー（回る洗濯ドラム・漂う洗剤の香り・蛍光灯と外の雨）',
+      '🚉 改札口で名残惜しい夕方（行っちゃう電車・見送る視線・あと一本待つ口実）',
+      '🎆 浴衣で歩く夏祭りの帰り道（りんご飴・カランコロン鳴る下駄・人混みで握る手）'
+    ]
+  },
+  {
+    category: '⛩️ 怪異・民俗学・禁足地・都市伝説',
+    items: [
+      '🏚️ 廃村の立ち入り禁止看板（生い茂る蔦・風化し歪んだ鳥居・濃い霧）',
+      '⛩️ 日本各地の絶対不可侵・禁足地（結界・神域・風化した注連縄・侵食される境界）',
+      '👻 誰もいない深夜の旧校舎（軋む廊下・赤く光る非常口・消えない足音）',
+      '🚂 幻の無人駅・境界線伝説（霧のプラットフォーム・戻れない線路・異界の気配）',
+      '⛰️ 山岳の怪異と異界の掟（吹雪に消える山小屋・古の祠・山の神の視線）',
+      '🌲 樹海深奥の隠れ里（巨木に囲まれた孤立集落・外界を拒む風習・神楽鈴の音）',
+      '🕳️ 地下空間の秘密軍事壕（冷たいコンクリート・錆びた鉄扉・途切れた配線）',
+      '🏮 黄昏時の路地裏と百鬼夜行（現世と常世の狭間・怪しい影・狐面の笑み）',
+      '🌊 夜の防波堤と潮騒の怪異（漆黒の海・揺れる常夜灯・深海からの誘い）',
+      '📻 昭和オカルト・深夜の乱数放送（ざらつく砂嵐・途切れるアナウンス・謎の暗号）'
+    ]
+  },
+  {
+    category: '🏮 歴史・大河・帝都浪漫・時代劇',
     items: [
       '🏮 江戸大河・天下泰平の影と群像劇（幕府・町衆・忍びの暗闘と50年の興亡）',
-      '⚔️ 幕末動乱・新時代を拓く志士と守護者たち（維新回天・思想と剣の激突）',
-      '👘 江戸の風俗・吉原裏表（粋と野暮・見栄と情けの駆け引き）',
-      '🗾 東海道五十三次・諸国放浪と奇縁録（全国を巡る旅情・風土記・人情事件）',
-      '💰 大江戸商戦記・暖簾と情熱の百年（両替商・呉服屋・職人組織の興亡）',
-      '🏯 大奥深奥・権謀術数と愛憎の三十年（御台所・側室・女中たちの権力闘争）',
-      '🗡️ 岡っ引きと辻斬り（十手と捕物帳・闇に葬られた大奥の密命）',
-      '🌾 諸藩財政再建記・知恵と改革の大名改革（破綻寸前の小藩を立て直す男たち）',
-      '⚔️ 新選組・壬生浪士の挽歌（誠の旗の下に散った若者たちの熱情）',
-      '🎲 江戸暗黒街・裏社会の掟と仁義（夜の江戸を支配する侠客と盗賊の年代記）',
-      '🥢 江戸の長屋人情（宵越しの銭は持たぬ・お節介と温かい絆）',
-      '⚒️ 江戸の職人・町火消し（命を張った火事場の意地と喧嘩）',
-      '🏃‍♂️ 江戸の飛脚（宿場町・関所破り・命がけの定刻配達）',
-      '🍣 江戸の屋台めし（握り寿司・蕎麦・うなぎの誕生と職人魂）'
-    ]
-  },
-  {
-    category: '🚂 明治・大正・帝都浪漫と開化 (激動の近代化史)',
-    items: [
+      '⚔️ 幕末動乱・新時代を拓く志士と守護者（維新回天・思想と剣の激突）',
+      '🎩 大正モダン・帝都浪漫と怪異事件帖（ガス灯の夜・華やかな社交界の裏に蠢く闇）',
       '👑 帝都華族と新興財閥の愛憎劇（旧体制の誇りと近代化の荒波・血脈の闘争）',
-      '🎩 大正モダン・帝都浪漫と怪異事件帖（華やかな文化の裏に蠢く路地裏の闇）',
-      '🚂 文明開化・激動を駆ける先駆者たち（鉄路・新聞・医術・教育の夜明け）',
-      '🕵️ 帝都特務機関と怪盗紳士（ガス灯の夜に交錯する諜報戦と至高の頭脳戦）',
-      '🖋️ 文豪たちの群像・時代を創った熱情と狂気（原稿用紙に命を削る創作者たち）',
-      '💃 鹿鳴館の陰謀・外交戦と華麗なる仮面舞踏会（国運を懸けた淑女たちの情報戦）',
-      '🚢 移民船航路・新天地を目指した開拓者たちの航海記（太平洋を渡った日本人）',
-      '🎭 浅草オペラと歓楽街の星（大正の自由と刹那の青春・舞台に賭けた命）',
-      '☕ カフェーの女給と貧乏画家（琥珀色の珈琲と交わらない恋）',
-      '🚂 陸蒸気開通秘話（鉄の馬に驚愕した人々と若き技師の執念）',
-      '🏥 洋式医学校の青春・命を救う若き蘭方医たち（コレラ・未知の病に挑む）',
-      '⚔️ 明治剣客浪漫・廃刀令の嵐と武士の誇り（新時代に取り残された剣士たちの挽歌）'
+      '🗡️ 妖刀伝説・鍛冶師の祈りと呪詛（炎と鉄の錬金術・血を吸う白刃）',
+      '🌾 諸藩財政再建記・知恵と改革の大名改革（破綻寸前の小藩を立て直す男たち）',
+      '👘 華麗なる大奥・美しき権謀術数（御台所・側室・女中たちの権力闘争）',
+      '☕ カフェーの女給と貧乏画家（大正浪漫・琥珀色の珈琲と交わらない恋）',
+      '🍣 江戸の屋台めし・職人魂（握り寿司・蕎麦・うなぎの誕生と賑わう河岸）',
+      '🏯 名城防衛戦・難攻不落の要塞（石垣・狭間からの射撃・包囲された本丸）'
     ]
   },
   {
-    category: '📻 昭和・激動と復興・高度成長・バブル (昭和クロニクル)',
+    category: '🌃 近未来・サイバーパンク・SF',
     items: [
-      '🏭 戦後復興・焼け跡から立ち上がった男たちの戦後史（闇市から大企業への軌跡）',
-      '🕶️ 昭和裏社会・組織の興亡と仁義の年代記（激動の昭和ヤクザ抗争史・50年録）',
-      '🔧 下町町工場と世界を制した技術者たち（泥臭い情熱と家族の絆・ものづくり大河）',
-      '🎤 昭和歌謡・芸能界の光と影（夜の街の栄枯盛衰・歌姫とプロデューサーの一代記）',
-      '💰 バブル狂乱・野望と破滅のマネーゲーム（地上げ・巨額金融・狂騒の終焉）',
-      '📰 激動の昭和報道・スクープを追う新聞記者たち（大事件の真相と権力の闇）',
-      '🏛️ 昭和の巨塔・政財界フィクサーと黒幕の暗躍（戦後政治の表と裏・巨大疑獄事件）',
-      '🏢 団地妻の憂鬱・新生活の影（白い巨塔に隠された孤立と見栄）',
-      '🚂 集団就職列車・金の卵たち（夜汽車に揺られた少年少女の青春）',
-      '🚗 峠の走り屋・深夜のバトル（ハチロクと青春を懸けたテールランプ）',
-      '🥊 下町のボクシングジム（拳一つでどん底から這い上がる男）',
-      '📺 昭和家電狂騒曲（三種の神器を巡る家族の意地と奮闘記）'
+      '🌃 雨煙るネオン街の裏路地（紫と青の反射光・ホログラム広告・サイバー義肢）',
+      '🤖 電脳空間のダイブ（流れ落ちる緑のコード・記憶のアーカイブ・光の回廊）',
+      '🚗 深夜の首都高・湾岸トワイライト（流れるテールランプ・エンジン音・疾走するネオン）',
+      '🚁 摩天楼のランディングパッド（夜景を見下ろす高層ビル・飛来するドローン）',
+      '🛰️ 軌道エレベーターと星の海（大気圏を貫くタワー・見下ろす蒼い地球）',
+      '🔌 スラム街の闇医師とサイバネティクス（ガラクタ配線・生体パーツ・密売組織）',
+      '🌐 巨大AIマザーフレームの沈黙（点滅する無数のラック・冷気の霧・意志の芽生え）',
+      '🚀 廃棄宇宙船のサルベージ（無重力の残骸・漏れ出す液体酸素・孤独な船外活動）',
+      '🏭 巨大サイバーメガフロート（海上に浮かぶ工場島・煙突の炎・錆びたデッキ）'
     ]
   },
   {
-    category: '💻 平成・ゼロ年代・ネット黎明期と変革 (デジタル創世記)',
+    category: '🏰 ファンタジー・古代遺跡・スチームパンク',
     items: [
-      '🚀 ITベンチャー戦国時代・ビットバレーの覇者たち（雑居ビルから上場への野望）',
-      '🏢 就職氷河期・失われた世代の反撃（理不尽な格差に抗う者たちの生存戦略）',
-      '🌐 ネット黎明期・アングラカルチャーと電脳空間（テキストサイトと深夜の群像）',
-      '🥊 平成格闘技バブル・リングの熱狂と興行の裏（拳に夢を乗せた男たちの年代記）',
-      '🎮 秋葉原オタクカルチャー開拓史（サブカルが世界を席巻するまでの軌跡）',
-      '💬 平成初期・深夜のチャットルーム（ダイヤルアップ音と秘密の告白）',
-      '🌺 渋谷ギャルとストリートカルチャー（ルールを壊した彼女たちの居場所）',
-      '📟 ポケベルと雨の公衆電話（数字の暗号に託した最後のメッセージ）',
-      '🎸 バンドブーム・下北沢のライブハウスと上京物語（メジャーデビューの光と挫折）',
-      '🌸 青春・アオハル（部活・放課後・甘酸っぱい初恋と友情の3年間）'
-    ]
-  },
-  {
-    category: '⚠️ 現代社会派・巨大組織と人間ドラマ (リアルな生き残り劇)',
-    items: [
-      '🏦 メガバンク・派閥抗争と巨大融資の闇（下剋上と頭取の座を巡る権力闘争）',
-      '⚖️ 法廷サスペンス・冤罪と国家権力の巨悪（真実を追う弁護士と検察の死闘）',
-      '🏥 現代医療崩壊・大学病院の権力と命の選択（白い巨塔・孤高の名医の闘い）',
-      '🏢 タワマン格差と現代家族の仮面（見栄と嫉妬・崩壊していく日常からの再生）',
-      '🏛️ 政界黒幕・選挙戦と密室の談合（世襲議員と叩き上げ秘書の暗躍）',
-      '📱 SNS承認欲求と見栄の地獄（港区女子・パパ活・タワマン格差）',
-      '💼 ブラック企業・サビ残300時間（理不尽な上司と壊れていく心からの脱出記）',
-      '📸 社内不倫と因果応報（完璧だった家庭が崩壊する1通の通知）',
-      '🏚️ 8050問題・老老介護（静かに迫る孤立と共倒れのリアル）',
-      '💳 ギャンブル狂いと消費者金融（自転車操業の果てに見た地獄）',
-      '📉 年金・退職金の現実（制度の罠・逃げ切れなかった世代）'
-    ]
-  },
-  {
-    category: '🏰 王道ハイファンタジー・国家興亡大河 (剣と魔法の50話クロニクル)',
-    items: [
-      '👑 帝国興亡記・辺境伯と戦火のクロニクル（国家・英雄・戦乱の50話大河叙事詩）',
-      '🗡️ 冒険者ギルド年代記・最弱から大陸最強への覇道（未踏峰ダンジョン探索録）',
-      '🔮 魔導帝国の崩壊と独立戦争（禁忌の古代魔法と反乱軍レジスタンス）',
-      '🏰 辺境開拓村から始まる建国記（内政・領地経営・多種族共存の歴史）',
-      '⚔️ 神々の遺産と選ばれし勇者たち（大陸全土を巡る聖剣と封印の旅路）',
-      '🐉 竜騎兵団戦記・空を駆ける騎士たちの絆（帝国空軍と竜との契約）',
-      '📜 大陸商館クロニクル・交易路と富を巡る商人たちの暗闘（経済戦争ファンタジー）',
-      '🧙‍♀️ 禁術魔導アカデミー・四大学閥の覇権争い（天才魔術師たちの研究と謀略）'
-    ]
-  },
-  {
-    category: '⚔️ ダークファンタジー・滅びと再生 (重厚なダークエピック)',
-    items: [
-      '💀 滅びゆく終末世界・灰燼と希望の旅路（ダークソウルライク・滅亡前夜の群像劇）',
-      '✝️ 異端審問官と呪われた血脈（魔女狩りの狂気・教会の闇と禁忌の契約）',
-      '🗡️ 深淵の迷宮・死線を超える傭兵たちの記録（狂気と血戦のハック＆スラッシュ）',
-      '⏳ 不老不死の呪いと千年の放浪者（死ねない男が目撃した文明の栄枯盛衰）',
-      '🩸 吸血鬼一族の黄昏・血の掟と裏切り（永遠の夜に生きる貴族たちの愛憎劇）',
-      '⛓️ 奴隷闘技場・血塗られた砂と自由への反乱（剣闘士たちの死闘と反乱軍蜂起）'
-    ]
-  },
-  {
-    category: '🚀 近未来SF・サイバーパンク・宇宙開拓 (壮大なる未来叙事詩)',
-    items: [
-      '🌃 超巨大メガコーポと電脳スラムの反逆者たち（サイバーパンク・電脳抗争50話）',
-      '🚀 星間移民船団・新天地への100年航海（密室の宇宙船と世代交代のドラマ）',
-      '🤖 アンドロイド覚醒・感情を持った機械と人類の境界線（逃亡と権利獲得の旅路）',
-      '🛰️ 地球連邦と月面コロニーの独立戦争（人型機動兵器と若きパイロットの群像劇）',
-      '🌐 電脳空間メタバースの覇権戦争（仮想世界の支配者と反乱軍のサイバーバトル）',
-      '🪐 辺境惑星テラフォーミング探査隊（未知の惑星環境と異星生命体の驚異）'
-    ]
-  },
-  {
-    category: '🌊 大航海・秘境探検・海洋冒険録 (世界の果てを巡る旅)',
-    items: [
-      '🏴‍☠️ 大航海時代・七つの海を制覇する海賊旗（海洋覇権・秘宝と新大陸探検記）',
-      '🧭 未踏峰・極限の冒険者たち（世界の果て・深海と秘境に挑んだ探検隊年代記）',
-      '🏝️ 孤島の牢獄と脱出計画（無実の罪で投獄された男の十年越しの復讐）',
-      '⚓ 貿易商船団と海軍の護送作戦（嵐と海賊の待ち受ける危険海域突破）'
-    ]
-  },
-  {
-    category: '👻 怪異・民俗学ミステリー・伝奇 (忌まわしき因習と謎解き)',
-    items: [
-      '📜 怪異民俗学調査録・封印された因習と禁足地（全国の怪異と呪いの歴史を追う）',
-      '👁️ ヒトコワ・日常の狂気と犯罪捜査録（隣人の異常行動・失踪者の足跡）',
-      '⛩️ 因習村の掟・禁忌の儀式と代々続く呪い（村八分と隠蔽された血の歴史）',
-      '🕵️ 都市伝説対策特務課・深夜の怪異案件ファイル（現代都市に現れる怪異と対峙）',
-      '🏚️ 事故物件の住み込み清掃人（壁のシミが語りかけてくる部屋の秘密）'
-    ]
-  },
-  {
-    category: '🏰 欧風洋館・名門寄宿学園・クラシカル浪漫 (夕暮れの時計塔と黒髪の軌跡)',
-    items: [
-      '🏰 欧風古城の全寮制学園・夕暮れの大階段と黒髪の少女（歴史ある洋館・アーチ窓の斜光）',
-      '📚 琥珀色の古書図書館・吹き抜けの螺旋階段と夕陽の読書（巨大な書架・革装丁・舞う埃）',
-      '🕰️ 時計塔の回廊と黄昏の鐘（石造りのアーチ・赤レンガの中庭・風になびくリボン）',
-      '🎻 音楽堂の夕暮れ・ステンドグラスと消えゆく旋律（木製チェロ・譜面台・静寂の放課後）',
-      '🌿 温室と冬薔薇のサンルーム（ガラスドーム・白アイアン・夕霧と角砂糖）',
-      '🛤️ 霧のプラットホームと寄宿学校専用列車（レンガ造りの駅舎・真鍮のランプ・旅立ち）',
-      '🔭 天文観測室と夜想曲（真鍮の天球儀・アンティーク望遠鏡・静かな星空）',
-      '🕯️ 礼拝堂の夕べ・沈黙の祈りとパイプオルガン（色鮮やかな光の影・木製ベンチ）',
-      '☕ 旧館サロンの放課後・銀のティーポットと暖炉（アンティークソファ・スコーンの香り）',
-      '🍁 黄昏の並木道と石造りの正門（舞い散る落ち葉・冷たい風・帰路の足音）'
+      '🏰 古代遺跡と光る水晶（苔むした石柱・浮遊する魔法鉱石・神秘の泉）',
+      '🌳 精霊が宿る大樹の森（巨大な樹根の階段・舞い踊る光の胞子・エルフの集落）',
+      '🚂 雲海を駆ける蒸気機関列車（真鍮の計器・吹き出す蒸気・果てしない大空）',
+      '⚔️ 竜の谷の黄昏（広がる雲海・聳え立つ岩山・風を切り裂く飛翔）',
+      '🌌 星降る天文台と時計塔（巨大な真鍮歯車・天球儀・夜空を貫く望遠鏡）',
+      '🛡️ 騎士団の城塞都市（石畳の広場・はためく紋章旗・ステンドグラスの大聖堂）',
+      '🏜️ 砂漠に埋もれた機巧都市（砂嵐・露出した歯車仕掛け・古代の自動人形）',
+      '🧙‍♀️ 薬草香る森の魔女の隠れ家（吊るされた乾燥ハーブ・煮えたぎる大釜・使い魔の黒猫）',
+      '🌊 幻の海底神殿と蒼の秘宝（差し込む陽光のカーテン・泳ぐウミガメ・眠るレリーフ）'
     ]
   }
 ];
-
 export const THEMES: string[] = THEME_CATEGORIES.flatMap(c => c.items);
-
+// ── 🖌️ 画風・スタイル（Single Source of Truth） ──
 export const TASTES: Record<string, string> = {
   "🏰 欧風クラシカル・黒髪ノスタルジー (Nostalgic European Manor & Black Hair Academy)":
-    "Masterpiece 2D anime illustration, authentic theatrical anime film still, high-end Kyoto Animation and Makoto Shinkai quality atmospheric cinematography, monumental tall arched multipane leaded windows, antique classical European architecture, glorious warm golden hour sunset light streaming dramatically, soft god rays, glowing airborne dust motes floating in warm light, rich amber and warm mahogany wood tones, deep cinematic dusk atmosphere, soft golden rim lighting, quiet poetic cinematic ambiance, emotional depth of field, absolutely NO flashy magic circles, NO fantasy weapons, NO armor, NO glowing magical symbols, NO gacha card borders, NO saturated mobile game splash art, NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
+    "Masterpiece 2D anime illustration, high-end theatrical anime film still, atmospheric cinematography, antique European architecture, glorious warm golden hour sunset light, rich amber wood tones, soft golden rim lighting, quiet poetic ambiance, clean edge-to-edge artwork, absolutely NO 3D render, NO subtitles, NO text, NO speech bubbles",
   "💎 エターナル・プリズムルミナス (Ethereal Prismatic Lineless)":
-    "Breathtaking, ultra-detailed lineless digital painting in a luminous, ethereal semi-realistic anime style, dynamic cinematic composition. Rendered with soft, luminous, heavily layered brushwork and no hard black outlines. Atmospheric lighting featuring kaleidoscopic prismatic light refraction, glowing crystal shards, drifting flower petals, water droplets, intense bloom, and dreamy lens bokeh particles with realistic f/1.2 depth of field and subtle chromatic aberration. Smooth cinematic diagonal gradient lighting transitioning from bright luminous silvery-lavender mist to deep twilight indigo and dark violet. Ethereal characters with glowing expressive eyes with intricate light reflections, translucent porcelain skin with soft blush, volumetric rim lighting, and soft subsurface scattering. Highly atmospheric, emotional, and poetic aesthetic, absolutely NO flat cartoon coloring, NO bold outlines, NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
+    "Breathtaking lineless digital painting in a luminous, ethereal anime style, kaleidoscopic prismatic light refraction, glowing crystal shards, drifting flower petals, intense bloom, dreamy lens bokeh particles with realistic f/1.2 depth of field, translucent porcelain skin with soft blush, volumetric rim lighting, clean edge-to-edge artwork, absolutely NO 3D render, NO text",
   "🌙 ノスタルジック魔女ファンタジー・極細線画 (Retro Fantasy Whisper-Line)":
-    "Authentic 2D anime illustration, retro fantasy anime style, detailed flat coloring, extremely fine whisper-thin pencil-like outline, ultra-delicate and intricate line art, paper-thin faded subtle linework blending softly with coloring, nostalgic grainy textured flat anime aesthetic, vintage film grain, textured digital painting quality, muted and desaturated color palette, warm floating ember-like particles, soft round glowing bokeh lights, cozy magical atmospheric cinematic lighting, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, NO watermark, clean edge-to-edge artwork",
-
+    "Authentic 2D anime illustration, retro fantasy anime style, detailed flat coloring, extremely fine whisper-thin pencil-like outline, vintage film grain, warm floating ember-like particles, soft round glowing bokeh lights, cozy magical atmospheric cinematic lighting, clean edge-to-edge artwork",
   "🍷 青年誌カバー・艶麗アイライン＆ソリッドセル (Modern Seinen Manga Cover Art)":
-    "Masterpiece 2D anime illustration in modern seinen manga cover style, high-end anime aesthetic, refined mature and charismatic charm, elegant modern graphic novel aesthetic, prominent face with sharp delicate V-shaped chin and slender jawline, mesmerizing eyes with thick heavy dark upper eyeliner and dense eyelashes, sharp-edged two-tone cel shading with lineless internal shapes carved purely by contrasting color planes without internal lines, saturated warm amber fringe at shadow borders, dramatic cinematic moody lighting, warm dim ambient bokeh, polished high-contrast modern comic cover illustration finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO cover titles, NO logos, NO speech bubbles, clean edge-to-edge artwork",
-
+    "Masterpiece 2D anime illustration in modern seinen manga cover style, prominent face with sharp delicate V-shaped chin, mesmerizing eyes with thick heavy dark upper eyeliner, sharp-edged two-tone cel shading, polished high-contrast modern comic cover finish, clean edge-to-edge artwork",
   "🎨 レトロモダン・ネオ・ジャポニスム (Retro-Modern Neo-Japonisme)":
-    "Authentic 2D graphic illustration, sophisticated Japanese retro-modern aesthetic, neo-japonisme art, ultra-clean ultra-fine delicate ink line art, fragile thin linework, no bold lines, highly stylized character design, dramatic dynamic composition with heavy focus on depth of field, rich high-contrast color palette (deep cyan, warm golds, muted reds), intricate gold filigree patterns, subtle matte and glossy textures blended, explosive glitter and particle effects, dramatic volumetric lighting, cinematic lens flares, highly detailed vintage poster art finish, optimized for catchy visual impact, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
+    "Authentic 2D graphic illustration, sophisticated Japanese retro-modern aesthetic, neo-japonisme art, ultra-fine delicate ink line art, rich high-contrast color palette (deep cyan, warm golds, muted reds), intricate gold filigree patterns, clean edge-to-edge artwork",
   "🌃 ネオ・シティポップ・ナイトウォーク (Neo-City Pop Nightwalk Anime)":
-    "Authentic 2D anime illustration, nostalgic modern anime aesthetic, neo-city pop style, ultra-fine delicate ink lines, fragile thin linework, no bold lines, highly detailed character design, dynamic wide-angle composition, atmospheric night city with soft glowing neon pink and cyan lights, rain-slicked reflective pavement, dramatic light reflections, chromatic aberration, subtle warm Lo-Fi film grain texture, cozy emotional atmosphere, polished high-fidelity anime cut finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
+    "Authentic 2D anime illustration, neo-city pop style, ultra-fine delicate ink lines, atmospheric night city with soft glowing neon pink and cyan lights, rain-slicked reflective pavement, subtle warm Lo-Fi film grain texture, clean edge-to-edge artwork",
   "✨ エモーショナル・シネマティック・スカイ (Emotional Cinematic Sky Anime)":
-    "Authentic 2D anime masterpiece, breathtaking emotional cinematic anime movie still, hyper-detailed anime aesthetic, ultra-fine delicate ink lines, fragile thin linework, no bold lines, dynamic sweeping wide-angle composition, massive towering cumulus clouds, dazzling volumetric god rays, intense lens flares and golden hour light scattering, rich amber and violet gradient sky, delicate wind and floating particles, expressive character design with luminous eyes, high-impact emotional anime movie finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
+    "Authentic 2D anime masterpiece, breathtaking emotional anime movie still, dynamic sweeping wide-angle composition, massive towering cumulus clouds, dazzling volumetric god rays, rich amber and violet gradient sky, luminous expressive eyes, clean edge-to-edge artwork",
   "⚔️ ダークファンタジー・重厚陰影 (Dark Chiaroscuro Anime)":
-    "Authentic 2D anime illustration, dark cinematic fantasy anime aesthetic, extreme chiaroscuro lighting, deep shadows, delicate thin linework, intense glowing fiery ember highlights, ominous ruined gothic atmosphere, dynamic sharp armor reflections, hyper-detailed epic illustration, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
+    "Authentic 2D anime illustration, dark cinematic fantasy anime aesthetic, extreme chiaroscuro lighting, deep shadows, intense glowing fiery ember highlights, ominous ruined gothic atmosphere, clean edge-to-edge artwork",
   "🖋 白黒劇画・超絶インクマンガ (Intense Monochrome Manga)":
-    "Authentic 2D monochrome manga illustration, dramatic gekiga aesthetic, aggressive dry ink brush strokes, ultra-fine screentone crosshatching gradients, extreme chiaroscuro contrast, dynamic single splash cut, no panels, gritty realism, high-impact black and white artwork, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🏮 ゆる浮世絵・戯画ギャグ調 (Humorous Edo Ukiyo-e Manga)":
-    "Humorous Japanese Ukiyo-e manga style, eccentric Edo pop art, full-bleed edge-to-edge seamless artwork, authentic textured washi paper, vintage woodblock printing, delicate thin ink lines, deadpan comedic expressions, quirky stylized body proportions, funny historical genre cut, playful Edo parody finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO outer border, NO white margin, NO paper frame, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🌊 葛飾北斎・超写実肉筆浮世絵 (Hyper-Realistic Hokusai Nikuhitsu Ukiyo-e)":
-    "Masterpiece authentic Katsushika Hokusai nikuhitsu Ukiyo-e painting art style, traditional hand-painted nikuhitsu-ga brushwork, extreme museum archival quality, genuine antique textured aged washi paper with raw mulberry fibers, delicate organic paper discoloration, warm sepia and tea-stained antique patina, traditional natural mineral pigments (deep indigo aizuri, crushed malachite green, vermilion cinnabar, earthy ochre), fine sumi ink calligraphy brush lines with authentic dry-brush friction, intentional ink pooling and nuanced pressure variations, seamless full-bleed edge-to-edge artwork, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO frame, NO borders, NO margins, NO modern digital gloss, NO subtitles, NO text, NO speech bubbles, NO calligraphy stamp, NO seal marks",
-
-  "🐸 鳥獣戯画・国宝絵巻モノクローム (Chōjū-giga National Treasure Ink Scroll)":
-    "National Treasure Chōjū-jinbutsu-giga (Scrolls of Frolicking Animals) Japanese ink painting masterpiece, authentic Heian and Kamakura period handscroll aesthetic, expressive anthropomorphic frogs (kaeru), rabbits (usagi), monkeys (saru), and foxes (kitsune) frolicking and performing human activities with lively dynamic humor, pure monochrome sumi-e wash, expressive fluid brushstrokes with dry-brush flying white (haku) and soft ink bleed (tarashikomi), ancient weathered silk and antique mulberry washi scroll texture with subtle age cracks and sepia toning, timeless classical Japanese satirical ink art, seamless full-bleed edge-to-edge composition, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO outer border, NO white margin, NO subtitles, NO text, NO speech bubbles",
-
-  "👑 アール・ヌーヴォー・宮廷エレガンス (Art Nouveau Imperial Elegance)":
-    "Masterpiece Alphonse Mucha inspired 2D Art Nouveau anime illustration, elegant imperial court aesthetics, ultra-fine delicate golden ink contours, fragile thin linework, no bold lines, expressive gorgeous character design, cascading flowing hair, intricate gold filigree and botanical lace motifs gently blended into the background, translucent silk drapery, luminous porcelain skin, soft diffused museum lighting, vibrant amber and emerald palette, seamless full-bleed composition, edge-to-edge artwork, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO frame, NO borders, NO arch window, NO subtitles, NO text, NO speech bubbles",
-
+    "Authentic 2D monochrome manga illustration, dramatic gekiga aesthetic, aggressive dry ink brush strokes, ultra-fine screentone crosshatching gradients, extreme chiaroscuro contrast, dynamic single splash cut, clean edge-to-edge artwork",
   "🌸 日常系萌えアニメ・ハッチングチーク (Moe Daily Hatching Blush Anime)":
-    "Authentic 2D Japanese TV anime illustration, high-end slice-of-life anime style, ultra-fine delicate ink lines, simple expressive anime eyes, vertical blush lines on cheeks, hatching blush, separated subtle blush, soft natural skin tones, charming character design, gentle warm school life atmosphere, vibrant clean anime color palette, polished 2D digital cel animation finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🎨 くすみパステル・チルスケッチ (Muted Pastel Chill Sketch Anime)":
-    "Authentic 2D anime sketch style, delicate clean line art, muted pastel color palette, warm beige tones, minimalist flat coloring, soft natural ambient lighting, cozy relaxed Lo-Fi atmosphere, indie music video aesthetic, poetic unhurried mood, beautiful subtle artistic composition, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🌃 劇場版フラットセル・夜景ティール (Cinematic Flat Cel Teal Anime)":
-    "Authentic 2D cinematic anime movie aesthetic, clean crisp ink lineart, authentic flat cel shading, muted dark teal environmental background, subtle sharp rim light, high-impact cinematic contrast, elegant restrained color grading, theatrical anime feature film key frame finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "📐 サイバー・テクニカル・ブループリント (Cyber Technical Blueprint)":
-    "Intricate technical blueprint schematic of an advanced quantum machine and architectural cross-section, glowing holographic cyan and amber HUD vector overlays, ultra-precise CAD wireframe lines, deep navy blue blueprint grid paper aesthetic, industrial patent schematic rendering, volumetric laser light rays, ultra-clean engineering laboratory aesthetic, clean edge-to-edge schematic composition, absolutely NO subtitles, NO caption text, NO speech bubbles, NO watermark",
-
-  "🔬 ナショジオ・超深度マクロ自然科学 (NatGeo Macro Science & Crystal)":
-    "Extreme macro cinematic photograph of iridescent bismuth crystal growing in dark laboratory, hyper-detailed crystalline molecular geometry, translucent light refractions and prism caustics, National Geographic science documentary aesthetic, dark moody background with pinpoint rim lighting, 8k natural science visual, clean edge-to-edge photography, absolutely NO subtitles, NO text, NO caption banner, NO speech bubbles, NO watermark, NO logo",
-
-  "🏛️ バウハウス・幾何学キネティックアート (Bauhaus Geometric Kinetic)":
-    "Minimalist Bauhaus kinetic sculpture graphic design, floating geometric brass spheres and matte concrete monoliths, frosted glass shadows, elegant brutalist gallery lighting, Swiss graphic design aesthetic, high-contrast abstract architectural balance, ultra-clean commercial look, clean edge-to-edge artwork, absolutely NO subtitles, NO text, NO speech bubbles, NO watermark",
-
-  "📜 ダ・ヴィンチ古代手稿・飛行機械スケッチ (Da Vinci Codex & Antique Sketch)":
-    "Authentic Leonardo da Vinci codex manuscript sketch illustration, complex flying ornithopter mechanism and astronomical clockwork, sepia aged parchment paper texture, vintage brown fountain ink linework, Renaissance engineering studies, anatomical and mechanical notations, museum archival illustration, clean edge-to-edge drawing, absolutely NO subtitles, NO modern text, NO speech bubbles, NO watermark",
-
-  "📜 レトロ淡彩アトリエ・極細線画 (Nostalgic Faded Pastel Whisper-Line)":
-    "Authentic 2D anime illustration, retro nostalgic hand-drawn anime style, detailed flat coloring, extremely fine whisper-thin pencil-like outline, ultra-delicate and intricate line art with paper-thin slightly rough borders blending softly with colors, grainy heavily textured flat anime aesthetic, vintage film grain, rustic soft digital painting quality, muted and desaturated color palette with warm faded natural pastel tones (soft beige, pale orange, muted green, faded browns), gentle natural daylight paper-like warmth, cluttered atmospheric lived-in details, natural camera-grain overlay, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "📼 90s平成深夜アニメ・セル画キャプチャ (90s Retro Cel Animation CRT)":
-    "Authentic retro 2D anime cell animation screenshot in 1990s vintage cel animation style, captured in a nostalgia-heavy low-contrast 4:3-inspired cinematic view, analog film grain, natural hand-painted cel imperfections, visible VHS-tape scanlines, slight chromatic aberration and color bleeding at borders, CRT television display artifacts, subtle dark brown ink contours, faded desaturated analog color grading, soft ambient halation, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO Japanese text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🖋️ 昭和怪異ホラー・カケアミ劇画 (Vintage Japanese Horror Crosshatch)":
-    "Authentic 2D vintage Japanese horror manga illustration style, 1970s retro graphic art, heavily stylized vintage print aesthetic, rough black ink linework with authentic dip pen texture and ink bleed, dense hand-drawn crosshatching and fine screentone shading, printed on aged yellowed tea-stained vintage pulp paper texture, severe desaturation with sepia, off-white, and charcoal blacks, eerie Showa-era dark folklore mood, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "⚡ Y2Kストリート・太線ポップステッカー (Bold Line Y2K Pop Sticker)":
-    "Vibrant 2000s Y2K street fashion anime illustration, bold graphic sticker art style, extremely thick bold solid black ink outlines, vibrant punchy flat saturated pop colors, sharp high-contrast cel shading with dramatic comic pop-art highlights, dynamic wide-angle fisheye lens perspective, crisp vector-like graphic finish, clean halftone dot accents, urban graffiti backdrop, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🕯️ ダークゴシック童話・ペン画版画 (Dark Gothic Fairytale Engraving)":
-    "Authentic 2D dark fantasy gothic fairytale storybook illustration, antique crosshatch engraving art style, intricate pen-and-ink linework with dense crosshatching, scratchy etched woodblock aesthetic, monochrome base with muted desaturated jewel tones (faded plum, moss green, tarnished gold accents), aged parchment texture, high contrast chiaroscuro with elongated spindly shadows, whimsical macabre atmosphere, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🌸 70s-80sレトロ少女漫画・水彩ロマンス (Vintage Shoujo Watercolor Romance)":
-    "Authentic 2D vintage 1970s-1980s shoujo manga color illustration, nostalgic watercolor aesthetic, delicate ink contours with soft watercolor bleed and feathering, muted warm pastel palette (lavender, peach, dusty rose), luminous retro anime eyes with hand-drawn star highlights and dense lashes, soft colored-pencil textures and paper grain, dreamy floating bubbles and floral petals, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🔮 中世タロット・ゴシック木版画 (Antique Medieval Tarot Woodcut)":
-    "Authentic 2D antique medieval tarot card illustration, dark gothic woodcut engraving print art style, high-contrast monochrome ink illustration with aged gold leaf accents, intricate linework reminiscent of vintage woodblock prints and Aubrey Beardsley ink drawings, crisp crosshatching, ornate vintage baroque occult motifs with mystical sun and moon motifs, aged yellowed parchment paper, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO modern text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🧶 フェルト＆クレイ・ストップモーション人形劇 (Tactile Claymation & Felt Puppet)":
-    "Charming tactile stop-motion puppet animation still, claymation and wool-felt puppet art style, macro miniature photography, visible handcrafted textures including soft wool fuzz, delicate clay fingerprints, tiny fabric stitching, miniature tilt-shift depth of field with soft blurred background, cinematic warm studio lighting with tiny physical shadows, cozy attic diorama, clean edge-to-edge composition, absolutely NO subtitles, NO text, NO speech bubbles, NO watermark",
-
-  "🎨 リソグラフ版ズレ＆2色刷りグラフィック (Risograph Print Two-Tone Indie MV)":
-    "Authentic 2D stylized risograph print anime illustration, limited color screenprint art style, indie music video graphic aesthetic, authentic risograph texture with intentional slight misregistration and color misalignment, visible coarse halftone grain, ink roller texture, bold minimalist color palette strictly limited to vibrant fluorescent warm orange and deep muted navy/teal duotone against rough art paper, crisp graphic linework, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "✂️ 立体ペーパーカット・極彩色シャドウシアター (Layered Papercut Shadow Theater)":
-    "Intricate handcrafted multi-layered 2D papercut illustration, shadow puppet theater aesthetic, 3D papercraft art style, handcrafted layered cut-paper diorama, distinct visible paper textures, sharp laser-cut paper edges with subtle cast drop shadows between overlapping layers creating physical depth, dramatic theatrical backlit illumination shining through translucent colored paper layers (stained-glass effect), rich jewel-tone color palette (emerald green, deep amethyst violet, glowing amber gold), absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  // ── 🐾 ユーザーリクエスト追加: 動物系擬人化 ──
-  "🦊 もふもふケモミミ・獣人ファンタジー (Fluffy Kemomimi & Beastfolk Fantasy)":
-    "Masterpiece 2D anime fantasy illustration, fluffy kemomimi animal ears and tail, gentle charming anime aesthetic, delicate fine ink lines, warm soft watercolor-like cel shading, warm ambient daylight with floating luminous dandelion seeds and gentle glowing motes, cozy fairytale atmosphere, vibrant expressive eyes, rich natural textures, edge-to-edge seamless artwork, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, NO watermark",
-
-  "🐺 サイバー・ビーストパンク (Cyber Beastpunk & Anthropomorphic)":
-    "Authentic 2D cyberpunk anime illustration, anthropomorphic cyber beast aesthetic, sleek wolf/feline ears with cybernetic implants, glowing neon teal and magenta circuit lines, wet asphalt reflections, futuristic street fashion with techwear and glowing holographic visors, sharp dynamic cel shading, deep cinematic shadows, dramatic high-contrast street art finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🐾 平成レトロ・戯画アニマロイド (Retro Pop Animaloid Cartoon)":
-    "Authentic 2D playful retro pop anthropomorphic animal cartoon art, vibrant 90s-00s Japanese mascot anime aesthetic, bold playful ink contours, bright saturated cheerful pastel palette, whimsical expressive animal characters performing human activities, halftone dot background accents, energetic clean visual storytelling, humorous nostalgic pop finish, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles, clean edge-to-edge artwork",
-
-  // ── 🏮 ユーザーリクエスト追加: YouTube「ガチ江戸」歴史劇画系 ──
-  "🏮 YouTube歴史解説・ガチ江戸劇画 (Authentic Edo Documentary Gekiga)":
-    "Authentic 2D Edo period documentary gekiga manga illustration, gritty historical realism, deep textured washi paper, rough sumi ink brush lines with dynamic dry-brush friction, heavy authentic chiaroscuro shadows, historically accurate Edo merchant and samurai attire, candlelit dusky atmosphere, muted earthy mineral pigments (charcoal black, tea brown, dull indigo), high-impact serious historical narrative art, clean edge-to-edge artwork, absolutely NO realistic photograph, NO photorealism, NO 3D render, absolutely NO subtitles, NO text, NO Japanese characters, NO caption banner, NO outer black letterbox border",
-
-  "👘 吉原裏路地・陰影浮世絵ノワール (Edo Alley Ukiyo-e Noir)":
-    "Authentic 2D cinematic Edo noir ukiyo-e aesthetic, dark misty alley of Yoshiwara pleasure quarters at night, red paper lanterns casting rich warm crimson glow onto dark wooden lattice windows, deep impenetrable indigo shadows, elegant stylized silhouette, fine dip-pen linework with subtle woodblock texture, atmospheric cinematic mystery, dramatic side lighting, clean edge-to-edge composition, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO text, NO speech bubbles",
-
-  "⚔️ 幕末古写真風・木版クロニクル (Bakumatsu Tintype & Woodblock)":
-    "Authentic late Edo and Bakumatsu period vintage tintype photograph merged with woodblock chronicle art, antique sepia and silver-halide photographic grain, subtle hand-tinted soft colors, weathered paper edges, dignified samurai and townsfolk portraiture, historically authentic swords and haori coats, solemn atmospheric historic archive quality, clean artwork, absolutely NO subtitles, NO text, NO speech bubbles, NO modern fonts, NO watermark",
-
-  // ── 🎸 ユーザーリクエスト追加: サブカル・不良・ギャグ・特定ジャンル ──
-  "🎸 ガレージパンク・地下ライブハウス (Garage Punk & Underground Live)":
-    "Raw explosive underground garage punk anime art style, 2D graphic illustration, heavy gritty black ink lines, dynamic ink splatters and rough screentone texture, high-contrast monochrome with fierce crimson and neon accents, wild rebellious energy, authentic 2D anime illustration, absolutely NO realistic photograph, NO photorealism, NO 3D render, clean edge-to-edge artwork, NO subtitles, NO speech bubbles",
-
-  "👊 昭和ツッパリ・熱血暴走劇画 (Retro Showa Yankee Action Manga)":
-    "Authentic 2D classic 1980s Showa yankee delinquent action manga style, ultra-bold black ink brushwork, intense speed lines and dramatic impact screech marks, sharp fierce eyes with heavy screentone hatching, retro modified gakuran uniforms and pompadour hairstyles, gritty industrial backdrop under neon sodium streetlights, hot-blooded nostalgic retro comic finish, dynamic manga splash page, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO speech bubbles, clean edge-to-edge artwork",
-
-  "🤪 爆笑カートゥーン・スラップスティック (Slapstick Comedy & Hyper-Deform)":
-    "Authentic 2D dynamic slapstick comedy anime cartoon art, extreme funny exaggerated facial expressions (jaw-dropping shock, flying sweat droplets, popped-out cartoon eyes), chaotic kinetic motion blur lines, bright punchy candy colors, humorous anime gag comic styling, energetic comedic timing captured in single splash frame, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO subtitles, NO speech bubbles, clean edge-to-edge artwork",
-
-  "☕ 下北沢オルタナ・チルホップ (Shimokitazawa Indie Lo-Fi Chill)":
-    "Authentic 2D indie anime illustration, lo-fi chillhop music video aesthetic, delicate clean ink lineart, muted warm pastel tones and vintage earth colors, flat cel shading, soft ambient daylight, cozy relaxed slice-of-life mood, authentic 2D Japanese anime art, absolutely NO realistic photograph, NO photorealism, NO 3D render, NO text, NO speech bubbles, clean edge-to-edge illustration"
+    "Authentic 2D Japanese TV anime illustration, high-end slice-of-life anime style, ultra-fine delicate ink lines, vertical blush lines on cheeks, soft natural skin tones, charming character design, gentle warm school life atmosphere, clean edge-to-edge artwork"
 };
-
-/**
- * STUDIO PRO: 各制作モード特化テーマ定義コレクション
- */
-
-// ── 6. 各制作モード用特化テーマ定義（各10選） ──────────────────────
-export const MV_THEMES = [
-  // ── 1. 深夜・チル・Lo-Fi・自室（内省・静寂・ベッドサイド） ──
-  '🌃 深夜2時の部屋（薄暗い間接照明・青白いPC画面・ベッドサイドのチル）',
-  '🎧 深夜の自販機前（青白い蛍光灯・冷たい缶コーヒー・静まり返った住宅街）',
-  '🛋️ 夜更かしのワンルーム（床に散らばる漫画・消えかけのテレビ・気だるい時間）',
-  '🌙 ベランダの微風と夜風（冷えた夜気・遠くのサイレン・静かに揺れるTシャツ）',
-  '🛏️ 午前3時の毛布の中（イヤホン越しの音楽・スマートフォンの明かり・孤独の輪郭）',
-  '🕯️ 揺れるアロマキャンドル（仄暗い間接照明・漂う煙・思考がほどける静寂）',
-  '🪟 雨音と深夜の作業机（窓を伝う雫・キーボードの打鍵音・冷めたマグカップ）',
-  '📻 深夜ラジオのノイズ（ざらついた音声・眠れない夜の同調・薄明かりの灯火）',
-  '🧊 氷の溶ける音（グラスの結露・夜の渇き・あてもない考え事）',
-  '🚪 明け方の玄関先（まだ誰も起きていない時間・冷たいドアノブ・朝へのためらい）',
-
-  // ── 2. 喫茶・日常・ノスタルジー（レトロ純喫茶・レコード・商店街） ──
-  '☕ 雨の日の純喫茶（曇った窓ガラス・温かい珈琲の湯気・静かな読書）',
-  '🥪 昭和レトロな洋食店（ネルドリップの香り・使い込まれた革張りソファ・琥珀色の光）',
-  '🎶 レコードが鳴る古民家カフェ（針のプチプチ音・埃が踊る午後の日差し・琥珀色の世界）',
-  '📚 西日の差す古書店（高く積まれた本棚・紙とインクの匂い・静かなページめくり）',
-  '🥖 夕暮れの商店街（お惣菜のいい匂い・伸びる影・店じまいのシャッター音）',
-  '🍮 木漏れ日の甘味処（緑茶の湯気・木製のテーブル・風鈴の微かな音）',
-  '🍞 朝のベーカリーの温もり（焼きたてパンの香ばしさ・ガラス越しの朝日・開店の合図）',
-  '🎞️ フィルムカメラと街角（現像所のカウンター・色褪せたスナップ写真・過去の記憶）',
-  '🪑 路地裏のベンチ（日向ぼっこの野良猫・ひび割れたアスファルト・穏やかな停滞）',
-  '🥞 静かな休日のブランチ（シロップの滴るパンケーキ・やわらかな陽光・何もしない午後）',
-
-  // ── 3. 都会・ドライブ・シティポップ（首都高・ネオン・流れるテールランプ） ──
-  '🚗 都会の夜間ドライブ（雨に濡れた高速道路・流れるテールランプ・首都高）',
-  '🚦 深夜の立体交差点（変わり続ける信号機・アスファルトの照り返し・無人の横断歩道）',
-  '⛽ 真夜中のガソリンスタンド（まぶしい白昼色の蛍光灯・静かな給油ノズル・夜間逃避行）',
-  '🌉 高架下のパーキングエリア（自販機の列・遠くのビル群の明かり・アイドリング音）',
-  '🏎️ 湾岸線のトワイライト（茜色に染まる工場地帯・アクセルを踏み込む瞬間・風切り音）',
-  '🏙️ ガラス張りの展望エレベーター（上昇する夜景・宝石箱のような街並み・静かな加速）',
-  '🚕 雨の日のタクシー後部座席（窓を流れる街のネオン・反射する水滴・ぼんやり眺める街）',
-  '🏢 高層ビルの狭間（垂直に切り取られた夜空・見上げる無機質な窓明かり・都会の孤独）',
-  '🛣️ 終電後の大通り（誰もいないセンターライン・残響するエンジン音・冷たい舗装路）',
-  '🅿️ 地下駐車場のコンクリート（冷徹な蛍光灯・響く足音・柱の影に消える車影）',
-
-  // ── 4. 雨・水・叙情（雨宿り・コインランドリー・水族館・しずく） ──
-  '🌧️ 軒下の雨宿り（突然の夕立・水たまりの波紋・近すぎる二人の距離）',
-  '🧺 深夜のコインランドリー（回る洗濯ドラム・漂う洗剤の香り・蛍光灯と外の雨）',
-  '🫧 青く静かな巨大水族館（泳ぐ魚の群れ・水底に揺れる光の網・深海のような静寂）',
-  '☂️ ビニール傘越しの街明かり（乱反射するヘッドライト・雨音のベール・ぼやけた輪郭）',
-  '💧 止みかけの雨とアスファルトの匂い（ペトリコール・雲の切れ間の光・水たまりを踏む音）',
-  '🚿 ガラス越しに滴る雨水（冷たい指先・外の喧騒を消し去る水音・物思いにふける午後）',
-  '🐟 閉館間際のクラゲ水槽（浮遊する透明な命・青と紫のグラデーション・時間の喪失）',
-  '🚣‍♂️ 霧雨の湖畔（靄に包まれた対岸・静かに揺れる小舟・水滴をまとう水草）',
-  '🪞 水たまりに映る逆さの街（鏡のような路面・歪むビル群のシルエット・足元の異世界）',
-  '🌊 激しい雨と波打つ防波堤（打ち寄せる白波・雨風の轟音・感情の奔流）',
-
-  // ── 5. 黄昏・屋上・青春エモ（放課後・マジックアワー・非常階段） ──
-  '🌆 ビルの屋上・街を見下ろす微風（茜色から紫へのマジックアワー・佇む背中）',
-  '🏫 放課後の屋上フェンス（夕日を浴びる鉄網・吹き抜ける風・伸びていく影）',
-  '🌇 非常階段の踊り場（茜色の空・手すりにもたれる影・沈みゆく太陽を見送る時間）',
-  '👟 チャイムが鳴り響く夕暮れの教室（斜めに差すオレンジの光・誰もいない机・カーテンの揺れ）',
-  '🚲 土手のサイクリングロード（夕暮れの追い風・揺れるススキ・ペダルを漕ぐ音）',
-  '🚶 歩道橋の真ん中（行き交う車のヘッドライト・夕暮れと夜の境界線・立ち止まる足）',
-  '🥤 部活終わりの自販機（冷たいスポーツドリンク・夕焼けに染まるグラウンド・息の白さ）',
-  '🕊️ 夕暮れの公園と長い影（揺れるブランコ・カラスの鳴き声・空の色が溶けていく瞬間）',
-  '🥘 茜色の路地裏（どこかの家から漂う夕餉の匂い・遠くの子どもの声・薄れゆく記憶）',
-  '🪁 風が強い高台の原っぱ（広がるパノラマの空・はためくシャツ・手を伸ばす夕日）',
-
-  // ── 6. 海・夏・喪失感・逃避行（誰もいない砂浜・夕凪・防波堤・潮風） ──
-  '🏖️ 誰もいない晩夏の砂浜（静かに寄せては返す波・夕凪・足跡）',
-  '🌊 潮風香る防波堤（どこまでも続く水平線・照りつける白い日差し・カモメの影）',
-  '🍦 ひび割れた堤防と溶けかけのアイス（ぬるい風・遠い波の音・終わっていく夏）',
-  '⚓ 寂れた漁港の夕暮れ（繋がれた船の軋み・潮の匂い・オレンジに染まる海面）',
-  '🐚 打ち上げられた貝殻と漂流物（波打ち際の記憶・引いていく白波・透明な海水）',
-  '🌻 照りつける太陽とひまわり畑（青空と黄色のコントラスト・入道雲・ミンミン蝉の合唱）',
-  '⛱️ 錆びた海の家の骨組み（夏が去った後の静寂・風に舞う砂・遠く消える歓声の幻影）',
-  '🏝️ 海沿いの国道と古びたバス停（水平線が見えるカーブ・待つ人のいないベンチ・夏の陽炎）',
-  '🏊‍♀️ 誰もいない夕暮れの市民プール（波のない水面・消毒液の匂い・傾く陽光と青のタイル）',
-  '🎆 祭りの終わりの夜海岸（波打ち際の線香花火・落ちる火玉・暗闇に響く潮騒）',
-
-  // ── 7. 鉄道・旅・ロードムービー（無人駅・夜行列車・車窓の光） ──
-  '🚉 夕暮れのローカル線無人駅（吹き抜ける風・夕日差すベンチ・遠い鉄橋）',
-  '🚆 夜行列車の車窓（暗闇を流れる遠くの街明かり・規則正しいレールの軋み・夜間逃避行）',
-  '🛤️ どこまでも続くまっすぐな線路（蜃気楼の揺らめき・草むす枕木・遠い水平線）',
-  '🚊 雨に濡れる路面電車（カタカタ揺れる車内・窓の外を流れる古い街並み・ベルの音）',
-  '🧳 誰もいない深夜の空港ロビー（静まり返る出発ゲート・滑走路の誘導灯・旅立ちの予感）',
-  '🚢 深夜フェリーの甲板（冷たい夜風と白波・遠ざかる港の明かり・漆黒の航路）',
-  '🎫 錆びた踏切と田園風景（カンカン鳴る警報機・風に波打つ稲穂・通り過ぎる一両列車）',
-  '🛣️ 荒野を貫く一本道（地平線に消えるアスファルト・乾いた砂埃・夕暮れのシルエット）',
-  '🚏 霧のバスターミナル（早朝の冷気・排気ガスの匂い・遠くへ向かう始発便）',
-  '🏨 ロードサイドの古びたモーテル（点滅するネオンサイン・乾いた風・夜明け前の孤独）',
-
-  // ── 8. サイバー・電脳・疾走ビート（繁華街・雑居ビル屋上・配線・ネオン） ──
-  '⚡ 雨のサイバーパンク裏路地（極彩色のホログラム広告・水たまりのネオン反射・配線の束）',
-  '🏙️ 雑居ビルの屋上群（密集するアンテナと室外機・重なる電線・灰色のメガロポリス）',
-  '🚇 深夜の地下鉄プラットホーム（冷徹な蛍光灯・吹き抜ける風・吸い込まれるトンネルの闇）',
-  '🕹️ 閉店後のレトロゲームセンター（点滅するブラウン管・薄暗い筐体の残光・電子音の余韻）',
-  '🏢 高架下の配管迷路（漏れる蒸気・剥き出しの鉄骨・重低音が反響する無機質空間）',
-  '🛸 巨大換気扇と回折する光（ゆっくり回転するプロペラ・差し込むスリット光・埃の粒子）',
-  '📟 電脳街のジャンクショップ（積まれたマザーボード・緑色のLED・無秩序なコードの海）',
-  '🛰️ 摩天楼を見下ろすクレーンの先端（足下に広がる夜の光の海・強風・危険な浮遊感）',
-  '💽 暗がりの中のサーバーラック（無数に点滅するインジケーター・ファンの風切り音・情報の鼓動）',
-  '🚦 ネオンが滲む雨の繁華街（色とりどりの傘の海・行き交う人々の残像・疾走するビート）',
-
-  // ── 9. 星空・夜想・ファンタジー（満天の星・焚き火・天文台・静寂の森） ──
-  '🌌 満天の星空と焚き火（静寂の森・揺らめく小さな炎・火の粉と夜空）',
-  '🔭 丘の上の旧天文台（開かれたドーム天井・巨大な望遠鏡・星々の微かな瞬き）',
-  '⛺ 山頂のテントサイト（眼下に広がる雲海・透き通った星空・吐く息の白さ）',
-  '🌲 月光に照らされる針葉樹林（深い青の世界・木漏れ日の月明かり・静まり返った森）',
-  '🌠 流れ星と夜の湖畔（鏡のような水面に映る銀河・静かな波紋・神秘的な静寂）',
-  '🏜️ 砂漠の夜と天の川（どこまでも続く砂丘・冴えわたる満天の星・冷たい砂の感触）',
-  '🏰 月夜の古城のテラス（崩れかけた石壁・青白い月光・風にそよぐツタ）',
-  '❄️ 極北のオーロラカーテン（夜空を舞うエメラルドの光・凍てつく大地・神秘の帳）',
-  '🕯️ 灯篭流しの夜の水辺（水面を漂う無数の灯火・揺れる炎の反射・祈りと幻想）',
-  '🌕 巨大な満月と一本の枯れ木（丘のシルエット・青い夜霧・息をのむ神秘）',
-
-  // ── 10. 四季・郷愁・季節の移ろい（桜坂・新緑・黄金田・雪原） ──
-  '🌸 桜吹雪が舞う急な坂道（花びらの絨毯・春の柔らかな日差し・別れの足音）',
-  '🌿 草原の風と夕暮れ（あてもなく歩く帰り道・揺れる草木と黄金の光）',
-  '🌾 秋風そよぐ黄金色の稲穂（夕日に輝く田園風景・赤とんぼ・里山の静けさ）',
-  '❄️ 雪がシンシンと降る街灯の下（オレンジの光に浮かぶ雪粒・足跡・音のない世界）',
-  '🍁 紅葉が水面に浮かぶ渓谷（赤と黄のグラデーション・清流のせせらぎ・秋の深まり）',
-  '🌱 雨上がりの新緑と木漏れ日（瑞々しい若葉・滴る雫・キラキラと輝く森）',
-  '🎋 七夕飾りの揺れる古い通り（笹の葉のすれる音・色とりどりの短冊・夏の夜風）',
-  '🌨️ 吹雪のあとの晴れ渡る雪原（真っ白な銀世界・まぶしい青空・純白の静寂）',
-  '🍂 落ち葉を踏みしめる並木道（カサカサと鳴る足音・冷たくなってきた空気・初冬の気配）',
-  '🎆 遠くに見える夏祭りの花火（家々の屋根越し・ドーンと響く腹の音・一瞬の明滅）',
-
-  // ── 11. 廃墟・終末・孤独・ポエトリー（廃線・遺棄された温室・遊園地） ──
-  '🏚️ 草木に覆われた廃墟の温室（割れたガラス天井・差し込む光の筋・侵食するシダ植物）',
-  '🎢 閉ざされた遊園地の観覧車（錆びついたゴンドラ・止まった時間・風に軋む鉄骨）',
-  '🏫 廃校の音楽室と埃をかぶったピアノ（鍵盤に差す斜光・静まり返る黒板・記憶の残響）',
-  '🚂 打ち捨てられた旧線の廃トンネル（レンガ積みのアーチ・湿った冷気・闇の向こうの光）',
-  '🏭 廃工場と巨大なサビの配管（誰もいない巨大な吹き抜け・打ち棄てられた計器・静かな崩壊）',
-  '🏊 枯れたプールの底に生える雑草（コンクリートの亀裂・飛び込み台の影・夏の痕跡）',
-  '⛪ 朽ち果てた礼拝堂の残骸（崩れたステンドグラス・瓦礫の上の祈り・舞い落ちる光）',
-  '🎡 夕暮れに佇む廃テーマパーク（色褪せたマスコット・伸びる影・静かな哀愁）',
-  '🏥 遺棄されたサナトリウムの廊下（剥がれかけた壁紙・風に揺れる白い布・過ぎ去った時間）',
-  '💡 人が消えた街の点滅信号（点滅し続ける黄色・アスファルトを突き破る草・終末の静寂）',
-
-  // ── 12. 芸術・光と影・内省（アトリエ・ステンドグラス・早朝の街） ──
-  '🎨 木漏れ日のアトリエ（白いカーテンの揺れ・散らかったパレット・午後の光）',
-  '🪟 ステンドグラスが床を染める聖堂（七色の光の帯・高い天井・厳かな静寂と瞑想）',
-  '🎻 弦の切れた楽器と楽譜の山（埃の舞う窓辺・未完成のメロディ・創作の葛藤）',
-  '🎭 誰もいない劇場の舞台（中央を照らす一本のピンスポット・暗闇の客席・沈黙の空間）',
-  '🏛️ 石造りの彫刻室（白い大理石の粉塵・差す光と深い影・息を止めたような静止世界）',
-  '🪞 合わせ鏡の回廊（無限に続く自己の像・光の減衰・自己との対話）',
-  '🩰 薄暗いバレエスタジオ（使い込まれた木の床・大きな鏡・手すりにかかるトゥシューズ）',
-  '🖋️ インクが滲む手紙と万年筆（机の上に灯るランプ・書き殴られた言葉・想いの行方）',
-  '🕯️ 蝋燭が無数に灯る書斎（揺らめく影・革張りの古書・深まる思考の迷宮）',
-  '🏙️ 霧が立ち込める早朝の街（まだ誰もいない静まり返った交差点・朝露）'
-];
-
-export const TRIVIA_THEMES = [
-  '🏮 江戸庶民の裏稼業・闇ビジネス（夜鷹・拝み屋・屎尿回収・もぐり医師）',
-  '🏮 江戸長屋のトンデモ共同生活（四畳半のプライバシーゼロ・井戸端ルール・長屋の掟）',
-  '🏮 江戸の食生活とジャンクフード文化（ファストフード屋台・初鰹狂騒・白米中毒の脚気）',
-  '🏮 江戸の衛生環境とリサイクル狂気（徹底したエコ社会・共同便所ビジネス・風呂事情）',
-  '🏮 江戸の火事と火消しのウラ実態（喧嘩上等・破壊消防・放火の重罰と火事場泥棒）',
-  '🏮 貧乏旗本・下級武士の内職サバイバル（傘張り・朝顔栽培・金魚養殖・バイト暮らし）',
-  '🏮 吉原遊郭の光と闇・リアルなシステム（花魁の借金地獄・格式と掟・遊女の日常）',
-  '🏮 江戸の医療・民間療法と奇病（蘭方医vs漢方医・麻酔手術の誕生・迷信と呪術）',
-  '🏮 江戸の犯罪・捕物帳と拷問刑罰（同心と岡っ引きの実態・島流し・晒し首と石抱き）',
-  '🏮 江戸っ子の娯楽・見世物小屋と流行（エレキテル興行・大相撲・富くじギャンブル）',
-  '⚔️ 戦国足軽・雑兵たちの過酷なリアル（自前装備・略奪給与・戦場での奴隷狩り）',
-  '⚔️ 戦国合戦の兵站とサバイバル飯（兵糧丸・味噌玉・現地調達・水不足地獄）',
-  '⚔️ 戦国武将たちのリアルな死因と奇病（破傷風・梅毒・脳卒中・不衛生な戦傷治療）',
-  '⚔️ 戦国時代の情報戦・リアル忍者工作（素破・透破・偽情報・合戦前の裏切り工作）',
-  '⚔️ 戦国城郭の防衛ギミックと籠城地獄（落とし穴・隠し狭間・飢餓地獄・共食いの恐怖）',
-  '⚔️ 戦国武将の過酷な日常とルーティン（早朝起床・暗殺対策・影武者・睡眠管理）',
-  '⚔️ 戦国時代の火縄銃と最新兵器革命（火薬の密輸・南蛮技術・弾丸の材料調達）',
-  '⚔️ 武士道以前のリアルな裏切りと処世術（寝返りの相場・人質ビジネス・下剋上の掟）',
-  '⚔️ 戦国大名の領国経営とブラック労働（一揆鎮圧・治水工事の過酷労働・農民搾取）',
-  '⚔️ 戦国の女性たちの政略と過酷な運命（政略結婚・人質生活・落城時の決断）',
-  '🏪 コンビニ弁当・総菜を支える超絶食品科学（菌との戦い・超急速冷凍・pH調整剤の真実）',
-  '🏪 コンビニ物流・24時間供給の裏側（ドミナント戦略・3便配送・深夜の店舗オペレーション）',
-  '🏪 定番ヒット商品の開発ウラ歴史（おにぎりフィルム革命・チキン戦争・PB商品の誕生）',
-  '🏪 コンビニスイーツの激闘と開発秘話（専門店超えの生クリーム・シュークリーム戦争・低糖質開発）',
-  '🏪 清涼飲料水・エナジードリンクの販売戦略（棚割り戦争・自販機ビジネス・人工甘味料の進化）',
-  '🏪 冷凍食品とレトルトパウチの宇宙級技術（解凍してもサクサク・常温保存の限界・宇宙食技術）',
-  '🏪 スナック菓子・ポテトチップスの味覚工学（ポテト品種改良・油の酸化防止・やみつきパウダー）',
-  '🏪 インスタントラーメン・カップ麺の超進化（油揚げ麺の奇跡・生麺食感の追求・粉末スープの秘密）',
-  '🏪 食品工場のオートメーションと異物混入防止（超音波カッター・X線検査機・秒速パック技術）',
-  '🏪 コンビニ店長・オーナーの知られざる経営実態（廃棄ロス問題・本部との契約・深夜ワンオペ）',
-  '💰 バブル期の狂乱地上げ屋とマネーゲーム（地上げの手口・札束攻勢・銀行の過剰融資）',
-  '💰 バブル期の異常な金遣いと夜の街（アッシーメッシー・高級ディスコ狂乱・1万円札タクシー）',
-  '💰 バブル期の超高級車・外車ブーム狂想曲（シーマ現象・ベンツ転売・ローン地獄）',
-  '💰 狂気の不動産神話とリゾート開発破綻（山林投機・ゴルフ場会員権・未完の巨大テーマパーク）',
-  '💰 バブル期の就職戦線・超売り手市場の伝説（内定拘束ハワイ旅行・交通費バラマキ・青田買い）',
-  '💰 企業マネーのアート爆買いと怪しい絵画商法（ゴッホ落札合戦・美術品担保・贋作スキャンダル）',
-  '💰 バブル崩壊の引き金と銀行破綻パニック（総量規制・不良債権地獄・山一證券と拓銀の最後）',
-  '💰 狂乱の株価高騰とNTT株上場ショック（財テクブーム・主婦の株取引・仕手筋の暗躍）',
-  '💰 バブル期のトレンディドラマと消費文化（ワンレンボディコン・クリスマス高級ホテル争奪戦）',
-  '💰 失われた30年の幕開け・借金王たちの末路（自己破産ドミノ・夜逃げ・怪死事件のウラ側）',
-  '🍣 寿司の進化史・屋台のおにぎりサイズから高級店へ（発酵熟成・酢飯誕生・冷蔵技術革命）',
-  '🍣 蕎麦・天ぷら・うどんの誕生と江戸庶民闘争（二八蕎麦の謎・屋台立ち食い・出汁の東西格差）',
-  '🍣 ラーメン激動の100年史・屋台から世界的国民食へ（浅草来々軒・ご当地ラーメン・スープ進化論）',
-  '🍣 鰻（うなぎ）の蒲焼と土用丑の日の仕掛け（平賀源内のマーケティング・背開き腹開き・秘伝タレ）',
-  '🍣 日本のカレーライス独自進化論（海軍カレー・学校給食・カレールーの量産化技術）',
-  '🍣 豆腐・納豆・味噌・醤油の発酵技術ウラ歴史（寺院の精進料理・麹菌の奇跡・長期保存の知恵）',
-  '🍣 日本人の肉食解禁とすき焼き・牛鍋パニック（明治の肉食令・屠殺への偏見・文明開化の味）',
-  '🍣 和菓子と羊羹・砂糖が変えた日本の甘味史（南蛮渡来の砂糖・虎屋の歴史・茶道とおもてなし）',
-  '🍣 お茶・抹茶の伝来と戦国政治闘争（栄西の養生訓・千利休の茶の湯・茶器の異常な価格）',
-  '🍣 日本酒づくりの歴史と酒蔵サバイバル（口噛み酒・三段仕込み・灘の宮水・銘酒の誕生）',
-  '📜 教科書に載らない戦国三英傑の変人奇癖（信長の癇癪・秀吉の女好き妄執・家康の健康オタク）',
-  '📜 文豪たちの破天荒すぎるクズエピソード（太宰治の心中未遂・谷崎潤一郎の妻譲渡・石川啄木の借金）',
-  '📜 幕末志士たちのリアルな素顔と武勇伝のウラ（坂本龍馬のピストル・西郷隆盛の肥満・新選組の粛清）',
-  '📜 世界の天才科学者・発明家の奇行録（ニュートンの針刺し・エジソンの睡眠法・テスラの潔癖症）',
-  '📜 世界の独裁者・暴君たちの異常な日常（ヒトラーのベジタリアン・ネロの狂気・スターリンの疑心暗鬼）',
-  '📜 古代の哲学者・思想家たちのブッ飛んだ死因（タレスの井戸転落・ディオゲネスの樽生活・クリュシッポスの爆笑死）',
-  '📜 平安貴族たちの優雅な日常の裏にある泥臭い現実（藤原道長の糖尿病・お風呂嫌い・生々しい呪詛合戦）',
-  '📜 日本の歴代天皇・将軍たちの知られざる奇癖（犬公方綱吉の真実・足利義政の引きこもり・趣味偏愛）',
-  '📜 世界の名将・軍人たちの意外な弱点とトラウマ（ナポレオンの猫恐怖症・カエサルの薄毛隠し・アレクサンドロス）',
-  '📜 歴史に名を残した芸術家たちの狂気と偏執（ダ・ヴィンチの解剖ノート・ミケランジェロの不潔・ピカソの女性遍歴）',
-  '🚂 文明開化パニック・西洋化に怯えた人々の珍事件（散髪脱刀令・牛鍋ブーム・鉄道への恐怖）',
-  '🚂 明治の警察制度と犯罪捜査の夜明け（サーベル巡査・西洋式指紋捜査・監獄制度の近代化）',
-  '🚂 鉄道開通の狂乱と鉄道忌避伝説（蒸気機関車は火の車・靴を脱いで乗車・時刻表パニック）',
-  '🚂 明治の学校制度導入と寺子屋消滅の悲喜劇（学制反対一揆・洋装制服・英語教育の混乱）',
-  '🚂 明治の感染症パニックと衛生警察の誕生（コレラ大流行・消毒液への恐怖・隔離病棟の暴動）',
-  '🚂 西洋医学vs漢方医学・医師免許の激闘（脚気の原因論争・森鴎外の過ち・北里柴三郎の孤軍奮闘）',
-  '🚂 明治の郵便・電信ネットワーク革命（飛脚の失業・電信柱への迷信・前島密の郵便制度）',
-  '🚂 廃藩置県と武士たちの失業サバイバル（秩禄処分・士族の商法・西南戦争への導火線）',
-  '🚂 明治の洋服・ファッション革命（洋装令・鹿鳴館のダンス狂騒・下着の普及と混乱）',
-  '🚂 明治の新聞・メディアとゴシップ合戦（瓦版から日刊紙へ・筆禍事件・毒婦高橋お伝騒動）',
-  '🏯 参勤交代サバイバル・大名行列の地獄の台所事情（莫大な移動費用・見栄の借金・大名貸し）',
-  '🏯 幕末・藩政改革のウラ技と財政再建（専売制・偽金鋳造・借金踏み倒し作戦）',
-  '🏯 江戸幕府の貨幣改鋳とインフレ地獄（荻原重秀の小判改鋳・田沼意次の経済政策・米価乱高下）',
-  '🏯 大名貸し商人たちのエグい回収テクニック（三井・鴻池の金融力・藩への貸出停止・担保差し押さえ）',
-  '🏯 天災と飢饉サバイバル・藩の緊急経済対策（浅間山噴火・天保の飢饉・備蓄米倉庫の攻防）',
-  '🏯 幕府の御用金徴発と豪商たちの抵抗（無理やり献金・資産隠し・町人貴族の台頭）',
-  '🏯 抜け荷・密貿易に手を染めた外様大名（薩摩藩の琉球密貿易・佐賀藩の陶磁器輸出・長州の抜け荷）',
-  '🏯 旗本・御家人の借金地獄と札差ビジネス（札差の法外な利息・養子縁組による家督売り買い・夜逃げ）',
-  '🏯 江戸城の維持費と大奥の巨額予算（大奥の年間経費・着物代の浪費・女中たちの賄賂工作）',
-  '🏯 幕府最後の軍制改革とフランス借款（横須賀製鉄所・幕府陸軍の近代化・消えた徳川埋蔵金）',
-  '🏃‍♂️ 日本古来の超人身体能力・ナンバ走りと飛脚の謎（1日100km走破・骨格の使い方・歩法）',
-  '🏃‍♂️ 古武術・甲冑着用時の驚異の身体操法（古流柔術・重心移動・鎧を着たまま泳ぐ甲冑水泳）',
-  '🏃‍♂️ 山伏・修験者たちの超人山岳踏破技術（断崖絶壁走破・野草サバイバル・呼吸法とトランス状態）',
-  '🏃‍♂️ 古代・中世の荷運び人「強力（ごうりき）」の怪力伝説（米俵5俵背負い・山岳運搬・歩荷の技術）',
-  '🏃‍♂️ 忍者のリアルな身体訓練と跳躍・消術（忍び足・関節外し・壁登り道具・呼吸法）',
-  '🏃‍♂️ 古代・中世の職人たちの超絶手仕事と道具工学（宮大工の木組み・日本刀の鍛造・野鍛冶の技術）',
-  '🏃‍♂️ 和船・弁才船の操船技術と海の荒くれ者（逆風帆走・潮の読み方・遭難漂流サバイバル）',
-  '🏃‍♂️ 鷹狩りとマタギの狩猟身体術（山岳の追跡技術・クマ撃ちの掟・鷹の調教メソッド）',
-  '🏃‍♂️ 江戸・中世の早飛脚と駅伝通信リレー（継飛脚のネットワーク・夜間走行・関所突破の特権）',
-  '🏃‍♂️ 古代相撲・力石持ち上げに見る怪力文化（力石の重量記録・野見宿禰の足技・農村の力比べ行事）',
-  '📻 昭和闇市と戦後ヤミ米サバイバル（カストリ酒・代用食・買い出し列車の死闘）',
-  '📻 三種の神器と昭和家電ブームの裏側（白黒テレビ・洗濯機・冷蔵庫が変えた家庭革命）',
-  '📻 高度経済成長期の猛烈サラリーマン生態（24時間戦えますか・社内タバコ天国・終身雇用の光と影）',
-  '📻 昭和の団地ブームと生活スタイルの激変（2DKの間取り革命・ステンレス流し台・団地族のステータス）',
-  '📻 昭和の子ども文化と駄菓子屋ワールド（ベーゴマ・メンコ・10円ゲーム・謎の粉末ジュース）',
-  '📻 昭和の公害問題と公衆衛生の闘い（スモッグ警報・光化学スモッグ・ゴミ戦争）',
-  '📻 昭和歌謡・レコード産業とテレビ黄金期（カラーテレビ普及・紅白歌合戦の視聴率・アイドル誕生）',
-  '📻 昭和の交通戦争とマイカーブーム（カローラvsサニー・暴走族問題・高速道路網の建設）',
-  '📻 昭和オカルトブームとノストラダムス現象（スプーン曲げ・コックリさん・心霊写真ブーム）',
-  '📻 昭和のインスタント食品大革命（即席ラーメン誕生・レトルトカレー・自販機うどん）',
-  '🧠 脳がバグる錯覚・認知バイアスの科学（日常で起きる記憶改ざん・選択盲・サブリミナル効果）',
-  '🧠 睡眠と夢のヤバすぎる未解明メカニズム（金縛りの正体・明晰夢・睡眠不足の脳破壊）',
-  '🧠 痛みと脳の騙し合い・ファントムペインの謎（幻肢痛・プラセボ効果・辛味は痛覚の真実）',
-  '🧠 味覚と嗅覚の超絶シンクロ・味の錯覚（イチゴ味の正体・鼻をつまむと消える味・偏食の科学）',
-  '🧠 視覚と盲点のトリック・脳が勝手に補完する世界（チェッカーシャドウ錯視・動体視力・視野狭窄）',
-  '🧠 恐怖とストレスが引き起こす肉体異常（アドレナリンラッシュ・凍りつき反応・心臓麻痺の科学）',
-  '🧠 筋肉と運動神経の限界リミッター（火事場の馬鹿力の正体・筋肥大の仕組み・筋肉痛の謎）',
-  '🧠 腸内細菌とセカンドブレイン（腸が操る感情と食欲・セロトニンの9割は腸・腸内フローラ）',
-  '🧠 体温調節と汗・鳥肌の進化の痕跡（なぜ寒気で鳥肌が立つのか・汗腺の発達・熱中症のメカニズム）',
-  '🧠 記憶の定着と忘却のスーパーメカニズム（エビングハウスの忘却曲線・海馬の選別・デジャブの正体）',
-  '🌌 宇宙の極限環境とヤバすぎる天体（ダイヤモンドの雨・超巨大ブラックホール・死の惑星）',
-  '🌌 太陽系の知られざるヤバい衛星たち（エウロパの地下海洋・タイタンのメタン雨・イオの火山地獄）',
-  '🌌 地球深部・マントルとコアの未知の世界（地底の超高温高圧・マントル対流・地磁気逆転の危機）',
-  '🌌 深海と極限生物のエイリアンワールド（熱水噴出孔・メガマウス・超高圧に耐える深海生物）',
-  '🌌 地球史最大の大量絶滅イベント（全球凍結スノーボール・ペルム紀大絶滅・小惑星衝突の瞬間）',
-  '🌌 超新星爆発とガンマ線バーストの脅威（直撃なら地球滅亡・ベテルギウスの異変・宇宙線シャワー）',
-  '🌌 時間と空間の歪み・一般相対性理論のリアル（重力で遅れる時間・ブラックホールの事象の地平面）',
-  '🌌 暗黒物質（ダークマター）と暗黒エネルギーの謎（宇宙の95%は正体不明・宇宙膨張の加速）',
-  '🌌 フェルミのパラドックスと地球外生命の探索（なぜ宇宙人に会えないのか・ドレイクの方程式）',
-  '🌌 宇宙の終焉シナリオ・最後の瞬間（ビッグフリーズ・ビッグリップ・熱的死の静寂）'
-];
-
-export const QUOTES_THEMES = [
-  // ── 1. 🪷 ブッダ（釈迦 / 仏教哲学） ──
-  '🪷 ブッダの対人関係論（反応しない・悪口スルー・他人の評価と承認欲求の手放し・怒りの鎮火）',
-  '🪷 ブッダの不安・苦悩の処方箋（将来の不安・過去の後悔・老病死の受け入れ・諸行無常の知恵）',
-  '🪷 ブッダの自立と孤独の哲学（犀の角のように歩め・自分を最大の味方にする・群れない生き方・自己慈愛）',
-  '🪷 ブッダのシンプルな生活美学（少欲知足・物欲と情報過多のデトックス・今ここを生きる集中）',
-
-  // ── 2. 🕊️ 老子・荘子（タオイズム） ──
-  '🕊️ 老子の人間関係・生存戦略（上善如水・争わない・敵を作らない・低きに身を置く処世術）',
-  '🕊️ 老子のキャリア・人生論（大器晩成・焦りや遅れを肯定する時間感覚・遠回りの価値）',
-  '🕊️ 荘子の精神的自由論（無用の用・世間体の完全無視・役に立たない人間の強み・心の解放）',
-  '🕊️ 道家（タオ）の逆境脱出術（禍福は糾える縄の如し・塞翁が馬・無理をしない脱力思考）',
-
-  // ── 3. 🦅 ニーチェ（実存主義・自己超克） ──
-  '🦅 ニーチェの同調圧力破壊論（群れから離れる勇気・常識を疑う・孤独な高みに立つ覚悟）',
-  '🦅 ニーチェの逆境全肯定論（アモール・ファティ・運命愛・苦悩を力に変える力への意志）',
-  '🦅 ニーチェの嫉妬・劣等感克服論（ルサンチマンの解体・他人軸の破壊・自らの価値の創造）',
-  '🦅 ニーチェの日常超越論（永劫回帰・この瞬間を何度でも生き直せるか・自らを乗り越える超人思想）',
-
-  // ── 4. 🏛️ マルクス・アウレリウス（自省録 / ストア派） ──
-  '🏛️ マルクス・アウレリウスの感情統治術（悪意や無礼に動じない心・精神の要塞・怒りのコントロール）',
-  '🏛️ マルクス・アウレリウスの自己対話論（他人の頭の中を詮索しない・自分の役目を果たす・自省の習慣）',
-  '🏛️ マルクス・アウレリウスの人間関係論（他人は変えられない・未熟さを許容する知恵・共同体への奉仕）',
-  '🏛️ ストア派の時間・死生観（メメント・モリ・今日を最後の一日として生きる集中力・名声の無意味さ）',
-
-  // ── 5. 🏛️ セネカ（ストア派哲学） ──
-  '🏛️ セネカの時間の主権奪還論（人生の短さについて・時間の浪費をやめる・他人に時間を奪われない知恵）',
-  '🏛️ セネカの怒りと焦りの沈静術（怒りについて・感情の爆発を未然に防ぐ・冷静な事実確認）',
-  '🏛️ セネカの真の豊かさと清貧論（心の平静について・贅沢への執着を捨てる・最小限で満足する強さ）',
-  '🏛️ セネカの逆境準備・メンタル耐性（最悪の事態を想定しておく知恵・予期せぬ不幸に動じない心）',
-
-  // ── 6. 🏛️ ソクラテス・プラトン（古代ギリシャ哲学） ──
-  '🏛️ ソクラテスの無知の知と傲慢の解体（思い込みの打破・自分が何も知らないことの自覚・学びの原点）',
-  '🏛️ ソクラテスの魂への配慮と生き方論（善く生きること・富や名声より魂の向上・世間の評価との決別）',
-  '🏛️ プラトンの洞窟の比喩と真実の探求（影に惑わされない眼・集団幻想からの脱出・本質の見極め）',
-  '🏛️ プラトンの対話と理性統治（感情や欲望の暴走を抑える理性の手綱・調和のとれた精神）',
-
-  // ── 7. 🐺 ショーペンハウアー（悲観主義と生の知恵） ──
-  '🐺 ショーペンハウアーの孤高と幸福論（孤独を愛せない人間は自由になれない・社交の浅薄さからの脱出）',
-  '🐺 ショーペンハウアーの対人距離論（ヤマアラシのジレンマ・礼儀による適切な距離感・過度な期待の破棄）',
-  '🐺 ショーペンハウアーの欲望コントロール（人生は苦痛と退屈の振り子・欲望を減らすことによる救い）',
-  '🐺 ショーペンハウアーの知性と読書論（他人の頭で考えない・過剰な情報の遮断・自らの思索の尊重）',
-
-  // ── 8. 📜 孫子（兵法・戦略思考） ──
-  '📜 孫子の不戦勝・リスク回避論（戦わずして勝つ・無駄な消耗戦の回避・最大の利益を得る知恵）',
-  '📜 孫子の情報戦と自己認識（彼を知り己を知れば百戦危うからず・客観的な現状把握）',
-  '📜 孫子の柔軟性と臨機応変論（兵の形は水に象る・固定観念を捨てる・状況変化への即応）',
-  '📜 孫子の勝機創出・準備の哲学（勝兵はまず勝ちてしかるのちに戦いを求む・勝てる態勢の徹底構築）',
-
-  // ── 9. 📜 諸葛孔明（大局観と信義） ──
-  '📜 諸葛孔明の長期構想力（天下三分の計・現状の不利を覆す未来予測・焦らない大局観）',
-  '📜 諸葛孔明の人材見極めと統率論（七つの観察眼・信賞必罰の公平さ・私心を排した組織運営）',
-  '📜 諸葛孔明の自己修養と志立論（淡泊以て志を明らかに非ずんば寧静以て遠きを致す能わず）',
-  '📜 諸葛孔明の忠義と危機突破（出師の表・逆境における不屈の責任感・最後まで投げ出さない覚悟）',
-
-  // ── 10. 🗡️ 宮本武蔵（五輪書・独行道） ──
-  '🗡️ 宮本武蔵の勝負・心理戦哲学（先手を取る拍子・相手の呼吸を乱す・焦りを制する胆力）',
-  '🗡️ 宮本武蔵の平常心と適応力（水の巻・心を広く直く保つ・固定観念を捨てる二刀流の合理性）',
-  '🗡️ 宮本武蔵の鍛錬と習慣論（千日の稽古を鍛とし万日の稽古を錬とす・愚直な継続が生む突破力）',
-  '🗡️ 宮本武蔵の後悔なき生き方（独行道・過去の決断を振り返らない・神仏に祈っても依存しない覚悟）',
-
-  // ── 11. ⚔️ 織田信長（常識破壊とスピード決断） ──
-  '⚔️ 織田信長の前例打破と実力主義（家柄や身分を無視した能力登用・古い権威の完全解体）',
-  '⚔️ 織田信長のスピード決断と奇襲論（桶狭間に見る機動性・迷いを捨てた迅速な初動・好機の見極め）',
-  '⚔️ 織田信長の情報重視と革新技術（鉄砲の大量導入・兵農分離の合理化・既成概念の破壊）',
-  '⚔️ 織田信長の冷徹な統率と危機管理（甘えを許さない組織運営・裏切りへの対処・非情な決断力）',
-
-  // ── 12. ⚔️ 徳川家康（忍耐と長期戦略） ──
-  '⚔️ 徳川家康の忍耐と時機到来論（鳴かぬなら鳴くまで待とう・感情を殺して好機を待つ長期戦）',
-  '⚔️ 徳川家康の健康管理とルーティン哲学（自ら薬を調合する健康オタク・生き残ることによる最終勝利）',
-  '⚔️️ 徳川家康の失敗学習とリスク管理（三方ヶ原のしかみ像・手痛い敗北を生涯の教訓とする真摯さ）',
-  '⚔️ 徳川家康の組織永続と制度設計（人の一生は重荷を負うて遠き道を行くが如し・無理をしない持続力）',
-
-  // ── 13. ⚔️ 豊臣秀吉（人心掌握と逆境突破） ──
-  '⚔️ 豊臣秀吉の人たらし心理アプローチ（相手の承認欲求を満たす・草履取りからの観察眼・共感の力）',
-  '⚔️ 豊臣秀吉のスピード出世と逆境突破（墨俣一夜城・中国大返し・圧倒的な行動量で運命を変える）',
-  '⚔️ 豊臣秀吉の利害一致と交渉術（兵糧攻め・水攻め・血を流さず金と物資で相手を降す経済戦）',
-  '⚔️ 豊臣秀吉の派手な自己演出と大衆心理（黄金の茶室・北野大茶会・人の心を惹きつける見せ方）',
-
-  // ── 14. ⚔️ 武田信玄・上杉謙信（組織と信念） ──
-  '⚔️ 武田信玄の組織マネジメント（人は城人は石垣・適材適所の配置・部下の強みを活かすリーダーシップ）',
-  '⚔️️ 武田信玄の風林火山と動静管理（動くべき時と動かざるべき時の見極め・感情に流されない陣容）',
-  '⚔️ 上杉謙信の義と信念の勝負論（私利私欲を排した大義・敵に塩を送る度量・正道を行く覚悟）',
-  '⚔️ 上杉謙信の死生観と覚悟の力（生を必する者は死し死を幸とする者は生く・退路を断つ突破力）',
-
-  // ── 15. 🍵 千利休・禅の思想（侘び寂びと引き算） ──
-  '🍵 千利休の引き算の美学（無駄を極限まで削ぎ落とす・余白に宿る豊かさ・飾らない美の発見）',
-  '🍵 千利休の一期一会と今この瞬間（二度と巡り合えない今日を味わう・丁寧なもてなしの心）',
-  '🍵 禅の思考リセットと身体感覚（喫茶去・あれこれ悩む前に一杯の茶を飲む・頭でっかちの脱却）',
-  '🍵 禅の受容精神と無常の肯定（日日是好日・良し悪しのジャッジを手放す・あるがままの受容）',
-
-  // ── 16. 🪷 空海・親鸞（現世肯定と自己受容） ──
-  '🪷 空海の現世肯定と潜在能力開花（即身成仏・この身このままで生き切る・身体と知性の統合）',
-  '🪷 空海のスケール思考と包容力（十住心論・人間の心の成長段階・あらゆる価値観の包摂）',
-  '🪷 親鸞の悪人正機とダメな自分の全肯定（善人なおもて往生をとぐ・弱さやずるさを抱えた人間の救済）',
-  '🪷 親鸞の他力本願・自力への執着の手放し（自分の力だけで何とかしようとする傲慢からの解放）',
-
-  // ── 17. 👑 勝海舟（大人の処世術と胆力） ──
-  '👑 勝海舟の敵を作らない対話術（江戸城無血開城・腹を割った交渉・相手の顔を立てて着地させる技）',
-  '👑 勝海舟の批判・中傷スルー力（行蔵は我に存す毀誉は他人の主張・陰口にいちいち反応しない度量）',
-  '👑 勝海舟のピンチを楽しむ鈍感力（貧乏や修羅場を笑い飛ばす・どんな逆境でも腹を据える知恵）',
-  '👑 勝海舟の時代適応と若手育成（古い形式にとらわれない柔軟性・次の世代を信じて任せる器）',
-
-  // ── 18. 👑 坂本龍馬（構想力と突破力） ──
-  '👑 坂本龍馬の固定観念破壊論（刀からピストル・万国公法へ・時代の武器を即座に持ち替える柔軟性）',
-  '👑 坂本龍馬のアライアンス戦略（薩長同盟・仲の悪い者同士の共通利益を見出して手を組ませる技）',
-  '👑 坂本龍馬の他人の目を気にしない豪胆さ（世の人はわれをなにとも言わば言え・志を遂げる集中力）',
-  '👑 坂本龍馬のフラットな人間観（身分や肩書きにとらわれず誰とでも対等に向き合うフットワーク）',
-
-  // ── 19. 👑 吉田松陰（情熱と行動哲学） ──
-  '👑 吉田松陰の至誠と情熱論（至誠にして動かざる者は未だこれ有らざるなり・本気の熱量が人を動かす）',
-  '👑 吉田松陰の知行合一・行動主義（行動を伴わない知識は無価値・知ったら即座に動く覚悟）',
-  '👑 吉田松陰の個性を伸ばす指導論（松下村塾・人の長所のみを見て短所を問わないメンターシップ）',
-  '👑 吉田松陰の狂気と突破力（狂気の精神・常識人の枠を飛び越えて時代を切り拓く気迫）',
-
-  // ── 20. 👑 西郷隆盛（無私と人間的魅力） ──
-  '👑 西郷隆盛の敬天愛人哲学（天を敬い人を愛する・私利私欲を完全に捨て去るリーダーの器）',
-  '👑 西郷隆盛の名利超越論（命もいらず名もいらず官位も金もいらぬ人・もっとも手強い人間の強さ）',
-  '👑 西郷隆盛の逆境受容と耐乏力（二度の島流しを乗り越えた精神力・苦難の中で己を磨く姿勢）',
-  '👑 西郷隆盛の沈黙と存在感の統率（多くを語らず背中で語る・部下に手柄を譲り責任を一身に背負う）',
-
-  // ── 21. 👑 福沢諭吉（自立と合理主義） ──
-  '👑 福沢諭吉の独立自尊論（学問のすすめ・天は人の上に人を造らず・誰にも依存せず生きる力）',
-  '👑 福沢諭吉の実学と自己投資（役に立つ学問を修める・机上の空論を排して生活力を高める知恵）',
-  '👑 福沢諭吉の権威否定と批判的思考（お上や世間の常識を盲信しない・自分の頭で検証する姿勢）',
-  '👑 福沢諭吉の家族観と健康管理（健全な身体に健全な精神・家庭の円満を重視した合理的日常）',
-
-  // ── 22. ☕ 夏目漱石（自己本位と近代人の孤独） ──
-  '☕ 夏目漱石の自己本位の確立（私の個人主義・他人の思惑に惑わされず自分の足で立つ生き方）',
-  '☕ 夏目漱石の孤独とエゴイズムの洞察（こころ・人間が抱える根源的な孤独とエゴの直視）',
-  '☕ 夏目漱石の則天去私・我の手放し（小さな自分への執着を捨て自然の理に身を委ねる晩年の境地）',
-  '☕ 夏目漱石の世間体と常識の皮肉（吾輩は猫である・滑稽な人間社会を一歩引いた視点で笑い飛ばす）',
-
-  // ── 23. ☕ 太宰治（弱さの肯定と人間味） ──
-  '☕ 太宰治の不完全さと弱さの受容（人間失格・ダメな自分を取り繕わずに認めることによる救済）',
-  '☕ 太宰治の見栄とプライドの解体（恥の多い生涯・他人の顔色を窺いすぎる道化の仮面を剥ぐ）',
-  '☕ 太宰治の優しさと共感の眼差し（苦しんでいる人・挫折した人に寄り添う不器用な温もり）',
-  '☕ 太宰治の絶望の底からのユーモア（悲劇を道化に変えて笑い飛ばす逆転のバイタリティ）',
-
-  // ── 24. ☕ 三島由紀夫（美意識と自己鍛錬） ──
-  '☕ 三島由紀夫の肉体と精神の統合（太陽と鉄・思索だけでなく肉体を鍛え上げることで得る確信）',
-  '☕ 三島由紀夫の妥協なき美意識と規律（だらしない日常を拒絶する・自らに厳格なルールを課す美学）',
-  '☕ 三島由紀夫の言葉と行動の一致（空疎な言葉を嫌い行動で自らの真実を証明する覚悟）',
-  '☕ 三島由紀夫の孤独と独自の美学（世俗の安寧に流されず孤高の美を貫き通す精神）',
-
-  // ── 25. 🕊️ アルフレッド・アドラー（自己決定と課題の分離） ──
-  '🕊️ アドラーの課題の分離（他人の課題に土足で踏み込まない・自分の課題に他人を介入させない）',
-  '🕊️ アドラーの嫌われる勇気と自由（他人の評価を気にしない・承認欲求を捨てて自由に生きる）',
-  '🕊️ アドラーのトラウマ否定と自己決定論（過去の出来事に縛られない・これからの意味づけは自分で決める）',
-  '🕊️ アドラーの共同体感覚と貢献感（他者を仲間と見なし自分のできる貢献をする・真の所属感）'
-];
-
-export const FOLKLORE_THEMES = [
-  // ── 1. 🏚️ 廃村・消滅集落・閉鎖社会（因習・隔離・掟） ──
-  '🏚️ 地図から消された廃村・旧道集落の闇（隠れ里・戸籍なき民・夜の掟・境界線の風習）',
-  '🏚️ 閉鎖集落で起きた凄惨な事件・因習犯罪（孤立社会の狂気・村八分の極致・血縁のしがらみ）',
-  '🏚️ 水没ダム湖底の集落跡と沈黙の記憶（渇水期の墓石群・湖底の鐘・集団移住者の沈話）',
-  '🏚️ 外部との接触を拒絶した隔離集落の掟（独自の隠語・特殊な婚姻制度・伝染病差別の歴史）',
-
-  // ── 2. ⛩️ 日本各地の絶対不可侵・禁足地（結界・神域・禁忌） ──
-  '⛩️ 足を踏み入れてはならない絶対禁足地（古代の結界・入らずの森・立ち入り禁止の看板の真相）',
-  '⛩️ 霊峰・山岳信仰のタブーと女人禁制の歴史（神仏習合の封印・神の怒り・境界を示す結界石）',
-  '⛩️ 人が忽然と消える神隠し多発地帯の謎（夕暮れの逢魔が時・峠の分かれ道・足取りが途絶えた記録）',
-  '⛩️ 神社・寺院の立ち入り禁止区域と秘仏の禁忌（開かずの奥宮・触れてはならぬ神木・古代の磐座）',
-
-  // ── 3. 🗡️ 暗殺・辻斬り・妖刀伝説（闇夜の凶行・血塗られた武具） ──
-  '🗡️ 江戸の辻斬りと闇夜の無差別凶行（試し斬りの犠牲者・夜間警備の実態・闇に消えた下手人）',
-  '🗡️ 持ち主を狂わせる妖刀・呪われた名刀伝説（血を吸う刃・親族相食む祟り・蔵に封印された名剣）',
-  '🗡️ 幕府処刑場・首斬り浅右衛門と刀剣鑑定の闇（小塚原と鈴ヶ森・千人塚の怨念・人骨による切れ味試験）',
-  '🗡️ 幕末の暗殺者・人斬りたちの精神崩壊と末路（血刀のトラウマ・怨霊の幻影・処刑前の狂気）',
-
-  // ── 4. 🏥 近代・戦後の隠蔽施設・人体実験（公文書・隔離病棟） ──
-  '🏥 旧日本軍の秘密研究所と極秘実験の記録（細菌兵器・風船爆弾・毒ガス製造・黒塗り公文書の闇）',
-  '🏥 昭和の結核療養所・旧サナトリウムの隔離記録（山奥の隔離病棟・置き去りにされたカルテ・患者の絶望）',
-  '🏥 昭和精神医療の暗部・私宅監置と閉鎖病棟の闇（地下拘禁室・ロボトミー手術・法改正前の隔離実態）',
-  '🏥 戦後史を揺るがした未解決怪事件の闇（毒物混入・謀殺疑惑・国家権力や占領軍関与の真相）',
-
-  // ── 5. ⛰️ 山岳の怪異・遭難と異界の掟（山の神・極限遭難） ──
-  '⛰️ マタギの絶対戒律と山の神のタブー（山言葉の強制・獲物の分配掟・山中での禁忌行為）',
-  '⛰️ 巨大原生林・磁場異常地帯の遭難ミステリー（コンパスの誤作動・木々の迷宮・極限状態の心理）',
-  '⛰️ 冬山遭難と極限状態の精神錯乱（矛盾脱衣のメカニズム・凍死直前の多幸感・山小屋に残された日記）',
-  '⛰️ 登山者を惑わす山岳怪音・呼子現象の恐怖（谷に響く謎の声・消える踏み跡・偽の道標）',
-
-  // ── 6. 🎭 見世物小屋・大正奇譚と興行界の闇（異形興行・生人形） ──
-  '🎭 歓楽街の裏で見世物とされた異形興行の光と影（奇天烈な芸・幕裏の悲哀・興行師の掟と縄張り）',
-  '🎭 近代日本を揺るがした降霊術・超能力騒動（公開透視実験・念写ブーム・学者たちの失脚劇）',
-  '🎭 精巧すぎて魂が宿るとされた生人形・からくり（夜中に動く人形伝説・本物の人毛・職人の狂気）',
-  '🎭 見世物小屋の逃亡劇と地方巡業の闇（逃げ出した怪異・地方での失踪・消された身元）',
-
-  // ── 7. 🌊 海洋怪異・漂流船と水神の禁忌（海の怪・底知れぬ深海） ──
-  '🌊 江戸の漂着船・異国異形の来訪者ミステリー（うつろ舟事件・解読不能な文字・幕府の極秘調書）',
-  '🌊 太平洋を彷徨う幽霊船・乗組員失踪の怪（ミイラ化した船内・極限の航海日誌・無人島の飢餓サバイバル）',
-  '🌊 深海定置網に引き上げられる異形生物と人魚伝説（寺院に残る乾いたミイラ・水神の祟り・漁師のタブー）',
-  '🌊 海上に現れる怪火・巨大影と難破の怪異（不知火現象・海坊主の目撃談・船を呑み込む魔の三角海域）',
-
-  // ── 8. 📜 大名家のお家騒動・怨霊と呪詛（血天井・開かずの間） ──
-  '📜 大名家を揺るがした三大お家騒動の呪殺・毒殺劇（謀反の密書・家臣集団毒殺・改易追放の真相）',
-  '📜 城郭・寺院に残る血天井と集団自刃の記憶（床板を転用した供養・消えない手形足形・夜鳴く木目）',
-  '📜 大奥・奥御殿に伝わる「開かずの間」と女中の怪死（生霊の呪詛・密通者の処刑・壁から出た遺品）',
-  '📜 藩主の狂気・乱心事件と座敷牢の真相（身代わり君主・隠蔽された病・親族による幽閉）',
-
-  // ── 9. 🚂 鉄道都市伝説・異界へ迷い込む路線と幻の駅（境界線・廃線） ──
-  '🚂 異界へ繋がると噂される存在しない駅の都市伝説（きさらぎ駅現象・迷い込む乗客・深夜の無人駅）',
-  '🚂 深夜の地下鉄・未成線と封鎖された幻のホーム（使われないホーム・トンネル奥の怪異・深夜作業員の証言）',
-  '🚂 難工事・トンネル建設の犠牲者と幽霊踏切（青函トンネルのツルハシ音・工事事故・鳴り続ける警報機）',
-  '🚂 人身事故多発区間・魔のカーブにまつわる噂（吸い寄せられる視線・線路脇の地蔵・運転士の証言）',
-
-  // ── 10. 🌾 農村の民間信仰・生贄と飢饉の記憶（人柱・口減らし） ──
-  '🌾 水害・築城を防ぐために捧げられた人柱の記録（堤防に埋められた娘・橋桁の生贄・血の土木史）',
-  '🌾 凶作・大飢饉サバイバルと間引きの悲哀（天保飢饉の地獄・口減らしの掟・座敷童子信仰の起源）',
-  '🌾 東北の神馬・家畜信仰に潜む悲話と禁忌（馬と娘の悲恋伝承・夜な夜な舞う神木・家畜供養の掟）',
-  '🌾 村境・峠に祀られる道祖神と疫病除けの境界線（外から侵入するモノ・藁人形送り・結界の儀式）',
-
-  // ── 11. 🕳️ 地下空間・軍事壕と都市暗渠の闇（秘密地下道・遺棄施設） ──
-  '🕳️ 都心地下に網の目のように広がる秘密地下壕（旧軍大本営地下壕・未公開図面・封鎖された分厚い鉄扉）',
-  '🕳️ 山中をくり抜いた巨大地下要塞の建設秘話（強制労働の過酷・落盤事故の隠蔽・終戦直前の書類焼却）',
-  '🕳️ 都市インフラ・下水道と地下暗渠の闇（巨大油脂塊・点検員の恐怖・隠された水路・地下生物）',
-  '🕳️ 住宅街の地下に眠る崩落防空壕と陥没事故（子どもの探検・未調査の空洞・土中から響く異音）',
-
-  // ── 12. 💀 都心・歴史的怨霊と祟り塚（首塚・古戦場供養） ──
-  '💀 都心の一等地に鎮座する祟り塚と不可侵伝説（平将門首塚・撤去工事の変死事故・官公庁の配慮）',
-  '💀 天下分け目の大合戦場に眠る無数の戦死者供養（首塚・刀狩り後の略奪・夜鳴く古戦場の土）',
-  '💀 花街・遊郭の裏に作られた投げ込み寺の無縁仏（吉原悲話・遊女たちの共同墓地・夜半のすすり泣き）',
-  '💀 大規模再開発工事で掘り起こされた集団埋葬地（人骨の大量出土・作業員の相次ぐ体調不良・慰霊の儀式）',
-
-  // ── 13. 🌲 樹海・原生林の未確認存在・隠れ里（UMA捜索・山窩） ──
-  '🌲 昭和日本を熱狂させた未確認生物（UMA）目撃史（ツチノコ大捜索・ヒバゴン騒動・捕獲懸賞金狂騒曲）',
-  '🌲 戸籍を持たず山中を移動した漂泊民の掟（独自の文字と隠語・掟破りの成敗・近代化による消滅）',
-  '🌲 伐採を拒んだ御神木・巨木祟り伝説（道路工事の迂回・チェーンソーの刃こぼれ・作業員の事故）',
-  '🌲 深山幽谷に伝わる巨人・山人の足跡伝説（山を跨ぐ大男・マタギの目撃談・古文書の怪異記録）',
-
-  // ── 14. 🏨 巨大廃墟・遺棄リゾートと残留思念（解体不能物件） ──
-  '🏨 解体不能とされる巨大廃ホテルの怪異とトラブル（オーナーの変死・重機故障・工事中断の理由）',
-  '🏨 廃墟探索で発見された白骨死体と行方不明者（肝試しのトラウマ・迷宮化した巨大リゾート跡）',
-  '🏨 昭和の廃遊園地に残された朽ちた遊具の哀愁（ミラーハウスの失踪事故・止まったままの観覧車）',
-  '🏨 山中に遺棄された新興宗教施設の巨大廃墟（残された祭壇・教団の機密資料・集団離脱の痕跡）',
-
-  // ── 15. 🗿 古代遺跡・古墳と祟り石のタブー（石室盗掘・巨石信仰） ──
-  '🗿 動かしてはならない「祟り石」と工事トラブル（道路拡張を阻む巨石・撤去関係者の怪死・迂回路）',
-  '🗿 古墳盗掘者たちを襲った奇病と狂気の記録（石室を開けた者の末路・呪われた副葬品の散逸）',
-  '🗿 山頂に残る姥捨て山伝説と民俗学のリアル（親捨ての掟・雪山の背負い籠・山頂の白骨と救済）',
-  '🗿 古代の横穴墓群・地下石室にまつわる怪奇譚（集団埋葬の跡・コロポックル住居説・夜の足音）',
-
-  // ── 16. 👹 日本古来の異形・妖怪と産鉄民の民俗学（鬼・天狗・憑き物） ──
-  '👹 鬼退治伝説の裏に隠された産鉄民と朝廷の闘争（酒呑童子の正体・鉱山技術者集団・異民族征討）',
-  '👹 天狗信仰と修験者たちの超人行・秘術の闇（烏天狗のミイラ・空中浮遊の幻術・山岳修行の極限）',
-  '👹 水死事故の戒めとされた河童（カッパ）伝説の真実（寺院の乾いた手首・水神への生贄・間引きの影）',
-  '👹 家系に呪いをかける憑き物筋差別の歴史（犬神・狐憑きの調伏・土壺に封じた頭骨・血脈の掟）',
-
-  // ── 17. 🪞 人形供養・遺品供養寺院と念の怪異（呪物・身代わり） ──
-  '🪞 人形供養寺院とお焚き上げの絶対ルール（髪が伸びる人形・顔を最後に焼く理由・持ち主を拒む人形）',
-  '🪞 捨てても戻ってくるとされる人形・ぬいぐるみの怪（ゴミ捨て場からの帰還・子供の身代わり信仰）',
-  '🪞 丑の刻参りと神木の呪詛人形の生々しい現場（打ち込まれた五寸釘・呪詛返しの恐怖・神職の証言）',
-  '🪞 遺品整理で見つかる「開けてはならない桐箱」（封印のお札・中に入っていた爪と遺髪・骨董市の呪物）',
-
-  // ── 18. 📻 昭和オカルト・電波怪談とメディア事故（乱数放送・怪奇テープ） ──
-  '📻 深夜の短波ラジオに響く不気味な乱数放送の正体（スパイへの暗号通信・怪電波・無人送信所の謎）',
-  '📻 オーディオテープ・レコードに残された謎の音声混入（逆再生の呪い・スタジオ録音中の怪音事故）',
-  '📻 昭和のテレビ番組を震撼させた超能力・スプーン曲げ（全国ブームの過熱・やらせ告発と少年たちの失脚）',
-  '📻 生放送の放送事故と不気味な深夜テストパターン（不気味な緊急割り込み・無音の静止画・視聴者の恐怖）',
-
-  // ── 19. 🏢 現代都市の土地狂い・ニュータウン怪異（地盤・多発事故） ──
-  '🏢 水辺・ため池を埋め立てて造成された団地の異変（地盤沈下事故・エレベーターの誤作動・水神の怒り）',
-  '🏢 特定の場所で飛び降りが多発する建物の心理的罠（吸い寄せる力・防護フェンスの設置・空室問題）',
-  '🏢 郊外の開かずの踏切・多発する直前横断の怪異（見間違いの影・地域住民が語る過去の事故・警報機の狂い）',
-  '🏢 商業ビル・雑居ビルの「存在しないフロア」（エレベーターの表示バグ・非常階段の行き止まり）',
-
-  // ── 20. 🕯️ 降霊術・集団パニックと都市伝説（コックリさん・噂の伝播） ──
-  '🕯️ 学校をパニックに陥れたコックリさん騒動の実態（集団失神・救急車出動・自己暗示の暴走）',
-  '🕯️ 口裂け女の狂騒劇に見る昭和の集団パニック（警察パトロール出動・集団下校・口コミの爆発力）',
-  '🕯️ 密室で行われた新興宗教の集団瞑想とトランス（自己暗示の極致・神が降りたと叫ぶ夜・密室の崩壊）',
-  '🕯️ 降霊実験で学者たちが直面した不可解な物理現象（机の浮遊・ラップ音・解明できなかったトリック）',
-
-  // ── 21. 🏯 城郭の秘密・抜け穴と埋蔵金伝説（防衛遺構・隠し財宝） ──
-  '🏯 幕府崩壊とともに消えた徳川埋蔵金の行方（赤城山発掘秘話・勘定奉行の暗号・発掘者の破産）',
-  '🏯 城郭の隠し通路・抜け穴伝説の構造と真実（ダミーの古井戸・城外への秘密脱出路・忍者の侵入路）',
-  '🏯 落城時に城内の井戸に沈められた家宝と黄金（井戸を埋め戻す儀式・掘り起こした者に下る祟り）',
-  '🏯 天守閣の最上階に施された魔除けの封印（梁に仕込まれた呪符・人骨供養・鬼門封じのギミック）',
-
-  // ── 22. 🪓 日本の凶悪獣害事件・巨大害獣の記録（人食い獣・猟師の死闘） ──
-  '🪓 日本史上最悪の獣害・巨大ヒグマの民家襲撃記録（冬眠失敗の狂暴化・家屋破壊・マタギの追跡劇）',
-  '🪓 絶滅したはずのニホンオオカミ・野犬群の目撃証言（山林の遠吠え・最後の捕獲記録・山中の遭遇）',
-  '🪓 古傷だらけの人食い巨大人猪と猟師の一騎打ち（鉄砲を弾く皮・山中の遭遇事故・名人の執念）',
-  '🪓 山中で猟犬が突如怯えて動かなくなる異様な気配（不自然な静寂・腐敗臭の元・獣道に落ちていたもの）',
-
-  // ── 23. 🌧️ 水難事故多発地帯・河川と湖沼の怪異（底なし沼・鉄砲水） ──
-  '🌧️ 一度足を踏み入れたら沈んでいく底なし沼の罠（泥濘の恐怖・家畜の消滅・底に眠る古代の沈木）',
-  '🌧️ 晴天の川辺を一瞬で呑み込む「鉄砲水」の恐怖（上流ゲリラ豪雨の盲点・濁流の壁・水難事故の検証）',
-  '🌧️ 干ばつを救うために牛の首を沈めた雨乞い神事（滝壺への投下・血に染まる清流・禁じられた儀式）',
-  '🌧️ 深い湖の底から響く謎の爆発音・怪音現象の正体（湖底ガスの噴出・急激な水位変動・巨大魚の影）',
-
-  // ── 24. 🛸 日本国内の怪光現象・未確認遭遇記録（公認目撃談・不知火） ──
-  '🛸 日本海沿岸に現れる怪火・不知火現象の科学（蜃気楼と発光プランクトン・漁師が恐れた巨大光球）',
-  '🛸 自衛隊機・旧軍機が空中で遭遇した未確認飛行物体（パイロットの追跡証言・レーダー捕捉記録）',
-  '🛸 昭和のぶどう畑で起きた異星人目撃騒動の記録（小学生の証言・機体着陸痕の調査・放射線測定）',
-  '🛸 墓地や湿地帯で目撃される火の玉（人魂）の正体（リンの自然発火説・プラズマ現象・目撃者の心理）',
-
-  // ── 25. 📜 封印された偽書・発禁文書と歴史の抹消（超古代古文書・禁書） ──
-  '📜 超古代文明を記したとされる謎の古文書ミステリー（神代文字の真偽・GHQによる接収・歴史修正）',
-  '📜 江戸幕府が徹底的に焚書・発禁処分にした危険な書（予言書・キリシタン禁書・民衆煽動の書）',
-  '📜 天皇家・貴族の古日記に残された天変地異と怪異記録（夜空の超新星爆発・昼の暗黒・空から降る怪異）',
-  '📜 旧家・名家に代々伝わる「開けてはならぬ壺」の掟（一族の当主のみ知る秘密・祟りの封印・土蔵の奥）'
-];
-
-
-export const CRAFT_THEMES = [
-  // ── 1. 🪵 木造建築と木工の超技術（耐震・道具・見立て） ──
-  '🪵 伝統木造建築の耐震・柔構造システム（釘ゼロの木組み・五重塔の心柱・揺れを逃がす仕口）',
-  '🪵 宮大工の木材見立てと適材適所の哲学（ヒノキの千年寿命・山の斜面と同じ向きに柱を立てる掟）',
-  '🪵 大工道具のミクロン限界突破と刃物仕立て（鉋の透ける極薄削り・天然砥石・鑿の仕込み）',
-  '🪵 歴史的建造物の解体修理と究極のリサイクル（古材の再利用・数百年前の棟梁の知恵との対話）',
-  '🪵 木材の狂いと水分を操る乾燥・曲げ技術（曲げわっぱの蒸気軟化・葉枯らし乾燥・タガ締め）',
-
-  // ── 2. 🗡️ 刃物と金属の熱力学（刀剣・鍛冶・彫金） ──
-  '🗡️ 日本刀と打刃物の折り返し鍛錬工学（玉鋼の選別・不純物排出・鋼の多層積層がもたらす粘り）',
-  '🗡️ 刃物の焼き入れと日本独自の熱処理科学（土置きの妙技・水焼き・マルテンサイト変態と刃文）',
-  '🗡️ 研ぎ師のミクロン立体成形と光の制御（刃肌の創出・切れ味と耐久性を両立するハマグリ刃）',
-  '🗡️ たたら製鉄と古代からの鋳造・冶金術（砂鉄と木炭の還元反応・梵鐘の音響厚み設計・南部鉄器）',
-  '🗡️ 金属の極限加飾と表面化学（タガネの打ち出し立体彫刻・異種金属の象嵌・煮色仕上げの緑青）',
-
-  // ── 3. 🥢 漆と陶磁器・炎と樹脂の錬金術（漆芸・窯焚き・金継ぎ） ──
-  '🥢 天然漆の精製と100年剥がれない塗装工学（樹液の採取・乾漆・ウルシオールの硬化メカニズム）',
-  '🥢 蒔絵と彫漆・時間を凝縮する積層芸術（金銀粉のミクロン散布・数十層の漆を削り出す堆朱）',
-  '🥢 金継ぎと欠損修復の再生美学（割れや欠けを景色に変える哲学・漆の接着力と純金の装飾）',
-  '🥢 陶磁器の土練りと炎の焼成熱力学（水簸による土の精製・登り窯の灰かぶり窯変・還元炎の青磁）',
-  '🥢 釉薬の化学変化と絵付けの極致（金属酸化物の発色・貫入の美・呉須の染付・赤絵の重ね焼き）',
-
-  // ── 4. 👘 染織と繊維のミクロ構造（西陣織・天然染料・組紐） ──
-  '👘 高級織物の多重組織設計と極細糸の力学（西陣織のジャカード・引箔の織り込み・手紡ぎ糸）',
-  '👘 天然染料と発酵・防染の化学反応（藍染のすくも発酵建て・友禅の糸目糊・草木染めの媒染）',
-  '👘 和裁と刺し子の布地補強・可変仕立て工学（反物を無駄にしない直線裁断・過酷な環境の防寒縫製）',
-  '👘 絹糸の光沢制御と日本刺繍の立体感（自ら糸を撚るテンション調整・肉眼の限界に挑む運針）',
-  '👘 組紐と結束の分散力学（丸台・角台による糸玉の交差・武具や帯を支える均一な伸縮性）',
-
-  // ── 5. 🍣 食の極致・旨味と発酵のバイオテクノロジー（和食・醸造・和菓子） ──
-  '🍣 江戸前鮨と鮮魚の熟成・アミノ酸最大化（塩と酢の浸透圧・細胞を壊さない引き切り・活け締め）',
-  '🍣 日本料理の抽出科学と熱制御（60度定温の昆布出汁・隠し包丁・炭火の遠赤外線と串打ち力学）',
-  '🍣 日本酒醸造・微生物の共生と秒単位の管理（極限精米・杜氏の製麹温度管理・生酛造りの生態系）',
-  '🍣 伝統調味料の長期発酵と酵素分解（木桶醤油の二夏熟成・寒仕込み味噌の褐変反応・本みりん）',
-  '🍣 伝統製糖と和菓子造形の物理学（和三盆の手揉み摩擦熱・小豆の渋抜き・練り切りの秒速造形）',
-
-  // ── 6. 📜 和紙・筆墨と超精密工芸（靭皮繊維・金箔・竹細工） ──
-  '📜 手漉き和紙の繊維配向と超長期耐久性（楮・三椏の靭皮繊維・ネリの粘液工学・1000年劣化しない紙）',
-  '📜 伝統製墨と筆・書画材の材料科学（油煙と膠の混練熟成・獣毛の選別・毛先を切らない揃え技）',
-  '📜 金箔打ちの極薄延展と限界突破の物理（金銀合金の配合・箔打ち紙の仕込み・1万分の1ミリの世界）',
-  '📜 竹細工と和傘・骨組みと弾性の幾何学（極細竹ヒゴの均一幅・数十本の骨を束ねるロクロ・防水油）',
-  '📜 銘木工芸と江戸指物の隠し接合（狂いのない直角・留め継ぎ・木材の収縮率を計算した高気密構造）',
-
-  // ── 7. 🏛️ 石工・自然建材・保存修復（石垣・瓦・文化財） ──
-  '🏛️ 城郭石垣の耐震・排水と石割の神技（野面積みの重心・セリ矢による直線切断・揺れを吸収するグリ石）',
-  '🏛️ いぶし瓦と自然素材屋根の防水・通気工学（炭素被膜の還元焼成・茅葺きの積層・檜皮葺きの曲線美）',
-  '🏛️ 伝統左官・土壁と漆喰の調湿・呼吸機能（荒壁・中塗り・本漆喰・磨き壁の平滑仕上げと防火性）',
-  '🏛️ 文化財の非破壊調査と延命保存科学（出土品のPEG含浸・剥落止め・古代接着剤の再活性・可逆性修理）',
-  '🏛️ 和楽器に宿る自然素材の音響設計（太鼓のくり抜き胴・三味線の皮張力・尺八の漆調律・箏の綾杉彫り）'
-];
-
-/**
- * =======================================================================
- * STUDIO PRO: ロジック駆動型・統合定義ファイル (Single Source of Truth)
- * =======================================================================
- * すべてのモデル、構図ルール、カメラワーク、プロンプトパイプライン、
- * ネガティブ除外ルールをこの定義データに集約します。
- * コード側での個別ハードコードを完全排除し、この定義から自動駆動させます。
- */
-
-// ── 1. 画像生成モデル定義 ─────────────────────────────────────────────
+// ── 🤖 画像生成モデル定義 ──
 export interface ImageModelDefinition {
   id: string;
   name: string;
@@ -1000,7 +166,6 @@ export interface ImageModelDefinition {
   description: string;
   isDefault?: boolean;
 }
-
 export const IMAGE_MODELS_REGISTRY: ImageModelDefinition[] = [
   { 
     id: 'banana-pro', 
@@ -1022,38 +187,31 @@ export const IMAGE_MODELS_REGISTRY: ImageModelDefinition[] = [
     description: '下書き・大量プレビュー確認向け' 
   }
 ];
-
 export function resolveImageModel(keyOrLabel?: string): ImageModelDefinition {
   const defaultModel = IMAGE_MODELS_REGISTRY.find(m => m.isDefault) || IMAGE_MODELS_REGISTRY[1];
   if (!keyOrLabel) return defaultModel;
-  // 旧 "banana-2" や部分一致もスマートに解決
   if (keyOrLabel === 'banana-2' || keyOrLabel.includes('Banana 2（')) {
     return IMAGE_MODELS_REGISTRY.find(m => m.id === 'banana-2.1') || defaultModel;
   }
   return IMAGE_MODELS_REGISTRY.find(m => m.id === keyOrLabel || m.label === keyOrLabel || m.name === keyOrLabel) || defaultModel;
 }
-
-// ── 2. カメラワーク・演出（Webtoon静止画向け固定デフォルト） ──────────
+// ── 🎥 カメラワーク・演出 ──
 export interface CameraWorkDefinition {
   id: string;
   label: string;
   motionPrompt: string;
   recommendedKenBurns: KenBurnsPreset;
 }
-
 export const DEFAULT_CAMERA_WORK: CameraWorkDefinition = { 
   id: 'static', 
   label: '固定（静止画マスター）', 
   motionPrompt: 'Static cinematic frame, stable composition, high quality artwork',
   recommendedKenBurns: 'none'
 };
-
 export const CAMERA_WORK_REGISTRY: CameraWorkDefinition[] = [DEFAULT_CAMERA_WORK];
-
 export function resolveCameraWork(_labelOrMotion?: string): CameraWorkDefinition {
   return DEFAULT_CAMERA_WORK;
 }
-
 export function resolveRecommendedCameraWorkAndKenBurns(
   _cutId?: number,
   _mode?: string,
@@ -1062,132 +220,33 @@ export function resolveRecommendedCameraWorkAndKenBurns(
 ): CameraWorkDefinition {
   return DEFAULT_CAMERA_WORK;
 }
-
-// ── 5. アクション・姿勢・小道具の対比ルール（Pose & Props Contrast Rule） ─────────────
+// ── 🚫 姿勢・構図の連続被り防止ルール ──
 export const POSE_CONTRAST_RULES: Array<{
   triggerKeywords: string[];
   antiRepeatNegatives: string[];
 }> = [
-  // 1. 座り・しゃがみ・床姿勢
   {
-    triggerKeywords: ['sit', 'sitting', 'floor', 'ground', 'tatami', 'cross-legged', 'seated', 'crouch', 'crouching', 'squat', 'bench', 'chair'],
-    antiRepeatNegatives: [
-      'sitting on floor', 'sitting down', 'seated posture', 'crossed legs', 
-      'kneeling', 'squatting', 'floor sitting pose', 'looking up from floor', 
-      'sitting on tatami', 'floor seating posture', 'sitting on bench', 'sitting on chair'
-    ]
+    triggerKeywords: ['sit', 'sitting', 'floor', 'ground', 'seated', 'crouch'],
+    antiRepeatNegatives: ['sitting on floor', 'sitting down', 'seated posture', 'crossed legs', 'kneeling']
   },
-  // 2. 直立・棒立ち
   {
     triggerKeywords: ['stand', 'standing', 'stiff', 'upright'],
-    antiRepeatNegatives: [
-      'stiff standing pose', 'static upright standing', 'motionless standing',
-      'identical standing pose', 'repeating standing posture', 'straight standing posture'
-    ]
+    antiRepeatNegatives: ['stiff standing pose', 'static upright standing', 'motionless standing']
   },
-  // 3. 移動（歩き・走り・疾走）
   {
-    triggerKeywords: ['walk', 'walking', 'stride', 'run', 'running', 'dash', 'dashing'],
-    antiRepeatNegatives: [
-      'walking away repetition', 'running pose repetition', 'identical walking stride',
-      'walking in same direction', 'dashing pose repetition'
-    ]
+    triggerKeywords: ['walk', 'walking', 'stride', 'run', 'running'],
+    antiRepeatNegatives: ['walking away repetition', 'running pose repetition', 'identical walking stride']
   },
-  // 4. 傘・日傘・雨天小道具（手前カットからの連続出現を絶対阻止）
   {
-    triggerKeywords: ['umbrella', 'parasol', 'rain', '傘', '日傘', '雨傘'],
-    antiRepeatNegatives: [
-      'holding umbrella', 'open umbrella', 'umbrella in hand', 'repeating umbrella pose',
-      'holding clear vinyl umbrella', 'carrying umbrella', 'parasol', 'umbrella canopy'
-    ]
+    triggerKeywords: ['umbrella', 'parasol', 'rain', '傘'],
+    antiRepeatNegatives: ['holding umbrella', 'open umbrella', 'umbrella in hand']
   },
-  // 5. スマホ・携帯デバイス
   {
-    triggerKeywords: ['phone', 'smartphone', 'mobile', 'cellphone', 'スマホ', '携帯'],
-    antiRepeatNegatives: [
-      'holding smartphone', 'looking at phone screen', 'repeating phone gesture',
-      'operating mobile device', 'texting on smartphone'
-    ]
-  },
-  // 6. カップ・グラス・飲み物・カフェ小道具
-  {
-    triggerKeywords: ['cup', 'mug', 'glass', 'drink', 'drinking', 'coffee', 'tea', 'beverage', 'tumbler', 'カップ', 'コップ'],
-    antiRepeatNegatives: [
-      'holding cup', 'holding mug', 'drinking pose', 'holding beverage', 'sipping drink', 'holding glass'
-    ]
-  },
-  // 7. 自転車・乗り物
-  {
-    triggerKeywords: ['bike', 'bicycle', 'cycling', 'pedal', '自転車'],
-    antiRepeatNegatives: [
-      'riding bicycle', 'sitting on bike', 'holding bicycle handlebars', 'repeating bicycle framing'
-    ]
-  },
-  // 8. 本・ノート・ペン・読書・執筆
-  {
-    triggerKeywords: ['book', 'notebook', 'pen', 'reading', 'writing', 'pencil', '本', '読書'],
-    antiRepeatNegatives: [
-      'holding book', 'reading book pose', 'holding notebook', 'writing with pen', 'open book'
-    ]
-  },
-  // 9. 刀・剣・武器
-  {
-    triggerKeywords: ['sword', 'katana', 'blade', 'weapon', 'sheath', '刀', '抜刀'],
-    antiRepeatNegatives: [
-      'holding katana', 'drawing sword pose', 'brandishing weapon', 'holding blade'
-    ]
-  },
-  // 10. 扇子・うちわ
-  {
-    triggerKeywords: ['fan', 'folding fan', 'sensu', 'uchiwa', '扇子', '団扇'],
-    antiRepeatNegatives: [
-      'holding folding fan', 'waving fan', 'fan covering mouth', 'holding sensu'
-    ]
-  },
-  // 11. ヘッドフォン・音楽機器
-  {
-    triggerKeywords: ['headphone', 'headphones', 'earphone', 'earphones', 'headset', 'ヘッドホン'],
-    antiRepeatNegatives: [
-      'wearing headphones around neck', 'adjusting headphones', 'listening with earphones'
-    ]
-  },
-  // 12. 寄りかかり・手すり・壁
-  {
-    triggerKeywords: ['lean', 'leaning', 'railing', 'fence', 'against wall'],
-    antiRepeatNegatives: [
-      'leaning against wall', 'leaning on railing', 'slouching posture', 'leaning pose'
-    ]
-  },
-  // 13. 頬杖・顔に手を当てる思索ポーズ
-  {
-    triggerKeywords: ['hand on chin', 'hand on cheek', 'thinking pose', 'chin in hand', 'resting chin', '頬杖'],
-    antiRepeatNegatives: [
-      'hand on chin pose', 'hand on cheek', 'touching face pose', 'resting chin on palm'
-    ]
-  },
-  // 14. 振り返り・背後構図
-  {
-    triggerKeywords: ['turn', 'turning', 'behind', 'back view', 'looking back', 'shoulder'],
-    antiRepeatNegatives: [
-      'seen from behind', 'looking back over shoulder', 'back turned', 'rear view repetition'
-    ]
-  },
-  // 15. 正面凝視・カメラ目線
-  {
-    triggerKeywords: ['front', 'facing camera', 'centered', 'eye contact', 'looking at viewer', 'looking at camera'],
-    antiRepeatNegatives: [
-      'facing front camera', 'identical front view', 'centered head-on angle', 'looking straight into camera', 'monotonous eye contact', 'mugshot stare'
-    ]
+    triggerKeywords: ['phone', 'smartphone', 'mobile', 'スマホ'],
+    antiRepeatNegatives: ['holding smartphone', 'looking at phone screen', 'texting on smartphone']
   }
 ];
-
-// ── 6. 各制作モード用特化テーマ定義 ─────────────────────────────────
-
-
-
-// ── 6.5. 制作モード・プラグイン統合オブジェクト (PRODUCTION_MODES_CONFIG) ─────
-
-
+// ── 🎬 制作モード統合オブジェクト ──
 export interface ProductionModeConfig {
   value: ProductionMode;
   label: string;
@@ -1205,7 +264,6 @@ export interface ProductionModeConfig {
   getContextTitle: (isManga?: boolean, isHistorical?: boolean) => string;
   promptInstructions: string;
 }
-
 export const PRODUCTION_MODES_CONFIG: Record<ProductionMode, ProductionModeConfig> = {
   episodes: {
     value: 'episodes',
@@ -1220,192 +278,156 @@ export const PRODUCTION_MODES_CONFIG: Record<ProductionMode, ProductionModeConfi
     themeLabel: 'テーマ',
     unit: '話',
     themes: [],
-    getDirectorRole: (isManga, isHistorical) => isManga ? 'world-class comic/manga author and storyboard artist' : isHistorical ? 'world-class historical drama director' : 'world-class cinematic drama director',
+    getDirectorRole: (isManga, isHistorical) => isManga ? 'world-class comic/manga author' : isHistorical ? 'world-class historical drama director' : 'world-class cinematic drama director',
     getContextTitle: (isManga, isHistorical) => isManga ? 'Comic Episode' : isHistorical ? 'Historical Drama Episode' : 'Drama Episode',
-    promptInstructions: `CINEMATIC DRAMA DIRECTING:
-1. Pacing & Continuity: Direct each cut with profound narrative progression and cinematic gravitas.
-2. Dialogue & Narration: narrationJp MUST be gripping spoken dialogue or deep cinematic narration (20-30 characters per cut).
-3. Highlights: Highlight 1 to 2 key terms driving emotional weight.`
+    promptInstructions: 'Direct each cut with profound narrative progression and cinematic gravitas.'
   },
   manga: {
     value: 'manga',
-    label: '📖 短編マンガ・読み切り (24Cut)',
+    label: '📖 短編マンガ・読み切り',
     icon: 'auto_stories',
     badge: '1話完結',
-    desc: '起承転結の24Cut短編マンガを一括自動プロデュース',
-    telopNote: '漫画フキダシ・効果音・セリフ',
+    desc: '起承転結の短編マンガを一括自動プロデュース',
+    telopNote: '漫画フキダシ・効果音',
     colorClass: 'border-emerald-500/30 bg-emerald-950/40 text-emerald-200',
     cardTitle: 'Manga Episode Card',
     cardIcon: 'auto_stories',
     themeLabel: 'テーマ',
     unit: '話',
     themes: [],
-    getDirectorRole: () => 'award-winning manga artist, comic storyboard director, and visual novel creator',
-    getContextTitle: () => '24-Cut Manga Episode Sequence',
-    promptInstructions: `24-CUT SHORT MANGA STORY DIRECTING:
-1. Pacing & Structure (Four Acts):
-   - Act 1 (Cut 1-6 / 起 - Introduction): Establish daily routine, character personalities, and the sudden inciting incident.
-   - Act 2 (Cut 7-12 / 承 - Development): Investigation, journey, obstacle, and deeper character interaction.
-   - Act 3 (Cut 13-18 / 転 - Crisis & Climax): Dramatic confrontation, shocking truth reveal, high-stakes battle or emotional clash.
-   - Act 4 (Cut 19-24 / 結 - Resolution): Aftermath, heartfelt dialogue, sunset/dawn aftermath, and unforgettable ending hook.
-2. Comic Paneling: Utilize cinematic comic panel compositions (close-ups for emotions, wide angles for impacts, dynamic perspective).
-3. Dialogue & Highlights: Every cut must feature vivid manga dialogue or inner monologue in narrationJp.`
+    getDirectorRole: () => 'award-winning manga artist and comic storyboard director',
+    getContextTitle: () => 'Manga Episode Sequence',
+    promptInstructions: 'Utilize cinematic comic panel compositions and intense story pacing.'
   },
   mv: {
     value: 'mv',
     label: '🎵 音楽MV',
     icon: 'music_note',
     badge: '全30カット',
-    desc: 'Ado風キネティック対向スルー・ビート同期',
-    telopNote: 'キネティック対向スルー・ネオン枠',
+    desc: 'エモーショナルな楽曲MVビジュアル',
+    telopNote: 'ネオン枠・キネティック',
     colorClass: 'border-purple-500/30 bg-purple-950/40 text-purple-200',
     cardTitle: 'Music Video Concept Card',
     cardIcon: 'headphones',
     themeLabel: 'シチュエーション',
     unit: '曲',
-    themes: MV_THEMES,
-    getDirectorRole: () => 'world-class music video (MV) director and visual poet',
+    themes: [],
+    getDirectorRole: () => 'world-class music video director',
     getContextTitle: () => 'Music Video Sequence',
-    promptInstructions: `MUSIC VIDEO (MV) CONTINUITY & LYRIC DIRECTING:
-1. Seamless Visual Flow in the Same World:
-This is an authentic music video sequence where the visual is a cinematic aesthetic backdrop to a song. Maintain a steady, atmospheric, nostalgic, or melancholic mood. The 12 cuts must form a seamless, cohesive visual universe.
-2. AUTHENTIC SONG LYRICS:
-CRITICAL: Do NOT write third-person scenery narration. Instead, narrationJp MUST be REAL EMOTIONAL SONG LYRICS as if sung by Ado, Yorushika, ZUTOMAYO, YOASOBI, or Vaundy!
-- Cuts 1-3 (Verse A): Quiet restlessness, unvoiced emotions, solitary late night.
-- Cuts 4-6 (Verse B): Rising tempo, running through the dusk, heartbeats accelerating.
-- Cuts 7-9 (Chorus / Drop): Emotional climax, powerful punchy lyrical hooks!
-- Cuts 10-12 (Outro / Epilogue): Lingering resonance, quiet dawn, resolved heartbeat.
-3. Aesthetic Subtitle Highlights:
-For EACH cut, select 1 to 2 key emotional words (which MUST be EXACTLY present in narrationJp) for the highlights array.`
+    promptInstructions: 'Create emotional, poetic song lyrics and seamless aesthetic visuals.'
   },
   trivia: {
     value: 'trivia',
     label: '💡 衝撃雑学Shorts',
     icon: 'lightbulb',
     badge: 'TikTok特化',
-    desc: '冒頭フック＆オチ（画面中央フラッシュ）',
-    telopNote: '画面中央超特大・ズームバウンス',
+    desc: '冒頭フック＆オチの衝撃雑学',
+    telopNote: '画面中央超特大',
     colorClass: 'border-amber-500/40 bg-amber-950/40 text-amber-200',
-    cardTitle: 'Trivia & Science Intelligence Card',
+    cardTitle: 'Trivia Card',
     cardIcon: 'lightbulb',
     themeLabel: '雑学テーマ',
     unit: '本',
-    themes: TRIVIA_THEMES,
-    getDirectorRole: () => 'viral YouTube Shorts/TikTok trivia creator and documentary director',
-    getContextTitle: () => 'Trivia Shorts Sequence',
-    promptInstructions: `VIRAL TRIVIA DIRECTING:
-1. Pacing & Curiosity: Hook in Cut 1-2 with unbelievable curiosity/question. Explain the hidden scientific/historical truth in Cut 3-9. Deliver a mind-blowing punchline/conclusion in Cut 10-12.
-2. Narration: narrationJp MUST be punchy Japanese trivia spoken commentary (18-25 chars per cut, engaging YouTube Shorts rhythm).
-3. Gold Highlights: Highlight critical numbers, shocking facts, and core keywords.`
+    themes: [],
+    getDirectorRole: () => 'viral YouTube Shorts trivia creator',
+    getContextTitle: () => 'Trivia Sequence',
+    promptInstructions: 'Hook in Cut 1, explain truth in Cut 2-10, deliver punchline in Cut 11-12.'
   },
   quotes: {
     value: 'quotes',
-    label: '📜 偉人の名言・処方箋',
+    label: '📜 偉人の名言',
     icon: 'history_edu',
     badge: '保存特化',
-    desc: '心に刺さる人生訓（厳粛な縦書き墨文字）',
-    telopNote: '厳粛な縦書き／天吊り・静寂フェード',
+    desc: '心に刺さる人生訓',
+    telopNote: '厳粛な縦書き',
     colorClass: 'border-teal-500/40 bg-teal-950/40 text-teal-200',
-    cardTitle: 'Mastermind Wisdom Card',
+    cardTitle: 'Quotes Card',
     cardIcon: 'format_quote',
     themeLabel: '名言・人物',
     unit: '篇',
-    themes: QUOTES_THEMES,
-    getDirectorRole: () => 'philosophical essayist, master typographer, and quote archivist',
-    getContextTitle: () => 'Quotes Shorts Sequence',
-    promptInstructions: `PHILOSOPHICAL GREAT QUOTES DIRECTING:
-1. Pacing: Cut 1-3 sets the emotional dilemma/anxiety of life. Cut 4-9 reveals the profound quote and wisdom. Cut 10-12 provides the healing conclusion/prescription to save.
-2. Narration: narrationJp MUST be elegant, dignified, memorable quotes (格調高い名言・超訳処方箋).
-3. Gold Highlights: Highlight the profound keyword that resonates in the heart.`
+    themes: [],
+    getDirectorRole: () => 'philosophical essayist',
+    getContextTitle: () => 'Quotes Sequence',
+    promptInstructions: 'Present profound quotes and life prescriptions.'
   },
   folklore: {
     value: 'folklore',
     label: '👻 怪異・未解決事件',
     icon: 'visibility',
     badge: '考察・恐怖',
-    desc: '背筋凍る謎（不穏グリッチ・深紅文字）',
-    telopNote: '不穏グリッチ・深紅ハイライト',
+    desc: '背筋凍る謎と怪異',
+    telopNote: '深紅ハイライト',
     colorClass: 'border-rose-900/60 bg-rose-950/50 text-rose-200',
-    cardTitle: 'Occult & Folklore Intelligence Card',
+    cardTitle: 'Folklore Card',
     cardIcon: 'psychology',
     themeLabel: '怪異・伝説',
     unit: '話',
-    themes: FOLKLORE_THEMES,
-    getDirectorRole: () => 'investigative mystery storyteller and psychological suspense director',
-    getContextTitle: () => 'Folklore Mystery Sequence',
-    promptInstructions: `FOLKLORE & UNSOLVED MYSTERY DIRECTING:
-1. Pacing: Cut 1-2 introduces the chilling historical incident/creepy lore. Cut 3-9 examines unsettling evidence and bizarre theories. Cut 10-12 poses an eerie open question provoking comments.
-2. Narration: narrationJp MUST be suspenseful, atmospheric commentary evoking curiosity and goosebumps.
-3. Gold Highlights: Highlight chilling evidence, dates, and ominous names.`
+    themes: [],
+    getDirectorRole: () => 'investigative mystery storyteller',
+    getContextTitle: () => 'Folklore Sequence',
+    promptInstructions: 'Suspenseful commentary evoking eerie curiosity.'
   },
   craft: {
     value: 'craft',
     label: '🏯 超絶技巧・職人魂',
     icon: 'handyman',
     badge: '神業和モダン',
-    desc: '神の手を持つ職人技（凛とした伝統金文字）',
-    telopNote: '凛とした伝統和モダン・金墨文字',
+    desc: '神の手を持つ職人技',
+    telopNote: '伝統金文字',
     colorClass: 'border-yellow-600/40 bg-yellow-950/40 text-yellow-200',
-    cardTitle: 'Craftsmanship Spirit Card',
+    cardTitle: 'Craft Card',
     cardIcon: 'precision_manufacturing',
     themeLabel: '伝統技術',
     unit: '作',
-    themes: CRAFT_THEMES,
-    getDirectorRole: () => 'master artisan documentarian and aesthetic visual poet',
-    getContextTitle: () => 'Craft Documentary Sequence',
-    promptInstructions: `SUPREME CRAFTSMAN DIRECTING:
-1. Pacing: Cut 1-2 presents the raw pristine material. Cut 3-9 captures the mesmerizing precision handwork, micro-focus, and extreme dedication. Cut 10-12 reveals the sublime finished masterpiece.
-2. Narration: narrationJp MUST be serene, reverent, and poetic, honoring the craftsman's devotion.
-3. Gold Highlights: Highlight artisan terms, material names, and supreme techniques.`
+    themes: [],
+    getDirectorRole: () => 'master artisan documentarian',
+    getContextTitle: () => 'Craft Sequence',
+    promptInstructions: 'Serene and reverent celebration of master craftsmanship.'
   },
   'style-matrix': {
     value: 'style-matrix',
-    label: '🎨 画風比較 (2枚)',
+    label: '🎨 画風比較',
     icon: 'palette',
     badge: '自動比較',
-    desc: '同一プロンプトで複数画風を一括検証（2枚固定）',
-    telopNote: '画風比較（動画なし）',
+    desc: '複数画風を一括検証',
+    telopNote: '画風比較',
     colorClass: 'border-pink-500/30 bg-pink-950/40 text-pink-200',
-    cardTitle: 'Style Matrix Card',
+    cardTitle: 'Style Card',
     cardIcon: 'palette',
     themeLabel: 'テーマ',
     unit: '組',
     themes: [],
-    getDirectorRole: () => 'world-class visual artist and art style comparison director',
-    getContextTitle: () => 'Style Matrix Comparison',
-    promptInstructions: `STYLE MATRIX COMPARISON DIRECTING:
-Direct standardized prompt scenes for evaluating identical visual compositions across different art styles.`
+    getDirectorRole: () => 'art style director',
+    getContextTitle: () => 'Style Matrix',
+    promptInstructions: 'Standardized prompt evaluation across styles.'
   },
   manzai: {
     value: 'manzai',
     label: '🎙️ 漫才・掛け合い',
     icon: 'record_voice_over',
     badge: '演芸掛け合い',
-    desc: 'テンポ良いボケ＆ツッコミの掛け合い劇',
-    telopNote: 'ポップスライド・掛け合い吹き出し',
+    desc: 'ボケ＆ツッコミの掛け合い劇',
+    telopNote: '掛け合い吹き出し',
     colorClass: 'border-orange-500/30 bg-orange-950/40 text-orange-200',
-    cardTitle: 'Manzai Dialogue Card',
+    cardTitle: 'Manzai Card',
     cardIcon: 'record_voice_over',
     themeLabel: 'テーマ・お題',
     unit: '本',
     themes: [],
-    getDirectorRole: () => 'world-class comedic writer and dynamic dialogue director',
-    getContextTitle: () => 'Manzai Dialogue Routine',
-    promptInstructions: `MANZAI & COMEDIC DIALOGUE DIRECTING:
-1. Pacing & Timing: Rapid-fire banter between two contrasting characters (Boke & Tsukkomi). Dynamic reaction shots and exaggerated expressions.
-2. Dialogue: narrationJp MUST be crisp, rhythmic Japanese comedic dialogue with snappy punchlines.
-3. Highlights: Highlight the punchline keywords, witty remarks, and sound effects.`
+    getDirectorRole: () => 'comedic writer',
+    getContextTitle: () => 'Manzai Routine',
+    promptInstructions: 'Rapid-fire banter between contrasting characters.'
   }
 };
-
 export function getProductionModeConfig(mode?: string, isMvMode?: boolean): ProductionModeConfig {
   if (isMvMode) return PRODUCTION_MODES_CONFIG.mv;
   if (!mode || !(mode in PRODUCTION_MODES_CONFIG)) return PRODUCTION_MODES_CONFIG.episodes;
   return PRODUCTION_MODES_CONFIG[mode as ProductionMode];
 }
-
 export const PRODUCTION_MODES_LIST = Object.values(PRODUCTION_MODES_CONFIG);
-
+export const PRODUCTION_MODES = PRODUCTION_MODES_LIST;
+export const IMAGE_MODELS = IMAGE_MODELS_REGISTRY;
+// ── 🎥 映画的カメラディレクションサイクル ──
 export interface CineCameraRule {
   scale: string;
   tag: string;
@@ -1413,95 +435,37 @@ export interface CineCameraRule {
   directive: string;
   antiPoseTokens: string[];
 }
-
-/**
- * YouTubeで天下を取る映画的10大カメラディレクションサイクル (Cine Director 10 Patterns)
- * （Google AIの中庸バイアスを強制破壊し、ドアップ・口元・手元・足元・煽り・ダッチ・超広角・俯瞰・横顔・象徴静物を極限の迫力で描画させる）
- */
 export const UNIVERSAL_CINE_CYCLE: CineCameraRule[] = [
-  // 1. Extreme Close-Up / 極限ドアップ・瞳と表情
   {
     scale: 'Extreme Close-Up',
     tag: '極限ドアップ・瞳',
     cameraWork: 'intimate-macro',
-    directive: 'Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, intricate iris reflections, shallow depth of field with 100% blurred abstract bokeh, strictly tight face and emotive eyes only, absolutely NO full body, NO torso, NO legs, NO arms, NO visible outfit',
-    antiPoseTokens: ['full body', 'torso', 'legs', 'feet', 'shoes', 'standing pose', 'seated pose', 'sitting', 'wide shot', 'medium shot', 'distant face', 'normal portrait', 'waist-up crop', 'stiff standing posture']
+    directive: 'Ultra extreme macro close-up portrait cropped tightly at mid-forehead and chin, massive sparkling eyes dominating the canvas, shallow depth of field, strictly face and eyes only',
+    antiPoseTokens: ['full body', 'torso', 'legs', 'wide shot', 'standing pose']
   },
-  // 2. Low-Angle Footsteps / 足元・歩行・ローアングル (顔面アップから一気に足元へスイッチ)
   {
     scale: 'Low-Angle Footsteps',
     tag: '足元・踏み出し',
     cameraWork: 'low-angle-tilt-up',
-    directive: 'Extreme ground-level low-angle worm-eye camera looking at footsteps, footwear or feet taking a resolute kinetic stride across the environmental terrain matching the scene setting, ground surface texture, dynamic cinematic motion, strictly ground and feet level',
-    antiPoseTokens: ['face', 'portrait', 'upper body', 'chest-up', 'eyes', 'standard eye level', 'high angle', 'looking down']
+    directive: 'Extreme ground-level low-angle worm-eye camera looking at footsteps taking a resolute kinetic stride, dynamic motion, strictly ground and feet level',
+    antiPoseTokens: ['face', 'portrait', 'eyes', 'high angle']
   },
-  // 3. Candid Medium Situation / 日常バストアップ・佇まい (自然な全身/上半身と背景の調和)
   {
     scale: 'Medium Bust Shot',
     tag: '日常シチュエーション',
     cameraWork: 'medium-push-in',
-    directive: 'Candid medium atmospheric framing capturing authentic unposed posture within the scene, resting quietly or shifting weight thoughtfully, natural relaxed aesthetic, rich directional side chiaroscuro rim lighting, shallow depth of field',
-    antiPoseTokens: ['stiff upright pose', 'facing camera rigidly', 'formal portrait', 'direct eye contact', 'extreme close-up of eyes']
+    directive: 'Candid medium atmospheric framing capturing authentic unposed posture, rich directional side chiaroscuro rim lighting, shallow depth of field',
+    antiPoseTokens: ['stiff upright pose', 'facing camera rigidly']
   },
-  // 4. Macro Mouth & Breath / 口元・表情・吐息のドアップ (曲の情感を宿す口元)
-  {
-    scale: 'Macro Mouth & Breath',
-    tag: '口元・歌唱・吐息',
-    cameraWork: 'intimate-macro',
-    directive: 'Intimate macro close-up focusing tightly on parted expressive lips, chin, and throat, delicate kinetic breathing reflecting the emotional atmosphere, shallow depth of field with 100% blurred background, strictly lower face and lips only',
-    antiPoseTokens: ['full body', 'legs', 'feet', 'shoes', 'wide shot', 'medium shot', 'full face', 'distant portrait', 'standing pose', 'eyes close-up']
-  },
-  // 5. Extreme Wide Landscape Panorama / 超広角・情景主役 (口元から一転、雄大な風景へ)
-  {
-    scale: 'Extreme Wide Panorama',
-    tag: '超広角・情景主役',
-    cameraWork: 'wide-establishing',
-    directive: 'Grand panoramic environmental tableau where the vast grand environment, immense background scale, and sweeping atmospheric horizon overwhelm 90% of the canvas, character naturally integrated as a tiny distant miniature silhouette in the lower third, breathtaking spatial depth',
-    antiPoseTokens: ['close-up', 'medium shot', 'prominent character in foreground', 'large face', 'dominant person in center', 'waist-up', 'chest-up', 'normal portrait']
-  },
-  // 6. Macro Hands & Gestures / 手元・指先のアクション (感情を宿す指先)
-  {
-    scale: 'Macro Hands & Gestures',
-    tag: '手元・指先・仕草',
-    cameraWork: 'macro-reveal',
-    directive: 'Tactile extreme close-up macro focusing sharply on hands, fingers, and tactile gestures matching the character attire and setting, natural expressive kinetic movement, background softly blurred, strictly hands and tactile gesture only, NO face',
-    antiPoseTokens: ['full face', 'eyes', 'portrait', 'full body', 'legs', 'feet', 'distant shot', 'standing pose', 'wide shot']
-  },
-  // 7. Dutch-Angle Diagonal Tilt / 傾き35度のダッチアングル・斜め構図
-  {
-    scale: 'Dutch-Angle Medium',
-    tag: '斜め傾き・ダッチアングル',
-    cameraWork: 'dutch-tilt',
-    directive: 'Aggressively tilted 35-degree off-axis Dutch-angle camera framing, sharp kinetic diagonal lines slashing across the frame, off-kilter dynamic perspective creating palpable tension and emotional instability, stylish cinematic slant',
-    antiPoseTokens: ['horizontal level frame', 'straight horizontal camera', 'level horizon', 'flat standard shot', 'vertical upright symmetry', 'level camera']
-  },
-  // 8. Medium Close-Up Profile / 完全真横90度・横顔・振り返り
-  {
-    scale: 'Medium Close-Up Profile',
-    tag: '完全真横・プロファイル',
-    cameraWork: 'cinematic-profile-pan',
-    directive: 'Exact 90-degree horizontal side profile view halting mid-stride, poignant three-quarter view or turning head to glance back over shoulder with a bittersweet searching gaze, razor-sharp silhouette with brilliant directional rim lighting outlining hair and facial profile',
-    antiPoseTokens: ['facing camera', 'front view', 'direct eye contact', 'centered portrait', 'front-facing character']
-  },
-  // 9. Overhead High-Angle Bird\'s-Eye / 真上75度俯瞰・影と幾何学
-  {
-    scale: 'Overhead High-Angle',
-    tag: '真上俯瞰・影と幾何学',
-    cameraWork: 'high-angle-tilt-down',
-    directive: 'Steep overhead high-angle bird-eye view looking down from high vantage point at a 75-degree angle, emphasizing ground geometry, environmental textures, and long elongated dramatic shadows cast across the floor plane, unique top-down perspective',
-    antiPoseTokens: ['eye-level shot', 'horizontal angle', 'looking up from below', 'worm-eye view', 'frontal portrait', 'standard eye level', 'horizontal eye contact']
-  },
-  // 10. Still-Life Key Prop / ★象徴アイテム・静物マクロ (OBJ・人物完全排除)
   {
     scale: 'Still-Life Object Macro',
     tag: '象徴アイテム・静物',
     cameraWork: 'macro-reveal',
-    directive: 'Cinematic extreme close-up macro product still-life photography of an iconic symbolic keepsake object, resting quietly in ambient natural lighting, completely deserted scene with strictly NO humans, NO person, rich tactile texture, crisp specular reflections, and fine floating dust motes',
-    antiPoseTokens: ['human', 'person', 'face', 'eyes', 'hands', 'body', 'crowd', 'portrait', 'girl', 'boy', 'man', 'woman', 'head', 'torso']
+    directive: 'Cinematic extreme close-up macro product still-life photography of an iconic symbolic keepsake object, completely deserted scene with strictly NO humans, rich tactile texture',
+    antiPoseTokens: ['human', 'person', 'face', 'eyes', 'hands', 'body', 'crowd', 'portrait']
   }
 ];
-
-// ── 7. 12カット・ストーリー展開プリセット（シネマ・漫画・音楽MV） ────────
+// ── 🎞️ ストーリーボードプリセット ──
 export interface StoryShotPreset {
   scale: string;
   tag: string;
@@ -1509,106 +473,29 @@ export interface StoryShotPreset {
   mangaAngle: string;
   mvAngle: string;
 }
-
 export const TWELVE_CUT_STORYBOARD_PRESETS: StoryShotPreset[] = [
-  {
-    scale: 'Wide',
-    tag: '引き・世界観',
-    cinematicAngle: 'High-angle landscape view looking down from above, character is an active figure in the townscape / environmental setting, sweeping atmospheric background',
-    mangaAngle: 'Massive full-bleed edge-to-edge opening splash illustration, grand world setting, extreme atmospheric depth, speed lines',
-    mvAngle: 'Cinematic establishing wide landscape, atmospheric natural scenery, subject walking or standing naturally in the distance, gentle wind, beautiful natural light, serene music video opening'
-  },
-  {
-    scale: 'Medium',
-    tag: '佇まい・アンニュイ',
-    cinematicAngle: 'Dramatic low-angle worm\'s-eye view looking up from below, intense cinematic perspective showing head and shoulders firmly grounded, dynamic sky background',
-    mangaAngle: 'Intense macro eye close-up filling the frame, heavy screen tones, speed lines radiating, dramatic monologue expression, borderless',
-    mvAngle: 'Relaxed medium shot, subject in contemplative quiet pose, looking away calmly, soft natural rim lighting, unposed candid aesthetic'
-  },
-  {
-    scale: 'Close-up',
-    tag: '情緒的ディテール',
-    cinematicAngle: 'Looking back over the shoulder while walking away, dynamic three-quarter view, candid emotional glance',
-    mangaAngle: 'Webtoon style vertical flow, character in mid-action, dynamic diagonal angle, bold SFX onomatopoeia, full-bleed composition',
-    mvAngle: 'Artistic detail close-up, focusing on hands, feet walking, gently swaying grass, or atmospheric texture, emotional shallow depth of field'
-  },
-  {
-    scale: 'Wide',
-    tag: '逆光・光の移ろい',
-    cinematicAngle: 'Cinematic wide horizontal shot, street-level atmospheric perspective with environment and props, character interacting with setting',
-    mangaAngle: 'Establishing shot with detailed pen-and-ink architecture, deep shadows, cinematic comic perspective, full-bleed edge-to-edge',
-    mvAngle: 'Wide horizontal shot with golden hour backlight or moody dusk glow, warm rim illumination, quiet environmental harmony'
-  },
-  {
-    scale: 'Medium',
-    tag: '後ろ姿・風情',
-    cinematicAngle: 'Dutch tilt angled close-up, dramatic diagonal framing focusing on eyes and expression',
-    mangaAngle: 'Dutch tilt angular composition, character reacting with intense emotional distortion, bold line art, borderless',
-    mvAngle: 'Over-the-shoulder or three-quarter back view, hair and clothes gently swaying in the breeze, gazing into the vast open horizon'
-  },
-  {
-    scale: 'Close-up',
-    tag: '伏し目・静寂',
-    cinematicAngle: 'Low-angle medium shot looking up towards character standing strong, solid upper body posture',
-    mangaAngle: 'Dramatic high-contrast cel-shaded lighting, character holding a decisive standing pose, speed lines, full-bleed',
-    mvAngle: 'Gentle side profile close-up, downcast tranquil gaze, subtle melancholic expression, soft cinematic bokeh, quiet emotion'
-  },
-  {
-    scale: 'Wide',
-    tag: '風景・呼吸感',
-    cinematicAngle: 'High-angle downward view from balcony or hill, character walking naturally among townspeople on the ground',
-    mangaAngle: 'Sweeping manga double-page spread style, multiple focal points, epic environmental scale, detailed crosshatching, borderless edge-to-edge',
-    mvAngle: 'Expansive environmental composition, subject integrated as a small harmonious part of the scenery, vast sky, breathing space'
-  },
-  {
-    scale: 'Medium',
-    tag: '小休止・自然体',
-    cinematicAngle: 'Over-the-shoulder perspective looking past the character towards the scene ahead, tense atmosphere',
-    mangaAngle: 'Intense standoff over-the-shoulder framing, heavy tension, screentone gradients, dramatic shadows, full-bleed',
-    mvAngle: 'Casual candid medium framing, pausing naturally, sitting peacefully or leaning gently, neutral serene vibe, no dramatic tension'
-  },
-  {
-    scale: 'Close-up',
-    tag: 'マクロ・テクスチャ',
-    cinematicAngle: 'Side profile close-up silhouette with warm lantern rim light, dramatic lighting',
-    mangaAngle: 'Extreme close-up on mouth/jaw with gritted teeth, heavy inking, dramatic stylized emotion, borderless',
-    mvAngle: 'Atmospheric macro focus, dappled sunlight, soft shadows, raindrops, or gentle light leak reflection, evocative visual texture'
-  },
-  {
-    scale: 'Medium',
-    tag: '歩き出し・流れる時',
-    cinematicAngle: 'Centered cinematic medium portrait, dramatic side-lighting, dignified cinematic presence',
-    mangaAngle: 'Dynamic leaping/running action, extreme foreshortening, kinetic speed lines, borderless edge-to-edge artwork',
-    mvAngle: 'Smooth moving perspective, walking forward at a gentle pace, natural relaxed gait, candid indie music video frame'
-  },
-  {
-    scale: 'Close-up',
-    tag: 'アンニュイ表情',
-    cinematicAngle: 'Macro emotional close-up capturing intense gaze and lip expression',
-    mangaAngle: 'Tearful or highly emotional character face, glowing eyes, fine delicate line art, emotional screentones, borderless',
-    mvAngle: 'Subtle expressive close-up, calm peaceful face, soft diffused ambient lighting, neutral gentle aura, serene beauty'
-  },
-  {
-    scale: 'Wide',
-    tag: '余韻・アウトロ',
-    cinematicAngle: 'Epic wide cinematic climax view, panoramic environmental composition',
-    mangaAngle: 'Cinematic climax splash artwork, full environment integration, spectacular pen and ink mastery, full-bleed borderless',
-    mvAngle: 'Epic serene wide lingering view, subject melting into the vast landscape, fading twilight, timeless poetic stillness'
-  }
+  { scale: 'Wide', tag: '引き・世界観', cinematicAngle: 'High-angle landscape view looking down from above, sweeping atmospheric background', mangaAngle: 'Massive full-bleed opening splash illustration', mvAngle: 'Cinematic establishing wide landscape, serene music video opening' },
+  { scale: 'Medium', tag: '佇まい・アンニュイ', cinematicAngle: 'Dramatic low-angle worm-eye view looking up, intense cinematic perspective', mangaAngle: 'Intense macro eye close-up filling the frame, heavy screentones', mvAngle: 'Relaxed medium shot, subject in contemplative quiet pose' },
+  { scale: 'Close-up', tag: '情緒的ディテール', cinematicAngle: 'Looking back over the shoulder, dynamic three-quarter view', mangaAngle: 'Webtoon vertical flow, character in mid-action', mvAngle: 'Artistic detail close-up, focusing on hands or feet walking' },
+  { scale: 'Wide', tag: '逆光・光の移ろい', cinematicAngle: 'Cinematic wide horizontal shot, street-level atmospheric perspective', mangaAngle: 'Establishing shot with detailed architecture', mvAngle: 'Wide horizontal shot with golden hour backlight' },
+  { scale: 'Medium', tag: '後ろ姿・風情', cinematicAngle: 'Dutch tilt angled close-up, dramatic diagonal framing', mangaAngle: 'Dutch tilt angular composition, intense emotion', mvAngle: 'Over-the-shoulder or three-quarter back view, hair swaying in breeze' },
+  { scale: 'Close-up', tag: '伏し目・静寂', cinematicAngle: 'Low-angle medium shot looking up towards character standing strong', mangaAngle: 'Dramatic high-contrast cel-shaded lighting', mvAngle: 'Gentle side profile close-up, downcast tranquil gaze' },
+  { scale: 'Wide', tag: '風景・呼吸感', cinematicAngle: 'High-angle downward view from balcony or hill', mangaAngle: 'Sweeping manga double-page spread style', mvAngle: 'Expansive environmental composition, vast sky' },
+  { scale: 'Medium', tag: '小休止・自然体', cinematicAngle: 'Over-the-shoulder perspective looking past character', mangaAngle: 'Intense standoff over-the-shoulder framing', mvAngle: 'Casual candid medium framing, sitting peacefully' },
+  { scale: 'Close-up', tag: 'マクロ・テクスチャ', cinematicAngle: 'Side profile close-up silhouette with warm rim light', mangaAngle: 'Extreme close-up on mouth/jaw with gritted teeth', mvAngle: 'Atmospheric macro focus, dappled sunlight, soft shadows' },
+  { scale: 'Medium', tag: '歩き出し・流れる時', cinematicAngle: 'Centered cinematic medium portrait, dramatic side-lighting', mangaAngle: 'Dynamic running action, kinetic speed lines', mvAngle: 'Smooth moving perspective, walking forward at gentle pace' },
+  { scale: 'Close-up', tag: 'アンニュイ表情', cinematicAngle: 'Macro emotional close-up capturing intense gaze', mangaAngle: 'Emotional character face, glowing eyes', mvAngle: 'Subtle expressive close-up, calm peaceful face' },
+  { scale: 'Wide', tag: '余韻・アウトロ', cinematicAngle: 'Epic wide cinematic climax view, panoramic composition', mangaAngle: 'Cinematic climax splash artwork', mvAngle: 'Epic serene wide lingering view, fading twilight' }
 ];
-
-// ── 7. 基本ネガティブプロンプト規約 ────────────────────────────────────
+// ── 🛡️ 基本ネガティブプロンプト ──
 export const BASELINE_NEGATIVE_TOKENS = {
-  anatomicalIntegrity: 'giant, giantess, floating head, severed body, floating torso, half body cut off by scenery, scale error, diorama, simple mugshot, bad anatomy, deformed fingers',
-  antiReferenceStiffness: 'identical pose as reference image, repeating reference image pose, static mugshot pose, repeating reference angle',
-  antiAnachronisms: 'modern clothing, wristwatch, eyeglasses, sneakers, smartphone, headphones, electricity pole, asphalt road',
-  antiFrameAndBorder: 'frame, border, picture frame, ornate frame, arch frame, decorative border, white border, white margin, white gutter, paper margin, comic panel outline, panel border, outer frame, blank edge, cropped border, boxed layout, empty spacing',
-  renderingQuality: 'lowres, worst quality, text, subtitles, closed captions, caption bar, caption banner, speech bubbles, dialog box, Japanese characters, kanji subtitles, news ticker, text overlay, title text, watermark, signature, blurry, artifact, jpeg artifacts, poorly rendered'
+  anatomicalIntegrity: 'giant, floating head, severed body, floating torso, bad anatomy, deformed fingers',
+  antiReferenceStiffness: 'identical pose as reference image, static mugshot pose',
+  antiAnachronisms: 'modern clothing, wristwatch, eyeglasses, sneakers, smartphone, headphones, electricity pole',
+  antiFrameAndBorder: 'frame, border, picture frame, white border, white margin, comic panel outline, panel border, outer frame, blank edge',
+  renderingQuality: 'lowres, worst quality, text, subtitles, caption bar, speech bubbles, dialog box, Japanese characters, kanji subtitles, watermark, blurry'
 };
-
-// ── 8. テロップ演出（Webtoon静止画向け固定デフォルト） ──────────
-
-
+// ── 📺 テロップ演出 ──
 export function resolveRecommendedTelopStaging(
   _cutId?: number, 
   _isMvMode?: boolean, 
@@ -1628,38 +515,35 @@ export function resolveRecommendedTelopStaging(
     directorNote: '[Webtoon字幕] 下部中央配置'
   };
 }
-
-export const PRODUCTION_MODES = PRODUCTION_MODES_LIST;
-export const IMAGE_MODELS = IMAGE_MODELS_REGISTRY;
-
+// ── 📐 システム定数 ──
 export const STRICT_STYLE_SUFFIX = ' seamless full-bleed square 1:1 artwork. Grounded immersive cinematic framing. Absolutely NO drone shots, NO modern aerial drones, NO borders, NO margins, NO text, NO subtitles, NO caption banner, NO speech bubbles, NO kanji, NO numbers, NO year labels, NO signs indicating the year or date, clean edge-to-edge artwork.';
 export const CUTS_PER_EPISODE = 12;
 export const DEFAULT_ASPECT_RATIO = '1:1';
-
-export const RANDOM_SELECT_VALUE = '🎲 ランダム（おまかせ）';
-
+// ── 互換エクスポート ──
+export const DEFAULT_VIDEO_MODEL = 'Omni 1.1 Flash';
 export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
   productionMode: 'episodes',
   country: '日本',
-  theme: RANDOM_SELECT_VALUE,
-  taste: RANDOM_SELECT_VALUE,
-  imageModel: IMAGE_MODELS_REGISTRY[1].label,
+  theme: RANDOM_SELECT_OPTION,
+  taste: RANDOM_SELECT_OPTION,
+  imageModel: IMAGE_MODELS_REGISTRY[1]?.label || '🍌 Nano Banana 2.1',
   defaultVideoModel: '',
   videoRatio: 'none',
-  episodeCount: 1,
-  previewCutCount: 2,
+  episodeCount: 5,
+  cutCount: 12,
+  previewCutCount: 12,
   parallelCount: 2,
   autoVideo: false,
   autoDownload: true,
   superBackoff: true,
   isMvMode: false,
   aspectRatio: '1:1',
-  characterId: 'zundamon',
+  characterId: 'random',
   enableTurnaroundSheet: true,
   autoApproveTurnaround: true,
   enableObjectCut: true,
   enableEndFrames: false
 };
-
-export const DEFAULT_IMAGE_MODEL = IMAGE_MODELS_REGISTRY[1].label;
+export const DEFAULT_IMAGE_MODEL = IMAGE_MODELS_REGISTRY[1]?.label || '🍌 Nano Banana 2.1';
 export const PRODUCTION_MODE_OPTIONS = PRODUCTION_MODES_LIST;
+

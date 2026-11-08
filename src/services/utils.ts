@@ -1,12 +1,8 @@
 export function safeJsonParse<T>(raw: any, defaultValue: T = {} as T): T {
   if (!raw) return defaultValue;
-
-  // すでにパース済みのオブジェクトまたは配列であればそのまま返す
   if (typeof raw === 'object' && raw !== null && !('text' in raw)) {
     return raw as T;
   }
-
-  // 文字列の抽出
   let text = '';
   if (typeof raw === 'string') {
     text = raw;
@@ -19,23 +15,16 @@ export function safeJsonParse<T>(raw: any, defaultValue: T = {} as T): T {
       return defaultValue;
     }
   }
-
   if (!text || typeof text !== 'string' || !text.trim()) {
     return defaultValue;
   }
-
   const cleanText = text.replace(/```json\n?|```/g, '').trim();
-
-  // 配列またはオブジェクトの開始位置を検出
   const firstBrace = cleanText.indexOf('{');
   const firstBracket = cleanText.indexOf('[');
-
   if (firstBrace === -1 && firstBracket === -1) {
     return defaultValue;
   }
-
   try {
-    // 配列が外側にある場合 ([...])
     if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
       const lastBracket = cleanText.lastIndexOf(']');
       if (lastBracket > firstBracket) {
@@ -43,8 +32,6 @@ export function safeJsonParse<T>(raw: any, defaultValue: T = {} as T): T {
         return JSON.parse(jsonStr) as T;
       }
     }
-
-    // オブジェクトが外側にある場合 ({...})
     if (firstBrace !== -1) {
       const lastBrace = cleanText.lastIndexOf('}');
       if (lastBrace > firstBrace) {
@@ -55,13 +42,8 @@ export function safeJsonParse<T>(raw: any, defaultValue: T = {} as T): T {
   } catch (err) {
     console.warn('JSON Parse Error:', err);
   }
-
   return defaultValue;
 }
-
-/** 
- * エラーオブジェクトから詳細な理由を抽出する
- */
 export function formatErrorMessage(err: any): string {
   if (!err) return 'Unknown error';
   if (typeof err === 'string') return err;
@@ -72,7 +54,6 @@ export function formatErrorMessage(err: any): string {
   
   const mainMsg = err?.error?.message || err?.message || err?.statusText;
   if (mainMsg) parts.push(String(mainMsg));
-
   if (err?.error && typeof err.error === 'string') parts.push(err.error);
   if (err?.details) {
     try {
@@ -90,10 +71,6 @@ export function formatErrorMessage(err: any): string {
   
   return String(err);
 }
-
-/** 
- * 指定ミリ秒で強制タイムアウトさせるラッパー
- */
 export function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label = '処理'): Promise<T> {
   return Promise.race([
     promise,
@@ -102,7 +79,6 @@ export function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label = '
     )
   ]);
 }
-
 export interface RetryOptions {
   maxRetries?: number;
   timeoutMs?: number;
@@ -110,10 +86,6 @@ export interface RetryOptions {
   superBackoff?: boolean;
   abortCheck?: () => boolean;
 }
-
-/**
- * ミリ秒を人間が読みやすい「〇〇秒」または「〇〇分間」の文字列に変換
- */
 export function formatDurationMs(ms: number): string {
   if (ms >= 60000) {
     const mins = Math.round(ms / 60000);
@@ -121,14 +93,9 @@ export function formatDurationMs(ms: number): string {
   }
   return `${Math.round(ms / 1000)}秒`;
 }
-
-/**
- * 緊急停止（Abort）を即座に検知可能なスリープ
- */
 export async function sleepWithAbortCheck(durationMs: number, abortCheck?: () => boolean): Promise<boolean> {
   if (durationMs <= 0) return true;
   return new Promise((resolve) => {
-    // Immediate check
     if (abortCheck && abortCheck()) {
       return resolve(false);
     }
@@ -140,75 +107,58 @@ export async function sleepWithAbortCheck(durationMs: number, abortCheck?: () =>
       if (timer) clearInterval(timer);
       if (timeout) clearTimeout(timeout);
     };
-
     timer = setInterval(() => {
       if (abortCheck && abortCheck()) {
         cleanup();
         resolve(false);
       }
     }, 100);
-
     timeout = setTimeout(() => {
       cleanup();
       resolve(true);
     }, durationMs);
   });
 }
-
 /** 
- * 堅牢な指数バックオフ・リトライ
- * デフォルト間隔: 5秒、10秒、20秒、40秒、80秒（計5回）
- * 超指数バックオフ(superBackoff): さらに 10分、20分、30分 を追加（夜間放置完走用・計8回）
- * SAFETY/BLOCKED等の即死エラー時はリトライせず即時スローする
+ * 軽快なスマート・リトライ＆同時衝突防止ジッター
+ * standardDelays: [8000, 18000, 30000] (最大3回)
+ * throttleDelays: [15000, 30000, 45000]
+ * jitter: 5000 + Math.random() * 15000
  */
 export async function callWithRetry<T>(
   fn: () => Promise<T>,
   onRetry?: (attempt: number, maxRetries: number, delayMs: number, err: any, isSuperBackoff?: boolean) => void,
-  maxRetriesOrOptions: number | RetryOptions = 5,
+  maxRetriesOrOptions: number | RetryOptions = 3,
   timeoutMs?: number,
   timeoutLabel = 'API呼び出し',
   superBackoff = false,
   abortCheck?: () => boolean
 ): Promise<T> {
-  let maxRetries = 5;
+  let maxRetries = 3;
   let effectiveTimeoutMs = timeoutMs;
   let effectiveTimeoutLabel = timeoutLabel;
-  let effectiveSuperBackoff = superBackoff;
   let effectiveAbortCheck = abortCheck;
-
   if (typeof maxRetriesOrOptions === 'object' && maxRetriesOrOptions !== null) {
-    maxRetries = maxRetriesOrOptions.maxRetries ?? 5;
+    maxRetries = maxRetriesOrOptions.maxRetries ?? 3;
     effectiveTimeoutMs = maxRetriesOrOptions.timeoutMs;
     effectiveTimeoutLabel = maxRetriesOrOptions.timeoutLabel ?? 'API呼び出し';
-    effectiveSuperBackoff = !!maxRetriesOrOptions.superBackoff;
     effectiveAbortCheck = maxRetriesOrOptions.abortCheck;
   } else if (typeof maxRetriesOrOptions === 'number') {
     maxRetries = maxRetriesOrOptions;
   }
-
-  // デフォルト待機スケジュール: 5s, 30s, 60s, 120s
-  const standardDelays = [5000, 30000, 60000, 120000];
-  // 超指数バックオフ用スケジュール: 10分, 20分, 40分 (夜間放置完走用)
-  const superDelays = [10 * 60 * 1000, 20 * 60 * 1000, 40 * 60 * 1000];
-
-  const delays = effectiveSuperBackoff
-    ? [...standardDelays, ...superDelays]
-    : standardDelays.slice(0, maxRetries);
-
+  const standardDelays = [8000, 18000, 30000];
+  const delays = standardDelays.slice(0, Math.min(maxRetries, 3));
   const totalMaxAttempts = delays.length;
-
   for (let attempt = 0; attempt <= totalMaxAttempts; attempt++) {
     if (effectiveAbortCheck && effectiveAbortCheck()) {
       throw new Error('処理が中断されました (Aborted)');
     }
-
     try {
       const p = fn();
       return effectiveTimeoutMs ? await withTimeout(p, effectiveTimeoutMs, effectiveTimeoutLabel) : await p;
     } catch (err: any) {
       const msg = formatErrorMessage(err).toUpperCase();
       
-      // 即死エラー（セーフティ、ブロック、ポリシー違反、引数エラー）は無駄な待機リトライをせず即座に上位ハンドラへ投げる
       if (
         msg.includes('SAFETY') || 
         msg.includes('BLOCKED') || 
@@ -221,36 +171,27 @@ export async function callWithRetry<T>(
       ) {
         throw err;
       }
-
       if (attempt === totalMaxAttempts) throw err;
       
-      let baseDelay = delays[attempt] ?? 80000;
-
-      // レート制限（429、使用量上限、RESOURCE_EXHAUSTED）検知
+      let baseDelay = delays[attempt] ?? 30000;
       const isActivityThrottle = msg.includes('通常とは異なるアクティビティ') || 
         msg.includes('アクティビティ') || 
         msg.includes('429') || 
         msg.includes('RESOURCE_EXHAUSTED') || 
         msg.includes('RATE_LIMIT') || 
         msg.includes('使用量の上限');
-
-      // レート制限発生時は、短い連続叩きによるPushbackペナルティ（クールダウンタイマー巻き戻し）を防ぐため、
-      // 初回60秒（1分）、120秒（2分）、180秒（3分）、240秒（4分）、300秒（5分）の本格冷却待機スケジュールを強制適用
-      const throttleDelays = [60000, 120000, 180000, 240000, 300000];
+      const throttleDelays = [15000, 30000, 45000];
       if (isActivityThrottle) {
         baseDelay = throttleDelays[Math.min(attempt, throttleDelays.length - 1)];
       }
-
-      const isSuper = effectiveSuperBackoff && attempt >= standardDelays.length;
-      // ジッター加算（レート制限時はワーカー間の同時再発射を防ぐため 0〜5秒のランダム分散）
-      const jitter = isSuper ? Math.random() * 5000 : (isActivityThrottle ? Math.random() * 5000 : Math.random() * 1000);
+      // 2ワーカーの同時リトライ衝突（ボット検知）を防ぐため、5秒〜20秒のランダム時間差ジッターを付与
+      const jitter = 5000 + Math.random() * 15000;
       const roundedDelay = Math.round(baseDelay + jitter);
       
       if (onRetry) {
-        onRetry(attempt + 1, totalMaxAttempts, roundedDelay, err, isSuper);
+        onRetry(attempt + 1, totalMaxAttempts, roundedDelay, err, false);
       }
       
-      // 中断チェック付きスリープ
       const completed = await sleepWithAbortCheck(roundedDelay, effectiveAbortCheck);
       if (!completed) {
         throw new Error('処理が中断されました (Aborted)');
@@ -259,18 +200,29 @@ export async function callWithRetry<T>(
   }
   throw new Error('Maximum retries reached');
 }
-
+/**
+ * ログメッセージ生成（Base64等の生データ排除＆1行最大300文字制限）
+ */
 export function createLogMessage(message: string): string {
   const now = new Date();
   const time = now.toLocaleTimeString('ja-JP', { hour12: false });
-  return `[${time}] ${message}`;
+  
+  if (!message) return `[${time}] `;
+  // 1. Base64・長大画像データの置換
+  let cleanMsg = String(message)
+    .replace(/data:image\/[a-zA-Z0-9.+_-]+;base64,[a-zA-Z0-9+/=]+/g, '[画像データ省略]')
+    .replace(/data:application\/[a-zA-Z0-9.+_-]+;base64,[a-zA-Z0-9+/=]+/g, '[バイナリデータ省略]')
+    .replace(/[a-zA-Z0-9+/]{200,}={0,2}/g, '[長大データ省略]');
+  // 2. 1行あたり最大300文字制限
+  if (cleanMsg.length > 300) {
+    cleanMsg = cleanMsg.slice(0, 297) + '...';
+  }
+  return `[${time}] ${cleanMsg}`;
 }
-
-// ── IndexedDB ヘルパー（Reference Vault / キャッシュ復元用） ──
+// ── IndexedDB ヘルパー ──
 let dbInstance: IDBDatabase | null = null;
 const DB_NAME = 'EpicTimelineDB';
 const ASSET_STORE = 'referenceAssets';
-
 export const initDB = (): Promise<IDBDatabase> => {
   if (dbInstance) return Promise.resolve(dbInstance);
   return new Promise((resolve, reject) => {
@@ -292,7 +244,6 @@ export const initDB = (): Promise<IDBDatabase> => {
     }
   });
 };
-
 export const saveReferenceAsset = async (asset: any): Promise<number> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
@@ -303,7 +254,6 @@ export const saveReferenceAsset = async (asset: any): Promise<number> => {
     request.onerror = () => reject(request.error);
   });
 };
-
 export const getAllReferenceAssets = async (): Promise<any[]> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
@@ -314,7 +264,6 @@ export const getAllReferenceAssets = async (): Promise<any[]> => {
     request.onerror = () => reject(request.error);
   });
 };
-
 export function createDefaultCut(id: number, narration = '', prompt = '', isSelected = false): any {
   return {
     id,
@@ -324,10 +273,10 @@ export function createDefaultCut(id: number, narration = '', prompt = '', isSele
     telop: {
       fullText: narration,
       highlights: [],
-      style: 'mv-blur-slide',
-      transition: 'blur-slide-left',
-      position: 'bottom-left',
-      directorNote: '静寂から加速するビートに合わせたブラースライド演出'
+      style: 'cinema-subtle',
+      transition: 'aos-fade-soft',
+      position: 'bottom-center',
+      directorNote: '[Webtoon字幕] 下部中央配置'
     },
     isDirecting: false,
     isGeneratingImage: false,
@@ -337,11 +286,6 @@ export function createDefaultCut(id: number, narration = '', prompt = '', isSele
     isSelectedForVideo: isSelected
   };
 }
-
-/**
- * Flow.generate.image 等の各種 Flow SDK / Gemini 返却オブジェクトから
- * base64 文字列（または画像URL）を確実に抽出する堅牢なパーサー
- */
 export function extractImageBase64(res: any): string | undefined {
   if (!res) return undefined;
   if (typeof res === 'string') {
@@ -368,7 +312,6 @@ export function extractImageBase64(res: any): string | undefined {
   }
   return undefined;
 }
-
 export function extractMediaId(res: any): string | undefined {
   if (!res) return undefined;
   if (typeof res.mediaId === 'string' && res.mediaId.trim()) return res.mediaId.trim();
@@ -376,11 +319,6 @@ export function extractMediaId(res: any): string | undefined {
   if (typeof res.id === 'string' && res.id.trim()) return res.id.trim();
   return undefined;
 }
-
-/**
- * 画像データ（base64、データURI、HTTP URL、相対パス）を安全にブラウザ表示可能なURLに変換
- * ★最重要: JPEGのbase64（先頭が '/9j/' で始まる）を誤って相対パスとみなさないよう厳密判定
- */
 export function formatDataUri(raw?: any): string {
   if (!raw) return '';
   let str = '';
@@ -391,13 +329,9 @@ export function formatDataUri(raw?: any): string {
   }
   if (!str || str === '[object Object]') return '';
   
-  // すでに有効なURIプロトコルを持っている場合
   if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('blob:')) {
     return str;
   }
-
-  // ★超重要: JPEG base64は \xFF\xD8\xFF のbase64エンコードにより必ず '/9j/' で始まる！
-  // スラッシュで始まるからといって相対パスと誤認しては絶対にダメ！
   if (str.startsWith('/9j/') || str.startsWith('/9j')) {
     return `data:image/jpeg;base64,${str}`;
   }
@@ -407,12 +341,9 @@ export function formatDataUri(raw?: any): string {
   if (str.startsWith('PHN2') || str.startsWith('PD94') || str.startsWith('<svg')) {
     return `data:image/svg+xml;base64,${str}`;
   }
-
-  // 本物のWeb相対パス（例: /images/logo.png）のみを許可（短く、かつ拡張子を持つ）
   if (str.startsWith('/') && str.length < 500 && (str.includes('.png') || str.includes('.jpg') || str.includes('.jpeg') || str.includes('.webp') || str.includes('.svg') || str.includes('?'))) {
     return str;
   }
-
-  // デフォルトは PNG または raw base64
   return `data:image/png;base64,${str}`;
-}
+}
+

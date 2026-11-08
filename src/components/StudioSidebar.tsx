@@ -1,7 +1,6 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { GeneratorSettings, Episode, LogEntry } from '../types';
-import { IMAGE_MODELS, SAFE_CHARACTERS } from '../constants';
-
+import { SAFE_CHARACTERS } from '../constants';
 // ── UI 基本プリミティブ ──────────────────────────────────────
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex items-center px-1">
@@ -10,7 +9,6 @@ export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children
     </span>
   </div>
 );
-
 export const PillButton: React.FC<{
   icon?: React.ReactNode; 
   children: React.ReactNode;
@@ -33,13 +31,11 @@ export const PillButton: React.FC<{
     </button>
   );
 };
-
 export interface FieldDropdownOption {
   label: string;
   value: string;
   sublabel?: string;
 }
-
 export const FieldDropdown: React.FC<{
   label: string; 
   value: string; 
@@ -51,7 +47,6 @@ export const FieldDropdown: React.FC<{
 }> = ({ label, value, options = [], groups, onChange, className = '', disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const listener = (event: MouseEvent | TouchEvent) => {
       if (!ref.current || ref.current.contains(event.target as Node)) return;
@@ -60,13 +55,10 @@ export const FieldDropdown: React.FC<{
     document.addEventListener('mousedown', listener);
     return () => document.removeEventListener('mousedown', listener);
   }, []);
-
   const selectedOpt = useMemo(() => {
     return options.find(o => (typeof o === 'string' ? o : o.value) === value) as FieldDropdownOption | string | undefined;
   }, [options, value]);
-
   const selectedLabel = typeof selectedOpt === 'object' ? selectedOpt?.label : value;
-
   return (
     <div ref={ref} className={`relative ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
       <button 
@@ -87,7 +79,6 @@ export const FieldDropdown: React.FC<{
           </span>
         </div>
       </button>
-
       {isOpen && (
         <div className="absolute top-[calc(100%+4px)] left-0 w-full min-w-[240px] bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-[300px] overflow-y-auto py-1">
           {groups ? (
@@ -151,7 +142,6 @@ export const FieldDropdown: React.FC<{
     </div>
   );
 };
-
 export const TextInput: React.FC<{
   value: string; onChange: (val: string) => void; placeholder?: string; label?: string; multiline?: boolean;
 }> = ({ value, onChange, placeholder, label, multiline = true }) => (
@@ -176,264 +166,202 @@ export const TextInput: React.FC<{
     )}
   </div>
 );
-
 // ── サイドバー本体 ──────────────────────────────────────────
 export interface StudioSidebarProps {
   settings: GeneratorSettings;
-  setSettings: React.Dispatch<React.SetStateAction<GeneratorSettings>>;
-  isProducing: boolean;
-  onStartProduction: () => void;
-  onAbortProduction: () => void;
-  episodes: Episode[];
+  setSettings?: React.Dispatch<React.SetStateAction<GeneratorSettings>>;
+  onUpdateSettings?: (partial: Partial<GeneratorSettings>) => void;
+  manifestTitle?: string;
+  isProducing?: boolean;
+  onStartProduction?: () => void;
+  onAbortProduction?: () => void;
+  episodes?: Episode[];
   onClearEpisodes?: () => void;
   logs?: LogEntry[];
 }
-
 export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   settings,
   setSettings,
-  isProducing,
-  onStartProduction,
-  onAbortProduction,
-  episodes,
+  onUpdateSettings,
+  isProducing = false,
+  onAbortProduction = () => {},
+  episodes = [],
   onClearEpisodes,
   logs = []
 }) => {
-  const [activeTab, setActiveTab] = useState<'create' | 'settings' | 'logs'>('create');
+  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
-
+  const applySettingsUpdate = (updater: (prev: GeneratorSettings) => GeneratorSettings) => {
+    if (setSettings) {
+      setSettings(updater);
+    } else if (onUpdateSettings) {
+      onUpdateSettings(updater(settings));
+    }
+  };
   useEffect(() => {
-    if (activeTab === 'logs' && logContainerRef.current) {
+    if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
-  }, [logs, activeTab]);
-
-  const episodeOptions = [
-    { label: '単発 (1話)', value: 1 },
-    { label: '2話', value: 2 },
-    { label: '3話', value: 3 },
-    { label: '5話', value: 5 },
-    { label: '10話 (完結)', value: 10 }
-  ];
-
+  }, [logs]);
+  // 全ログをクリップボードにコピーする処理
+  const handleCopyLogs = useCallback(async () => {
+    if (logs.length === 0) return;
+    try {
+      const fullLogText = logs.map(l => l.message).join('\n');
+      await navigator.clipboard.writeText(fullLogText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy logs to clipboard:', err);
+    }
+  }, [logs]);
   const cutPresetOptions = [
     { label: '先行2カット', value: 2 },
     { label: '先行5カット', value: 5 },
-    { label: '全12カット一括', value: 12 }
+    { label: '全カット一括', value: settings.cutCount || 12 }
   ];
-
+  const isRandomChar = settings.characterId === 'random' || !settings.characterId;
   return (
     <div className="w-[320px] bg-white border-r border-slate-200 flex flex-col h-full shrink-0 shadow-sm z-30 select-none">
-      {/* タブナビゲーション */}
-      <div className="flex border-b border-slate-200 bg-slate-50 p-1 gap-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab('create')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
-            activeTab === 'create'
-              ? 'bg-white text-indigo-700 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[16px]">movie</span>
-          <span>制作</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('logs')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
-            activeTab === 'logs'
-              ? 'bg-white text-indigo-700 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[16px]">terminal</span>
-          <span>ログ</span>
-          {logs.length > 0 && (
-            <span className="px-1.5 py-0.2 bg-indigo-100 text-indigo-700 rounded-full text-[9px] font-black">
-              {logs.length}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('settings')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
-            activeTab === 'settings'
-              ? 'bg-white text-indigo-700 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[16px]">tune</span>
-          <span>詳細</span>
-        </button>
-      </div>
-
-      {/* メインコンテンツエリア */}
-      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-4">
-        {activeTab === 'create' && (
-          <div className="flex flex-col gap-3.5">
-            {/* キャラクター選択セクション */}
-            <div className="flex flex-col gap-1.5">
-              <SectionLabel>🎙️ 主人公キャラクター (VOICEVOX / 東北)</SectionLabel>
-              <div className="grid grid-cols-2 gap-1.5">
-                {SAFE_CHARACTERS.map(char => {
-                  const isSelected = settings.characterId === char.id;
-                  return (
-                    <button
-                      key={char.id}
-                      type="button"
-                      onClick={() => setSettings(s => ({ ...s, characterId: char.id }))}
-                      disabled={isProducing}
-                      className={`p-2 rounded-xl border text-left transition-all flex items-center gap-2 cursor-pointer ${
-                        isSelected
-                          ? 'border-indigo-500 bg-indigo-50/80 shadow-xs ring-1 ring-indigo-500'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
-                      }`}
-                    >
-                      <span className="text-xl shrink-0">{char.icon}</span>
-                      <div className="flex flex-col min-w-0">
-                        <span className={`text-xs font-bold truncate ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
-                          {char.nameJa}
-                        </span>
-                        <span className="text-[9px] text-slate-500 truncate">公式DNA保持</span>
-                      </div>
-                    </button>
-                  );
-                })}
+      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0">
+        {/* 1. 主人公キャラクター選択 */}
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <SectionLabel>🎙️ 主人公キャラクター (VOICEVOX / 東北)</SectionLabel>
+          
+          {/* 🎲 ランダム（おまかせ）全幅ボタン */}
+          <button
+            type="button"
+            onClick={() => applySettingsUpdate(s => ({ ...s, characterId: 'random' }))}
+            className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+              isRandomChar
+                ? 'border-indigo-500 bg-indigo-50/90 shadow-xs ring-1 ring-indigo-500 text-indigo-950'
+                : 'border-slate-200 hover:border-slate-300 bg-white text-slate-800'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xl shrink-0">🎲</span>
+              <div className="flex flex-col min-w-0">
+                <span className={`text-xs font-bold truncate ${isRandomChar ? 'text-indigo-900' : 'text-slate-800'}`}>
+                  ランダム（おまかせ）
+                </span>
+                <span className="text-[9.5px] text-slate-500 truncate">制作開始時に4人から自動選出</span>
               </div>
             </div>
-
-            {/* 話数セレクター */}
-            <div className="flex flex-col gap-1.5">
-              <SectionLabel>📚 制作エピソード数</SectionLabel>
-              <div className="flex gap-1">
-                {episodeOptions.map(opt => {
-                  const isSelected = (settings.episodeCount || 1) === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setSettings(s => ({ ...s, episodeCount: opt.value }))}
-                      disabled={isProducing}
-                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* アクションボタン */}
-            <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-              {isProducing ? (
-                <PillButton
-                  variant="filled"
-                  onClick={onAbortProduction}
-                  className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 h-10 shadow-md animate-pulse"
-                  icon={<span className="material-symbols-outlined text-[18px]">stop_circle</span>}
-                >
-                  制作プロセスを停止
-                </PillButton>
-              ) : (
-                <PillButton
-                  variant="filled"
-                  onClick={onStartProduction}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 h-10 shadow-md font-black text-sm"
-                  icon={<span className="material-symbols-outlined text-[20px]">smart_display</span>}
-                >
-                  🚀 全自動スタジオ制作を開始
-                </PillButton>
-              )}
-
-              {episodes.length > 0 && onClearEpisodes && !isProducing && (
+            {isRandomChar && (
+              <span className="material-symbols-outlined text-[18px] text-indigo-600 shrink-0">check_circle</span>
+            )}
+          </button>
+          {/* 4キャラクターのグリッド */}
+          <div className="grid grid-cols-2 gap-1.5">
+            {SAFE_CHARACTERS.map(char => {
+              const isSelected = settings.characterId === char.id;
+              return (
                 <button
+                  key={char.id}
                   type="button"
-                  onClick={onClearEpisodes}
-                  className="text-xs text-slate-500 hover:text-red-600 text-center py-1 transition-colors cursor-pointer"
+                  onClick={() => applySettingsUpdate(s => ({ ...s, characterId: char.id }))}
+                  className={`p-2 rounded-xl border text-left transition-all flex items-center gap-2 cursor-pointer ${
+                    isSelected
+                      ? 'border-indigo-500 bg-indigo-50/80 shadow-xs ring-1 ring-indigo-500'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
                 >
-                  制作データを消去
+                  <span className="text-xl shrink-0">{char.icon}</span>
+                  <div className="flex flex-col min-w-0">
+                    <span className={`text-xs font-bold truncate ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
+                      {char.nameJa}
+                    </span>
+                    <span className="text-[9px] text-slate-500 truncate">公式DNA保持</span>
+                  </div>
                 </button>
-              )}
+              );
+            })}
+          </div>
+        </div>
+        {/* 2. 先行カット生成数 */}
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <div className="flex items-center justify-between">
+            <SectionLabel>先行カット生成数</SectionLabel>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-slate-500 font-bold">自由指定:</span>
+              <input 
+                type="number" 
+                min="1" 
+                max="9999"
+                value={settings.previewCutCount || 12}
+                onChange={e => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val) && val > 0) {
+                    applySettingsUpdate(s => ({ ...s, previewCutCount: val }));
+                  }
+                }}
+                className="w-14 h-6 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-indigo-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+              <span className="text-[11px] font-bold text-slate-600">枚</span>
             </div>
           </div>
-        )}
-
-        {activeTab === 'logs' && (
-          <div ref={logContainerRef} className="flex-1 flex flex-col gap-1.5 font-mono text-[10px] overflow-y-auto max-h-[500px] p-2 bg-slate-900 text-slate-100 rounded-xl">
-            {logs.length === 0 ? (
-              <div className="text-slate-500 text-center py-6">ログはありません</div>
-            ) : (
-              logs.map(log => (
-                <div key={log.id} className="flex gap-1.5 leading-relaxed break-all">
-                  {log.timestamp && <span className="text-slate-500 shrink-0">[{log.timestamp}]</span>}
-                  <span className={
-                    log.type === 'error' ? 'text-red-400 font-bold' :
-                    log.type === 'warning' ? 'text-amber-300' :
-                    log.type === 'success' ? 'text-emerald-300 font-bold' :
-                    log.type === 'process' ? 'text-cyan-300' :
-                    'text-slate-200'
-                  }>
-                    {log.message}
-                  </span>
-                </div>
-              ))
+          <div className="flex flex-wrap w-full items-center gap-1 border border-slate-300 rounded-xl bg-slate-100 p-1">
+            {cutPresetOptions.map((opt) => {
+              const isSelected = settings.previewCutCount === opt.value;
+              return (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => applySettingsUpdate(s => ({ ...s, previewCutCount: opt.value }))}
+                  className={`flex-1 min-w-[60px] h-[30px] flex items-center justify-center text-xs font-bold transition-all cursor-pointer rounded-lg ${
+                    isSelected 
+                      ? 'bg-indigo-600 text-white shadow-sm font-black' 
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+                >
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {/* 3. 制作中停止 / 制作データ消去コントロール */}
+        {(isProducing || (episodes.length > 0 && onClearEpisodes)) && (
+          <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100 shrink-0">
+            {isProducing && (
+              <PillButton
+                variant="filled"
+                onClick={onAbortProduction}
+                className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 h-9 shadow-md animate-pulse"
+                icon={<span className="material-symbols-outlined text-[18px]">stop_circle</span>}
+              >
+                制作プロセスを停止
+              </PillButton>
+            )}
+            {episodes.length > 0 && onClearEpisodes && !isProducing && (
+              <button
+                type="button"
+                onClick={onClearEpisodes}
+                className="text-xs text-slate-500 hover:text-red-600 text-center py-1 transition-colors cursor-pointer"
+              >
+                制作データを消去
+              </button>
             )}
           </div>
         )}
-
-        {activeTab === 'settings' && (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <SectionLabel>先行カット生成数</SectionLabel>
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-slate-500 font-bold">自由指定:</span>
-                  <input 
-                    type="number" 
-                    min="1" 
-                    max="9999"
-                    value={settings.previewCutCount || 2}
-                    onChange={e => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val) && val > 0) {
-                        setSettings(s => ({ ...s, previewCutCount: val }));
-                      }
-                    }}
-                    className="w-14 h-6 px-1 text-center text-xs font-black text-indigo-700 bg-white border border-indigo-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                  <span className="text-[11px] font-bold text-slate-600">枚</span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap w-full items-center gap-1 border border-slate-300 rounded-xl bg-slate-100 p-1">
-                {cutPresetOptions.map((opt) => {
-                  const isSelected = settings.previewCutCount === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setSettings(s => ({ ...s, previewCutCount: opt.value }))}
-                      className={`flex-1 min-w-[60px] h-[30px] flex items-center justify-center text-xs font-bold transition-all cursor-pointer rounded-lg ${
-                        isSelected 
-                          ? 'bg-indigo-600 text-white shadow-sm font-black' 
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                      }`}
-                    >
-                      <span>{opt.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 内部固定ステータス表示 */}
-            <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 select-none">
+        {/* 4. エンジン仕様・指数バックオフ情報（折りたたみアコーディオン） */}
+        <div className="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsAccordionOpen(!isAccordionOpen)}
+            className="w-full px-2.5 py-1.5 flex items-center justify-between text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer select-none"
+          >
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-[14px] text-indigo-600">settings</span>
+              ⚙️ エンジン仕様・バックオフ設定（常時有効）
+            </span>
+            <span className="material-symbols-outlined text-[16px] text-slate-500 transition-transform">
+              {isAccordionOpen ? 'expand_less' : 'expand_more'}
+            </span>
+          </button>
+          {isAccordionOpen && (
+            <div className="p-2.5 pt-1.5 border-t border-slate-200/80 flex flex-col gap-1.5 text-slate-600 bg-white">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="flex items-center gap-1 text-slate-700">
                   <span className="material-symbols-outlined text-[14px] text-amber-500">palette</span>
@@ -443,29 +371,87 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                   🍌 2.1 (429時: Pro/Lite自動切替)
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[11px] font-bold pt-1 border-t border-slate-200/60">
+              <div className="flex items-center justify-between text-[11px] font-bold pt-1 border-t border-slate-100">
                 <span className="flex items-center gap-1 text-slate-700">
                   <span className="material-symbols-outlined text-[14px] text-indigo-500">speed</span>
                   並列処理
                 </span>
-                <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-black">2並列（最適化固定）</span>
+                <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-black text-[10px]">
+                  2並列（最適化固定）
+                </span>
               </div>
-              <div className="flex flex-col gap-0.5 pt-1 border-t border-slate-200/60 text-[10px]">
+              <div className="flex flex-col gap-0.5 pt-1 border-t border-slate-100 text-[10px]">
                 <div className="flex items-center justify-between font-bold text-slate-700">
                   <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[13px] text-amber-500">published_with_changes</span>
+                    <span className="material-symbols-outlined text-[13px] text-emerald-600">published_with_changes</span>
                     指数バックオフ待機
                   </span>
                   <span className="text-emerald-700 font-extrabold">常時有効 (夜間放置完走)</span>
                 </div>
-                <span className="text-slate-500 font-mono text-[9.5px] mt-0.5 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                <span className="text-slate-500 font-mono text-[9.5px] mt-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
                   5秒 → 30秒 → 60秒 → 120秒 → 10分 → 20分 → 40分
                 </span>
               </div>
             </div>
+          )}
+        </div>
+        {/* 5. ライブ進行ログ（下部常時表示・flex-1 min-h-[220px]） */}
+        <div className="flex-1 min-h-[220px] flex flex-col rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner">
+          <div className="px-2.5 py-1.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+            <span className="text-[10px] font-mono font-bold text-slate-400 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[13px] text-indigo-400">terminal</span>
+              進行ログ
+            </span>
+            <div className="flex items-center gap-1.5">
+              {logs.length > 0 && (
+                <span className="px-1.5 py-0.2 bg-indigo-950 text-indigo-300 border border-indigo-800/60 rounded-full text-[9px] font-mono font-bold">
+                  {logs.length}
+                </span>
+              )}
+              {/* ワンクリック全ログコピーボタン */}
+              <button
+                type="button"
+                onClick={handleCopyLogs}
+                disabled={logs.length === 0}
+                className={`px-2 py-0.5 rounded text-[9.5px] font-bold font-mono transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isCopied
+                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 active:scale-95'
+                }`}
+                title="全ログをクリップボードにコピー"
+              >
+                <span className="material-symbols-outlined text-[12px]">
+                  {isCopied ? 'check' : 'content_copy'}
+                </span>
+                <span>{isCopied ? 'コピー済' : 'コピー'}</span>
+              </button>
+            </div>
           </div>
-        )}
+          <div 
+            ref={logContainerRef} 
+            className="flex-1 overflow-y-auto p-2 font-mono text-[10px] flex flex-col gap-1 text-slate-200 dark-scrollbar select-text"
+          >
+            {logs.length === 0 ? (
+              <div className="text-slate-600 text-center py-8">ログ待機中...</div>
+            ) : (
+              logs.map(log => (
+                <div key={log.id} className="flex gap-1.5 leading-relaxed break-all">
+                  <span className={
+                    log.type === 'error' ? 'text-red-400 font-bold' :
+                    log.type === 'warning' ? 'text-amber-300' :
+                    log.type === 'success' ? 'text-emerald-300 font-bold' :
+                    log.type === 'process' ? 'text-cyan-300' :
+                    'text-slate-300'
+                  }>
+                    {log.message}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
+
