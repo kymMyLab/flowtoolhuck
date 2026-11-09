@@ -80,12 +80,16 @@ export function generateSrtContent(ep: Episode, cutDurationSeconds = 4): string 
  * ファイル名を生成（ASCII安全名とサニタイズ表示名の両方を作成）
  * ファイル名の先頭に主人公キャラクター名とシリーズ共通4桁ハッシュ（例: [ずんだもん]_A7F2_001_...）を付与
  * ファイル名先頭の3桁連番は実際のエピソード番号（ep.id）に基づく
+ * 「小夜/SAYO」等のスラッシュはOSパス区切りとして誤認されないよう「_」に完全サニタイズ
  * 全カット画像が揃っている場合は「_full」、未生成カットがある場合は「_preview」を付与
  */
 export function generateSafeFilenames(ep: Episode): { asciiFilename: string; displayFilename: string } {
   const charId = ep.characterId || 'zundamon';
   const foundChar = SAFE_CHARACTERS.find(c => c.id === charId);
-  const charNameJa = foundChar?.nameJa || (charId === 'zundamon' ? 'ずんだもん' : charId);
+  const rawCharNameJa = foundChar?.nameJa || (charId === 'zundamon' ? 'ずんだもん' : charId);
+  // スラッシュ「/」や特殊記号をアンダースコアへ完全サニタイズ
+  const safeCharNameJa = rawCharNameJa.replace(/[\/\\:*?"<>|]/g, '_').trim();
+  const safeCharAscii = (foundChar?.id || charId).replace(/[\/\\:*?"<>|]/g, '_').trim();
   const hashChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   let seriesHash = (ep as any).seriesHash || (typeof window !== 'undefined' ? (window as any).__STUDIO_SERIES_HASH__ : '');
   if (!seriesHash) {
@@ -94,11 +98,8 @@ export function generateSafeFilenames(ep: Episode): { asciiFilename: string; dis
       (window as any).__STUDIO_SERIES_HASH__ = seriesHash;
     }
   }
-  const safeCharNameJa = charNameJa.replace(/[\/\\:*?"<>|]/g, '_');
-  const safeCharAscii = (foundChar?.id || charId).replace(/[\/\\:*?"<>|]/g, '_');
   const charPrefix = `[${safeCharNameJa}]_${seriesHash}_`;
   const charAsciiPrefix = `[${safeCharAscii}]_${seriesHash}_`;
-  // 実際のエピソード番号（String(ep.id).padStart(3, '0')）を使用
   const epNumStr = String(ep.id || 1).padStart(3, '0');
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -160,7 +161,7 @@ export const savePackageFile = async (
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-      const baseClean = filename.replace(/\.zip$/i, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').replace(/[「」『』]/g, '_').trim();
+      const baseClean = filename.replace(/\.zip$/i, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').replace(/[「」『』\/\\:*?"<>|]/g, '_').trim();
       const txtFallbackFilename = `${baseClean || 'FlowTool_Package'}.zip.txt`;
       await Flow.download({ base64, mimeType: 'text/plain', filename: txtFallbackFilename });
       if (addLog) {
@@ -255,6 +256,9 @@ export async function packageEpisodeToZip(
     metan: 'voicevox:2',      // 四国めたん (ノーマル)
     tsumugi: 'voicevox:8',    // 春日部つむぎ
     himari: 'voicevox:14',    // 冥鳴ひまり
+    sayo: 'voicevox:46',      // 小夜/SAYO (アナウンサー調)
+    nurse_t: 'voicevox:47',   // ナースロボ＿タイプＴ (アンドロイド)
+    usagi: 'voicevox:61',     // 中国うさぎ (妹・ビビり枠)
   };
   const resolvedVoiceName = VOICE_MAP[ep.characterId || ''] || 'voicevox:3';
   const resolvedSpeaker = ep.characterId || 'zundamon';

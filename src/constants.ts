@@ -52,6 +52,36 @@ export const SAFE_CHARACTERS: SafeCharacter[] = [
     dnaPromptEn: 'meimei himari, mysterious gothic reaper anime girl, dark purple ombre hair, cool violet eyes, wearing a black hood cape and gothic dark dress with skull motif accessories, enigmatic mysterious aura',
     turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of meimei himari with purple hair, gothic black cloak, clean character model sheet',
     recommendedTastes: ['ダークファンタジー・重厚陰影', 'ダークゴシック童話・黒髪ノスタルジー']
+  },
+  {
+    id: 'sayo',
+    nameJa: '小夜/SAYO',
+    speakerCredit: 'VOICEVOX:小夜/Sayo',
+    icon: '🌸',
+    personality: '落ち着いた知性派アナウンサー。ニュース原稿のような極めてクリアで上品な語り口。歴史の真相や難解な事件を理知的に解き明かす。',
+    dnaPromptEn: 'sayo, elegant young Japanese woman, neat sleek jet-black bob hair, calm intelligent deep sapphire-blue eyes, wearing a stylish modern dark blazer jacket over white blouse, professional and refined anime protagonist',
+    turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of sayo with sleek black bob hair, dark blazer and blouse, elegant professional anime character model sheet',
+    recommendedTastes: ['劇画・ヴィンテージ昭和', '水彩絵の具・淡彩ノスタルジー', '昭和レトロ活版・劇画', '欧風クラシカル・黒髪ノスタルジー']
+  },
+  {
+    id: 'nurse_t',
+    nameJa: 'ナースロボ＿タイプＴ',
+    speakerCredit: 'VOICEVOX:ナースロボ＿タイプＴ',
+    icon: '💉',
+    personality: '心優しき人造生命体・アンドロイド。淡々とした機械的・無機質ボイスの中に微かな感情が宿る。怪異や生命反応を冷徹にスキャンする。',
+    dnaPromptEn: 'nurse robot type t, futuristic cyber android anime girl, pale pastel-pink twin-tails hair, cool clear turquoise-cyan eyes, wearing a sleek minimalist cyber nurse uniform with white and teal accents and stylized visor headset, subtle robotic joints, solitary mysterious presence',
+    turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of nurse robot type t with pastel pink twin-tails, cyber nurse uniform, minimalist robotic details, clean character sheet',
+    recommendedTastes: ['90年代セル画・サイバーパンク', 'ダークファンタジー・重厚陰影', 'ダークゴシック童話・黒髪ノスタルジー']
+  },
+  {
+    id: 'usagi',
+    nameJa: '中国うさぎ',
+    speakerCredit: 'VOICEVOX:中国うさぎ / 東北ずん子プロジェクト (SSS合同会社)',
+    icon: '🐰',
+    personality: 'あざと可愛い妹系ロリボイス。ビビりで泣き虫だが好奇心で付いてくる。怪異に出くわすとパニックで絶叫するマスコット枠。',
+    dnaPromptEn: 'chugoku usagi, adorable petite anime girl, fluffy long pure-white twin-tails hair tied with oversized pink rabbit-ear ribbon hair bows, large soft ruby-pink eyes, wearing a pastel pink and cream frilled capelet dress, cute knee-high socks, shy and endearing facial expression',
+    turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of chugoku usagi with fluffy white twin-tails, rabbit-ear ribbons, pastel capelet dress, clean character model sheet',
+    recommendedTastes: ['水彩絵の具・淡彩ノスタルジー', 'ダークゴシック童話・黒髪ノスタルジー', 'アニメ原画・線画スケッチ']
   }
 ];
 // ── 🎨 テーマカテゴリー定義 ──
@@ -532,8 +562,8 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
   episodeCount: 5,
   cutCount: 12,
   previewCutCount: 12,
-  parallelCount: 2,
-  runModeProfile: 'night',
+  parallelCount: 1,
+  executionProfile: 'night_safe',
   autoVideo: false,
   autoDownload: true,
   superBackoff: true,

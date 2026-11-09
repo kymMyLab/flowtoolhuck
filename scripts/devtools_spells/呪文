@@ -1,13 +1,3 @@
-/**
- * Google Flow Tool Webプロジェクト コード一括抽出・ダウンロード呪文 (V-Final 直撃版)
- * 
- * 【仕組み】
- * Flow Tool 独自構造（FLOW-APPLET-CODE-EXPLORER）を直接捕捉：
- * 1. .code-explorer-sidebar 内の全ファイルボタンを順番にクリック
- * 2. .code-container からエディタの純粋なコードを直接吸い上げ
- * 3. チャット履歴の混入ゼロ、100%確実に全ファイルをダウンロード＆コピー
- */
-
 (async function extractFlowToolCodeFinal() {
   console.log('%c🚀 [FlowTool Code Collector V-Final] 直撃型抽出エンジン起動...', 'color: #3b82f6; font-size: 15px; font-weight: bold;');
 

@@ -1,17 +1,12 @@
 // ========================================================
 // Flow Tool Web Project Complete Source Dump
-// Export Date: 2026-11-09T12:04:45.189512+00:00
+// Export Date: 2026-11-09T12:50:14.823895+00:00
 // Total Files: 16
 // ========================================================
 
 /* ========================================================
    FILE: types.ts
 ======================================================== */
-// ── Google Flow SDK グローバル型宣言 ──
-declare global {
-  const Flow: any;
-}
-
 export type VideoModelType = 'veo-lite' | 'omni-flash' | 'veo-fast' | 'browser-0pt';
 export type ProductionMode = 'episodes' | 'manga' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix' | 'manzai';
 export type RecommendationModel = VideoModelType | 'none';
@@ -176,6 +171,7 @@ export interface Episode {
   musicStyle?: string;
   instrumentalTrack?: unknown;
 }
+export type ExecutionProfileType = 'night_safe' | 'day_fast';
 export interface GeneratorSettings {
   productionMode: ProductionMode; 
   country: string;
@@ -197,12 +193,12 @@ export interface GeneratorSettings {
   totalEpisodes?: number;
   previewCutCount: number; 
   parallelCount: number;
+  executionProfile?: ExecutionProfileType;
   autoVideo: boolean;
   autoDownload: boolean;
   superBackoff?: boolean;
   aspectRatio?: '9:16' | '1:1' | '16:9';
   characterId?: string;
-  runModeProfile?: 'night' | 'daytime';
   enableTurnaroundSheet?: boolean;
   autoApproveTurnaround?: boolean;
   enableObjectCut?: boolean;
@@ -355,6 +351,36 @@ export const SAFE_CHARACTERS: SafeCharacter[] = [
     dnaPromptEn: 'meimei himari, mysterious gothic reaper anime girl, dark purple ombre hair, cool violet eyes, wearing a black hood cape and gothic dark dress with skull motif accessories, enigmatic mysterious aura',
     turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of meimei himari with purple hair, gothic black cloak, clean character model sheet',
     recommendedTastes: ['ダークファンタジー・重厚陰影', 'ダークゴシック童話・黒髪ノスタルジー']
+  },
+  {
+    id: 'sayo',
+    nameJa: '小夜/SAYO',
+    speakerCredit: 'VOICEVOX:小夜/Sayo',
+    icon: '🌸',
+    personality: '落ち着いた知性派アナウンサー。ニュース原稿のような極めてクリアで上品な語り口。歴史の真相や難解な事件を理知的に解き明かす。',
+    dnaPromptEn: 'sayo, elegant young Japanese woman, neat sleek jet-black bob hair, calm intelligent deep sapphire-blue eyes, wearing a stylish modern dark blazer jacket over white blouse, professional and refined anime protagonist',
+    turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of sayo with sleek black bob hair, dark blazer and blouse, elegant professional anime character model sheet',
+    recommendedTastes: ['劇画・ヴィンテージ昭和', '水彩絵の具・淡彩ノスタルジー', '昭和レトロ活版・劇画', '欧風クラシカル・黒髪ノスタルジー']
+  },
+  {
+    id: 'nurse_t',
+    nameJa: 'ナースロボ＿タイプＴ',
+    speakerCredit: 'VOICEVOX:ナースロボ＿タイプＴ',
+    icon: '💉',
+    personality: '心優しき人造生命体・アンドロイド。淡々とした機械的・無機質ボイスの中に微かな感情が宿る。怪異や生命反応を冷徹にスキャンする。',
+    dnaPromptEn: 'nurse robot type t, futuristic cyber android anime girl, pale pastel-pink twin-tails hair, cool clear turquoise-cyan eyes, wearing a sleek minimalist cyber nurse uniform with white and teal accents and stylized visor headset, subtle robotic joints, solitary mysterious presence',
+    turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of nurse robot type t with pastel pink twin-tails, cyber nurse uniform, minimalist robotic details, clean character sheet',
+    recommendedTastes: ['90年代セル画・サイバーパンク', 'ダークファンタジー・重厚陰影', 'ダークゴシック童話・黒髪ノスタルジー']
+  },
+  {
+    id: 'usagi',
+    nameJa: '中国うさぎ',
+    speakerCredit: 'VOICEVOX:中国うさぎ / 東北ずん子プロジェクト (SSS合同会社)',
+    icon: '🐰',
+    personality: 'あざと可愛い妹系ロリボイス。ビビりで泣き虫だが好奇心で付いてくる。怪異に出くわすとパニックで絶叫するマスコット枠。',
+    dnaPromptEn: 'chugoku usagi, adorable petite anime girl, fluffy long pure-white twin-tails hair tied with oversized pink rabbit-ear ribbon hair bows, large soft ruby-pink eyes, wearing a pastel pink and cream frilled capelet dress, cute knee-high socks, shy and endearing facial expression',
+    turnaroundPromptEn: 'character design turnaround sheet, 3 angles full body: front view, side view, and back view of chugoku usagi with fluffy white twin-tails, rabbit-ear ribbons, pastel capelet dress, clean character model sheet',
+    recommendedTastes: ['水彩絵の具・淡彩ノスタルジー', 'ダークゴシック童話・黒髪ノスタルジー', 'アニメ原画・線画スケッチ']
   }
 ];
 // ── 🎨 テーマカテゴリー定義 ──
@@ -835,8 +861,8 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
   episodeCount: 5,
   cutCount: 12,
   previewCutCount: 12,
-  parallelCount: 2,
-  runModeProfile: 'night',
+  parallelCount: 1,
+  executionProfile: 'night_safe',
   autoVideo: false,
   autoDownload: true,
   superBackoff: true,
@@ -858,7 +884,7 @@ export const PRODUCTION_MODE_OPTIONS = PRODUCTION_MODES_LIST;
    FILE: components/StudioSidebar.tsx
 ======================================================== */
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { GeneratorSettings, Episode, LogEntry } from '../types';
+import { GeneratorSettings, Episode, LogEntry, ExecutionProfileType } from '../types';
 import { SAFE_CHARACTERS } from '../constants';
 // ── UI 基本プリミティブ ──────────────────────────────────────
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -1081,6 +1107,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     { label: '全カット一括', value: settings.cutCount || 12 }
   ];
   const isRandomChar = settings.characterId === 'random' || !settings.characterId;
+  const currentProfile: ExecutionProfileType = settings.executionProfile || 'night_safe';
   return (
     <div className="w-[320px] bg-white border-r border-slate-200 flex flex-col h-full shrink-0 shadow-sm z-30 select-none">
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0">
@@ -1104,14 +1131,14 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 <span className={`text-xs font-bold truncate ${isRandomChar ? 'text-indigo-900' : 'text-slate-800'}`}>
                   ランダム（おまかせ）
                 </span>
-                <span className="text-[9.5px] text-slate-500 truncate">制作開始時に4人から自動選出</span>
+                <span className="text-[9.5px] text-slate-500 truncate">制作開始時に7人から自動選出</span>
               </div>
             </div>
             {isRandomChar && (
               <span className="material-symbols-outlined text-[18px] text-indigo-600 shrink-0">check_circle</span>
             )}
           </button>
-          {/* 4キャラクターのグリッド */}
+          {/* 全7キャラクターのグリッド */}
           <div className="grid grid-cols-2 gap-1.5">
             {SAFE_CHARACTERS.map(char => {
               const isSelected = settings.characterId === char.id;
@@ -1180,39 +1207,52 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             })}
           </div>
         </div>
-        {/* 稼働プロファイル切替（平日夜間 / 土日快速） */}
-        <div className="flex flex-col gap-1.5 shrink-0">
-          <SectionLabel>⏱️ 稼働プロファイル（生成間隔・安全制御）</SectionLabel>
-          <div className="grid grid-cols-2 gap-1 border border-slate-300 rounded-xl bg-slate-100 p-1">
+        {/* 3. ⏱️ 稼働プロファイルトグル */}
+        <div className="flex flex-col gap-1.5 shrink-0 p-2.5 rounded-xl border border-indigo-100 bg-indigo-50/50">
+          <div className="flex items-center justify-between">
+            <SectionLabel>⏱️ 稼働プロファイル</SectionLabel>
+            <span className="text-[9px] font-bold text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded">
+              {currentProfile === 'night_safe' ? '直列1並列・安全運転' : '2並列・快速'}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xs">
             <button
               type="button"
-              onClick={() => applySettingsUpdate(s => ({ ...s, runModeProfile: 'night' }))}
-              className={`h-[32px] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer rounded-lg ${
-                (settings.runModeProfile || 'night') === 'night'
-                  ? 'bg-indigo-900 text-white shadow-sm font-black'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              onClick={() => applySettingsUpdate(s => ({ ...s, executionProfile: 'night_safe', parallelCount: 1 }))}
+              className={`p-2 rounded-lg text-left transition-all flex flex-col gap-0.5 cursor-pointer ${
+                currentProfile === 'night_safe'
+                  ? 'bg-slate-900 text-white shadow-xs font-bold'
+                  : 'text-slate-700 hover:bg-slate-50'
               }`}
-              title="平日夜間モード: 1並列・50秒間隔・エピソード間60秒・シリーズ間2分。6時間放置で3〜4シリーズをエラーゼロで安全完走！"
             >
-              <span>🌙 平日夜間</span>
-              <span className="text-[9px] opacity-80">(6h安全)</span>
+              <div className="flex items-center gap-1 text-[11px]">
+                <span>🌙</span>
+                <span className="font-bold">平日夜間 (6h安全)</span>
+              </div>
+              <span className={`text-[8.5px] leading-tight ${currentProfile === 'night_safe' ? 'text-indigo-200' : 'text-slate-500'}`}>
+                1並列 / 50s間隔 / EP間60s
+              </span>
             </button>
             <button
               type="button"
-              onClick={() => applySettingsUpdate(s => ({ ...s, runModeProfile: 'daytime' }))}
-              className={`h-[32px] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer rounded-lg ${
-                settings.runModeProfile === 'daytime'
-                  ? 'bg-amber-600 text-white shadow-sm font-black'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              onClick={() => applySettingsUpdate(s => ({ ...s, executionProfile: 'day_fast', parallelCount: 2 }))}
+              className={`p-2 rounded-lg text-left transition-all flex flex-col gap-0.5 cursor-pointer ${
+                currentProfile === 'day_fast'
+                  ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                  : 'text-slate-700 hover:bg-slate-50'
               }`}
-              title="土日・日中モード: 2並列・10〜15秒間隔の快速生成。PCの前にいるときに素早く連続制作！"
             >
-              <span>⚡ 土日・日中</span>
-              <span className="text-[9px] opacity-80">(快速)</span>
+              <div className="flex items-center gap-1 text-[11px]">
+                <span>⚡</span>
+                <span className="font-bold">土日・日中 (快速)</span>
+              </div>
+              <span className={`text-[8.5px] leading-tight ${currentProfile === 'day_fast' ? 'text-indigo-100' : 'text-slate-500'}`}>
+                2並列 / 10s間隔 / EP間15s
+              </span>
             </button>
           </div>
         </div>
-        {/* 3. 制作中停止 / 制作データ消去コントロール */}
+        {/* 4. 制作中停止 / 制作データ消去コントロール */}
         {(isProducing || (episodes.length > 0 && onClearEpisodes)) && (
           <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100 shrink-0">
             {isProducing && (
@@ -1236,7 +1276,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             )}
           </div>
         )}
-        {/* 4. エンジン仕様・指数バックオフ情報（折りたたみアコーディオン） */}
+        {/* 5. エンジン仕様・指数バックオフ情報（折りたたみアコーディオン） */}
         <div className="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden shrink-0">
           <button
             type="button"
@@ -1245,7 +1285,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           >
             <span className="flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px] text-indigo-600">settings</span>
-              ⚙️ エンジン仕様・バックオフ設定（常時有効）
+              ⚙️ エンジン仕様・待機設定
             </span>
             <span className="material-symbols-outlined text-[16px] text-slate-500 transition-transform">
               {isAccordionOpen ? 'expand_less' : 'expand_more'}
@@ -1265,36 +1305,28 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               <div className="flex items-center justify-between text-[11px] font-bold pt-1 border-t border-slate-100">
                 <span className="flex items-center gap-1 text-slate-700">
                   <span className="material-symbols-outlined text-[14px] text-indigo-500">speed</span>
-                  並列・生成間隔
+                  並列度 & 間隔
                 </span>
-                <span className={`px-2 py-0.5 rounded font-black text-[10px] ${
-                  (settings.runModeProfile || 'night') === 'night'
-                    ? 'bg-indigo-900 text-indigo-100 border border-indigo-700'
-                    : 'bg-amber-100 text-amber-900 border border-amber-300'
-                }`}>
-                  {(settings.runModeProfile || 'night') === 'night' ? '1並列・50秒間隔 (安全直列)' : '2並列・12秒間隔 (快速)'}
+                <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-black text-[10px]">
+                  {currentProfile === 'night_safe' ? '1並列 (50s〜65s)' : '2並列 (10s〜15s)'}
                 </span>
               </div>
               <div className="flex flex-col gap-0.5 pt-1 border-t border-slate-100 text-[10px]">
                 <div className="flex items-center justify-between font-bold text-slate-700">
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-[13px] text-emerald-600">published_with_changes</span>
-                    冷却待機制御
+                    待機・クォータ保護
                   </span>
-                  <span className="text-emerald-700 font-extrabold">
-                    {(settings.runModeProfile || 'night') === 'night' ? '話間60秒 / シリーズ間2分' : '話間10秒 / シリーズ間15秒'}
-                  </span>
+                  <span className="text-emerald-700 font-extrabold">{currentProfile === 'night_safe' ? '夜間安全直列' : '快速運転'}</span>
                 </div>
                 <span className="text-slate-500 font-mono text-[9.5px] mt-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
-                  {(settings.runModeProfile || 'night') === 'night' 
-                    ? '🌙 夜間モード: Google過剰アクセス制限を100%回避する安全直列設計' 
-                    : '⚡ 土日モード: PC作業中のハイスピード並列連続生成設計'}
+                  {currentProfile === 'night_safe' ? 'カット間50s+ジッター / EP間60s / シリーズ間2m' : 'カット間10s+ジッター / EP間15s / シリーズ間5s'}
                 </span>
               </div>
             </div>
           )}
         </div>
-        {/* 5. ライブ進行ログ（下部常時表示・flex-1 min-h-[220px]） */}
+        {/* 6. ライブ進行ログ（下部常時表示・flex-1 min-h-[220px]） */}
         <div className="flex-1 min-h-[220px] flex flex-col rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner">
           <div className="px-2.5 py-1.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
             <span className="text-[10px] font-mono font-bold text-slate-400 flex items-center gap-1">
@@ -1824,6 +1856,8 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
 }) => {
   const isPending = !ep.isGenerating && !ep.isDone && !ep.isPreviewDone;
   const standbyCount = ep.cuts.filter(c => !c.imageBase64 && !c.imageMediaId).length;
+  const isMv = !!ep.isMvMode || ep.productionMode === 'mv';
+  const unitLabel = isMv ? '曲' : '話';
   return (
     <section className={`w-full flex flex-col gap-4 animate-slide-in transition-opacity duration-700 p-4 sm:p-5 rounded-2xl bg-white border border-slate-300 shadow-sm ${isPending ? 'opacity-40' : 'opacity-100'}`}>
       <div className="flex flex-col border-b border-slate-200 pb-4 gap-3">
@@ -1831,8 +1865,9 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
           {/* エピソードタイトル・サブタイトル */}
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-xs font-black tracking-wider shrink-0 shadow-xs">
-                第{ep.id}話
+              {/* 第N話バッジ表示（タイトル本体と完全分離し重複を根絶） */}
+              <span className="px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 font-mono font-black text-xs shrink-0 shadow-2xs">
+                第{ep.id}{unitLabel}
               </span>
               <h2 className="font-bold italic uppercase tracking-tight text-slate-900 leading-tight text-lg sm:text-xl md:text-2xl break-words">
                 {cleanEpisodeTitle(ep.titleJp) || '無題'}
@@ -3598,19 +3633,6 @@ export function sanitizeForYouTubeSafety(text: string): string {
   if (!text) return '';
   return text.replace(/[殺死血狂暴]/g, '★').replace(/(死ね|殺す|血まみれ|狂気|虐殺)/g, '危険').trim();
 }
-export const FALLBACK_EPISODE_SUBTITLES: Record<number, { jp: string; en: string }> = {
-  1: { jp: '運命の胎動と旅立ち', en: 'Dawn of Destiny' },
-  2: { jp: '交錯する思惑と影', en: 'Shadows Intertwined' },
-  3: { jp: '激動の転換点', en: 'Turning of the Tide' },
-  4: { jp: '迫りくる決断の刻', en: 'Hour of Reckoning' },
-  5: { jp: '明日への咆哮と夜明け', en: 'Roar Towards Tomorrow' },
-  6: { jp: '嵐の前の静けさ', en: 'Calm Before the Storm' },
-  7: { jp: '再起の誓い', en: 'Vow of Revival' },
-  8: { jp: '白熱する包囲網', en: 'The Tightening Net' },
-  9: { jp: '砕かれた幻想', en: 'Shattered Illusions' },
-  10: { jp: '栄光の凱歌と未来', en: 'Triumphant Hymn of Hope' }
-};
-
 export function cleanEpisodeTitle(title: string): string {
   if (!title) return '';
   return title
@@ -3841,8 +3863,8 @@ MANDATORY RULES:
 6. Format: Output cuts as an array under the "cuts" field, even if there is only 1 cut.
 Output ONLY valid JSON:
 {
-  ${isFirstChunk ? `"titleJp": "第${epId}話の展開を象徴する独自の劇的サブタイトル（既存の[${(existingTitles || []).join(', ')}]やテーマ名「${theme.split('（')[0]}」そのままは厳禁）",
-  "titleEn": "Unique dramatic English subtitle for Episode ${epId}",
+  ${isFirstChunk ? `"titleJp": "${plannedTitleJp}",
+  "titleEn": "${plannedTitleEn}",
   "summary": "${currentPlan.summary || plannedTitleJp}",
   "characterDna": "${defaultCharDna}",
   "eraAnalysisJp": "時代背景・世界観の解説（日本語）",` : ''}
@@ -4082,18 +4104,10 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     : (isMvMode
       ? 'Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob hair, gentle eyes, oversized cozy knit cardigan, sleek over-ear headphones'
       : 'Consistent single protagonist matching the world setting and narrative');
-  const fallbackSub = FALLBACK_EPISODE_SUBTITLES[epId] || { jp: `場面${epId}の情景`, en: `Scene ${epId}` };
-  const baseTitleCandidate = cleanEpisodeTitle(currentPlan.titleJp || '');
-  const isDuplicateOfTheme = baseTitleCandidate && theme && (theme.includes(baseTitleCandidate) || baseTitleCandidate.includes(theme.split('（')[0]));
-  const defaultInitialTitleJp = (!baseTitleCandidate || isDuplicateOfTheme)
-    ? `${theme.split('（')[0].slice(0, 10)}〜${fallbackSub.jp}`
-    : baseTitleCandidate;
-  const defaultInitialTitleEn = cleanEpisodeTitleEn(currentPlan.titleEn || fallbackSub.en);
-
   let episodeMetadata = {
-    titleJp: defaultInitialTitleJp,
-    titleEn: defaultInitialTitleEn,
-    summary: currentPlan.summary || `${defaultInitialTitleJp}の世界観で紡がれる物語`,
+    titleJp: cleanEpisodeTitle(currentPlan.titleJp || `場面${epId}`),
+    titleEn: cleanEpisodeTitleEn(currentPlan.titleEn || `Scene ${epId}`),
+    summary: currentPlan.summary || `${currentPlan.titleJp}の世界観で紡がれる物語`,
     characterDna: fallbackDna,
     eraAnalysisJp: '歴史・文化と人情の情景。',
     forbiddenAnachronisms: ['時代にそぐわない現代物'],
@@ -4602,12 +4616,16 @@ export function generateSrtContent(ep: Episode, cutDurationSeconds = 4): string 
  * ファイル名を生成（ASCII安全名とサニタイズ表示名の両方を作成）
  * ファイル名の先頭に主人公キャラクター名とシリーズ共通4桁ハッシュ（例: [ずんだもん]_A7F2_001_...）を付与
  * ファイル名先頭の3桁連番は実際のエピソード番号（ep.id）に基づく
+ * 「小夜/SAYO」等のスラッシュはOSパス区切りとして誤認されないよう「_」に完全サニタイズ
  * 全カット画像が揃っている場合は「_full」、未生成カットがある場合は「_preview」を付与
  */
 export function generateSafeFilenames(ep: Episode): { asciiFilename: string; displayFilename: string } {
   const charId = ep.characterId || 'zundamon';
   const foundChar = SAFE_CHARACTERS.find(c => c.id === charId);
-  const charNameJa = foundChar?.nameJa || (charId === 'zundamon' ? 'ずんだもん' : charId);
+  const rawCharNameJa = foundChar?.nameJa || (charId === 'zundamon' ? 'ずんだもん' : charId);
+  // スラッシュ「/」や特殊記号をアンダースコアへ完全サニタイズ
+  const safeCharNameJa = rawCharNameJa.replace(/[\/\\:*?"<>|]/g, '_').trim();
+  const safeCharAscii = (foundChar?.id || charId).replace(/[\/\\:*?"<>|]/g, '_').trim();
   const hashChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   let seriesHash = (ep as any).seriesHash || (typeof window !== 'undefined' ? (window as any).__STUDIO_SERIES_HASH__ : '');
   if (!seriesHash) {
@@ -4616,11 +4634,8 @@ export function generateSafeFilenames(ep: Episode): { asciiFilename: string; dis
       (window as any).__STUDIO_SERIES_HASH__ = seriesHash;
     }
   }
-  const safeCharNameJa = charNameJa.replace(/[\/\\:*?"<>|]/g, '_');
-  const safeCharAscii = (foundChar?.id || charId).replace(/[\/\\:*?"<>|]/g, '_');
   const charPrefix = `[${safeCharNameJa}]_${seriesHash}_`;
   const charAsciiPrefix = `[${safeCharAscii}]_${seriesHash}_`;
-  // 実際のエピソード番号（String(ep.id).padStart(3, '0')）を使用
   const epNumStr = String(ep.id || 1).padStart(3, '0');
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -4682,7 +4697,7 @@ export const savePackageFile = async (
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-      const baseClean = filename.replace(/\.zip$/i, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').replace(/[「」『』]/g, '_').trim();
+      const baseClean = filename.replace(/\.zip$/i, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').replace(/[「」『』\/\\:*?"<>|]/g, '_').trim();
       const txtFallbackFilename = `${baseClean || 'FlowTool_Package'}.zip.txt`;
       await Flow.download({ base64, mimeType: 'text/plain', filename: txtFallbackFilename });
       if (addLog) {
@@ -4777,6 +4792,9 @@ export async function packageEpisodeToZip(
     metan: 'voicevox:2',      // 四国めたん (ノーマル)
     tsumugi: 'voicevox:8',    // 春日部つむぎ
     himari: 'voicevox:14',    // 冥鳴ひまり
+    sayo: 'voicevox:46',      // 小夜/SAYO (アナウンサー調)
+    nurse_t: 'voicevox:47',   // ナースロボ＿タイプＴ (アンドロイド)
+    usagi: 'voicevox:61',     // 中国うさぎ (妹・ビビり枠)
   };
   const resolvedVoiceName = VOICE_MAP[ep.characterId || ''] || 'voicevox:3';
   const resolvedSpeaker = ep.characterId || 'zundamon';
@@ -4902,8 +4920,7 @@ import {
   extractHighlights, 
   sanitizeForYouTubeSafety, 
   buildCharacterTurnaroundPrompt, 
-  buildAdaptiveInfographicCoverPrompt,
-  FALLBACK_EPISODE_SUBTITLES
+  buildAdaptiveInfographicCoverPrompt 
 } from './directorService';
 import { getStoryboardPreset } from './promptEngine';
 import { downloadZip } from './zipPackager';
@@ -4949,7 +4966,8 @@ export async function ensureCharacterTurnaround(
   ctx: ProductionPipelineContext,
   ep: Episode
 ): Promise<{ mediaId?: string; base64?: string }> {
-  const { settings, addLog, activeReferenceRef } = ctx;
+  const { settings, addLog, activeReferenceRef, isAbortedRef } = ctx;
+  if (isAbortedRef.current) return {};
   if (ep.characterTurnaroundMediaId) {
     return { mediaId: ep.characterTurnaroundMediaId, base64: ep.characterTurnaroundBase64 };
   }
@@ -4987,8 +5005,10 @@ export async function ensureCharacterTurnaround(
             addLog(`👑 【三面図】上限検知！「🍌 Nano Banana Pro」へ自動昇格します`, 'success');
           }
         },
+        { maxRetries: 3, abortCheck: () => isAbortedRef.current }
       );
     } catch (_) {
+      if (isAbortedRef.current) return {};
       safeModelName = '🍌 Nano Banana Pro';
       res = await Flow.generate.image({
         prompt: safePrompt,
@@ -5055,7 +5075,7 @@ export async function ensureInfographicCover(
     let horizontalBase64 = freshEp.coverHorizontalBase64;
     let horizontalPromptEn = freshEp.coverHorizontalPromptEn;
     // A. 9:16 縦ロング扉絵の生成
-    if (force || !hasVertical) {
+    if ((force || !hasVertical) && !isAbortedRef.current) {
       const coverPromptObj = buildAdaptiveInfographicCoverPrompt({
         titleJp: cleanEpisodeTitle(freshEp.titleJp),
         titleEn: cleanEpisodeTitleEn(freshEp.titleEn),
@@ -5089,8 +5109,12 @@ export async function ensureInfographicCover(
         console.warn('Vertical cover gen error:', err);
       }
     }
+    if (isAbortedRef.current) {
+      updateEpisode(freshEp.id, { isGeneratingCover: false });
+      return {};
+    }
     // B. 16:9 横型マスターカバー（横動画サムネイル看板）の生成
-    if (force || !hasHorizontal) {
+    if ((force || !hasHorizontal) && !isAbortedRef.current) {
       const coverPromptH = buildAdaptiveInfographicCoverPrompt({
         titleJp: cleanEpisodeTitle(freshEp.titleJp),
         titleEn: cleanEpisodeTitleEn(freshEp.titleEn),
@@ -5190,8 +5214,6 @@ export async function finalizeAndProcessEpisode(
     }
   }
   const freshEp = episodesRef.current.find((e: Episode) => Number(e.id) === Number(epId)) || currentEp;
-  // ■ 4. 先行カット待機時の「早すぎるZIP自動ダウンロード」の防止
-  // 全カットが描き切れた（allCutsCompleted === true）場合にのみ自動ダウンロードを発火
   if (settings.autoDownload && !isAbortedRef.current && allCutsCompleted) {
     addLog(`📦 【第${epId}${unitLabel}】『${epTitle}』全カット完成！自動ZIPパッケージングを開始...`, 'process');
     const currentLogs = ctx.logsRef?.current || ((typeof window !== 'undefined' && (window as any).__STUDIO_LOGS__) || []);
@@ -5234,7 +5256,8 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
   const startEpIndex = existingMaxId + 1;
   const endEpIndex = existingMaxId + totalEpCount;
   const totalCutsPerEpisode = settings.cutCount || CUTS_PER_EPISODE;
-  addLog(`${modeInfo.icon} 【${modeInfo.label}モード】全 ${totalEpCount} ${modeInfo.unit}（各${totalCutsPerEpisode}Cut / 先行${settings.previewCutCount}枚描画）の制作を開始します！`, 'process');
+  const isNightProfile = settings.executionProfile === 'night_safe';
+  addLog(`${modeInfo.icon} 【${modeInfo.label}モード (${isNightProfile ? '🌙平日夜間直列安全' : '⚡土日快速'})】全 ${totalEpCount} ${modeInfo.unit}（各${totalCutsPerEpisode}Cut / 先行${settings.previewCutCount}枚）の制作を開始します！`, 'process');
   const baseRawTitle = settings.theme.split('（')[0].replace(/^[^\w\s一-龯]+/, '').trim() || '情景の記録';
   const defaultEnTitle = 'Cinematic Story';
   for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
@@ -5243,10 +5266,17 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       addLog(`🛑 制作が中断されました（${currentBatchStep - 1}/${totalEpCount}${modeInfo.unit}完了）`, 'warning');
       break;
     }
+    // エピソード間待機（平日夜間時は60秒、土日日中時は15秒）
+    if (epIndex > startEpIndex) {
+      const epWaitMs = isNightProfile ? 60000 : 15000;
+      addLog(`☕ エピソード間クォータ冷却中（${Math.round(epWaitMs / 1000)}秒安全待機）...`, 'info');
+      const rested = await sleepWithAbortCheck(epWaitMs, () => isAbortedRef.current);
+      if (!rested || isAbortedRef.current) break;
+    }
     const rawTitle = (endEpIndex > 1) ? `${baseRawTitle} Vol.${epIndex}` : baseRawTitle;
     const currentEnTitle = (endEpIndex > 1) ? `${defaultEnTitle} Vol.${epIndex}` : defaultEnTitle;
     const existingTitles = episodesRef.current
-      .map((e: Episode) => e.titleJp.replace(/^[^\w\s一-龯]+/, '').trim())
+      .map((e: Episode) => cleanEpisodeTitle(e.titleJp || ''))
       .filter(Boolean);
     addLog(`${modeInfo.icon} 【第${epIndex}${modeInfo.unit}】脚本をリレー生成中（全${totalCutsPerEpisode}Cut策定）...`, 'process');
     const curPlan = {
@@ -5272,6 +5302,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       abortCheck: () => isAbortedRef.current,
       addLog
     });
+    if (isAbortedRef.current) break;
     const cutsCount = totalCutsPerEpisode;
     const baseCutsData = Array.from({ length: cutsCount }, (_, j) => {
       const cutData = parsed.cuts[j] || {} as any;
@@ -5303,7 +5334,7 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       newEpisode.characterTurnaroundMediaId = turnaround.mediaId;
       newEpisode.characterTurnaroundBase64 = turnaround.base64;
     }
-    // 全カット（C01〜最終カット）を即座にUIへ反映して横並びSTANDBY展開
+    if (isAbortedRef.current) break;
     setEpisodes((prev: Episode[]) => [...prev.filter(e => e.id !== epIndex), newEpisode]);
     episodesRef.current = [...episodesRef.current.filter((e: Episode) => e.id !== epIndex), newEpisode];
     addLog(`✨ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』全${cutsCount}カットの脚本確定！（C01〜C${String(cutsCount).padStart(2, '0')}を配置、先行${settings.previewCutCount}枚を描画開始）`, 'success');
@@ -5322,10 +5353,11 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       isPreviewDone: isPreviewSuccessful, 
       isDone: isAllDone 
     });
-    if (isPreviewSuccessful) {
+    if (isPreviewSuccessful && !isAbortedRef.current) {
       addLog(`✅ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』先行${targetCutCount}カットの画像生成が完了しました！（残り${cutsCount - targetCutCount}カットはSTANDBY待機）`, 'success');
       await ensureInfographicCover(ctx, freshNewEp);
     }
+    if (isAbortedRef.current) break;
     await finalizeAndProcessEpisode(ctx, epIndex, {
       unitLabel: modeInfo.unit,
       title: newEpisode.titleJp
@@ -5357,13 +5389,14 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     ? SAFE_CHARACTERS.find(c => c.id === settings.characterId)
     : undefined;
   const totalCutsPerEpisode = settings.cutCount || CUTS_PER_EPISODE;
+  const isNightProfile = settings.executionProfile === 'night_safe';
   if (!seriesManifestRef.current) {
     const isHist = checkIsHistorical(settings.era, settings.theme);
     const isMv = settings.isMvMode || settings.productionMode === 'mv';
     const isManga = settings.isMangaMode || settings.productionMode === 'manga';
     const genreLabel = isMv ? '音楽MVシリーズ' : isManga ? '漫画シリーズ' : isHist ? '大河ドラマ' : '連続ドラマ';
     const totalEps = settings.totalEpisodes || settings.episodeCount || 1;
-    addLog(`📜 全${totalEps}話の${genreLabel}グランドデザインをAIに策定依頼中... [世界観: ${settings.theme}]`, 'process');
+    addLog(`📜 全${totalEps}話の${genreLabel} (${isNightProfile ? '🌙平日夜間直列安全' : '⚡土日快速'}) グランドデザインをAIに策定依頼中... [世界観: ${settings.theme}]`, 'process');
     const EP_CHUNK_SIZE = 20;
     const epChunks = Math.ceil(totalEps / EP_CHUNK_SIZE);
     let allEpisodesPlan: SeriesEpisodePlan[] = [];
@@ -5391,25 +5424,30 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       );
       let designRes: any;
       try {
-        designRes = await callWithRetry<any>(() => Flow.generate.text(designPrompt), undefined, 2);
+        designRes = await callWithRetry<any>(
+          () => Flow.generate.text(designPrompt),
+          undefined,
+          { maxRetries: 2, abortCheck: () => isAbortedRef.current }
+        );
       } catch (_) {
         designRes = { text: '' };
       }
+      if (isAbortedRef.current) break;
       const parsedDesign = safeJsonParse<any>(designRes?.text || '', {});
       if (cIdx === 0 && parsedDesign.seriesTitle) seriesTitle = parsedDesign.seriesTitle;
       if (cIdx === 0 && parsedDesign.overallSynopsis) overallSynopsis = parsedDesign.overallSynopsis;
       const rawPlanList: SeriesEpisodePlan[] = Array.isArray(parsedDesign.episodesPlan) ? parsedDesign.episodesPlan : [];
       for (let eNum = startEp; eNum <= endEp; eNum++) {
         const found = rawPlanList.find((p: any) => p.epNumber === eNum);
-        const fbSub = FALLBACK_EPISODE_SUBTITLES[eNum] || { jp: `第${eNum}幕の波乱`, en: `Act ${eNum}` };
         allEpisodesPlan.push({
           epNumber: eNum,
-          titleJp: found?.titleJp ? cleanEpisodeTitle(found.titleJp) : (totalEps > 1 ? `${seriesTitle}〜${fbSub.jp}` : seriesTitle),
-          titleEn: found?.titleEn ? cleanEpisodeTitleEn(found.titleEn) : fbSub.en,
+          titleJp: found?.titleJp ? cleanEpisodeTitle(found.titleJp) : (totalEps > 1 ? `${seriesTitle} 第${eNum}章` : seriesTitle),
+          titleEn: found?.titleEn ? cleanEpisodeTitleEn(found.titleEn) : `Episode ${eNum}`,
           summary: found?.summary || `${settings.theme}の世界観で描かれる物語`
         });
       }
     }
+    if (isAbortedRef.current) return;
     seriesManifestRef.current = {
       seriesTitle,
       totalEpisodes: totalEps,
@@ -5469,7 +5507,11 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       );
       let newPlan: SeriesEpisodePlan;
       try {
-        const planRes = await callWithRetry<any>(() => Flow.generate.text(nextPlanPrompt), undefined, 4);
+        const planRes = await callWithRetry<any>(
+          () => Flow.generate.text(nextPlanPrompt),
+          undefined,
+          { maxRetries: 3, abortCheck: () => isAbortedRef.current }
+        );
         const rawPlan = safeJsonParse<SeriesEpisodePlan>(planRes.text, {
           epNumber: epNum, titleJp: '運命の分岐点', titleEn: 'Turning Point', summary: '波乱の展開'
         });
@@ -5501,12 +5543,19 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
     const epId = currentPlan.epNumber || (i + 1);
     if (manifest.completedEpisodeIds.includes(epId)) continue;
     if (isAbortedRef.current) break;
+    // エピソード間待機（夜間安全時は60秒、日中時は15秒）
+    if (i > 0) {
+      const epWaitMs = isNightProfile ? 60000 : 15000;
+      addLog(`☕ 【第${epId}話】着手前クォータ冷却中（${Math.round(epWaitMs / 1000)}秒安全待機）...`, 'info');
+      const rested = await sleepWithAbortCheck(epWaitMs, () => isAbortedRef.current);
+      if (!rested || isAbortedRef.current) break;
+    }
     const isMv = settings.isMvMode || settings.productionMode === 'mv';
     const isManga = settings.isMangaMode || settings.productionMode === 'manga';
     const effectiveMode = settings.productionMode || (isMv ? 'mv' : isManga ? 'manga' : 'episodes');
     const unitLabel = isMv ? '曲' : '話';
     const existingTitles = episodesRef.current
-      .map((e: Episode) => (e.titleJp || '').replace(/^[^\w\s一-龯]+/, '').trim())
+      .map((e: Episode) => cleanEpisodeTitle(e.titleJp || ''))
       .filter(Boolean);
     try {
       addLog(`📖 【第${epId}${unitLabel}】「${currentPlan.titleJp}」の全${totalCutsPerEpisode}Cutをリレー生成中...`, 'process');
@@ -5528,6 +5577,10 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         abortCheck: () => isAbortedRef.current,
         addLog
       });
+      if (isAbortedRef.current) {
+        updateEpisode(epId, { isGenerating: false });
+        break;
+      }
       const seriesCutsCount = totalCutsPerEpisode;
       const episodeCuts: Cut[] = Array.from({ length: seriesCutsCount }, (_, j) => {
         const cutData = sharedScript.cuts[j] || {} as any;
@@ -5553,12 +5606,10 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         currentEpObj.characterTurnaroundMediaId = turnaroundMediaId;
         currentEpObj.characterTurnaroundBase64 = turnaroundBase64;
       }
-      // AIが命名した各話固有の劇的サブタイトルを最優先採用（テーマ名そのままは除外）
       const themeShort = (settings.theme || '').split('（')[0].trim();
       const isScriptTitleValid = sharedScript.titleJp && 
         !sharedScript.titleJp.includes('劇的サブタイトル') && 
         sharedScript.titleJp !== themeShort;
-      
       const rawTitleJp = isScriptTitleValid 
         ? sharedScript.titleJp 
         : (currentPlan.titleJp || `第${epId}話`);
@@ -5591,19 +5642,18 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       addLog(`🎨 【第${epId}${unitLabel}】全${seriesCutsCount}カット配置完了！先行 ${previewCount} カットの描画タスクを開始...（${previewCount + 1}カット目以降はSTANDBY待機）`, 'process');
       const currentEp = episodesRef.current.find((e: Episode) => e.id === epId)!;
       await runTasks(buildCutTasks(currentEp, episodeCuts.slice(0, previewCount)));
+      if (isAbortedRef.current) {
+        updateEpisode(epId, { isGenerating: false });
+        break;
+      }
       addLog(`🎉 【第${epId}${unitLabel}】「${finalTitleJp}」の先行プレビュー制作が完了しました！`, 'success');
       await ensureInfographicCover(ctx, episodesRef.current.find((e: Episode) => e.id === epId) || currentEp);
+      if (isAbortedRef.current) break;
       await finalizeAndProcessEpisode(ctx, epId, {
         unitLabel,
         title: finalTitleJp,
         manifest
       });
-      // 🌙 夜間放置モードまたは土日モードに応じたエピソード間クールダウン待機
-      if (i < (manifest.episodesPlan?.length || 0) - 1 && !isAbortedRef.current) {
-        const epCooldown = settings.runModeProfile === 'night' ? 60000 : 10000;
-        addLog(`☕ 第${epId + 1}${unitLabel}の脚本策定まで安定冷却待機中（${Math.round(epCooldown / 1000)}秒）...`, 'info');
-        await sleepWithAbortCheck(epCooldown, () => isAbortedRef.current);
-      }
     } catch (epErr: any) {
       addLog(`⚠️ 第 ${epId} 話の生成中にエラーが発生しました: ${formatErrorMessage(epErr)}`, 'warning');
       cleanupEpisodeMemory();
@@ -5622,7 +5672,7 @@ import { runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensur
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, LogEntry } from '../types';
 import { CUTS_PER_EPISODE, resolveImageModel, SAFE_CHARACTERS } from '../constants';
-import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId, getAllReferenceAssets, saveReferenceAsset } from './utils';
+import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId, getAllReferenceAssets, saveReferenceAsset, sleepWithAbortCheck } from './utils';
 import { 
   directShot, 
   buildImagePromptAndNegative, 
@@ -5691,6 +5741,7 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
     ));
   }, []);
   const clearEpisodes = useCallback(() => {
+    isAbortedRef.current = true;
     episodesRef.current = [];
     setEpisodes([]);
     setActiveSeriesManifest(null);
@@ -5722,7 +5773,7 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
     };
     episodesRef.current = episodesRef.current.map(resetEp);
     setEpisodes(prev => prev.map(resetEp));
-    addLog('🛑 ユーザーによって制作が中断されました。', 'warning');
+    addLog('🛑 ユーザーによって制作が中断されました（以降のタスクを安全破棄）。', 'warning');
   }, [addLog]);
   return {
     episodes,
@@ -5740,7 +5791,6 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
     abortProduction
   };
 }
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 interface UseStudioProductionProps {
   settings: GeneratorSettings;
   addLog: (message: string, type?: LogEntry['type']) => void;
@@ -5770,18 +5820,19 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
   const seriesQueueRef = useRef<GeneratorSettings[]>([]);
   const [queuedSeriesCount, setQueuedSeriesCount] = useState(0);
   const isProducingRef = useRef(false);
-  const productionRunIdRef = useRef<number>(0);
   const hasRateLimitedBanana2Ref = useRef(false);
   const lastErrorRef = useRef<string | null>(null);
   const handleClearEpisodes = useCallback(() => {
+    isAbortedRef.current = true;
     activeReferenceRef.current = undefined;
     currentAssetRef.current = undefined;
+    queueRef.current = [];
     seriesQueueRef.current = [];
     setQueuedSeriesCount(0);
     clearEpisodes();
   }, [clearEpisodes]);
   const handleAbort = useCallback(() => {
-    productionRunIdRef.current += 1;
+    isAbortedRef.current = true;
     queueRef.current = [];
     seriesQueueRef.current = [];
     setQueuedSeriesCount(0);
@@ -5895,6 +5946,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     addLog(`🎨 Ep.${epId}: 残り ${remainingCuts.length} 枚の画像生成を開始...`, 'process');
     await runTasks(buildCutTasks(ep, remainingCuts));
     
+    if (isAbortedRef.current) {
+      updateEpisode(epId, { isGeneratingRemainingImages: false });
+      return;
+    }
     const freshEp = episodesRef.current.find(e => e.id === epId) || ep;
     const stillRemaining = freshEp.cuts.filter(c => !c.imageBase64 && !c.imageMediaId).length;
     
@@ -5926,19 +5981,19 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     }
   };
   const runTasks = async (tasks: GenerationTask[]) => {
+    if (isAbortedRef.current || tasks.length === 0) return;
+    const isNightProfile = settings.executionProfile === 'night_safe';
     const preparedTasks: GenerationTask[] = [];
     let previousShotInfo: PreviousShotInfo | undefined = undefined;
-    if (tasks.length > 0) {
-      const firstTask = tasks[0];
-      const prevCut = episodesRef.current.find(e => e.id === firstTask.epId)?.cuts.find(c => c.id === firstTask.cutId - 1);
-      if (prevCut?.shotScale) {
-        previousShotInfo = {
-          scale: prevCut.shotScale,
-          angle: prevCut.cinematicAngle,
-          prompt: prevCut.promptEn,
-          tag: prevCut.cameraWork
-        };
-      }
+    const firstTask = tasks[0];
+    const prevCut = episodesRef.current.find(e => e.id === firstTask.epId)?.cuts.find(c => c.id === firstTask.cutId - 1);
+    if (prevCut?.shotScale) {
+      previousShotInfo = {
+        scale: prevCut.shotScale,
+        angle: prevCut.cinematicAngle,
+        prompt: prevCut.promptEn,
+        tag: prevCut.cameraWork
+      };
     }
     addLog(`🎬 全 ${tasks.length} カットの映画的対比演出を自動最適化中...`, 'process');
     for (let i = 0; i < tasks.length; i++) {
@@ -5991,20 +6046,37 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       addLog(`👑 Ep.${epId}: Cut 1（マスターアンカー）を先行生成中...`, 'process');
       await generateImage(cut1Task);
       if (isAbortedRef.current) return;
+      // Cut 1 後のインターバル
+      const initialDelay = isNightProfile ? 50000 : 10000;
+      await sleepWithAbortCheck(initialDelay, () => isAbortedRef.current);
+      if (isAbortedRef.current) return;
     }
     queueRef.current = [...preparedTasks];
-    const isNightMode = settings.runModeProfile === 'night';
-    const concurrency = isNightMode ? 1 : Math.max(1, settings.parallelCount || 2);
+    // 🌙 平日夜間時は 1並列・50秒間隔の完全直列安全運転。⚡土日・日中は 2並列・10秒間隔
+    const concurrency = isNightProfile ? 1 : Math.max(1, settings.parallelCount || 2);
+    const baseIntervalMs = isNightProfile ? 50000 : 10000;
+    addLog(`⚙️ 実行モード: ${isNightProfile ? '🌙 平日夜間 (1並列 / 50s間隔安全直列)' : '⚡ 土日・日中 (2並列 / 快速)'}`, 'info');
     const workers = Array(concurrency).fill(null).map(async (_, workerIdx) => {
-      if (workerIdx > 0) await sleep(workerIdx * 5000);
+      if (workerIdx > 0) {
+        await sleepWithAbortCheck(workerIdx * 5000, () => isAbortedRef.current);
+      }
       while (queueRef.current.length > 0) {
-        if (isAbortedRef.current) break;
+        if (isAbortedRef.current) {
+          queueRef.current = [];
+          break;
+        }
         const task = queueRef.current.shift();
         if (!task) break;
         await generateImage(task);
         if (queueRef.current.length > 0 && !isAbortedRef.current) {
-          const waitMs = isNightMode ? (45000 + Math.random() * 15000) : (10000 + Math.random() * 5000);
-          await sleep(waitMs);
+          const jitter = Math.random() * (isNightProfile ? 15000 : 5000);
+          const waitTime = Math.round(baseIntervalMs + jitter);
+          addLog(`⏳ クォータ安全待機中 (${Math.round(waitTime / 1000)}秒)...`, 'process');
+          const completedWait = await sleepWithAbortCheck(waitTime, () => isAbortedRef.current);
+          if (!completedWait || isAbortedRef.current) {
+            queueRef.current = [];
+            break;
+          }
         }
       }
     });
@@ -6033,6 +6105,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             updateEpisode(epId, { characterTurnaroundMediaId: uploadRes.mediaId });
           }
         } catch (_) {}
+      }
+      if (isAbortedRef.current) {
+        updateCut(epId, cutId, { isGeneratingImage: false });
+        return;
       }
       const currentCutObj = ep?.cuts.find(c => c.id === cutId);
       const isAnchorExcluded = task.isObjectOnly || 
@@ -6094,6 +6170,9 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       try {
         res = await callWithRetry<any>(
           async () => {
+            if (isAbortedRef.current) {
+              throw new Error('処理が中断されました (Aborted)');
+            }
             attemptCount++;
             let currentModelName = primaryModelName;
             let currentPrompt = safePrompt;
@@ -6109,7 +6188,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
               hasRateLimitedBanana2Ref.current = true;
               currentModelName = '🍌 Nano Banana Pro';
             }
-            // attemptCount > 1（2回目以降のトライ）のプロンプトリフレッシュ＆ハッシュロック回避
             if (attemptCount > 1) {
               const variation = retryVariations[(attemptCount - 2) % retryVariations.length];
               const sanitized = sanitizePromptForGoogleSafety(safePrompt);
@@ -6176,6 +6254,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
           throw firstErr;
         }
       }
+      if (isAbortedRef.current) {
+        updateCut(epId, cutId, { isGeneratingImage: false });
+        return;
+      }
       let finalBase64 = extractImageBase64(res);
       const finalMediaId = extractMediaId(res);
       if (!finalBase64 && finalMediaId && typeof (Flow as any)?.media?.getBase64 === 'function') {
@@ -6193,6 +6275,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       }
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');
     } catch (err) {
+      if (isAbortedRef.current) {
+        updateCut(epId, cutId, { isGeneratingImage: false });
+        return;
+      }
       const errorMsg = formatErrorMessage(err);
       updateCut(epId, cutId, { isGeneratingImage: false, error: errorMsg });
       addLog(`❌ Ep.${epId} C${cutId}: 画像失敗 - ${errorMsg}`, 'error');
@@ -6229,7 +6315,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       ...settings,
       ...(isValidOverride ? overrideSettings : {})
     };
-    // 🎲 characterId が 'random' の場合、4人の中からランダム自動選出
     if (!effectiveSettings.characterId || effectiveSettings.characterId === 'random') {
       const charIds = SAFE_CHARACTERS.map(c => c.id);
       const chosenCharId = charIds[Math.floor(Math.random() * charIds.length)];
@@ -6237,7 +6322,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       effectiveSettings.characterId = chosenCharId;
       addLog(`🎲 キャラクター自動抽選: 【${chosenChar?.icon || ''} ${chosenChar?.nameJa || chosenCharId}】に決定！`, 'success');
     }
-    // 制作中に押された場合は予約キューに追加して即座に戻る
     if (isProducingRef.current) {
       seriesQueueRef.current.push({ ...effectiveSettings });
       setQueuedSeriesCount(seriesQueueRef.current.length);
@@ -6249,20 +6333,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     isProducingRef.current = true;
     setIsProducing(true);
     isAbortedRef.current = false;
-    const myRunId = ++productionRunIdRef.current;
-    const runScopedAbortedRef = {
-      get current() {
-        return isAbortedRef.current || productionRunIdRef.current !== myRunId;
-      },
-      set current(val: boolean) {
-        isAbortedRef.current = val;
-      }
-    };
     let currentRunSettings: GeneratorSettings | undefined = effectiveSettings;
     let isFirstSeries = true;
     try {
-      while (currentRunSettings && !runScopedAbortedRef.current) {
-        // ── 前回の制作データクリア判定 ──
+      while (currentRunSettings && !isAbortedRef.current) {
         const existingEps = episodesRef.current;
         const prevEp = existingEps[0];
         const prevChar = prevEp?.characterId || (seriesManifestRef.current as any)?.characterId;
@@ -6296,38 +6370,25 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             delete (window as any).__STUDIO_SERIES_HASH__;
           }
         }
-        // 新しい4桁シリーズハッシュの生成・登録
         if (typeof window !== 'undefined' && (episodesRef.current.length === 0 || !(window as any).__STUDIO_SERIES_HASH__)) {
           const hashChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
           const newSeriesHash = Array.from({ length: 4 }, () => hashChars[Math.floor(Math.random() * hashChars.length)]).join('');
           (window as any).__STUDIO_SERIES_HASH__ = newSeriesHash;
         }
-        const runModeLabel = currentRunSettings.runModeProfile === 'night' ? '🌙 平日夜間（安全放置）' : '⚡ 土日・日中（快速）';
-        addLog(`🎬 【全自動プロデュース開始】稼働プロファイル: ${runModeLabel} / モード: ${currentRunSettings.productionMode || '通常'} / 全${currentRunSettings.totalEpisodes || currentRunSettings.episodeCount || 1}話`, 'process');
+        const isNight = currentRunSettings.executionProfile === 'night_safe';
+        addLog(`🎬 【全自動プロデュース開始】プロファイル: ${isNight ? '🌙平日夜間 (6h安全・1並列・50s間隔)' : '⚡土日・日中 (快速・2並列)'} / 全${currentRunSettings.totalEpisodes || currentRunSettings.episodeCount || 1}話`, 'process');
         const pipelineContext = {
           settings: currentRunSettings,
-          addLog: (msg: string, type?: any) => {
-            if (productionRunIdRef.current !== myRunId) return;
-            addLog(msg, type);
-          },
+          addLog,
           logsRef,
-          isAbortedRef: runScopedAbortedRef,
+          isAbortedRef,
           episodesRef,
-          setEpisodes: (updater: any) => {
-            if (productionRunIdRef.current !== myRunId) return;
-            setEpisodes(updater);
-          },
-          updateEpisode: (epId: number, updates: any) => {
-            if (productionRunIdRef.current !== myRunId) return;
-            updateEpisode(epId, updates);
-          },
+          setEpisodes,
+          updateEpisode,
           runTasks,
           buildCutTasks,
           seriesManifestRef,
-          setActiveSeriesManifest: (manifest: any) => {
-            if (productionRunIdRef.current !== myRunId) return;
-            setActiveSeriesManifest(manifest);
-          },
+          setActiveSeriesManifest,
           activeReferenceRef,
           currentAssetRef
         };
@@ -6343,17 +6404,30 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             }
           }
         } catch (err: any) {
-          addLog(`❌ 制作エラー: ${formatErrorMessage(err)}`, 'error');
+          if (!isAbortedRef.current) {
+            addLog(`❌ 制作エラー: ${formatErrorMessage(err)}`, 'error');
+          }
         }
         isFirstSeries = false;
-        // 次のキューがあるかチェック
-        if (!runScopedAbortedRef.current && seriesQueueRef.current.length > 0) {
+        // 次のキューがあるかチェック（中止された場合は即時終了してゾンビ化防止）
+        if (isAbortedRef.current) {
+          seriesQueueRef.current = [];
+          setQueuedSeriesCount(0);
+          currentRunSettings = undefined;
+          break;
+        }
+        if (seriesQueueRef.current.length > 0) {
           const nextSettings = seriesQueueRef.current.shift()!;
           setQueuedSeriesCount(seriesQueueRef.current.length);
-          const isNight = currentRunSettings.runModeProfile === 'night';
-          const seriesCooldownMs = isNight ? 120000 : 15000;
-          addLog(`⏭️ 【連続投入キュー実行】次シリーズの制作を${Math.round(seriesCooldownMs / 1000)}秒後に自動開始します（残り待機: ${seriesQueueRef.current.length}件）...`, 'success');
-          await sleep(seriesCooldownMs);
+          const seriesWaitMs = isNight ? 120000 : 5000;
+          addLog(`⏭️ 【連続投入】次シリーズ待機中（${Math.round(seriesWaitMs / 1000)}秒安全待機 / 残り予約: ${seriesQueueRef.current.length}件）...`, 'process');
+          const completedWait = await sleepWithAbortCheck(seriesWaitMs, () => isAbortedRef.current);
+          if (!completedWait || isAbortedRef.current) {
+            seriesQueueRef.current = [];
+            setQueuedSeriesCount(0);
+            currentRunSettings = undefined;
+            break;
+          }
           currentRunSettings = nextSettings;
         } else {
           currentRunSettings = undefined;
@@ -6806,6 +6880,5 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
     </div>
   );
 };
-
 
 

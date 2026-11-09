@@ -327,4 +327,3 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
     </div>
   );
 };
-

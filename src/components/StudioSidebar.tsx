@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { GeneratorSettings, Episode, LogEntry } from '../types';
+import { GeneratorSettings, Episode, LogEntry, ExecutionProfileType } from '../types';
 import { SAFE_CHARACTERS } from '../constants';
 // ── UI 基本プリミティブ ──────────────────────────────────────
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -222,6 +222,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     { label: '全カット一括', value: settings.cutCount || 12 }
   ];
   const isRandomChar = settings.characterId === 'random' || !settings.characterId;
+  const currentProfile: ExecutionProfileType = settings.executionProfile || 'night_safe';
   return (
     <div className="w-[320px] bg-white border-r border-slate-200 flex flex-col h-full shrink-0 shadow-sm z-30 select-none">
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0">
@@ -245,14 +246,14 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 <span className={`text-xs font-bold truncate ${isRandomChar ? 'text-indigo-900' : 'text-slate-800'}`}>
                   ランダム（おまかせ）
                 </span>
-                <span className="text-[9.5px] text-slate-500 truncate">制作開始時に4人から自動選出</span>
+                <span className="text-[9.5px] text-slate-500 truncate">制作開始時に7人から自動選出</span>
               </div>
             </div>
             {isRandomChar && (
               <span className="material-symbols-outlined text-[18px] text-indigo-600 shrink-0">check_circle</span>
             )}
           </button>
-          {/* 4キャラクターのグリッド */}
+          {/* 全7キャラクターのグリッド */}
           <div className="grid grid-cols-2 gap-1.5">
             {SAFE_CHARACTERS.map(char => {
               const isSelected = settings.characterId === char.id;
@@ -321,39 +322,52 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             })}
           </div>
         </div>
-        {/* 稼働プロファイル切替（平日夜間 / 土日快速） */}
-        <div className="flex flex-col gap-1.5 shrink-0">
-          <SectionLabel>⏱️ 稼働プロファイル（生成間隔・安全制御）</SectionLabel>
-          <div className="grid grid-cols-2 gap-1 border border-slate-300 rounded-xl bg-slate-100 p-1">
+        {/* 3. ⏱️ 稼働プロファイルトグル */}
+        <div className="flex flex-col gap-1.5 shrink-0 p-2.5 rounded-xl border border-indigo-100 bg-indigo-50/50">
+          <div className="flex items-center justify-between">
+            <SectionLabel>⏱️ 稼働プロファイル</SectionLabel>
+            <span className="text-[9px] font-bold text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded">
+              {currentProfile === 'night_safe' ? '直列1並列・安全運転' : '2並列・快速'}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xs">
             <button
               type="button"
-              onClick={() => applySettingsUpdate(s => ({ ...s, runModeProfile: 'night' }))}
-              className={`h-[32px] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer rounded-lg ${
-                (settings.runModeProfile || 'night') === 'night'
-                  ? 'bg-indigo-900 text-white shadow-sm font-black'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              onClick={() => applySettingsUpdate(s => ({ ...s, executionProfile: 'night_safe', parallelCount: 1 }))}
+              className={`p-2 rounded-lg text-left transition-all flex flex-col gap-0.5 cursor-pointer ${
+                currentProfile === 'night_safe'
+                  ? 'bg-slate-900 text-white shadow-xs font-bold'
+                  : 'text-slate-700 hover:bg-slate-50'
               }`}
-              title="平日夜間モード: 1並列・50秒間隔・エピソード間60秒・シリーズ間2分。6時間放置で3〜4シリーズをエラーゼロで安全完走！"
             >
-              <span>🌙 平日夜間</span>
-              <span className="text-[9px] opacity-80">(6h安全)</span>
+              <div className="flex items-center gap-1 text-[11px]">
+                <span>🌙</span>
+                <span className="font-bold">平日夜間 (6h安全)</span>
+              </div>
+              <span className={`text-[8.5px] leading-tight ${currentProfile === 'night_safe' ? 'text-indigo-200' : 'text-slate-500'}`}>
+                1並列 / 50s間隔 / EP間60s
+              </span>
             </button>
             <button
               type="button"
-              onClick={() => applySettingsUpdate(s => ({ ...s, runModeProfile: 'daytime' }))}
-              className={`h-[32px] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer rounded-lg ${
-                settings.runModeProfile === 'daytime'
-                  ? 'bg-amber-600 text-white shadow-sm font-black'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              onClick={() => applySettingsUpdate(s => ({ ...s, executionProfile: 'day_fast', parallelCount: 2 }))}
+              className={`p-2 rounded-lg text-left transition-all flex flex-col gap-0.5 cursor-pointer ${
+                currentProfile === 'day_fast'
+                  ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                  : 'text-slate-700 hover:bg-slate-50'
               }`}
-              title="土日・日中モード: 2並列・10〜15秒間隔の快速生成。PCの前にいるときに素早く連続制作！"
             >
-              <span>⚡ 土日・日中</span>
-              <span className="text-[9px] opacity-80">(快速)</span>
+              <div className="flex items-center gap-1 text-[11px]">
+                <span>⚡</span>
+                <span className="font-bold">土日・日中 (快速)</span>
+              </div>
+              <span className={`text-[8.5px] leading-tight ${currentProfile === 'day_fast' ? 'text-indigo-100' : 'text-slate-500'}`}>
+                2並列 / 10s間隔 / EP間15s
+              </span>
             </button>
           </div>
         </div>
-        {/* 3. 制作中停止 / 制作データ消去コントロール */}
+        {/* 4. 制作中停止 / 制作データ消去コントロール */}
         {(isProducing || (episodes.length > 0 && onClearEpisodes)) && (
           <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100 shrink-0">
             {isProducing && (
@@ -377,7 +391,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             )}
           </div>
         )}
-        {/* 4. エンジン仕様・指数バックオフ情報（折りたたみアコーディオン） */}
+        {/* 5. エンジン仕様・指数バックオフ情報（折りたたみアコーディオン） */}
         <div className="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden shrink-0">
           <button
             type="button"
@@ -386,7 +400,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           >
             <span className="flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px] text-indigo-600">settings</span>
-              ⚙️ エンジン仕様・バックオフ設定（常時有効）
+              ⚙️ エンジン仕様・待機設定
             </span>
             <span className="material-symbols-outlined text-[16px] text-slate-500 transition-transform">
               {isAccordionOpen ? 'expand_less' : 'expand_more'}
@@ -406,36 +420,28 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               <div className="flex items-center justify-between text-[11px] font-bold pt-1 border-t border-slate-100">
                 <span className="flex items-center gap-1 text-slate-700">
                   <span className="material-symbols-outlined text-[14px] text-indigo-500">speed</span>
-                  並列・生成間隔
+                  並列度 & 間隔
                 </span>
-                <span className={`px-2 py-0.5 rounded font-black text-[10px] ${
-                  (settings.runModeProfile || 'night') === 'night'
-                    ? 'bg-indigo-900 text-indigo-100 border border-indigo-700'
-                    : 'bg-amber-100 text-amber-900 border border-amber-300'
-                }`}>
-                  {(settings.runModeProfile || 'night') === 'night' ? '1並列・50秒間隔 (安全直列)' : '2並列・12秒間隔 (快速)'}
+                <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-black text-[10px]">
+                  {currentProfile === 'night_safe' ? '1並列 (50s〜65s)' : '2並列 (10s〜15s)'}
                 </span>
               </div>
               <div className="flex flex-col gap-0.5 pt-1 border-t border-slate-100 text-[10px]">
                 <div className="flex items-center justify-between font-bold text-slate-700">
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-[13px] text-emerald-600">published_with_changes</span>
-                    冷却待機制御
+                    待機・クォータ保護
                   </span>
-                  <span className="text-emerald-700 font-extrabold">
-                    {(settings.runModeProfile || 'night') === 'night' ? '話間60秒 / シリーズ間2分' : '話間10秒 / シリーズ間15秒'}
-                  </span>
+                  <span className="text-emerald-700 font-extrabold">{currentProfile === 'night_safe' ? '夜間安全直列' : '快速運転'}</span>
                 </div>
                 <span className="text-slate-500 font-mono text-[9.5px] mt-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
-                  {(settings.runModeProfile || 'night') === 'night' 
-                    ? '🌙 夜間モード: Google過剰アクセス制限を100%回避する安全直列設計' 
-                    : '⚡ 土日モード: PC作業中のハイスピード並列連続生成設計'}
+                  {currentProfile === 'night_safe' ? 'カット間50s+ジッター / EP間60s / シリーズ間2m' : 'カット間10s+ジッター / EP間15s / シリーズ間5s'}
                 </span>
               </div>
             </div>
           )}
         </div>
-        {/* 5. ライブ進行ログ（下部常時表示・flex-1 min-h-[220px]） */}
+        {/* 6. ライブ進行ログ（下部常時表示・flex-1 min-h-[220px]） */}
         <div className="flex-1 min-h-[220px] flex flex-col rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner">
           <div className="px-2.5 py-1.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
             <span className="text-[10px] font-mono font-bold text-slate-400 flex items-center gap-1">

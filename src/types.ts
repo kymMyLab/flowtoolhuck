@@ -1,8 +1,3 @@
-// ── Google Flow SDK グローバル型宣言 ──
-declare global {
-  const Flow: any;
-}
-
 export type VideoModelType = 'veo-lite' | 'omni-flash' | 'veo-fast' | 'browser-0pt';
 export type ProductionMode = 'episodes' | 'manga' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix' | 'manzai';
 export type RecommendationModel = VideoModelType | 'none';
@@ -167,6 +162,7 @@ export interface Episode {
   musicStyle?: string;
   instrumentalTrack?: unknown;
 }
+export type ExecutionProfileType = 'night_safe' | 'day_fast';
 export interface GeneratorSettings {
   productionMode: ProductionMode; 
   country: string;
@@ -188,12 +184,12 @@ export interface GeneratorSettings {
   totalEpisodes?: number;
   previewCutCount: number; 
   parallelCount: number;
+  executionProfile?: ExecutionProfileType;
   autoVideo: boolean;
   autoDownload: boolean;
   superBackoff?: boolean;
   aspectRatio?: '9:16' | '1:1' | '16:9';
   characterId?: string;
-  runModeProfile?: 'night' | 'daytime';
   enableTurnaroundSheet?: boolean;
   autoApproveTurnaround?: boolean;
   enableObjectCut?: boolean;

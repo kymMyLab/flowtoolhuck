@@ -462,6 +462,8 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
 }) => {
   const isPending = !ep.isGenerating && !ep.isDone && !ep.isPreviewDone;
   const standbyCount = ep.cuts.filter(c => !c.imageBase64 && !c.imageMediaId).length;
+  const isMv = !!ep.isMvMode || ep.productionMode === 'mv';
+  const unitLabel = isMv ? '曲' : '話';
   return (
     <section className={`w-full flex flex-col gap-4 animate-slide-in transition-opacity duration-700 p-4 sm:p-5 rounded-2xl bg-white border border-slate-300 shadow-sm ${isPending ? 'opacity-40' : 'opacity-100'}`}>
       <div className="flex flex-col border-b border-slate-200 pb-4 gap-3">
@@ -469,8 +471,9 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
           {/* エピソードタイトル・サブタイトル */}
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-xs font-black tracking-wider shrink-0 shadow-xs">
-                第{ep.id}話
+              {/* 第N話バッジ表示（タイトル本体と完全分離し重複を根絶） */}
+              <span className="px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 font-mono font-black text-xs shrink-0 shadow-2xs">
+                第{ep.id}{unitLabel}
               </span>
               <h2 className="font-bold italic uppercase tracking-tight text-slate-900 leading-tight text-lg sm:text-xl md:text-2xl break-words">
                 {cleanEpisodeTitle(ep.titleJp) || '無題'}

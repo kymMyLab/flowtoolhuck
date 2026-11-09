@@ -2,7 +2,7 @@ import { runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensur
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, LogEntry } from '../types';
 import { CUTS_PER_EPISODE, resolveImageModel, SAFE_CHARACTERS } from '../constants';
-import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId, getAllReferenceAssets, saveReferenceAsset } from './utils';
+import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId, getAllReferenceAssets, saveReferenceAsset, sleepWithAbortCheck } from './utils';
 import { 
   directShot, 
   buildImagePromptAndNegative, 
@@ -71,6 +71,7 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
     ));
   }, []);
   const clearEpisodes = useCallback(() => {
+    isAbortedRef.current = true;
     episodesRef.current = [];
     setEpisodes([]);
     setActiveSeriesManifest(null);
@@ -102,7 +103,7 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
     };
     episodesRef.current = episodesRef.current.map(resetEp);
     setEpisodes(prev => prev.map(resetEp));
-    addLog('🛑 ユーザーによって制作が中断されました。', 'warning');
+    addLog('🛑 ユーザーによって制作が中断されました（以降のタスクを安全破棄）。', 'warning');
   }, [addLog]);
   return {
     episodes,
@@ -120,7 +121,6 @@ function useEpisodeState(addLog: (msg: string, type?: any) => void) {
     abortProduction
   };
 }
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 interface UseStudioProductionProps {
   settings: GeneratorSettings;
   addLog: (message: string, type?: LogEntry['type']) => void;
@@ -150,18 +150,19 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
   const seriesQueueRef = useRef<GeneratorSettings[]>([]);
   const [queuedSeriesCount, setQueuedSeriesCount] = useState(0);
   const isProducingRef = useRef(false);
-  const productionRunIdRef = useRef<number>(0);
   const hasRateLimitedBanana2Ref = useRef(false);
   const lastErrorRef = useRef<string | null>(null);
   const handleClearEpisodes = useCallback(() => {
+    isAbortedRef.current = true;
     activeReferenceRef.current = undefined;
     currentAssetRef.current = undefined;
+    queueRef.current = [];
     seriesQueueRef.current = [];
     setQueuedSeriesCount(0);
     clearEpisodes();
   }, [clearEpisodes]);
   const handleAbort = useCallback(() => {
-    productionRunIdRef.current += 1;
+    isAbortedRef.current = true;
     queueRef.current = [];
     seriesQueueRef.current = [];
     setQueuedSeriesCount(0);
@@ -275,6 +276,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     addLog(`🎨 Ep.${epId}: 残り ${remainingCuts.length} 枚の画像生成を開始...`, 'process');
     await runTasks(buildCutTasks(ep, remainingCuts));
     
+    if (isAbortedRef.current) {
+      updateEpisode(epId, { isGeneratingRemainingImages: false });
+      return;
+    }
     const freshEp = episodesRef.current.find(e => e.id === epId) || ep;
     const stillRemaining = freshEp.cuts.filter(c => !c.imageBase64 && !c.imageMediaId).length;
     
@@ -306,19 +311,19 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     }
   };
   const runTasks = async (tasks: GenerationTask[]) => {
+    if (isAbortedRef.current || tasks.length === 0) return;
+    const isNightProfile = settings.executionProfile === 'night_safe';
     const preparedTasks: GenerationTask[] = [];
     let previousShotInfo: PreviousShotInfo | undefined = undefined;
-    if (tasks.length > 0) {
-      const firstTask = tasks[0];
-      const prevCut = episodesRef.current.find(e => e.id === firstTask.epId)?.cuts.find(c => c.id === firstTask.cutId - 1);
-      if (prevCut?.shotScale) {
-        previousShotInfo = {
-          scale: prevCut.shotScale,
-          angle: prevCut.cinematicAngle,
-          prompt: prevCut.promptEn,
-          tag: prevCut.cameraWork
-        };
-      }
+    const firstTask = tasks[0];
+    const prevCut = episodesRef.current.find(e => e.id === firstTask.epId)?.cuts.find(c => c.id === firstTask.cutId - 1);
+    if (prevCut?.shotScale) {
+      previousShotInfo = {
+        scale: prevCut.shotScale,
+        angle: prevCut.cinematicAngle,
+        prompt: prevCut.promptEn,
+        tag: prevCut.cameraWork
+      };
     }
     addLog(`🎬 全 ${tasks.length} カットの映画的対比演出を自動最適化中...`, 'process');
     for (let i = 0; i < tasks.length; i++) {
@@ -371,20 +376,37 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       addLog(`👑 Ep.${epId}: Cut 1（マスターアンカー）を先行生成中...`, 'process');
       await generateImage(cut1Task);
       if (isAbortedRef.current) return;
+      // Cut 1 後のインターバル
+      const initialDelay = isNightProfile ? 50000 : 10000;
+      await sleepWithAbortCheck(initialDelay, () => isAbortedRef.current);
+      if (isAbortedRef.current) return;
     }
     queueRef.current = [...preparedTasks];
-    const isNightMode = settings.runModeProfile === 'night';
-    const concurrency = isNightMode ? 1 : Math.max(1, settings.parallelCount || 2);
+    // 🌙 平日夜間時は 1並列・50秒間隔の完全直列安全運転。⚡土日・日中は 2並列・10秒間隔
+    const concurrency = isNightProfile ? 1 : Math.max(1, settings.parallelCount || 2);
+    const baseIntervalMs = isNightProfile ? 50000 : 10000;
+    addLog(`⚙️ 実行モード: ${isNightProfile ? '🌙 平日夜間 (1並列 / 50s間隔安全直列)' : '⚡ 土日・日中 (2並列 / 快速)'}`, 'info');
     const workers = Array(concurrency).fill(null).map(async (_, workerIdx) => {
-      if (workerIdx > 0) await sleep(workerIdx * 5000);
+      if (workerIdx > 0) {
+        await sleepWithAbortCheck(workerIdx * 5000, () => isAbortedRef.current);
+      }
       while (queueRef.current.length > 0) {
-        if (isAbortedRef.current) break;
+        if (isAbortedRef.current) {
+          queueRef.current = [];
+          break;
+        }
         const task = queueRef.current.shift();
         if (!task) break;
         await generateImage(task);
         if (queueRef.current.length > 0 && !isAbortedRef.current) {
-          const waitMs = isNightMode ? (45000 + Math.random() * 15000) : (10000 + Math.random() * 5000);
-          await sleep(waitMs);
+          const jitter = Math.random() * (isNightProfile ? 15000 : 5000);
+          const waitTime = Math.round(baseIntervalMs + jitter);
+          addLog(`⏳ クォータ安全待機中 (${Math.round(waitTime / 1000)}秒)...`, 'process');
+          const completedWait = await sleepWithAbortCheck(waitTime, () => isAbortedRef.current);
+          if (!completedWait || isAbortedRef.current) {
+            queueRef.current = [];
+            break;
+          }
         }
       }
     });
@@ -413,6 +435,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             updateEpisode(epId, { characterTurnaroundMediaId: uploadRes.mediaId });
           }
         } catch (_) {}
+      }
+      if (isAbortedRef.current) {
+        updateCut(epId, cutId, { isGeneratingImage: false });
+        return;
       }
       const currentCutObj = ep?.cuts.find(c => c.id === cutId);
       const isAnchorExcluded = task.isObjectOnly || 
@@ -474,6 +500,9 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       try {
         res = await callWithRetry<any>(
           async () => {
+            if (isAbortedRef.current) {
+              throw new Error('処理が中断されました (Aborted)');
+            }
             attemptCount++;
             let currentModelName = primaryModelName;
             let currentPrompt = safePrompt;
@@ -489,7 +518,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
               hasRateLimitedBanana2Ref.current = true;
               currentModelName = '🍌 Nano Banana Pro';
             }
-            // attemptCount > 1（2回目以降のトライ）のプロンプトリフレッシュ＆ハッシュロック回避
             if (attemptCount > 1) {
               const variation = retryVariations[(attemptCount - 2) % retryVariations.length];
               const sanitized = sanitizePromptForGoogleSafety(safePrompt);
@@ -556,6 +584,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
           throw firstErr;
         }
       }
+      if (isAbortedRef.current) {
+        updateCut(epId, cutId, { isGeneratingImage: false });
+        return;
+      }
       let finalBase64 = extractImageBase64(res);
       const finalMediaId = extractMediaId(res);
       if (!finalBase64 && finalMediaId && typeof (Flow as any)?.media?.getBase64 === 'function') {
@@ -573,6 +605,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       }
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');
     } catch (err) {
+      if (isAbortedRef.current) {
+        updateCut(epId, cutId, { isGeneratingImage: false });
+        return;
+      }
       const errorMsg = formatErrorMessage(err);
       updateCut(epId, cutId, { isGeneratingImage: false, error: errorMsg });
       addLog(`❌ Ep.${epId} C${cutId}: 画像失敗 - ${errorMsg}`, 'error');
@@ -609,7 +645,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       ...settings,
       ...(isValidOverride ? overrideSettings : {})
     };
-    // 🎲 characterId が 'random' の場合、4人の中からランダム自動選出
     if (!effectiveSettings.characterId || effectiveSettings.characterId === 'random') {
       const charIds = SAFE_CHARACTERS.map(c => c.id);
       const chosenCharId = charIds[Math.floor(Math.random() * charIds.length)];
@@ -617,7 +652,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       effectiveSettings.characterId = chosenCharId;
       addLog(`🎲 キャラクター自動抽選: 【${chosenChar?.icon || ''} ${chosenChar?.nameJa || chosenCharId}】に決定！`, 'success');
     }
-    // 制作中に押された場合は予約キューに追加して即座に戻る
     if (isProducingRef.current) {
       seriesQueueRef.current.push({ ...effectiveSettings });
       setQueuedSeriesCount(seriesQueueRef.current.length);
@@ -629,20 +663,10 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     isProducingRef.current = true;
     setIsProducing(true);
     isAbortedRef.current = false;
-    const myRunId = ++productionRunIdRef.current;
-    const runScopedAbortedRef = {
-      get current() {
-        return isAbortedRef.current || productionRunIdRef.current !== myRunId;
-      },
-      set current(val: boolean) {
-        isAbortedRef.current = val;
-      }
-    };
     let currentRunSettings: GeneratorSettings | undefined = effectiveSettings;
     let isFirstSeries = true;
     try {
-      while (currentRunSettings && !runScopedAbortedRef.current) {
-        // ── 前回の制作データクリア判定 ──
+      while (currentRunSettings && !isAbortedRef.current) {
         const existingEps = episodesRef.current;
         const prevEp = existingEps[0];
         const prevChar = prevEp?.characterId || (seriesManifestRef.current as any)?.characterId;
@@ -676,38 +700,25 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             delete (window as any).__STUDIO_SERIES_HASH__;
           }
         }
-        // 新しい4桁シリーズハッシュの生成・登録
         if (typeof window !== 'undefined' && (episodesRef.current.length === 0 || !(window as any).__STUDIO_SERIES_HASH__)) {
           const hashChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
           const newSeriesHash = Array.from({ length: 4 }, () => hashChars[Math.floor(Math.random() * hashChars.length)]).join('');
           (window as any).__STUDIO_SERIES_HASH__ = newSeriesHash;
         }
-        const runModeLabel = currentRunSettings.runModeProfile === 'night' ? '🌙 平日夜間（安全放置）' : '⚡ 土日・日中（快速）';
-        addLog(`🎬 【全自動プロデュース開始】稼働プロファイル: ${runModeLabel} / モード: ${currentRunSettings.productionMode || '通常'} / 全${currentRunSettings.totalEpisodes || currentRunSettings.episodeCount || 1}話`, 'process');
+        const isNight = currentRunSettings.executionProfile === 'night_safe';
+        addLog(`🎬 【全自動プロデュース開始】プロファイル: ${isNight ? '🌙平日夜間 (6h安全・1並列・50s間隔)' : '⚡土日・日中 (快速・2並列)'} / 全${currentRunSettings.totalEpisodes || currentRunSettings.episodeCount || 1}話`, 'process');
         const pipelineContext = {
           settings: currentRunSettings,
-          addLog: (msg: string, type?: any) => {
-            if (productionRunIdRef.current !== myRunId) return;
-            addLog(msg, type);
-          },
+          addLog,
           logsRef,
-          isAbortedRef: runScopedAbortedRef,
+          isAbortedRef,
           episodesRef,
-          setEpisodes: (updater: any) => {
-            if (productionRunIdRef.current !== myRunId) return;
-            setEpisodes(updater);
-          },
-          updateEpisode: (epId: number, updates: any) => {
-            if (productionRunIdRef.current !== myRunId) return;
-            updateEpisode(epId, updates);
-          },
+          setEpisodes,
+          updateEpisode,
           runTasks,
           buildCutTasks,
           seriesManifestRef,
-          setActiveSeriesManifest: (manifest: any) => {
-            if (productionRunIdRef.current !== myRunId) return;
-            setActiveSeriesManifest(manifest);
-          },
+          setActiveSeriesManifest,
           activeReferenceRef,
           currentAssetRef
         };
@@ -723,17 +734,30 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
             }
           }
         } catch (err: any) {
-          addLog(`❌ 制作エラー: ${formatErrorMessage(err)}`, 'error');
+          if (!isAbortedRef.current) {
+            addLog(`❌ 制作エラー: ${formatErrorMessage(err)}`, 'error');
+          }
         }
         isFirstSeries = false;
-        // 次のキューがあるかチェック
-        if (!runScopedAbortedRef.current && seriesQueueRef.current.length > 0) {
+        // 次のキューがあるかチェック（中止された場合は即時終了してゾンビ化防止）
+        if (isAbortedRef.current) {
+          seriesQueueRef.current = [];
+          setQueuedSeriesCount(0);
+          currentRunSettings = undefined;
+          break;
+        }
+        if (seriesQueueRef.current.length > 0) {
           const nextSettings = seriesQueueRef.current.shift()!;
           setQueuedSeriesCount(seriesQueueRef.current.length);
-          const isNight = currentRunSettings.runModeProfile === 'night';
-          const seriesCooldownMs = isNight ? 120000 : 15000;
-          addLog(`⏭️ 【連続投入キュー実行】次シリーズの制作を${Math.round(seriesCooldownMs / 1000)}秒後に自動開始します（残り待機: ${seriesQueueRef.current.length}件）...`, 'success');
-          await sleep(seriesCooldownMs);
+          const seriesWaitMs = isNight ? 120000 : 5000;
+          addLog(`⏭️ 【連続投入】次シリーズ待機中（${Math.round(seriesWaitMs / 1000)}秒安全待機 / 残り予約: ${seriesQueueRef.current.length}件）...`, 'process');
+          const completedWait = await sleepWithAbortCheck(seriesWaitMs, () => isAbortedRef.current);
+          if (!completedWait || isAbortedRef.current) {
+            seriesQueueRef.current = [];
+            setQueuedSeriesCount(0);
+            currentRunSettings = undefined;
+            break;
+          }
           currentRunSettings = nextSettings;
         } else {
           currentRunSettings = undefined;
