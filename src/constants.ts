@@ -533,6 +533,7 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
   cutCount: 12,
   previewCutCount: 12,
   parallelCount: 2,
+  runModeProfile: 'night',
   autoVideo: false,
   autoDownload: true,
   superBackoff: true,

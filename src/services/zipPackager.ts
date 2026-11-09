@@ -94,8 +94,10 @@ export function generateSafeFilenames(ep: Episode): { asciiFilename: string; dis
       (window as any).__STUDIO_SERIES_HASH__ = seriesHash;
     }
   }
-  const charPrefix = `[${charNameJa}]_${seriesHash}_`;
-  const charAsciiPrefix = `[${foundChar?.id || charId}]_${seriesHash}_`;
+  const safeCharNameJa = charNameJa.replace(/[\/\\:*?"<>|]/g, '_');
+  const safeCharAscii = (foundChar?.id || charId).replace(/[\/\\:*?"<>|]/g, '_');
+  const charPrefix = `[${safeCharNameJa}]_${seriesHash}_`;
+  const charAsciiPrefix = `[${safeCharAscii}]_${seriesHash}_`;
   // 実際のエピソード番号（String(ep.id).padStart(3, '0')）を使用
   const epNumStr = String(ep.id || 1).padStart(3, '0');
   const now = new Date();

@@ -26,6 +26,19 @@ export function sanitizeForYouTubeSafety(text: string): string {
   if (!text) return '';
   return text.replace(/[殺死血狂暴]/g, '★').replace(/(死ね|殺す|血まみれ|狂気|虐殺)/g, '危険').trim();
 }
+export const FALLBACK_EPISODE_SUBTITLES: Record<number, { jp: string; en: string }> = {
+  1: { jp: '運命の胎動と旅立ち', en: 'Dawn of Destiny' },
+  2: { jp: '交錯する思惑と影', en: 'Shadows Intertwined' },
+  3: { jp: '激動の転換点', en: 'Turning of the Tide' },
+  4: { jp: '迫りくる決断の刻', en: 'Hour of Reckoning' },
+  5: { jp: '明日への咆哮と夜明け', en: 'Roar Towards Tomorrow' },
+  6: { jp: '嵐の前の静けさ', en: 'Calm Before the Storm' },
+  7: { jp: '再起の誓い', en: 'Vow of Revival' },
+  8: { jp: '白熱する包囲網', en: 'The Tightening Net' },
+  9: { jp: '砕かれた幻想', en: 'Shattered Illusions' },
+  10: { jp: '栄光の凱歌と未来', en: 'Triumphant Hymn of Hope' }
+};
+
 export function cleanEpisodeTitle(title: string): string {
   if (!title) return '';
   return title
@@ -256,8 +269,8 @@ MANDATORY RULES:
 6. Format: Output cuts as an array under the "cuts" field, even if there is only 1 cut.
 Output ONLY valid JSON:
 {
-  ${isFirstChunk ? `"titleJp": "${plannedTitleJp}",
-  "titleEn": "${plannedTitleEn}",
+  ${isFirstChunk ? `"titleJp": "第${epId}話の展開を象徴する独自の劇的サブタイトル（既存の[${(existingTitles || []).join(', ')}]やテーマ名「${theme.split('（')[0]}」そのままは厳禁）",
+  "titleEn": "Unique dramatic English subtitle for Episode ${epId}",
   "summary": "${currentPlan.summary || plannedTitleJp}",
   "characterDna": "${defaultCharDna}",
   "eraAnalysisJp": "時代背景・世界観の解説（日本語）",` : ''}
@@ -497,10 +510,18 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     : (isMvMode
       ? 'Consistent 19yo Japanese girl, soft wavy dark brown chin-length bob hair, gentle eyes, oversized cozy knit cardigan, sleek over-ear headphones'
       : 'Consistent single protagonist matching the world setting and narrative');
+  const fallbackSub = FALLBACK_EPISODE_SUBTITLES[epId] || { jp: `場面${epId}の情景`, en: `Scene ${epId}` };
+  const baseTitleCandidate = cleanEpisodeTitle(currentPlan.titleJp || '');
+  const isDuplicateOfTheme = baseTitleCandidate && theme && (theme.includes(baseTitleCandidate) || baseTitleCandidate.includes(theme.split('（')[0]));
+  const defaultInitialTitleJp = (!baseTitleCandidate || isDuplicateOfTheme)
+    ? `${theme.split('（')[0].slice(0, 10)}〜${fallbackSub.jp}`
+    : baseTitleCandidate;
+  const defaultInitialTitleEn = cleanEpisodeTitleEn(currentPlan.titleEn || fallbackSub.en);
+
   let episodeMetadata = {
-    titleJp: cleanEpisodeTitle(currentPlan.titleJp || `場面${epId}`),
-    titleEn: cleanEpisodeTitleEn(currentPlan.titleEn || `Scene ${epId}`),
-    summary: currentPlan.summary || `${currentPlan.titleJp}の世界観で紡がれる物語`,
+    titleJp: defaultInitialTitleJp,
+    titleEn: defaultInitialTitleEn,
+    summary: currentPlan.summary || `${defaultInitialTitleJp}の世界観で紡がれる物語`,
     characterDna: fallbackDna,
     eraAnalysisJp: '歴史・文化と人情の情景。',
     forbiddenAnachronisms: ['時代にそぐわない現代物'],

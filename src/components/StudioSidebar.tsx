@@ -321,6 +321,38 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             })}
           </div>
         </div>
+        {/* 稼働プロファイル切替（平日夜間 / 土日快速） */}
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <SectionLabel>⏱️ 稼働プロファイル（生成間隔・安全制御）</SectionLabel>
+          <div className="grid grid-cols-2 gap-1 border border-slate-300 rounded-xl bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => applySettingsUpdate(s => ({ ...s, runModeProfile: 'night' }))}
+              className={`h-[32px] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer rounded-lg ${
+                (settings.runModeProfile || 'night') === 'night'
+                  ? 'bg-indigo-900 text-white shadow-sm font-black'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+              title="平日夜間モード: 1並列・50秒間隔・エピソード間60秒・シリーズ間2分。6時間放置で3〜4シリーズをエラーゼロで安全完走！"
+            >
+              <span>🌙 平日夜間</span>
+              <span className="text-[9px] opacity-80">(6h安全)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => applySettingsUpdate(s => ({ ...s, runModeProfile: 'daytime' }))}
+              className={`h-[32px] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer rounded-lg ${
+                settings.runModeProfile === 'daytime'
+                  ? 'bg-amber-600 text-white shadow-sm font-black'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+              title="土日・日中モード: 2並列・10〜15秒間隔の快速生成。PCの前にいるときに素早く連続制作！"
+            >
+              <span>⚡ 土日・日中</span>
+              <span className="text-[9px] opacity-80">(快速)</span>
+            </button>
+          </div>
+        </div>
         {/* 3. 制作中停止 / 制作データ消去コントロール */}
         {(isProducing || (episodes.length > 0 && onClearEpisodes)) && (
           <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100 shrink-0">
@@ -374,22 +406,30 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               <div className="flex items-center justify-between text-[11px] font-bold pt-1 border-t border-slate-100">
                 <span className="flex items-center gap-1 text-slate-700">
                   <span className="material-symbols-outlined text-[14px] text-indigo-500">speed</span>
-                  並列処理
+                  並列・生成間隔
                 </span>
-                <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-black text-[10px]">
-                  2並列（最適化固定）
+                <span className={`px-2 py-0.5 rounded font-black text-[10px] ${
+                  (settings.runModeProfile || 'night') === 'night'
+                    ? 'bg-indigo-900 text-indigo-100 border border-indigo-700'
+                    : 'bg-amber-100 text-amber-900 border border-amber-300'
+                }`}>
+                  {(settings.runModeProfile || 'night') === 'night' ? '1並列・50秒間隔 (安全直列)' : '2並列・12秒間隔 (快速)'}
                 </span>
               </div>
               <div className="flex flex-col gap-0.5 pt-1 border-t border-slate-100 text-[10px]">
                 <div className="flex items-center justify-between font-bold text-slate-700">
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-[13px] text-emerald-600">published_with_changes</span>
-                    指数バックオフ待機
+                    冷却待機制御
                   </span>
-                  <span className="text-emerald-700 font-extrabold">常時有効 (夜間放置完走)</span>
+                  <span className="text-emerald-700 font-extrabold">
+                    {(settings.runModeProfile || 'night') === 'night' ? '話間60秒 / シリーズ間2分' : '話間10秒 / シリーズ間15秒'}
+                  </span>
                 </div>
                 <span className="text-slate-500 font-mono text-[9.5px] mt-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
-                  5秒 → 30秒 → 60秒 → 120秒 → 10分 → 20分 → 40分
+                  {(settings.runModeProfile || 'night') === 'night' 
+                    ? '🌙 夜間モード: Google過剰アクセス制限を100%回避する安全直列設計' 
+                    : '⚡ 土日モード: PC作業中のハイスピード並列連続生成設計'}
                 </span>
               </div>
             </div>

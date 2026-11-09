@@ -150,6 +150,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
   const seriesQueueRef = useRef<GeneratorSettings[]>([]);
   const [queuedSeriesCount, setQueuedSeriesCount] = useState(0);
   const isProducingRef = useRef(false);
+  const productionRunIdRef = useRef<number>(0);
   const hasRateLimitedBanana2Ref = useRef(false);
   const lastErrorRef = useRef<string | null>(null);
   const handleClearEpisodes = useCallback(() => {
@@ -160,6 +161,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     clearEpisodes();
   }, [clearEpisodes]);
   const handleAbort = useCallback(() => {
+    productionRunIdRef.current += 1;
     queueRef.current = [];
     seriesQueueRef.current = [];
     setQueuedSeriesCount(0);
@@ -371,7 +373,8 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       if (isAbortedRef.current) return;
     }
     queueRef.current = [...preparedTasks];
-    const concurrency = Math.max(1, settings.parallelCount || 2);
+    const isNightMode = settings.runModeProfile === 'night';
+    const concurrency = isNightMode ? 1 : Math.max(1, settings.parallelCount || 2);
     const workers = Array(concurrency).fill(null).map(async (_, workerIdx) => {
       if (workerIdx > 0) await sleep(workerIdx * 5000);
       while (queueRef.current.length > 0) {
@@ -380,7 +383,8 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         if (!task) break;
         await generateImage(task);
         if (queueRef.current.length > 0 && !isAbortedRef.current) {
-          await sleep(10000 + Math.random() * 5000);
+          const waitMs = isNightMode ? (45000 + Math.random() * 15000) : (10000 + Math.random() * 5000);
+          await sleep(waitMs);
         }
       }
     });
@@ -625,10 +629,19 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     isProducingRef.current = true;
     setIsProducing(true);
     isAbortedRef.current = false;
+    const myRunId = ++productionRunIdRef.current;
+    const runScopedAbortedRef = {
+      get current() {
+        return isAbortedRef.current || productionRunIdRef.current !== myRunId;
+      },
+      set current(val: boolean) {
+        isAbortedRef.current = val;
+      }
+    };
     let currentRunSettings: GeneratorSettings | undefined = effectiveSettings;
     let isFirstSeries = true;
     try {
-      while (currentRunSettings && !isAbortedRef.current) {
+      while (currentRunSettings && !runScopedAbortedRef.current) {
         // ── 前回の制作データクリア判定 ──
         const existingEps = episodesRef.current;
         const prevEp = existingEps[0];
@@ -669,19 +682,32 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
           const newSeriesHash = Array.from({ length: 4 }, () => hashChars[Math.floor(Math.random() * hashChars.length)]).join('');
           (window as any).__STUDIO_SERIES_HASH__ = newSeriesHash;
         }
-        addLog(`🎬 【全自動プロデュース開始】モード: ${currentRunSettings.productionMode || '通常'} / 全${currentRunSettings.totalEpisodes || currentRunSettings.episodeCount || 1}話`, 'process');
+        const runModeLabel = currentRunSettings.runModeProfile === 'night' ? '🌙 平日夜間（安全放置）' : '⚡ 土日・日中（快速）';
+        addLog(`🎬 【全自動プロデュース開始】稼働プロファイル: ${runModeLabel} / モード: ${currentRunSettings.productionMode || '通常'} / 全${currentRunSettings.totalEpisodes || currentRunSettings.episodeCount || 1}話`, 'process');
         const pipelineContext = {
           settings: currentRunSettings,
-          addLog,
+          addLog: (msg: string, type?: any) => {
+            if (productionRunIdRef.current !== myRunId) return;
+            addLog(msg, type);
+          },
           logsRef,
-          isAbortedRef,
+          isAbortedRef: runScopedAbortedRef,
           episodesRef,
-          setEpisodes,
-          updateEpisode,
+          setEpisodes: (updater: any) => {
+            if (productionRunIdRef.current !== myRunId) return;
+            setEpisodes(updater);
+          },
+          updateEpisode: (epId: number, updates: any) => {
+            if (productionRunIdRef.current !== myRunId) return;
+            updateEpisode(epId, updates);
+          },
           runTasks,
           buildCutTasks,
           seriesManifestRef,
-          setActiveSeriesManifest,
+          setActiveSeriesManifest: (manifest: any) => {
+            if (productionRunIdRef.current !== myRunId) return;
+            setActiveSeriesManifest(manifest);
+          },
           activeReferenceRef,
           currentAssetRef
         };
@@ -701,11 +727,13 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         }
         isFirstSeries = false;
         // 次のキューがあるかチェック
-        if (!isAbortedRef.current && seriesQueueRef.current.length > 0) {
+        if (!runScopedAbortedRef.current && seriesQueueRef.current.length > 0) {
           const nextSettings = seriesQueueRef.current.shift()!;
           setQueuedSeriesCount(seriesQueueRef.current.length);
-          addLog(`⏭️ 【連続投入キュー実行】待機していた次シリーズの制作を5秒後に自動開始します（残り待機: ${seriesQueueRef.current.length}件）...`, 'success');
-          await sleep(5000);
+          const isNight = currentRunSettings.runModeProfile === 'night';
+          const seriesCooldownMs = isNight ? 120000 : 15000;
+          addLog(`⏭️ 【連続投入キュー実行】次シリーズの制作を${Math.round(seriesCooldownMs / 1000)}秒後に自動開始します（残り待機: ${seriesQueueRef.current.length}件）...`, 'success');
+          await sleep(seriesCooldownMs);
           currentRunSettings = nextSettings;
         } else {
           currentRunSettings = undefined;

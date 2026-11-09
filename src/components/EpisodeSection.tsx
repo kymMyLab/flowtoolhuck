@@ -469,6 +469,9 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
           {/* エピソードタイトル・サブタイトル */}
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-xs font-black tracking-wider shrink-0 shadow-xs">
+                第{ep.id}話
+              </span>
               <h2 className="font-bold italic uppercase tracking-tight text-slate-900 leading-tight text-lg sm:text-xl md:text-2xl break-words">
                 {cleanEpisodeTitle(ep.titleJp) || '無題'}
               </h2>

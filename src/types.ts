@@ -193,6 +193,7 @@ export interface GeneratorSettings {
   superBackoff?: boolean;
   aspectRatio?: '9:16' | '1:1' | '16:9';
   characterId?: string;
+  runModeProfile?: 'night' | 'daytime';
   enableTurnaroundSheet?: boolean;
   autoApproveTurnaround?: boolean;
   enableObjectCut?: boolean;

@@ -21,7 +21,8 @@ import {
   callWithRetry, 
   formatErrorMessage, 
   extractImageBase64, 
-  extractMediaId 
+  extractMediaId,
+  sleepWithAbortCheck
 } from './utils';
 import { 
   generateSafeEpisodeScript, 
@@ -33,7 +34,8 @@ import {
   extractHighlights, 
   sanitizeForYouTubeSafety, 
   buildCharacterTurnaroundPrompt, 
-  buildAdaptiveInfographicCoverPrompt 
+  buildAdaptiveInfographicCoverPrompt,
+  FALLBACK_EPISODE_SUBTITLES
 } from './directorService';
 import { getStoryboardPreset } from './promptEngine';
 import { downloadZip } from './zipPackager';
@@ -531,10 +533,11 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       const rawPlanList: SeriesEpisodePlan[] = Array.isArray(parsedDesign.episodesPlan) ? parsedDesign.episodesPlan : [];
       for (let eNum = startEp; eNum <= endEp; eNum++) {
         const found = rawPlanList.find((p: any) => p.epNumber === eNum);
+        const fbSub = FALLBACK_EPISODE_SUBTITLES[eNum] || { jp: `第${eNum}幕の波乱`, en: `Act ${eNum}` };
         allEpisodesPlan.push({
           epNumber: eNum,
-          titleJp: found?.titleJp ? cleanEpisodeTitle(found.titleJp) : (totalEps > 1 ? `${seriesTitle} 第${eNum}章` : seriesTitle),
-          titleEn: found?.titleEn ? cleanEpisodeTitleEn(found.titleEn) : `Episode ${eNum}`,
+          titleJp: found?.titleJp ? cleanEpisodeTitle(found.titleJp) : (totalEps > 1 ? `${seriesTitle}〜${fbSub.jp}` : seriesTitle),
+          titleEn: found?.titleEn ? cleanEpisodeTitleEn(found.titleEn) : fbSub.en,
           summary: found?.summary || `${settings.theme}の世界観で描かれる物語`
         });
       }
@@ -682,12 +685,16 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
         currentEpObj.characterTurnaroundMediaId = turnaroundMediaId;
         currentEpObj.characterTurnaroundBase64 = turnaroundBase64;
       }
-      const rawTitleJp = (currentPlan.titleJp && !currentPlan.titleJp.match(/^(第\d+話|第\d+曲|Vol\.\d+|Episode\s*\d+|Untitled)/i))
-        ? currentPlan.titleJp
-        : (sharedScript.titleJp || currentPlan.titleJp);
-      const rawTitleEn = (currentPlan.titleEn && !currentPlan.titleEn.match(/^(Episode\s*\d+|Track\s*\d+|Untitled)/i))
-        ? currentPlan.titleEn
-        : (sharedScript.titleEn || currentPlan.titleEn);
+      // AIが命名した各話固有の劇的サブタイトルを最優先採用（テーマ名そのままは除外）
+      const themeShort = (settings.theme || '').split('（')[0].trim();
+      const isScriptTitleValid = sharedScript.titleJp && 
+        !sharedScript.titleJp.includes('劇的サブタイトル') && 
+        sharedScript.titleJp !== themeShort;
+      
+      const rawTitleJp = isScriptTitleValid 
+        ? sharedScript.titleJp 
+        : (currentPlan.titleJp || `第${epId}話`);
+      const rawTitleEn = sharedScript.titleEn || currentPlan.titleEn || `Episode ${epId}`;
       const finalTitleJp = cleanEpisodeTitle(rawTitleJp);
       const finalTitleEn = cleanEpisodeTitleEn(rawTitleEn);
       updateEpisode(epId, {
@@ -716,13 +723,19 @@ export async function runSeriesProduction(ctx: ProductionPipelineContext): Promi
       addLog(`🎨 【第${epId}${unitLabel}】全${seriesCutsCount}カット配置完了！先行 ${previewCount} カットの描画タスクを開始...（${previewCount + 1}カット目以降はSTANDBY待機）`, 'process');
       const currentEp = episodesRef.current.find((e: Episode) => e.id === epId)!;
       await runTasks(buildCutTasks(currentEp, episodeCuts.slice(0, previewCount)));
-      addLog(`🎉 【第${epId}${unitLabel}】「${currentPlan.titleJp}」の先行プレビュー制作が完了しました！`, 'success');
+      addLog(`🎉 【第${epId}${unitLabel}】「${finalTitleJp}」の先行プレビュー制作が完了しました！`, 'success');
       await ensureInfographicCover(ctx, episodesRef.current.find((e: Episode) => e.id === epId) || currentEp);
       await finalizeAndProcessEpisode(ctx, epId, {
         unitLabel,
-        title: currentPlan.titleJp,
+        title: finalTitleJp,
         manifest
       });
+      // 🌙 夜間放置モードまたは土日モードに応じたエピソード間クールダウン待機
+      if (i < (manifest.episodesPlan?.length || 0) - 1 && !isAbortedRef.current) {
+        const epCooldown = settings.runModeProfile === 'night' ? 60000 : 10000;
+        addLog(`☕ 第${epId + 1}${unitLabel}の脚本策定まで安定冷却待機中（${Math.round(epCooldown / 1000)}秒）...`, 'info');
+        await sleepWithAbortCheck(epCooldown, () => isAbortedRef.current);
+      }
     } catch (epErr: any) {
       addLog(`⚠️ 第 ${epId} 話の生成中にエラーが発生しました: ${formatErrorMessage(epErr)}`, 'warning');
       cleanupEpisodeMemory();
