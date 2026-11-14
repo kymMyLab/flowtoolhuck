@@ -218,6 +218,10 @@ export async function packageEpisodeToZip(
       const clean = ext.split('base64,').pop() || ext;
       folder.file(`cut_${cutNum}.png`, clean, { base64: true });
     }
+    if (cut.videoBase64) {
+      const cleanVid = cut.videoBase64.split('base64,').pop() || cut.videoBase64;
+      folder.file(`cut_${cutNum}.mp4`, cleanVid, { base64: true });
+    }
     if (cut.endFrameImageBase64) {
       const extEnd = extractImageBase64(cut.endFrameImageBase64) || cut.endFrameImageBase64;
       const cleanEnd = extEnd.split('base64,').pop() || extEnd;
@@ -274,6 +278,7 @@ export async function packageEpisodeToZip(
     characterDna: ep.characterDna,
     voice_name: resolvedVoiceName,
     speaker: resolvedSpeaker,
+    songTitle: ep.songTitle,
     cuts: cuts.map((c, idx) => ({
       cutNumber: c.id || idx + 1,
       narrationJp: c.narrationJp || '',
@@ -289,10 +294,19 @@ export async function packageEpisodeToZip(
       dialogue: c.narrationJp || '',
       tts_text: c.narrationJp || '',
       visual_prompt: c.promptEn || '',
-      duration: c.duration || 4
+      duration: c.duration || 4,
+      // 🎵 Gemini視覚解析で厳選したエモ切り抜き座標・カメラワーク・判定理由
+      emoCrops: c.emoCrops || [],
+      visualArtifactWarning: c.visualArtifactWarning || undefined
     }))
   };
   folder.file('script.json', safeJsonStringify(structuredScript, 2));
+  // 🎵 楽曲音声ファイルがアップロードされている場合はZIPにも同梱
+  if (ep.songAudioBase64) {
+    const audioFilename = ep.songAudioFilename || 'song_audio.mp3';
+    const cleanAudio = ep.songAudioBase64.split('base64,').pop() || ep.songAudioBase64;
+    folder.file(audioFilename, cleanAudio, { base64: true });
+  }
   // 6. 字幕ファイル (subtitles.srt)
   const srtContent = generateSrtContent(ep, 4);
   folder.file('subtitles.srt', srtContent);
@@ -304,6 +318,7 @@ export async function packageEpisodeToZip(
     theme: ep.theme,
     era: ep.era,
     productionMode: ep.productionMode,
+    songTitle: ep.songTitle,
     cutsCount: cuts.length,
     characterDna: ep.characterDna,
     voice_name: resolvedVoiceName,

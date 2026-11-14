@@ -9,11 +9,12 @@ interface CutCardProps {
   cut: Cut;
   episodeId: number;
   isMvMode?: boolean;
+  aspectRatio?: string;
   onPreviewCut: (epId: number, cut: Cut) => void;
   onRetry?: (epId: number, cutId: number) => void;
 }
 export const CutCard: React.FC<CutCardProps> = React.memo(({ 
-  cut, episodeId, isMvMode, onPreviewCut, onRetry 
+  cut, episodeId, isMvMode, aspectRatio = '16:9', onPreviewCut, onRetry 
 }) => {
   const imageSrc = formatDataUri(cut.imageBase64 || (cut as any)?.image);
   const handleRetry = (e: React.MouseEvent) => {
@@ -21,19 +22,21 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
     if (onRetry) onRetry(episodeId, cut.id);
   };
   const isStandby = !imageSrc && !cut.isGeneratingImage && !cut.isDirecting && !cut.error;
+  const ratioAspectClass = isMvMode && cut.videoBase64 ? 'aspect-video' : 'aspect-square';
+  const cardWidthClass = isMvMode && cut.videoBase64 ? 'w-[190px]' : 'w-[155px]';
   return (
     <div 
       onClick={() => onPreviewCut(episodeId, cut)}
-      className={`w-[155px] flex-shrink-0 bg-white border rounded-xl overflow-hidden flex flex-col group transition-all relative shadow-sm hover:shadow-md cursor-pointer select-none ${
+      className={`${cardWidthClass} flex-shrink-0 bg-white border rounded-xl overflow-hidden flex flex-col group transition-all relative shadow-sm hover:shadow-md cursor-pointer select-none ${
         isStandby ? 'border-slate-300 hover:border-indigo-400 bg-slate-50/50' : 'border-slate-300 hover:border-slate-500'
       }`}
     >
       {/* プレビュー画像領域 */}
-      <div className={`relative aspect-square flex items-center justify-center overflow-hidden border-b border-slate-200 ${
+      <div className={`relative ${ratioAspectClass} flex items-center justify-center overflow-hidden border-b border-slate-200 ${
         isStandby ? 'bg-slate-100/90' : 'bg-slate-100'
       }`}>
         {imageSrc ? (
-          <div className="w-full h-full overflow-hidden">
+          <div className="w-full h-full overflow-hidden relative">
             <img 
               src={imageSrc} 
               alt={`Cut ${cut.id}`} 
@@ -41,6 +44,15 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
               className="w-full h-full object-cover transition-opacity duration-300" 
               style={{ opacity: 1 }}
             />
+            {/* 動画生成中半透明オーバーレイとスピナー */}
+            {cut.isGeneratingVideo && (
+              <div className="absolute inset-0 z-20 bg-slate-900/70 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 p-2 animate-in fade-in duration-200">
+                <div className="w-5 h-5 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" />
+                <span className="text-[9px] font-black text-purple-200 uppercase tracking-tight text-center leading-tight drop-shadow-xs">
+                  🎬 {cut.videoDuration || 8}s動画化中...
+                </span>
+              </div>
+            )}
           </div>
         ) : (cut.isGeneratingImage || cut.isDirecting) ? (
           <div className="flex flex-col items-center gap-1.5">
@@ -86,13 +98,23 @@ export const CutCard: React.FC<CutCardProps> = React.memo(({
             </div>
           )}
         </div>
-        {/* 左上カット番号 */}
-        <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10">
+        {/* 左上カット番号 ＆ EMOバッジ ＆ 🎬 MP4バッジ */}
+        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 z-10">
           <div className={`px-1.5 py-0.5 rounded-sm text-[9px] font-black shadow-xs border flex items-center ${
             isStandby ? 'bg-white/90 text-slate-600 border-slate-300' : 'bg-white/95 text-slate-900 border-slate-200'
           }`}>
             C{cut.id.toString().padStart(2, '0')}
           </div>
+          {cut.emoCrops && cut.emoCrops.length > 0 && (
+            <div className="px-1.5 py-0.5 rounded-sm bg-purple-700 text-white text-[8px] font-black shadow-xs flex items-center gap-0.5" title="Gemini自律判定エモ切り抜き点数">
+              <span>✂️ {cut.emoCrops.length}</span>
+            </div>
+          )}
+          {(cut.videoBase64 || cut.videoMediaId) && (
+            <div className="px-1.5 py-0.5 rounded-sm bg-emerald-700 text-white text-[8px] font-black shadow-xs flex items-center gap-0.5" title="Veo 3.1 Lite シネマグラフ動画生成済み">
+              <span>🎬 MP4</span>
+            </div>
+          )}
         </div>
       </div>
       {/* フッターテキスト領域 */}
@@ -450,15 +472,17 @@ export const HistoricalCard: React.FC<{ ep: Episode }> = ({ ep }) => {
 };
 interface EpisodeSectionProps {
   ep: Episode;
+  aspectRatio?: string;
   onGenerateRemaining: (epId: number) => void;
   onDownloadZip: (ep: Episode) => void;
   onPreviewCut: (epId: number, cut: Cut) => void;
   onGenerateCover?: (epId: number) => void;
   onRerollTaste?: (epId: number) => void;
   onRetry?: (epId: number, cutId: number) => void;
+  onOpenMvPlayer?: (ep: Episode) => void;
 }
 export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
-  ep, onGenerateRemaining, onDownloadZip, onPreviewCut, onGenerateCover, onRerollTaste, onRetry
+  ep, aspectRatio = '16:9', onGenerateRemaining, onDownloadZip, onPreviewCut, onGenerateCover, onRerollTaste, onRetry, onOpenMvPlayer
 }) => {
   const isPending = !ep.isGenerating && !ep.isDone && !ep.isPreviewDone;
   const standbyCount = ep.cuts.filter(c => !c.imageBase64 && !c.imageMediaId).length;
@@ -533,6 +557,18 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
               {standbyCount > 0 ? `残り描画 (${standbyCount}枚)` : '全カット描画済'}
             </PillButton>
             
+            {/* 🎵 音楽MV専用: AI厳選切り抜きMVプレビュー＆動画書き出し */}
+            {isMv && onOpenMvPlayer && (
+              <PillButton
+                variant="filled"
+                className="h-8 px-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs whitespace-nowrap shrink-0 shadow-md transition-all active:scale-95"
+                onClick={() => onOpenMvPlayer(ep)}
+                icon={<span className="material-symbols-outlined text-sm">play_circle</span>}
+                title="Web Audio低音キック解析・AI厳選切り抜きカメラワークで60fpsプレビュー再生＆MP4動画書き出し"
+              >
+                🎬 AI厳選切り抜きMVプレビュー＆動画書き出し
+              </PillButton>
+            )}
             <PillButton 
               variant="outline" 
               className="h-8 px-3 border-slate-300 hover:border-slate-400 text-slate-800 hover:text-slate-950 font-bold text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer bg-white shadow-2xs" 
@@ -555,6 +591,7 @@ export const EpisodeSection: React.FC<EpisodeSectionProps> = ({
             cut={cut} 
             episodeId={ep.id} 
             isMvMode={ep.isMvMode}
+            aspectRatio={aspectRatio}
             onPreviewCut={onPreviewCut}
             onRetry={onRetry}
           />

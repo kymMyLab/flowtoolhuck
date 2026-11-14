@@ -2,13 +2,14 @@ import { runShortsBatchProduction, runSeriesProduction, SHORTS_CONFIG_MAP, ensur
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Episode, Cut, GeneratorSettings, GenerationTask, SeriesManifest, LogEntry } from '../types';
 import { CUTS_PER_EPISODE, resolveImageModel, SAFE_CHARACTERS } from '../constants';
-import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractMediaId, getAllReferenceAssets, saveReferenceAsset, sleepWithAbortCheck } from './utils';
+import { safeJsonParse, callWithRetry, formatErrorMessage, createDefaultCut, formatDurationMs, extractImageBase64, extractVideoBase64, extractMediaId, getAllReferenceAssets, saveReferenceAsset, sleepWithAbortCheck } from './utils';
 import { 
   directShot, 
   buildImagePromptAndNegative, 
   cleanEpisodeTitle, 
   cleanEpisodeTitleEn, 
-  PreviousShotInfo 
+  PreviousShotInfo,
+  analyzeImageForEmoCrops 
 } from './directorService';
 import { sanitizePromptForGoogleSafety, buildDynamicAntiPreviousNegative, isFaceMacroScale, buildPositiveAntiPreviousMandate } from './promptEngine';
 import { downloadZip } from './zipPackager';
@@ -217,19 +218,61 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
     addLog(`📂 シリーズ「${manifest.seriesTitle}」を復元しました（全${manifest.totalEpisodes}話 / 完了: ${completedIds.length}話）`, 'success');
   };
   const buildCutTasks = (ep: Episode, cutsToGenerate: Cut[], styleKey?: string): GenerationTask[] => {
-    const fixedChar = (ep.characterId && ep.characterId !== 'auto' && ep.characterId !== 'random') 
+    const isMv = ep.isMvMode || settings.isMvMode;
+    const fixedChar = (!isMv && ep.characterId && ep.characterId !== 'auto' && ep.characterId !== 'random' && ep.characterId !== 'mv_cap_girl') 
       ? SAFE_CHARACTERS.find(c => c.id === ep.characterId) 
       : undefined;
-    const refMediaId = ep.characterTurnaroundMediaId || ep.masterAnchorMediaId || (ep.isMvMode ? undefined : activeReferenceRef.current?.mediaId);
+    const refMediaId = ep.characterTurnaroundMediaId || ep.masterAnchorMediaId || ep.refCharacterImageMediaId || activeReferenceRef.current?.mediaId;
+    const mvStyleMode = ep.mvStyleMode || settings.mvStyleMode || 'unified';
+    const SHIFT_STYLES: Record<number, string> = {
+      1: '水彩絵の具・淡彩ノスタルジー',
+      2: 'アニメ原画・線画スケッチ',
+      3: '水彩絵の具・淡彩ノスタルジー',
+      4: 'アニメ原画・線画スケッチ',
+      5: '新海誠風・美麗光彩',
+      6: 'エターナル・プリズムルミナス',
+      7: '新海誠風・美麗光彩',
+      8: 'エターナル・プリズムルミナス',
+      9: 'ネオ・シティポップ',
+      10: '90年代セル画・サイバーパンク',
+      11: 'ネオ・シティポップ',
+      12: '水彩絵の具・淡彩ノスタルジー'
+    };
+    const MIX_STYLES = [
+      '水彩絵の具・淡彩ノスタルジー',
+      '90年代セル画・サイバーパンク',
+      '新海誠風・美麗光彩',
+      'アニメ原画・線画スケッチ',
+      'エターナル・プリズムルミナス',
+      'ネオ・シティポップ',
+      '油彩・重厚インパスト',
+      'レトロ活版・劇画',
+      'グラフィティ・ストリートポップ',
+      'スタジオジブリ風・手描き美術',
+      '浮世絵・現代ネオ木版',
+      'ダークゴシック童話・黒髪ノスタルジー'
+    ];
     return cutsToGenerate.map(c => {
       const promptCandidates = [c.cleanImagePrompt, c.promptEn, c.scenePlot, c.narrationJp].filter(Boolean);
       const effectivePrompt = promptCandidates[0] || 'Cinematic anime visual scene';
+      let effectiveStyleKey = styleKey || ep.taste || settings.taste;
+      let effectiveCutRefId = refMediaId;
+      if (isMv) {
+        if (mvStyleMode === 'mix') {
+          effectiveStyleKey = MIX_STYLES[(c.id - 1) % MIX_STYLES.length] || effectiveStyleKey;
+          effectiveCutRefId = undefined; // 合作ミックス時も画風の塗り引きずりを防止
+        }
+      }
+      const MV_CAP_GIRL_DNA = 'cool aesthetic Japanese anime girl wearing a backwards baseball cap, oversized street hoodie, denim shorts, stylish high-top sneakers, sleek over-ear headphones resting around her neck, soft wavy hair, expressive calm eyes';
+      const effectiveCharDna = isMv 
+        ? (activeReferenceRef.current?.characterDna || ep.characterDna || MV_CAP_GIRL_DNA)
+        : (fixedChar?.dnaPromptEn || ep.characterDna);
       return {
         epId: ep.id,
         cutId: c.id,
         prompt: effectivePrompt,
         negativePrompt: c.negativePrompt,
-        styleKey: styleKey || ep.taste || settings.taste,
+        styleKey: effectiveStyleKey,
         imageModel: settings.imageModel,
         isMvMode: ep.isMvMode,
         panelLayout: c.panelLayout,
@@ -238,8 +281,8 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         forbiddenAnachronisms: ep.forbiddenAnachronisms,
         authenticAttireEn: ep.authenticAttireEn,
         forbiddenKeywordsEn: ep.forbiddenKeywordsEn,
-        referenceImageMediaId: refMediaId,
-        characterDna: fixedChar?.dnaPromptEn || ep.characterDna,
+        referenceImageMediaId: effectiveCutRefId,
+        characterDna: effectiveCharDna,
         isObjectOnly: c.isObjectOnly,
         focalSubject: c.focalPoint?.focalSubject,
         shotScale: c.shotScale,
@@ -444,12 +487,19 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
       const isAnchorExcluded = task.isObjectOnly || 
         currentCutObj?.characterPresence === '4_hands_or_feet_detail' || 
         currentCutObj?.characterPresence === '5_scenic_or_still_life';
-      const turnaroundMediaId = ep?.characterTurnaroundMediaId || (ep?.isMvMode ? undefined : activeReferenceRef.current?.mediaId);
-      const fallbackAnchor = ep?.isMvMode ? undefined : ep?.masterAnchorMediaId;
-      const refMediaId = isAnchorExcluded ? undefined : (turnaroundMediaId || task.referenceImageMediaId || fallbackAnchor);
+      const isMv = ep?.isMvMode || settings.isMvMode;
+      const mvStyleMode = ep?.mvStyleMode || settings.mvStyleMode || 'unified';
+      const turnaroundMediaId = ep?.characterTurnaroundMediaId || activeReferenceRef.current?.mediaId;
+      const fallbackAnchor = ep?.masterAnchorMediaId || ep?.refCharacterImageMediaId;
+      
+      // 🎯 画風変化モード ('mix') の時は元画像の塗りに引きずられないよう画像参照を除外し、テキストのキャラDNAのみで統一
+      const isStyleDynamicMode = isMv && (mvStyleMode === 'mix');
+      const refMediaId = (isAnchorExcluded || isStyleDynamicMode) 
+        ? undefined 
+        : (turnaroundMediaId || task.referenceImageMediaId || fallbackAnchor);
       let effectiveNegative = task.negativePrompt || '';
       let positiveMandate = '';
-      if (cutId > 1) {
+      if (cutId > 1 && !isMv) {
         const prevCuts = ep?.cuts.filter(c => (c.id === cutId - 1 || c.id === cutId - 2) && (c.promptEn || c.shotScale)) || [];
         if (prevCuts.length > 0) {
           const prevContexts = prevCuts.map(c => ({
@@ -464,18 +514,22 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         }
       }
       const charId = ep?.characterId || settings.characterId;
-      const fixedChar = (charId && charId !== 'auto' && charId !== 'random') 
+      const fixedChar = (!isMv && charId && charId !== 'auto' && charId !== 'random' && charId !== 'mv_cap_girl') 
         ? SAFE_CHARACTERS.find(c => c.id === charId) 
         : undefined;
+      const MV_CAP_GIRL_DNA = 'cool aesthetic Japanese anime girl wearing a backwards baseball cap, oversized street hoodie, denim shorts, stylish high-top sneakers, sleek over-ear headphones resting around her neck, soft wavy hair, expressive calm eyes';
+      const charDnaCandidate = isMv 
+        ? (activeReferenceRef.current?.characterDna || ep?.characterDna || task.characterDna || MV_CAP_GIRL_DNA)
+        : (fixedChar?.dnaPromptEn || task.characterDna || ep?.characterDna);
       const taskWithAntiPrevious: GenerationTask = {
         ...task,
-        characterDna: fixedChar?.dnaPromptEn || task.characterDna || ep?.characterDna,
+        characterDna: charDnaCandidate,
         focalSubject: currentCutObj?.focalPoint?.focalSubject,
         referenceImageMediaId: refMediaId,
         negativePrompt: effectiveNegative,
         antiPreviousMandate: positiveMandate
       };
-      const effectiveActiveRef = ep?.isMvMode ? undefined : activeReferenceRef.current;
+      const effectiveActiveRef = activeReferenceRef.current;
       const { finalPrompt, finalNegative, referenceImageMediaIds } = buildImagePromptAndNegative(taskWithAntiPrevious, settings, effectiveActiveRef);
       
       updateCut(epId, cutId, {
@@ -485,7 +539,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         styleKeyUsed: task.styleKey || settings.taste,
         imageModelUsed: modelDef.label
       });
-      const safeAspectRatio = '1:1';
+      const safeAspectRatio = (settings.aspectRatio || '16:9') as any;
       let safePrompt = finalPrompt && /[a-zA-Z0-9]/.test(finalPrompt) ? finalPrompt : 'Cinematic scene, high quality';
       safePrompt += ', balanced centered composition, ample negative space';
       const primaryModelName = modelDef?.name || '🍌 Nano Banana 2.1';
@@ -542,8 +596,7 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
               if (attemptCount >= 3) currentModelName = '🍌 Nano Banana 2 Lite';
             }
             return await Flow.generate.image({ 
-              prompt: currentPrompt,
-              negativePrompt: currentNegative, 
+              prompt: currentNegative ? `${currentPrompt}, avoid: ${currentNegative}` : currentPrompt,
               modelDisplayName: currentModelName,
               aspectRatio: safeAspectRatio as any,
               referenceImageMediaIds: currentRefIds 
@@ -573,7 +626,6 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
           res = await callWithRetry<any>(
             () => Flow.generate.image({ 
               prompt: rescuePrompt,
-              negativePrompt: '',
               modelDisplayName: '🍌 Nano Banana 2 Lite',
               aspectRatio: safeAspectRatio as any
             }),
@@ -604,6 +656,94 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         addLog(`👑 Ep.${epId}: Cut 1 の決定版ポートレートをマスターアンカーとして固定しました`, 'success');
       }
       addLog(`✨ Ep.${epId} C${cutId.toString().padStart(2, '0')}: 画像生成完了`, 'success');
+      // 👁️ 全モード・全カット共通: 生成されたBase64画像をGeminiに即時視覚解析させ、エモい切り抜きCutを動的判定
+      let motionTargetsExtracted = '';
+      if (finalBase64 && !isAbortedRef.current) {
+        addLog(`👁️ Ep.${epId} C${cutId.toString().padStart(2, '0')}: [Gemini視覚解析] 破綻リスク検査＆エモ切り抜き・シネマグラフパーツを解析中...`, 'process');
+        updateCut(epId, cutId, { isAnalyzingEmo: true });
+        try {
+          const cutNarr = currentCutObj?.narrationJp || '';
+          const cutPrompt = currentCutObj?.promptEn || safePrompt;
+          const emoAnalysis = await analyzeImageForEmoCrops(finalBase64, cutId, cutNarr, cutPrompt);
+          motionTargetsExtracted = emoAnalysis.cinemagraphMotionTargets || '';
+          updateCut(epId, cutId, {
+            emoCrops: emoAnalysis.emoCrops,
+            visualArtifactWarning: emoAnalysis.visualArtifactWarning,
+            cinemagraphMotionTargets: motionTargetsExtracted,
+            isAnalyzingEmo: false
+          });
+          const cropCount = emoAnalysis.emoCrops?.length || 1;
+          const topCrop = emoAnalysis.emoCrops?.[0];
+          addLog(`🎬 Ep.${epId} C${cutId.toString().padStart(2, '0')}: [切り抜き確定] ${cropCount}アングルを厳選！（注目: ${topCrop?.label || 'メイン'} / ${topCrop?.emoReason || ''}）`, 'success');
+        } catch (emoErr) {
+          updateCut(epId, cutId, { isAnalyzingEmo: false });
+          console.warn('Emo analysis err:', emoErr);
+        }
+      }
+      // 🎬 【Veo 3.1 Lite 自動動画化】割合判定（settings.videoRatio: none/cut1/30%/50%/100%）
+      const ratioMode = settings.videoRatio || (settings.autoVideo ? '100%' : 'none');
+      let shouldGenerateVideo = false;
+      if (ratioMode === 'none') {
+        shouldGenerateVideo = false;
+      } else if (ratioMode === 'cut1') {
+        shouldGenerateVideo = (cutId === 1);
+      } else if (ratioMode === '30%') {
+        shouldGenerateVideo = (cutId % 3 === 1);
+      } else if (ratioMode === '50%') {
+        shouldGenerateVideo = (cutId % 2 === 1);
+      } else if (ratioMode === '100%') {
+        shouldGenerateVideo = true;
+      }
+      if (task.skipAutoVideo) {
+        shouldGenerateVideo = false;
+      }
+      if (shouldGenerateVideo && !isAbortedRef.current && finalMediaId) {
+        const isMvExecution = ep?.isMvMode || settings.isMvMode || task.isMvMode;
+        const vidDuration = settings.videoDuration || 8;
+        const validDurations = [4, 6, 8];
+        const safeDuration = validDurations.includes(vidDuration) ? vidDuration : 8;
+        const videoRatio = isMvExecution ? '16:9' : ((settings.aspectRatio === '9:16') ? '9:16' : '16:9');
+        addLog(`🎬 Ep.${epId} C${cutId.toString().padStart(2, '0')}: 【Veo 3.1 Lite】シネマグラフ動画生成中（${videoRatio}・${safeDuration}秒・背景完全固定）...`, 'process');
+        updateCut(epId, cutId, { isGeneratingVideo: true });
+        const motionClause = motionTargetsExtracted || 'delicate swaying of hair tips, subtle flutter of clothes hem, natural blinking, gentle ambient light flicker';
+        const cinemagraphPrompt = `Static locked tripod camera, zero camera movement, completely freeze background architecture, 3D letters, furniture, and character body position without any morphing or warping. Cinemagraph style subtle local loop motion ONLY on: ${motionClause}. High consistency 2D anime.`;
+        try {
+          const videoRes = await callWithRetry<any>(
+            () => Flow.generate.video({
+              prompt: cinemagraphPrompt,
+              firstFrameImageMediaId: finalMediaId,
+              modelDisplayName: 'Veo 3.1 - Lite',
+              durationSeconds: safeDuration,
+              aspectRatio: videoRatio as any,
+              resolution: '720p'
+            }),
+            (attempt, max, delay, err) => {
+              addLog(`⚠️ Ep.${epId} C${cutId}: 動画リトライ (${attempt}/${max}) ${formatDurationMs(delay)}後: ${formatErrorMessage(err)}`, 'warning');
+            },
+            { maxRetries: 2, timeoutMs: 180000, timeoutLabel: 'Veo動画生成', abortCheck: () => isAbortedRef.current }
+          );
+          if (!isAbortedRef.current && videoRes) {
+            let videoB64 = extractVideoBase64(videoRes);
+            const videoMediaId = extractMediaId(videoRes) || (videoRes as any)?.mediaId;
+            if (!videoB64 && videoMediaId && typeof (Flow as any)?.media?.getBase64 === 'function') {
+              try {
+                videoB64 = extractVideoBase64(await (Flow as any).media.getBase64(videoMediaId));
+              } catch (_) {}
+            }
+            updateCut(epId, cutId, {
+              videoBase64: videoB64,
+              videoMediaId,
+              videoModelUsed: 'Veo 3.1 - Lite',
+              videoDuration: safeDuration,
+              isGeneratingVideo: false
+            });
+            addLog(`🎉 Ep.${epId} C${cutId.toString().padStart(2, '0')}: Veo 3.1 Lite シネマグラフ動画(${safeDuration}s)完成！`, 'success');
+          }
+        } catch (vidErr: any) {
+          updateCut(epId, cutId, { isGeneratingVideo: false });
+          addLog(`⚠️ Ep.${epId} C${cutId}: 動画生成をスキップ（静止画のみ保持）: ${formatErrorMessage(vidErr)}`, 'warning');
+        }
+      }
     } catch (err) {
       if (isAbortedRef.current) {
         updateCut(epId, cutId, { isGeneratingImage: false });
@@ -707,6 +847,50 @@ export function useStudioProduction({ settings, addLog, logs }: UseStudioProduct
         }
         const isNight = currentRunSettings.executionProfile === 'night_safe';
         addLog(`🎬 【全自動プロデュース開始】プロファイル: ${isNight ? '🌙平日夜間 (6h安全・1並列・50s間隔)' : '⚡土日・日中 (快速・2並列)'} / 全${currentRunSettings.totalEpisodes || currentRunSettings.episodeCount || 1}話`, 'process');
+        // 🎵 MVモードで参照画像が設定されている場合、Flow.uploadでMediaId化しGeminiでキャラクターDNAを抽出
+        const isCurMv = currentRunSettings.isMvMode || currentRunSettings.productionMode === 'mv';
+        if (isCurMv && currentRunSettings.refCharacterImageBase64) {
+          const rawB64 = currentRunSettings.refCharacterImageBase64.replace(/^data:image\/\w+;base64,/, '').trim();
+          if (rawB64) {
+            try {
+              if (!currentRunSettings.refCharacterImageMediaId) {
+                addLog('🖼️ 【MV参照画像】Flow Media Gallery へアップロード中...', 'process');
+                const upRes = await Flow.upload({
+                  base64: rawB64,
+                  mimeType: 'image/png',
+                  name: 'MV_Character_Reference.png'
+                });
+                if (upRes?.mediaId) {
+                  currentRunSettings.refCharacterImageMediaId = upRes.mediaId;
+                  addLog('✨ 【MV参照画像】アップロード完了！基準アンカーメディアとして登録しました。', 'success');
+                }
+              }
+              addLog('🔍 【MV参照画像解析】AIが参照画像のキャラクター服装・髪型・画風特徴を抽出中...', 'process');
+              const visionAnalysis = await callWithRetry<any>(
+                () => Flow.generate.text(
+                  "Analyze this character reference image. Provide a precise, highly detailed English description of the protagonist's appearance (exact hair color/style, eye color, face features, jacket/hoodie, sneakers/shoes, accessories, art style, and color palette) so an AI image generator can reproduce this exact character consistently in modern anime style. Output ONLY the concise English descriptive prompt without headers or intro.",
+                  {
+                    systemInstruction: "You are a master anime character designer extracting consistent visual DNA.",
+                    images: [{ base64: rawB64, mimeType: 'image/png' }]
+                  }
+                ),
+                undefined,
+                { maxRetries: 2, abortCheck: () => isAbortedRef.current }
+              );
+              const extractedDna = (visionAnalysis?.text || '').trim();
+              if (extractedDna) {
+                activeReferenceRef.current = {
+                  mediaId: currentRunSettings.refCharacterImageMediaId,
+                  characterDna: extractedDna,
+                  styleDna: 'modern lo-fi anime illustration matching reference'
+                };
+                addLog(`🎯 【MVキャラクターDNA確定】参照画像の特徴を12Cutすべてに統一適用します！`, 'success');
+              }
+            } catch (err: any) {
+              console.warn('[Ref Character Vision Analysis]', err);
+            }
+          }
+        }
         const pipelineContext = {
           settings: currentRunSettings,
           addLog,

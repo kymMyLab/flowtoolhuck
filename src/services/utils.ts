@@ -319,6 +319,46 @@ export function extractMediaId(res: any): string | undefined {
   if (typeof res.id === 'string' && res.id.trim()) return res.id.trim();
   return undefined;
 }
+export function extractVideoBase64(res: any): string | undefined {
+  if (!res) return undefined;
+  if (typeof res === 'string') {
+    const s = res.trim();
+    return s.length > 0 ? s : undefined;
+  }
+  if (typeof res.base64 === 'string' && res.base64.trim()) {
+    return res.base64.trim();
+  }
+  if (res.video) {
+    if (typeof res.video === 'string' && res.video.trim()) return res.video.trim();
+    if (typeof res.video.base64 === 'string' && res.video.base64.trim()) return res.video.base64.trim();
+    if (typeof res.video.videoBytes === 'string' && res.video.videoBytes.trim()) return res.video.videoBytes.trim();
+    if (typeof res.video.url === 'string' && res.video.url.trim()) return res.video.url.trim();
+  }
+  if (typeof res.videoBytes === 'string' && res.videoBytes.trim()) {
+    return res.videoBytes.trim();
+  }
+  if (typeof res.data === 'string' && res.data.trim()) {
+    return res.data.trim();
+  }
+  if (typeof res.url === 'string' && res.url.trim()) {
+    return res.url.trim();
+  }
+  return undefined;
+}
+export function formatVideoDataUri(raw?: any): string {
+  if (!raw) return '';
+  let str = '';
+  if (typeof raw === 'string') {
+    str = raw.trim();
+  } else if (typeof raw === 'object') {
+    str = (raw.base64 || raw.video?.base64 || raw.url || raw.video?.url || '').trim();
+  }
+  if (!str || str === '[object Object]') return '';
+  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('blob:')) {
+    return str;
+  }
+  return `data:video/mp4;base64,${str}`;
+}
 export function formatDataUri(raw?: any): string {
   if (!raw) return '';
   let str = '';
@@ -345,5 +385,60 @@ export function formatDataUri(raw?: any): string {
     return str;
   }
   return `data:image/png;base64,${str}`;
+}
+/**
+ * HTML5 Canvasを利用した中心座標・ズーム指定クロップ関数 (1枚絵から特定画角を切り出し)
+ */
+export async function cropImageBase64(
+  base64: string,
+  centerX: number = 0.5,
+  centerY: number = 0.5,
+  zoomScale: number = 1.0,
+  aspectRatio: '16:9' | '9:16' | '1:1' = '16:9'
+): Promise<string> {
+  const dataUri = formatDataUri(base64);
+  if (!dataUri) return base64;
+  return new Promise((resolve) => {
+    if (typeof document === 'undefined') return resolve(base64);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const outW = aspectRatio === '9:16' ? 720 : (aspectRatio === '1:1' ? 1024 : 1280);
+        const outH = aspectRatio === '9:16' ? 1280 : (aspectRatio === '1:1' ? 1024 : 720);
+        const canvas = document.createElement('canvas');
+        canvas.width = outW;
+        canvas.height = outH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(base64);
+        const targetAspect = outW / outH;
+        const imgAspect = img.width / img.height;
+        let srcW = img.width;
+        let srcH = img.height;
+        if (imgAspect > targetAspect) {
+          srcW = img.height * targetAspect;
+        } else {
+          srcH = img.width / targetAspect;
+        }
+        const effectiveZoom = Math.max(1.0, Math.min(3.0, zoomScale));
+        srcW = srcW / effectiveZoom;
+        srcH = srcH / effectiveZoom;
+        const cX = Math.max(0.05, Math.min(0.95, centerX)) * img.width;
+        const cY = Math.max(0.05, Math.min(0.95, centerY)) * img.height;
+        let srcX = cX - (srcW / 2);
+        let srcY = cY - (srcH / 2);
+        srcX = Math.max(0, Math.min(img.width - srcW, srcX));
+        srcY = Math.max(0, Math.min(img.height - srcH, srcY));
+        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
+        const resData = canvas.toDataURL('image/png');
+        resolve(resData.replace(/^data:image\/png;base64,/, ''));
+      } catch (err) {
+        console.warn('Canvas crop error:', err);
+        resolve(base64);
+      }
+    };
+    img.onerror = () => resolve(base64);
+    img.src = dataUri;
+  });
 }
 

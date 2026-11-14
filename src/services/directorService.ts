@@ -22,8 +22,12 @@ export { resolveTasteKey, resolveTastePrompt };
 /**
  * ── タイトル・テキスト整形ヘルパー ──
  */
-export function sanitizeForYouTubeSafety(text: string): string {
+export function sanitizeForYouTubeSafety(text: string, isMvMode: boolean = false): string {
   if (!text) return '';
+  if (isMvMode) {
+    // 音楽MVモードでは「死神」「殺風景」等の一般的な詩的表現・歌詞を不自然に伏せ字化せずそのまま保持し、過激な暴力・グロ表現のみ対象とする
+    return text.replace(/(血まみれ|虐殺|死ねよ|殺してやる)/g, '危険').trim();
+  }
   return text.replace(/[殺死血狂暴]/g, '★').replace(/(死ね|殺す|血まみれ|狂気|虐殺)/g, '危険').trim();
 }
 export function cleanEpisodeTitle(title: string): string {
@@ -220,12 +224,17 @@ export function buildCompactScriptChunkPrompt(
   _productionMode?: string,
   existingTitles?: string[],
   characterId?: string,
-  previousCutsSummary?: string
+  previousCutsSummary?: string,
+  mvSettings?: { songTitle?: string; lyricsMemo?: string; mvVibe?: 'pop' | 'chill'; mvStyleMode?: 'lofi_loop' | 'unified' | 'mix' }
 ): string {
   const worldSetting = era && era !== theme ? `${theme} (時代: ${era}, 地域: ${country})` : `${theme} (${country})`;
-  const fixedChar = (characterId && characterId !== 'auto') ? SAFE_CHARACTERS.find(c => c.id === characterId) : undefined;
+  const fixedChar = (!isMvMode && characterId && characterId !== 'auto' && characterId !== 'mv_cap_girl' && characterId !== 'random') 
+    ? SAFE_CHARACTERS.find(c => c.id === characterId) 
+    : undefined;
   const charDirective = fixedChar ? `\nPROTAGONIST LOCK: Protagonist MUST be "${fixedChar.nameJa}" (${fixedChar.dnaPromptEn}). Narration style: ${fixedChar.personality}. SAFETY: Never depict cruel abuse.` : '';
-  const defaultCharDna = fixedChar ? fixedChar.dnaPromptEn : 'Consistent single protagonist matching the world setting and narrative';
+  
+  const MV_CAP_GIRL_DNA = 'cool aesthetic Japanese anime girl wearing a backwards baseball cap, oversized street hoodie, denim shorts, stylish high-top sneakers, sleek over-ear headphones resting around her neck, soft wavy hair, expressive calm eyes';
+  const defaultCharDna = isMvMode ? MV_CAP_GIRL_DNA : (fixedChar ? fixedChar.dnaPromptEn : 'Consistent single protagonist matching the world setting and narrative');
   const rawStyle = taste ? resolveTastePrompt(taste) : '';
   const plannedTitleJp = cleanEpisodeTitle(currentPlan.titleJp || `場面${epId}`);
   const plannedTitleEn = cleanEpisodeTitleEn(currentPlan.titleEn || `Scene ${epId}`);
@@ -233,18 +242,61 @@ export function buildCompactScriptChunkPrompt(
   const isFirstChunk = startCut === 1;
   const isFinalChunk = endCut >= totalCutCount;
   const chunkCount = endCut - startCut + 1;
+  const defaultMvPhrases = ['AFTER SCHOOL', 'SUMMER BREEZE', 'MIDNIGHT STEP', 'DAYDREAM POP', 'BLUE MOMENT', 'NEON HORIZON'];
+  const mvSongTitle = (mvSettings?.songTitle || '').trim() || plannedTitleEn || defaultMvPhrases[Math.floor(Math.random() * defaultMvPhrases.length)];
+  const lyricsList = (mvSettings?.lyricsMemo || '')
+    .split(/[\r\n]+/)
+    .map(l => l.trim())
+    .filter(Boolean);
+  const mvVibe = mvSettings?.mvVibe || 'pop';
+  let mvWorldDirection = '';
+  if (isMvMode) {
+    const vibeInstruction = mvVibe === 'pop'
+      ? `🌈 VIBE: ✨ ポップ・青春 (Kawaii Pop)
+- Atmosphere: Crisp saturated blue skies, fluffy white summer clouds, vibrant school footbridges, colorful Tokyo/Japanese street corners, rooftop with soft golden hour reflections, joyful airy aesthetic.
+- Color & Lighting: Glossy candy pastel & vivid acrylic painted 3D letter surfaces (soft cream, sunny yellow, pastel sky blue, cherry pink accents). Bright, uplifting, clean modern anime MV aesthetic.
+- 🚫 STRICTLY FORBIDDEN IN POP VIBE: NO dark gritty concrete, NO decaying ruins, NO gloomy dark rain, NO European classical gothic buildings.`
+      : `🌙 VIBE: 🌙 チル・夜更かし (Lo-Fi Chill)
+- Atmosphere: Nostalgic midnight city, rain-slicked wet pavement with neon reflections, quiet corner cafes, late-night laundromat glow, peaceful railway crossing under twilight.
+- Color & Lighting: Softly glowing warm vintage neon tubes, weathered brick/concrete lettering, cool indigo and warm amber twilight, serene melancholic Lo-Fi chillhop aesthetic.`;
+    mvWorldDirection = `
+【🎵 音楽MV (12Cut×AIエモ切り抜き) 専用ディレクション: 4ゾーン高密度ワイド構図 × 空間に散らばる英単語立体文字】
+${vibeInstruction}
+- 🚫 FORBIDDEN COMPOSITIONS: NO empty plain backgrounds (NO empty flat sky/grass with single subject), NO clumped tight logo blocks in center.
+- 📐 MANDATORY 4-ZONE HIGH-DENSITY BALANCED WIDE LAYOUT (Each scene MUST feature 4 distinct storytelling zones for multiple emo crops):
+  1) 🔤 SPATIALLY SCATTERED 3D LETTERS: The letters of "${mvSongTitle}" are NOT clumped into one tight block. They are dynamically scattered across the physical environment (some letters in the foreground, some staggered in middle ground and distance) along sidewalks, rooftops, or bridges with depth and physical perspective.
+  2) 🧢 COOL ANIME GIRL: "${MV_CAP_GIRL_DNA}" naturally positioned interacting with one of the giant letters (sitting inside 'O', resting on 'U', sitting on 'A'/'H' crossbar, leaning on 'L'/'E').
+  3) 👟 GROUND & FOOTSTEPS DETAIL: Highly detailed ground textures in lower third (wet asphalt neon reflections, puddle ripple rings, rooftop grid tiles, railway wooden ties, concrete curb with spraypaint) framing the girl's high-top sneakers.
+  4) ☕ PROPS & BACKGROUND STORYTELLING DETAILS: Foreground/side props (steaming paper coffee cup on letter ledge, open notebook/sketchbook, soda bottle with condensation, potted foliage) + Rich atmospheric background elements (sunset tangled powerlines, glowing vending machine, warm cafe window backlight, layered city skyline).
+- 🌆 12 HIGH-VARIETY LOCATIONS & TIMING (Every cut MUST explore a completely distinct setting & lighting):
+  * Cut 1 (駅前歩道橋・放課後夕暮れ): Orange sunset sky, tangled powerlines, letters of "${mvSongTitle}" scattered along footbridge railing, girl sitting in 'O' dangling sneakers.
+  * Cut 2 (夜の雨上がり裏路地): Wet asphalt reflecting pink/cyan glowing neon 3D letters, puddle ripples, girl lying across 'U' curve gazing up at rainy twilight sky.
+  * Cut 3 (学校の屋上・青空と入道雲): Crisp cobalt summer sky, towering white thunderhead clouds, chain-link fence, pastel letters of "${mvSongTitle}" resting along rooftop edge, girl perched on 'H'/'A' crossbar holding headphones.
+  * Cut 4 (レトロ純喫茶前・午後): Cobblestone pavement, warm amber light through textured glass, steaming coffee cup and potted green plant on letter pedestal, girl leaning against 'L'/'E' step holding smartphone.
+  * Cut 5 (深夜のコインランドリー前): Glowing cyan vending machine, white fluorescent glow through glass, neon tube letters embedded on curb, girl peeking playfully between two tall letters.
+  * Cut 6 (海沿いの坂道と踏切): Shimmering blue sea horizon, coastal railway crossing barrier, bright sun glinting off white clouds, giant letters lining the roadside, girl in shade of giant letter on sidewalk.
+  * Cut 7 (高架下ストリートアート壁面): Atmospheric elevated railway bridge, colorful urban graffiti wall, concrete letters, girl walking along top edge of connected letters like balance beam.
+  * Cut 8 (夕暮れ河川敷の階段・サビ): Magic hour violet and amber sky, wide grass embankment concrete steps, illuminated letters glowing, wind whipping oversized hoodie, dynamic dance step.
+  * Cut 9 (深夜の首都高陸橋): Distant car headlight light-trails, steel bridge girders, cool midnight breeze, girl resting high-top sneaker on first letter pedestal tying shoelace.
+  * Cut 10 (早朝のカフェ通り): Dawn light breaking, empty quiet shopping arcade, morning mist, girl leaning both arms against curved back of rounded letter, chin resting on hands.
+  * Cut 11 (ネオン街ゲームセンター横): Vibrant arcade neon reflections on wet street, clear vinyl umbrella, backlit silhouette of girl against the glowing giant phrase letters.
+  * Cut 12 (夜明けの摩天楼屋上・結末): Golden sunrise crowning the city skyline, quiet morning breeze, girl sitting atop the final letter of "${mvSongTitle}" watching the new day begin.
+- ✍️ LYRICS ASSIGNMENT: Assign poetic Japanese phrases to each cut's "narrationJp" (if user lyrics are provided: ${lyricsList.length > 0 ? `incorporate phrases from: ${lyricsList.slice(0, 12).join(' / ')}` : 'poetic urban lyric lines'}).
+`;
+  }
   const pacingDirective = !isFinalChunk
     ? `\n【重要・物語の進行に関する絶対指示】現在は全${totalCutCount}カット中の第${startCut}〜${endCut}カット目（物語の途中・展開中）です。ここで絶対に物語を完結させず、次のカット（Cut ${endCut + 1}以降）へ続く展開のままバトンを渡してください。事件の完全解決や総括の結びに入らず、次へ続く緊張感や新たな事態の発生を描いてください。結末（オチ・解決）は最終カット（Cut ${totalCutCount}）でのみ描かれます。`
     : `\n【最終バッチ指示】現在は全${totalCutCount}カットのクライマックスおよび結末部（Cut ${startCut}〜${endCut}）です。これまでの展開を受け止め、第${totalCutCount}カット目で見事な結末・オチ・余韻を描いてストーリーを美しく完結させてください。`;
   const relayHistoryClause = previousCutsSummary
     ? `\n--- PREVIOUS CUTS CONTEXT (Cut 1 to ${startCut - 1}) ---\n${previousCutsSummary}\nCRITICAL: Continue the story chronologically from Cut ${endCut < totalCutCount ? startCut : startCut}. Do not restart or repeat previous scenes.`
     : '';
-  return `You are an elite film director, manga artist, and screenwriter.
+  return `You are an elite film director, manga artist, and art director for modern Lo-Fi anime music videos.
 Generate screenplay for Cut ${startCut} to Cut ${endCut} (Total Cuts planned: ${totalCutCount}) for Episode ${epId} in "${worldSetting}".
 Episode Concept: "${currentPlan.summary || plannedTitleJp}".
 Art Style: "${taste || ''}" (${rawStyle}).
 ${avoidDup}
 ${charDirective}
+${mvWorldDirection}
 ${pacingDirective}
 ${relayHistoryClause}
 MANDATORY RULES:
@@ -252,7 +304,7 @@ MANDATORY RULES:
 2. Ensure continuous story flow and visual variety across shot scales (Close-up, Medium, Wide).
 3. Cut with "isObjectOnly": true should occasionally focus on an atmospheric symbolic keepsake or deserted prop without humans.
 4. "basicPlot" MUST be clear, high-detail English description for text-to-image prompt.
-5. "narrationJp" MUST be natural Japanese dialogue or poetic narration (around 20-40 characters).
+5. "narrationJp" MUST be natural Japanese dialogue, lyric phrase, or poetic narration (around 20-40 characters).
 6. Format: Output cuts as an array under the "cuts" field, even if there is only 1 cut.
 Output ONLY valid JSON:
 {
@@ -266,10 +318,293 @@ Output ONLY valid JSON:
       "id": ${startCut}, 
       "isObjectOnly": false,
       "basicPlot": "Cinematic visual scene description of protagonist...", 
-      "narrationJp": "セリフまたはナレーション（日本語）"
+      "narrationJp": "セリフまたは歌詞フレーズ（日本語）"
     }
   ]
 }`;
+}
+/**
+ * ── 🎵 【最重要】完成画像をGeminiに視覚解析させ、エモい切り抜きCutを動的判定させる ──
+ */
+export async function analyzeImageForEmoCrops(
+  imageBase64: string,
+  cutId: number,
+  narrationJp: string,
+  promptEn: string
+): Promise<{
+  emoCrops: Array<{
+    id: number;
+    label: string;
+    centerX: number;
+    centerY: number;
+    zoomScale: number;
+    panDirection?: 'none' | 'slow-pan-right' | 'slow-pan-left' | 'slow-tilt-up' | 'slow-zoom-in' | 'slow-zoom-out';
+    emoReason: string;
+    isSafeFromArtifacts: boolean;
+  }>;
+  visualArtifactWarning?: string;
+  cinemagraphMotionTargets?: string;
+}> {
+  const cleanB64 = imageBase64.replace(/^data:image\/\w+;base64,/, '').trim();
+  if (!cleanB64) {
+    return {
+      emoCrops: [{
+        id: 1,
+        label: '全体ビュー (Full)',
+        centerX: 0.5,
+        centerY: 0.5,
+        zoomScale: 1.0,
+        panDirection: 'none',
+        emoReason: '構図全体の静謐な空気感をそのまま味わうマスターショット',
+        isSafeFromArtifacts: true
+      }],
+      cinemagraphMotionTargets: 'delicate swaying of hair tips, subtle flutter of clothes hem, natural blinking, gentle ambient light flicker'
+    };
+  }
+  const analysisPrompt = `You are a legendary Anime Music Video (AMV) Art Director & Cinematographer.
+Analyze the provided generated image for Cut #${cutId} (Context: "${narrationJp}", Prompt: "${promptEn}").
+YOUR MISSION:
+1. ARTIFACT & DEFORMATION INSPECTION:
+   - Identify if there are any subtle hand/finger deformations, strange face lines, or clipped elements.
+   - Note which areas are crisp, beautiful, and SAFE to zoom into (e.g. gorgeous eye profile, cool sneakers, sneakers on wet pavement, silhouette against glowing giant letters, atmospheric sky).
+   - If an area has risk of looking weird when cropped, DO NOT crop tightly into it.
+2. DYNAMIC EMO CROP SELECTION (EXTRACT 3 TO 4 DISTINCTLY DIVERSE CROPS):
+   - You MUST extract 3 to 4 crop points that look radically different from each other so the video editor can cut between them dynamically:
+     1) [全景マスター (Wide/Full)]: zoomScale: 1.0 to 1.15. The whole 4-zone high-density scenery showing the scattered 3D letters, anime girl, and city depth.
+     2) [キャラクター表情・上半身 (Medium Chest/Face)]: zoomScale: 1.5 to 2.1, centered on the girl's expressive face, backwards cap, and headphones around her neck.
+     3) [足元・スニーカーと地面反射 (Sneakers & Ground)]: zoomScale: 1.4 to 2.0, centered on the girl's high-top sneakers resting on the curb/pavement with puddle/wet surface reflections.
+     4) [エモ小道具・風景パーツ (Prop / Letter Detail)]: zoomScale: 1.4 to 2.0, centered on the steaming coffee cup, soda bottle, plant, or neon glowing letter curve next to her.
+   - For each crop, define:
+     * label: Japanese title (e.g. "4ゾーン全景 (マスター)", "キャップと横顔 (上半身)", "スニーカーと路面の反射 (足元)", "湯気立つ珈琲と文字の影 (小道具)")
+     * centerX: normalized coordinate (0.05 to 0.95, center is 0.5)
+     * centerY: normalized coordinate (0.05 to 0.95, center is 0.5)
+     * zoomScale: 1.0 to 2.2
+     * panDirection: 'none' | 'slow-pan-right' | 'slow-pan-left' | 'slow-tilt-up' | 'slow-zoom-in' | 'slow-zoom-out'
+     * emoReason: Japanese aesthetic explanation why this crop evokes deep emotion / chill vibe.
+     * isSafeFromArtifacts: boolean (true if visually flawless)
+3. CINEMAGRAPH MOTION TARGETS (VEO 3.1 LITE SELECTION):
+   - Inspect what is ACTUALLY VISIBLE in this image.
+   - Pick 3 to 5 motion phrases STRICTLY from the following 20-item whitelist that exist in this image:
+     [Character]:
+     - "delicate swaying of hair tips/strands"
+     - "subtle flutter of hoodie strings and clothes hem"
+     - "natural blinking and gentle breathing"
+     - "tiny rhythmic toe-tapping of dangling sneakers"
+     - "subtle finger tapping"
+     [Props/Objects]:
+     - "rising steam from hot drinks/food"
+     - "fizzing bubbles in soda bottle/glass"
+     - "fluttering pages of an open notebook/book"
+     - "gentle swaying of curtains, lanterns, or wind chimes"
+     - "spinning laundromat drum or vinyl record"
+     - "dripping raindrops from clear umbrella/eaves"
+     [Lights/City]:
+     - "soft ambient flicker on neon tubes and streetlights"
+     - "blinking traffic lights or railroad crossing signals"
+     - "subtle screen glow from smartphone"
+     [Nature/Atmosphere]:
+     - "subtle ripples on water puddles or shimmering sea surface"
+     - "gentle rustling of tree leaves and dappled sunlight"
+     - "drifting dust motes, petals, mist, or rain droplets"
+     - "slow drift of distant clouds"
+     - "slight wind sway on overhead power lines"
+     - "flickering candle or incense smoke"
+   - Output comma-separated English list in "cinemagraphMotionTargets" field. Do NOT include elements not present in the image!
+Output ONLY valid JSON:
+{
+  "visualArtifactWarning": "気づいた破綻リスク（なければ空文字）",
+  "cinemagraphMotionTargets": "3 to 5 comma-separated whitelist phrases describing actual visible elements",
+  "emoCrops": [
+    {
+      "id": 1,
+      "label": "ショット名",
+      "centerX": 0.5,
+      "centerY": 0.5,
+      "zoomScale": 1.0,
+      "panDirection": "slow-zoom-in",
+      "emoReason": "なぜエモいかの理由",
+      "isSafeFromArtifacts": true
+    }
+  ]
+}`;
+  try {
+    const res = await callWithRetry<any>(
+      () => Flow.generate.text(analysisPrompt, {
+        systemInstruction: "You are an expert anime art director analyzing frame compositions with precision.",
+        images: [{ base64: cleanB64, mimeType: 'image/png' }]
+      }),
+      undefined,
+      { maxRetries: 2, timeoutMs: 45000 }
+    );
+    const parsed = safeJsonParse<any>(res?.text || '{}', {});
+    const crops = Array.isArray(parsed.emoCrops) && parsed.emoCrops.length > 0 ? parsed.emoCrops : [];
+    const motionTargets = (parsed.cinemagraphMotionTargets || '').trim() || 'delicate swaying of hair tips, subtle flutter of clothes hem, natural blinking, gentle ambient light flicker';
+    
+    if (crops.length === 0) {
+      return {
+        emoCrops: [{
+          id: 1,
+          label: '全体マスタービュー',
+          centerX: 0.5,
+          centerY: 0.5,
+          zoomScale: 1.0,
+          panDirection: 'slow-zoom-in',
+          emoReason: '巨大文字とキャラクターの対比が最も美しく成立している全体構図',
+          isSafeFromArtifacts: true
+        }],
+        visualArtifactWarning: parsed.visualArtifactWarning || undefined,
+        cinemagraphMotionTargets: motionTargets
+      };
+    }
+    return {
+      emoCrops: crops.map((c: any, idx: number) => ({
+        id: idx + 1,
+        label: c.label || `エモ切り抜き #${idx + 1}`,
+        centerX: typeof c.centerX === 'number' ? Math.max(0.1, Math.min(0.9, c.centerX)) : 0.5,
+        centerY: typeof c.centerY === 'number' ? Math.max(0.1, Math.min(0.9, c.centerY)) : 0.5,
+        zoomScale: typeof c.zoomScale === 'number' ? Math.max(1.0, Math.min(2.5, c.zoomScale)) : 1.2,
+        panDirection: c.panDirection || 'none',
+        emoReason: c.emoReason || '構図の詩的対比と空気感の調和',
+        isSafeFromArtifacts: c.isSafeFromArtifacts !== false
+      })),
+      visualArtifactWarning: parsed.visualArtifactWarning || undefined,
+      cinemagraphMotionTargets: motionTargets
+    };
+  } catch (err) {
+    console.warn('[Gemini Emo Crop Analysis Fallback]', err);
+    return {
+      emoCrops: [{
+        id: 1,
+        label: '全体ビュー (Default)',
+        centerX: 0.5,
+        centerY: 0.5,
+        zoomScale: 1.0,
+        panDirection: 'slow-zoom-in',
+        emoReason: '街の空気感と立体文字の存在感を自然に捉えたマスター構図',
+        isSafeFromArtifacts: true
+      }],
+      cinemagraphMotionTargets: 'delicate swaying of hair tips, subtle flutter of clothes hem, natural blinking, gentle ambient light flicker'
+    };
+  }
+}
+/**
+ * ── 🎵 【MV 1枚絵から12連微動展開】マスター1枚絵から12アングルと別々のシネマグラフ部位を抽出 ──
+ */
+export async function analyzeMasterImageFor12Crops(
+  imageBase64: string,
+  lyricsList: string[],
+  songTitle: string
+): Promise<Array<{
+  cutId: number;
+  label: string;
+  centerX: number;
+  centerY: number;
+  zoomScale: number;
+  panDirection?: 'none' | 'slow-pan-right' | 'slow-pan-left' | 'slow-tilt-up' | 'slow-zoom-in' | 'slow-zoom-out';
+  emoReason: string;
+  cinemagraphMotionTargets: string;
+}>> {
+  const cleanB64 = imageBase64.replace(/^data:image\/\w+;base64,/, '').trim();
+  const whitelistClauses = [
+    'delicate swaying of hair tips/strands',
+    'subtle flutter of hoodie strings and clothes hem',
+    'natural blinking and gentle breathing',
+    'tiny rhythmic toe-tapping of dangling sneakers',
+    'subtle finger tapping',
+    'rising steam from hot drinks/food',
+    'fizzing bubbles in soda bottle/glass',
+    'fluttering pages of an open notebook/book',
+    'gentle swaying of curtains, lanterns, or wind chimes',
+    'spinning laundromat drum or vinyl record',
+    'dripping raindrops from clear umbrella/eaves',
+    'soft ambient flicker on neon tubes and streetlights',
+    'blinking traffic lights or railroad crossing signals',
+    'subtle screen glow from smartphone',
+    'subtle ripples on water puddles or shimmering sea surface',
+    'gentle rustling of tree leaves and dappled sunlight',
+    'drifting dust motes, petals, mist, or rain droplets',
+    'slow drift of distant clouds',
+    'slight wind sway on overhead power lines',
+    'flickering candle or incense smoke'
+  ];
+  const default12 = [
+    { cutId: 1, label: 'マスター全景 (世界観確立)', centerX: 0.5, centerY: 0.5, zoomScale: 1.0, panDirection: 'slow-zoom-in' as const, emoReason: '街と立体文字と少女の全景', cinemagraphMotionTargets: 'delicate swaying of hair tips/strands, subtle flutter of hoodie strings and clothes hem, slow drift of distant clouds' },
+    { cutId: 2, label: '少女の横顔・呼吸 (表情寄)', centerX: 0.45, centerY: 0.35, zoomScale: 1.8, panDirection: 'slow-tilt-up' as const, emoReason: 'キャップ下の澄んだ瞳とヘッドフォン', cinemagraphMotionTargets: 'natural blinking and gentle breathing, delicate swaying of hair tips/strands' },
+    { cutId: 3, label: '足元のスニーカー (リズムタップ)', centerX: 0.48, centerY: 0.82, zoomScale: 1.7, panDirection: 'slow-pan-right' as const, emoReason: 'ハイカットスニーカーと縁石の影', cinemagraphMotionTargets: 'tiny rhythmic toe-tapping of dangling sneakers, subtle ripples on water puddles or shimmering sea surface' },
+    { cutId: 4, label: '手元の小道具・湯気 (日常感)', centerX: 0.55, centerY: 0.60, zoomScale: 1.9, panDirection: 'none' as const, emoReason: '温かいドリンクの湯気と微かな指先', cinemagraphMotionTargets: 'rising steam from hot drinks/food, subtle finger tapping' },
+    { cutId: 5, label: '立体文字モニュメント (サビ導入)', centerX: 0.70, centerY: 0.45, zoomScale: 1.4, panDirection: 'slow-pan-left' as const, emoReason: '街に溶け込む巨大英文字のカーブ', cinemagraphMotionTargets: 'soft ambient flicker on neon tubes and streetlights, gentle rustling of tree leaves and dappled sunlight' },
+    { cutId: 6, label: '街の空気感・さざ波 (情景インサート)', centerX: 0.30, centerY: 0.70, zoomScale: 1.5, panDirection: 'slow-tilt-up' as const, emoReason: '濡れた路面の反射と光彩', cinemagraphMotionTargets: 'subtle ripples on water puddles or shimmering sea surface, dripping raindrops from clear umbrella/eaves' },
+    { cutId: 7, label: '後ろ姿・パーカーの裾 (サビ絶頂)', centerX: 0.48, centerY: 0.45, zoomScale: 1.5, panDirection: 'slow-zoom-in' as const, emoReason: '風に吹かれるビッグシルエットパーカー', cinemagraphMotionTargets: 'subtle flutter of hoodie strings and clothes hem, delicate swaying of hair tips/strands' },
+    { cutId: 8, label: '頭上の電線と空 (解放感)', centerX: 0.50, centerY: 0.20, zoomScale: 1.4, panDirection: 'slow-tilt-up' as const, emoReason: '交差する電線とグラデーション空', cinemagraphMotionTargets: 'slight wind sway on overhead power lines, slow drift of distant clouds' },
+    { cutId: 9, label: 'ネオン看板と光の明滅 (夜更け)', centerX: 0.75, centerY: 0.30, zoomScale: 1.7, panDirection: 'none' as const, emoReason: 'レトロな明滅とLo-Fiな陰影', cinemagraphMotionTargets: 'soft ambient flicker on neon tubes and streetlights, subtle screen glow from smartphone' },
+    { cutId: 10, label: '少女の目元・まつ毛 (繊細な感情)', centerX: 0.45, centerY: 0.32, zoomScale: 2.1, panDirection: 'none' as const, emoReason: '涼しげな眼差しと風に揺れる前髪', cinemagraphMotionTargets: 'natural blinking and gentle breathing, delicate swaying of hair tips/strands' },
+    { cutId: 11, label: '風に揺れる街角・葉擦れ (クライマックス)', centerX: 0.25, centerY: 0.40, zoomScale: 1.6, panDirection: 'slow-pan-right' as const, emoReason: '街路樹の木漏れ日と木々のざわめき', cinemagraphMotionTargets: 'gentle rustling of tree leaves and dappled sunlight, drifting dust motes, petals, mist, or rain droplets' },
+    { cutId: 12, label: '全景ラストショット (余韻)', centerX: 0.50, centerY: 0.50, zoomScale: 1.05, panDirection: 'slow-zoom-out' as const, emoReason: '曲の終わりを告げる静かな全景フェード', cinemagraphMotionTargets: 'delicate swaying of hair tips/strands, natural blinking and gentle breathing, slow drift of distant clouds' }
+  ];
+  if (!cleanB64) return default12;
+  const prompt = `You are a master anime music video director. We have ONE SINGLE high-definition master artwork for song "${songTitle || 'Lo-Fi Chill'}".
+Your task: Divide this single image into EXACTLY 12 distinct cinematic crops (Cut 1 to Cut 12), ensuring 100% character and art style consistency with zero artifacts.
+For EACH of the 12 cuts:
+1. Provide unique framing:
+   - Cut 1: Wide establishing shot (zoomScale: 1.0)
+   - Cut 2: Medium face/eyes profile (zoomScale: 1.6 - 2.1)
+   - Cut 3: Footwear / sneakers / ground interaction (zoomScale: 1.5 - 2.0)
+   - Cut 4: Prop or beverage / food steam / hands (zoomScale: 1.5 - 2.0)
+   - Cut 5: 3D typography letters detail in environment (zoomScale: 1.3 - 1.8)
+   - Cut 6: Environment / reflection / puddles (zoomScale: 1.3 - 1.8)
+   - Cut 7: Back or torso silhouette in the wind (zoomScale: 1.4 - 1.9)
+   - Cut 8: Sky, rooftop, overhead powerlines or ceiling (zoomScale: 1.3 - 1.7)
+   - Cut 9: Neon signage / streetlight / screen glow (zoomScale: 1.4 - 1.9)
+   - Cut 10: Extreme close-up of eyes or headphones (zoomScale: 1.8 - 2.2)
+   - Cut 11: Foliage / curtains / background scenery (zoomScale: 1.4 - 1.8)
+   - Cut 12: Final wide outro shot (zoomScale: 1.05)
+2. Assign 2-3 motion phrases for Veo 3.1 Lite cinemagraph loop STRICTLY from this whitelist:
+${whitelistClauses.map(w => `   - "${w}"`).join('\n')}
+Output ONLY valid JSON:
+{
+  "crops": [
+    {
+      "cutId": 1,
+      "label": "カット名",
+      "centerX": 0.5,
+      "centerY": 0.5,
+      "zoomScale": 1.0,
+      "panDirection": "slow-zoom-in",
+      "emoReason": "美学的な演出理由",
+      "cinemagraphMotionTargets": "whitelist phrase 1, whitelist phrase 2"
+    }
+  ]
+}`;
+  try {
+    const res = await callWithRetry<any>(
+      () => Flow.generate.text(prompt, {
+        systemInstruction: "You are a world-class anime MV director orchestrating 12 distinct crops from a master artwork.",
+        images: [{ base64: cleanB64, mimeType: 'image/png' }]
+      }),
+      undefined,
+      { maxRetries: 2, timeoutMs: 50000 }
+    );
+    const parsed = safeJsonParse<any>(res?.text || '{}', {});
+    const rawList = Array.isArray(parsed?.crops) ? parsed.crops : [];
+    if (rawList.length >= 8) {
+      return Array.from({ length: 12 }, (_, i) => {
+        const item = rawList.find((c: any) => c && Number(c.cutId) === (i + 1)) || rawList[i] || default12[i];
+        return {
+          cutId: i + 1,
+          label: item.label || default12[i].label,
+          centerX: typeof item.centerX === 'number' ? Math.max(0.1, Math.min(0.9, item.centerX)) : default12[i].centerX,
+          centerY: typeof item.centerY === 'number' ? Math.max(0.1, Math.min(0.9, item.centerY)) : default12[i].centerY,
+          zoomScale: typeof item.zoomScale === 'number' ? Math.max(1.0, Math.min(2.5, item.zoomScale)) : default12[i].zoomScale,
+          panDirection: item.panDirection || default12[i].panDirection,
+          emoReason: item.emoReason || default12[i].emoReason,
+          cinemagraphMotionTargets: item.cinemagraphMotionTargets || default12[i].cinemagraphMotionTargets
+        };
+      });
+    }
+  } catch (err) {
+    console.warn('[analyzeMasterImageFor12Crops fallback]', err);
+  }
+  return default12;
 }
 export interface InfographicCoverPromptOptions {
   titleJp: string;
@@ -408,10 +743,13 @@ export async function directShot(
     previousShotInfo?.telop,
     settings.productionMode
   );
+  const isMv = settings.isMvMode || task.isMvMode;
   const effectiveScale = task.shotScale || preset.scale;
   const effectiveAngle = task.cinematicAngle || preset.angle;
-  let antiPreviousNegative = buildDynamicAntiPreviousNegative(previousShotInfo, effectiveScale);
-  if (settings.isMvMode && !isAllowedEyeContact) {
+  let antiPreviousNegative = isMv 
+    ? 'extreme macro face, cropped forehead, distorted fingers, anatomical fusion, 3d CGI render' 
+    : buildDynamicAntiPreviousNegative(previousShotInfo, effectiveScale);
+  if (isMv && !isAllowedEyeContact) {
     antiPreviousNegative = antiPreviousNegative ? `${antiPreviousNegative}, ${MV_ANTI_CAMERA_LOOK_NEGATIVE}` : MV_ANTI_CAMERA_LOOK_NEGATIVE;
   }
   const hasCameraDirective = prompt.includes('[CAMERA DIRECTIVE:') || prompt.includes('[STRICT') || prompt.includes('[IRONCLAD');
@@ -452,6 +790,7 @@ export interface GenerateSafeScriptOptions {
   characterId?: string;
   targetCutCount?: number;
   superBackoff?: boolean;
+  mvSettings?: { songTitle?: string; lyricsMemo?: string; mvVibe?: 'pop' | 'chill'; mvStyleMode?: 'lofi_loop' | 'unified' | 'mix' };
   abortCheck?: () => boolean;
   addLog?: (msg: string, type?: 'info' | 'success' | 'warning' | 'error' | 'process') => void;
 }
@@ -550,7 +889,8 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
       productionMode,
       existingTitles,
       characterId,
-      previousCutsSummary
+      previousCutsSummary,
+      opts.mvSettings
     );
     let scriptRes: any;
     const chunkStartTime = Date.now();
@@ -613,28 +953,32 @@ export async function generateSafeEpisodeScript(opts: GenerateSafeScriptOptions)
     for (let cIdx = 0; cIdx < expectedChunkCount; cIdx++) {
       const globalCutId = startCut + cIdx;
       const rawCutData = parsedCuts.find((c: any) => c && Number(c.id) === globalCutId) || parsedCuts[cIdx] || {};
-      const isObj = rawCutData.isObjectOnly !== undefined ? Boolean(rawCutData.isObjectOnly) : (globalCutId % 6 === 0);
+      const isObj = isMvMode ? false : (rawCutData.isObjectOnly !== undefined ? Boolean(rawCutData.isObjectOnly) : (globalCutId % 6 === 0));
       const rawNarration = rawCutData.narrationJp || rawCutData.narration || (isMvMode ? `歌詞パート${globalCutId}` : `場面${globalCutId}の情景`);
-      const defaultCoord: [number, number] = isObj ? [0.5, 0.5] : [0.5, 0.3];
-      const defaultSubject = isObj ? 'symbolic_object' : 'character_face';
-      const defaultPlot = isObj
-        ? `Atmospheric iconic object or landscape matching ${theme}, completely empty of people, cinematic still-life`
-        : `${fixedChar ? `${fixedChar.dnaPromptEn}, ` : ''}cinematic scene ${globalCutId} of ${currentPlan.titleEn}, atmospheric lighting`;
+      const defaultCoord: [number, number] = isObj ? [0.5, 0.5] : [0.5, 0.4];
+      const defaultSubject = isObj ? 'symbolic_object' : 'character_and_giant_typography';
+      const defaultPlot = isMvMode
+        ? `Wide to medium shot of cool anime girl in stylish hoodie and sneakers interacting with gigantic 3D physical typography object of song title in a quiet Lo-Fi urban scene`
+        : (isObj
+          ? `Atmospheric iconic object or landscape matching ${theme}, completely empty of people, cinematic still-life`
+          : `${fixedChar ? `${fixedChar.dnaPromptEn}, ` : ''}cinematic scene ${globalCutId} of ${currentPlan.titleEn}, atmospheric lighting`);
       accumulatedCuts.push({
         id: globalCutId,
         panelLayout: 'single',
         basicPlot: rawCutData.basicPlot || rawCutData.promptEn || defaultPlot,
-        narrationJp: sanitizeForYouTubeSafety(rawNarration),
+        narrationJp: sanitizeForYouTubeSafety(rawNarration, isMvMode),
         highlights: rawCutData.highlights || episodeMetadata.highlightWords || [],
         isObjectOnly: isObj,
         focalPoint: {
-          grid: isObj ? 'center' : 'top-center',
+          grid: isObj ? 'center' : 'center',
           normalizedCoord: defaultCoord,
           focalSubject: defaultSubject
         },
-        compositionPrompt: rawCutData.compositionPrompt || (isObj 
-          ? 'Centered still-life composition of prop/object, rule of thirds, completely empty of people' 
-          : 'Subject framed at upper-third, face centered at top-center, rule of thirds composition')
+        compositionPrompt: rawCutData.compositionPrompt || (isMvMode
+          ? 'Medium-wide establishing composition showing both the massive 3D typography letters and the cool anime girl clearly framed in the scene'
+          : (isObj 
+            ? 'Centered still-life composition of prop/object, rule of thirds, completely empty of people' 
+            : 'Subject framed at upper-third, face centered at top-center, rule of thirds composition'))
       });
     }
     if (addLog && chunkCount > 1) {

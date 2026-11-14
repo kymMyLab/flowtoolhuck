@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
+import { MvPlayerModal } from './components/MvPlayerModal';
 import { StudioSidebar, FieldDropdown, FieldDropdownOption } from './components/StudioSidebar';
 import { EpisodeSection } from './components/EpisodeSection';
 import { Cut, GeneratorSettings, Episode, LogEntry } from './types';
-import { THEMES, THEME_CATEGORIES, TASTES, IMAGE_MODELS, RANDOM_SELECT_OPTION, SAFE_CHARACTERS } from './constants';
+import { THEMES, THEME_CATEGORIES, TASTES, IMAGE_MODELS, RANDOM_SELECT_OPTION, SAFE_CHARACTERS, DEFAULT_GENERATOR_SETTINGS } from './constants';
 import { createLogMessage, initDB } from './services/utils';
 import { downloadZip, savePackageFile } from './services/zipPackager';
 import { useStudioProduction } from './services/useStudioProduction';
@@ -51,6 +52,60 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
         <div className="flex items-center gap-1.5 shrink-0 text-slate-800">
           <span className="material-symbols-outlined text-amber-500 text-xl">movie_edit</span>
           <h1 className="text-sm font-black italic tracking-tighter uppercase whitespace-nowrap">Studio Pro</h1>
+        </div>
+        {/* 🎬 / 🎵 制作モード切り替えタブ */}
+        <div className="flex items-center gap-1 p-0.5 bg-slate-100 border border-slate-200 rounded-xl shadow-2xs shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              setSettings(s => ({
+                ...s,
+                productionMode: 'episodes',
+                isMvMode: false,
+                episodeCount: 5,
+                cutCount: 12,
+                previewCutCount: 12,
+                aspectRatio: '1:1',
+                autoVideo: true,
+                videoRatio: '50%',
+                videoDuration: 8
+              }));
+            }}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+              settings.productionMode !== 'mv'
+                ? 'bg-white text-indigo-700 shadow-xs border border-slate-200'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>🎬</span>
+            <span className="whitespace-nowrap">ドラマ・Shorts (VOICEVOX)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSettings(s => ({
+                ...s,
+                productionMode: 'mv',
+                isMvMode: true,
+                aspectRatio: '1:1',
+                episodeCount: 1,
+                cutCount: 12,
+                previewCutCount: 12,
+                autoVideo: true,
+                videoRatio: '100%',
+                videoDuration: 8,
+                mvStyleMode: s.mvStyleMode || 'lofi_loop'
+              }));
+            }}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+              settings.productionMode === 'mv'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xs font-black'
+                : 'text-purple-700 hover:text-purple-900 hover:bg-purple-50'
+            }`}
+          >
+            <span>🎵</span>
+            <span className="whitespace-nowrap">音楽MV (12Cut×AIエモ切り抜き)</span>
+          </button>
         </div>
         <div className="flex items-center gap-1.5 p-1 bg-gradient-to-r from-emerald-50/80 via-teal-50/60 to-emerald-50/80 rounded-xl border border-emerald-300/80 shadow-2xs shrink-0 flex-wrap">
           <FieldDropdown 
@@ -177,13 +232,13 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 export default function App() {
-  const [settings, setSettings] = useState<GeneratorSettings>({
-    productionMode: 'episodes', country: '日本', theme: RANDOM_SELECT_OPTION, taste: RANDOM_SELECT_OPTION, imageModel: IMAGE_MODELS[1]?.label || '🍌 Nano Banana 2.1', defaultVideoModel: '', videoRatio: 'none', episodeCount: 5, cutCount: 12, previewCutCount: 12, parallelCount: 2, autoVideo: false, autoDownload: true, superBackoff: true, isMvMode: false, aspectRatio: '1:1', characterId: 'random',
-    enableTurnaroundSheet: true, autoApproveTurnaround: true, enableObjectCut: true, enableEndFrames: false
-  });
+  const [settings, setSettings] = useState<GeneratorSettings>(DEFAULT_GENERATOR_SETTINGS);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const addLog = useCallback((message: string, type: LogEntry['type'] = 'info') => {
     const formattedMessage = createLogMessage(message);
+    try {
+      console.log('[STUDIO PRO]', formattedMessage);
+    } catch (_) {}
     setLogs(prev => {
       const next = [...prev.slice(-499), { 
         id: Math.random().toString(36).substr(2, 9), 
@@ -196,6 +251,7 @@ export default function App() {
       return next;
     });
   }, []);
+  const [activeMvEpisode, setActiveMvEpisode] = useState<Episode | null>(null);
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [previewingCutData, setPreviewingCutData] = useState<{ epId: number; cut: Cut } | null>(null);
   useEffect(() => {
@@ -346,14 +402,36 @@ export default function App() {
     const isThemeRandom = !chosenTheme || chosenTheme === RANDOM_SELECT_OPTION;
     const isTasteRandom = !chosenTaste || chosenTaste === RANDOM_SELECT_OPTION;
     const isCharRandom = !chosenChar || chosenChar === 'random';
+    const isMv = settings.productionMode === 'mv' || settings.isMvMode;
     if (isThemeRandom) {
-      chosenTheme = THEMES[Math.floor(Math.random() * THEMES.length)];
+      if (isMv) {
+        // MVモードではファンタジーや怪異を除外し、日常・青春・アオハルまたは都市・街並みテーマのみから抽選
+        const everydayThemes = THEME_CATEGORIES[0]?.items || [
+          '雨上がりの放課後、誰もいない屋上と水たまり',
+          '深夜のコインランドリーと青いネオンの明滅',
+          '黄昏時の路面電車と夕焼け色の街並み',
+          '終電後の静まり返った地下街と反響する足音',
+          '夜風が吹き抜ける海沿いの防波堤と灯台',
+          '日曜午後の喫茶店、窓際の席と琥珀色の珈琲'
+        ];
+        chosenTheme = everydayThemes[Math.floor(Math.random() * everydayThemes.length)];
+      } else {
+        chosenTheme = THEMES[Math.floor(Math.random() * THEMES.length)];
+      }
     }
     if (isTasteRandom) {
-      const tasteKeys = Object.keys(TASTES);
-      chosenTaste = tasteKeys[Math.floor(Math.random() * tasteKeys.length)];
+      if (isMv) {
+        const mvTastes = ['90年代セル画・サイバーパンク', 'アニメ原画・線画スケッチ', '水彩絵の具・淡彩ノスタルジー', '新海誠風・美麗光彩'];
+        const validMvTastes = mvTastes.filter(t => TASTES[t]);
+        chosenTaste = validMvTastes.length > 0 ? validMvTastes[Math.floor(Math.random() * validMvTastes.length)] : Object.keys(TASTES)[0];
+      } else {
+        const tasteKeys = Object.keys(TASTES);
+        chosenTaste = tasteKeys[Math.floor(Math.random() * tasteKeys.length)];
+      }
     }
-    if (isCharRandom) {
+    if (isMv) {
+      chosenChar = 'mv_cap_girl';
+    } else if (isCharRandom) {
       const charIds = SAFE_CHARACTERS.map(c => c.id);
       chosenChar = charIds[Math.floor(Math.random() * charIds.length)];
       const foundChar = SAFE_CHARACTERS.find(c => c.id === chosenChar);
@@ -403,11 +481,13 @@ export default function App() {
                 <EpisodeSection 
                   key={ep.internalId || `ep_${ep.id}_${idx}`} 
                   ep={ep} 
+                  aspectRatio={settings.aspectRatio}
                   onGenerateRemaining={handleGenerateRemaining} 
                   onDownloadZip={handleDownloadZip} 
                   onPreviewCut={(eId, cut) => setPreviewingCutData({ epId: eId, cut })} 
                   onGenerateCover={generateInfographicCover} 
                   onRerollTaste={handleRerollTaste} 
+                  onOpenMvPlayer={epToPlay => setActiveMvEpisode(epToPlay)}
                   onRetry={(eId, cId) => {
                     const epFound = episodes.find(e => e.id === eId);
                     const cutFound = epFound?.cuts.find(c => c.id === cId);
@@ -453,6 +533,7 @@ export default function App() {
                 cut={activeCut} 
                 episodeId={previewingCutData.epId} 
                 currentImageModel={settings.imageModel} 
+                aspectRatio={settings.aspectRatio}
                 hasPrev={hasPrev}
                 hasNext={hasNext}
                 onPrev={handlePrev}
@@ -480,6 +561,15 @@ export default function App() {
               />
             );
           })()}
+          {/* 🎵 音楽MV プレビュー＆動画書き出しモーダル */}
+          {activeMvEpisode && (
+            <MvPlayerModal
+              isOpen={true}
+              ep={activeMvEpisode}
+              aspectRatio={settings.aspectRatio}
+              onClose={() => setActiveMvEpisode(null)}
+            />
+          )}
         </div>
         <input type="file" accept=".json" ref={resumeFileRef} style={{ display: 'none' }} onChange={handleResumeSeries} />
       </div>

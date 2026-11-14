@@ -1,7 +1,7 @@
 export type VideoModelType = 'veo-lite' | 'omni-flash' | 'veo-fast' | 'browser-0pt';
 export type ProductionMode = 'episodes' | 'manga' | 'mv' | 'trivia' | 'quotes' | 'folklore' | 'craft' | 'style-matrix' | 'manzai';
 export type RecommendationModel = VideoModelType | 'none';
-export type VideoRatio = 'none' | 'cut2' | '30%' | '50%' | '100%';
+export type VideoRatio = 'none' | 'cut1' | 'cut2' | '30%' | '50%' | '100%';
 export type KenBurnsPreset = 'none' | 'zoom-in' | 'zoom-out' | 'pan-left' | 'pan-right' | 'tilt-up' | 'tilt-down';
 export type TelopStyle = 'mv-blur-slide' | 'mv-kinetic-pop' | 'mv-neon-glow' | 'cinema-subtle' | 'traditional-sumi' | 'brush-impact' | 'mv-vertical-lyric' | 'mv-center-climax';
 export type TelopTransition = 'blur-slide-left' | 'blur-slide-up' | 'blur-slide-right' | 'zoom-in-bounce' | 'glow-fade' | 'glitch-pop' | 'animista-slide-bck' | 'aos-fade-soft' | 'gsap-kinetic-stagger';
@@ -40,6 +40,16 @@ export interface FocalPoint {
   normalizedCoord: [number, number]; // [x, y] 0.0〜1.0 (例: [0.5, 0.28])
   focalSubject: string;
 }
+export interface EmoCropPoint {
+  id: number;
+  label: string;
+  centerX: number; // 0.0 to 1.0 (50% is 0.5)
+  centerY: number; // 0.0 to 1.0
+  zoomScale: number; // e.g. 1.0 (full) to 2.4 (macro detail)
+  panDirection?: 'none' | 'slow-pan-right' | 'slow-pan-left' | 'slow-tilt-up' | 'slow-zoom-in' | 'slow-zoom-out';
+  emoReason: string; // なぜそこがエモいか・美学的な理由
+  isSafeFromArtifacts: boolean; // 顔や指の破綻エリアを避けた安全領域判定
+}
 export interface Cut {
   id: number;
   promptEn: string;
@@ -77,6 +87,12 @@ export interface Cut {
   videoModelUsed?: string;
   videoDuration?: number;
   telop?: TelopConfig;
+  // 🎵 音楽MV (12Cut×AIエモ切り抜き) 専用メタデータ
+  emoCrops?: EmoCropPoint[];
+  isAnalyzingEmo?: boolean;
+  visualArtifactWarning?: string;
+  giantTypographyLetter?: string;
+  cinemagraphMotionTargets?: string;
   isDirecting: boolean; 
   isGeneratingImage: boolean;
   isGeneratingVideo: boolean;
@@ -158,6 +174,16 @@ export interface Episode {
   packageZipBlobUrl?: string;
   packageZipFilename?: string;
   packageZipSizeStr?: string;
+  // 🎵 音楽MV (12Cut×AIエモ切り抜き) 専用
+  songTitle?: string;
+  lyricsMemo?: string;
+  songAudioBase64?: string;
+  songAudioMimeType?: string;
+  songAudioFilename?: string;
+  refCharacterImageBase64?: string;
+  refCharacterImageMediaId?: string;
+  mvVibe?: 'pop' | 'chill';
+  mvStyleMode?: 'lofi_loop' | 'unified' | 'mix';
   soundPrompt?: string;
   musicStyle?: string;
   instrumentalTrack?: unknown;
@@ -184,12 +210,23 @@ export interface GeneratorSettings {
   totalEpisodes?: number;
   previewCutCount: number; 
   parallelCount: number;
-  executionProfile?: ExecutionProfileType;
+  executionProfile: ExecutionProfileType;
   autoVideo: boolean;
+  videoDuration?: number;
   autoDownload: boolean;
   superBackoff?: boolean;
   aspectRatio?: '9:16' | '1:1' | '16:9';
   characterId?: string;
+  // 🎵 音楽MV (12Cut×AIエモ切り抜き) 専用設定
+  songTitle?: string;
+  lyricsMemo?: string;
+  refCharacterImageBase64?: string;
+  refCharacterImageMediaId?: string;
+  songAudioBase64?: string;
+  songAudioMimeType?: string;
+  songAudioFilename?: string;
+  mvVibe?: 'pop' | 'chill';
+  mvStyleMode?: 'lofi_loop' | 'unified' | 'mix';
   enableTurnaroundSheet?: boolean;
   autoApproveTurnaround?: boolean;
   enableObjectCut?: boolean;
@@ -222,6 +259,7 @@ export interface GenerationTask {
   camera?: string;
   previousContexts?: any;
   antiPreviousMandate?: string;
+  skipAutoVideo?: boolean;
 }
 export interface ProductionPipelineContext {
   settings: GeneratorSettings;
@@ -281,4 +319,3 @@ export interface LogEntry {
   message: string;
   type: 'info' | 'process' | 'success' | 'warning' | 'error';
 }
-

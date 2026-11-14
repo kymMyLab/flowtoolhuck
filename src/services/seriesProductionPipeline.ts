@@ -21,8 +21,10 @@ import {
   callWithRetry, 
   formatErrorMessage, 
   extractImageBase64, 
+  extractVideoBase64,
   extractMediaId,
-  sleepWithAbortCheck
+  sleepWithAbortCheck,
+  cropImageBase64
 } from './utils';
 import { 
   generateSafeEpisodeScript, 
@@ -34,7 +36,8 @@ import {
   extractHighlights, 
   sanitizeForYouTubeSafety, 
   buildCharacterTurnaroundPrompt, 
-  buildAdaptiveInfographicCoverPrompt 
+  buildAdaptiveInfographicCoverPrompt,
+  analyzeMasterImageFor12Crops
 } from './directorService';
 import { getStoryboardPreset } from './promptEngine';
 import { downloadZip } from './zipPackager';
@@ -66,7 +69,7 @@ export function createPipelineCut(
   const dramaStaging = resolveRecommendedTelopStaging(cutIndex + 1, isMv, false, undefined, effectiveMode);
   Object.assign(cut.telop, dramaStaging);
   cut.telop.highlights = extractHighlights(narration, cutData.highlights || sharedScript.highlightWords);
-  cut.isObjectOnly = settings.enableObjectCut !== false ? (cutData.isObjectOnly || false) : false;
+  cut.isObjectOnly = isMv ? false : (settings.enableObjectCut !== false ? (cutData.isObjectOnly || false) : false);
   cut.focalPoint = cutData.focalPoint;
   cut.compositionPrompt = cutData.compositionPrompt;
   cut.veoMotionPrompt = cutData.veoMotionPrompt;
@@ -84,6 +87,9 @@ export async function ensureCharacterTurnaround(
   if (isAbortedRef.current) return {};
   if (ep.characterTurnaroundMediaId) {
     return { mediaId: ep.characterTurnaroundMediaId, base64: ep.characterTurnaroundBase64 };
+  }
+  if (ep.isMvMode || settings.isMvMode || settings.productionMode === 'mv') {
+    return {};
   }
   if (!ep.isMvMode && !settings.isMvMode && activeReferenceRef.current?.mediaId) {
     return { mediaId: activeReferenceRef.current.mediaId };
@@ -371,9 +377,13 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
   const endEpIndex = existingMaxId + totalEpCount;
   const totalCutsPerEpisode = settings.cutCount || CUTS_PER_EPISODE;
   const isNightProfile = settings.executionProfile === 'night_safe';
-  addLog(`${modeInfo.icon} 【${modeInfo.label}モード (${isNightProfile ? '🌙平日夜間直列安全' : '⚡土日快速'})】全 ${totalEpCount} ${modeInfo.unit}（各${totalCutsPerEpisode}Cut / 先行${settings.previewCutCount}枚）の制作を開始します！`, 'process');
   const baseRawTitle = settings.theme.split('（')[0].replace(/^[^\w\s一-龯]+/, '').trim() || '情景の記録';
-  const defaultEnTitle = 'Cinematic Story';
+  const isMvMode = curMode === 'mv' || settings.isMvMode;
+  const MV_CAP_GIRL_DNA = 'cool aesthetic Japanese anime girl wearing a backwards baseball cap, oversized street hoodie, denim shorts, stylish high-top sneakers, sleek over-ear headphones resting around her neck, soft wavy hair, expressive calm eyes';
+  const MV_DEFAULT_TITLES = ['AFTER SCHOOL', 'MIDNIGHT STEP', 'DAYDREAM POP', 'SUMMER BREEZE', 'BLUE MOMENT', 'NEON HORIZON'];
+  const defaultEnTitle = isMvMode 
+    ? ((settings.songTitle || '').trim() || MV_DEFAULT_TITLES[Math.floor(Math.random() * MV_DEFAULT_TITLES.length)])
+    : 'Cinematic Story';
   for (let epIndex = startEpIndex; epIndex <= endEpIndex; epIndex++) {
     const currentBatchStep = epIndex - startEpIndex + 1;
     if (isAbortedRef.current) {
@@ -413,6 +423,12 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       characterId: settings.characterId,
       targetCutCount: totalCutsPerEpisode,
       superBackoff: settings.superBackoff,
+      mvSettings: curMode === 'mv' ? { 
+        songTitle: settings.songTitle, 
+        lyricsMemo: settings.lyricsMemo,
+        mvVibe: settings.mvVibe,
+        mvStyleMode: settings.mvStyleMode
+      } : undefined,
       abortCheck: () => isAbortedRef.current,
       addLog
     });
@@ -431,15 +447,28 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
       id: epIndex, internalId: crypto.randomUUID(),
       titleJp: displayTitleJp, titleEn: displayTitleEn,
       summary: parsed.summary || `${safeTopicJp}の情景`, 
-      characterDna: parsed.characterDna,
+      characterDna: ctx.activeReferenceRef.current?.characterDna || (isMvMode ? MV_CAP_GIRL_DNA : parsed.characterDna),
       eraAnalysis: parsed.eraAnalysisJp || '作品を引き立てる演出構図。',
       forbiddenAnachronisms: parsed.forbiddenAnachronisms || ['過剰な劇的演出'],
       authenticAttireEn: parsed.authenticAttireEn || 'Cinematic style attire', forbiddenKeywordsEn: 'explosive drama',
       coverCatchphraseJp: parsed.coverCatchphraseJp || '心揺さぶる一瞬の物語。', highlightWords: parsed.highlightWords || ['光'],
       cuts: baseCutsData, isGenerating: true, isGeneratingRemainingImages: false, isBatchGeneratingVideos: false,
       isPreviewDone: false, isDone: false, characterId: settings.characterId, taste: settings.taste, era: settings.era, theme: settings.theme,
-      isMvMode: curMode === 'mv', productionMode: curMode as any
+      isMvMode: curMode === 'mv', productionMode: curMode as any,
+      songTitle: settings.songTitle,
+      lyricsMemo: settings.lyricsMemo,
+      songAudioBase64: settings.songAudioBase64,
+      songAudioMimeType: settings.songAudioMimeType,
+      songAudioFilename: settings.songAudioFilename,
+      refCharacterImageBase64: settings.refCharacterImageBase64,
+      refCharacterImageMediaId: settings.refCharacterImageMediaId || ctx.activeReferenceRef.current?.mediaId,
+      mvVibe: settings.mvVibe,
+      mvStyleMode: settings.mvStyleMode
     };
+    if (newEpisode.refCharacterImageMediaId || ctx.activeReferenceRef.current?.mediaId) {
+      newEpisode.masterAnchorMediaId = newEpisode.refCharacterImageMediaId || ctx.activeReferenceRef.current?.mediaId;
+      newEpisode.masterAnchorBase64 = newEpisode.refCharacterImageBase64;
+    }
     if (!newEpisode.isMvMode && !settings.isMvMode) {
       ctx.activeReferenceRef.current = undefined;
     }
@@ -453,7 +482,145 @@ export async function runShortsBatchProduction(ctx: ProductionPipelineContext, c
     episodesRef.current = [...episodesRef.current.filter((e: Episode) => e.id !== epIndex), newEpisode];
     addLog(`✨ 第${epIndex}${modeInfo.unit}『${newEpisode.titleJp}』全${cutsCount}カットの脚本確定！（C01〜C${String(cutsCount).padStart(2, '0')}を配置、先行${settings.previewCutCount}枚を描画開始）`, 'success');
     const targetCutCount = Math.min(settings.previewCutCount, cutsCount);
-    await runTasks(buildCutTasks(newEpisode, newEpisode.cuts.slice(0, targetCutCount)));
+    // 🎵 【MVモード: 1枚絵固定・12種微動 (mvStyleMode === 'lofi_loop' または未指定)】
+    if (isMvMode && (!settings.mvStyleMode || settings.mvStyleMode === 'lofi_loop')) {
+      addLog(`✨ 【1枚絵固定・12種微動】Cut 1（マスター1枚絵）を1:1正方形で高精度描画中...`, 'process');
+      // 1) Cut 1 のみ通常画像タスクを実行（後続で12種類の異なる微動動画を生成するためCut 1動画化はスキップ）
+      const cut1Task = buildCutTasks(newEpisode, [newEpisode.cuts[0]]).map(t => ({
+        ...t,
+        skipAutoVideo: true
+      }));
+      await runTasks(cut1Task);
+      if (isAbortedRef.current) {
+        updateEpisode(epIndex, { isGenerating: false });
+        break;
+      }
+      const epAfterCut1 = episodesRef.current.find((e: Episode) => e.id === epIndex) || newEpisode;
+      const masterCut = epAfterCut1.cuts[0];
+      const masterB64 = masterCut?.imageBase64 || settings.refCharacterImageBase64;
+      const masterMediaId = masterCut?.imageMediaId || settings.refCharacterImageMediaId;
+      if (masterB64 && masterMediaId && !isAbortedRef.current) {
+        addLog(`🔍 【Geminiマスター解析】1枚絵の中に実在する動かせるパーツを解析中...`, 'process');
+        const lyricsList = epAfterCut1.cuts.map(c => c.narrationJp || '');
+        const masterCrops = await analyzeMasterImageFor12Crops(masterB64, lyricsList, epAfterCut1.titleEn || settings.songTitle || '');
+        addLog(`🔁 【1枚絵複製配置】トリミングなしの無傷のマスター絵を全12カットへ同期配置中...`, 'process');
+        for (let cIdx = 0; cIdx < cutsCount; cIdx++) {
+          if (isAbortedRef.current) break;
+          const cropPlan = masterCrops[cIdx] || { 
+            cutId: cIdx + 1,
+            label: `アングル #${cIdx + 1}`,
+            centerX: 0.5, 
+            centerY: 0.5, 
+            zoomScale: 1.0, 
+            panDirection: 'none' as const,
+            emoReason: 'マスター構図',
+            cinemagraphMotionTargets: 'delicate swaying of hair tips/strands' 
+          };
+          // 切抜き・加工一切なしのマスター絵そのものを全カットに複製配置
+          const updatedCut: Partial<Cut> = {
+            imageBase64: masterB64,
+            imageMediaId: masterMediaId,
+            isGeneratingImage: false,
+            cinemagraphMotionTargets: cropPlan.cinemagraphMotionTargets,
+            emoCrops: masterCut.emoCrops || [{
+              id: 1,
+              label: cropPlan.label,
+              centerX: 0.5,
+              centerY: 0.5,
+              zoomScale: 1.05,
+              panDirection: cropPlan.panDirection,
+              emoReason: cropPlan.emoReason,
+              isSafeFromArtifacts: true
+            }]
+          };
+          // 割合判定に基づくVeo 3.1 Lite動画化（16:9横動画・8秒）
+          const ratioMode = settings.videoRatio || (settings.autoVideo ? '100%' : 'none');
+          const cutNum = cIdx + 1;
+          const isWithinPreview = (cIdx < targetCutCount);
+          let shouldVid = false;
+          if (isWithinPreview) {
+            if (ratioMode === 'cut1') shouldVid = (cutNum === 1);
+            else if (ratioMode === '30%') shouldVid = (cutNum % 3 === 1);
+            else if (ratioMode === '50%') shouldVid = (cutNum % 2 === 1);
+            else if (ratioMode === '100%') shouldVid = true;
+          }
+          if (shouldVid && masterMediaId && !isAbortedRef.current) {
+            const safeDuration = [4, 6, 8].includes(settings.videoDuration || 8) ? (settings.videoDuration || 8) : 8;
+            addLog(`🎬 Ep.${epIndex} C${String(cutNum).padStart(2, '0')}: 【Veo 3.1 Lite】シネマグラフ動画生成中（16:9・${safeDuration}秒・${cropPlan.label}）...`, 'process');
+            
+            // カード上にスピナー（🎬 8s動画化中...）を表示
+            setEpisodes((prev: Episode[]) => prev.map(e => {
+              if (e.id !== epIndex) return e;
+              const newCuts = [...e.cuts];
+              newCuts[cIdx] = { ...newCuts[cIdx], isGeneratingVideo: true, videoDuration: safeDuration };
+              return { ...e, cuts: newCuts };
+            }));
+            episodesRef.current = episodesRef.current.map((e: Episode) => {
+              if (e.id !== epIndex) return e;
+              const newCuts = [...e.cuts];
+              newCuts[cIdx] = { ...newCuts[cIdx], isGeneratingVideo: true, videoDuration: safeDuration };
+              return { ...e, cuts: newCuts };
+            });
+            // 12カットそれぞれ異なる微細モーション指示（16:9・背景と文字は完全フリーズ）
+            const cinemagraphPrompt = `Static locked tripod camera, zero camera movement, completely freeze background architecture, 3D letters, furniture, and character body position without any morphing or warping. Cinemagraph style subtle local loop motion ONLY on: ${cropPlan.cinemagraphMotionTargets}. High consistency 2D anime.`;
+            
+            try {
+              const videoRes = await callWithRetry<any>(
+                () => Flow.generate.video({
+                  prompt: cinemagraphPrompt,
+                  firstFrameImageMediaId: masterMediaId,
+                  modelDisplayName: 'Veo 3.1 - Lite',
+                  durationSeconds: safeDuration,
+                  aspectRatio: '16:9',
+                  resolution: '720p'
+                }),
+                undefined,
+                { maxRetries: 2, timeoutMs: 180000, abortCheck: () => isAbortedRef.current }
+              );
+              if (videoRes && !isAbortedRef.current) {
+                let vidB64 = extractVideoBase64(videoRes);
+                const vidMid = extractMediaId(videoRes) || (videoRes as any)?.mediaId;
+                if (!vidB64 && vidMid && typeof (Flow as any)?.media?.getBase64 === 'function') {
+                  try { vidB64 = extractVideoBase64(await (Flow as any).media.getBase64(vidMid)); } catch (_) {}
+                }
+                updatedCut.videoBase64 = vidB64;
+                updatedCut.videoMediaId = vidMid;
+                updatedCut.videoModelUsed = 'Veo 3.1 - Lite';
+                updatedCut.videoDuration = safeDuration;
+                updatedCut.isGeneratingVideo = false;
+                addLog(`🎉 Ep.${epIndex} C${String(cutNum).padStart(2, '0')}: Veo動画(${safeDuration}s)完成！`, 'success');
+              } else {
+                updatedCut.isGeneratingVideo = false;
+              }
+            } catch (vidErr: any) {
+              updatedCut.isGeneratingVideo = false;
+              addLog(`⚠️ Ep.${epIndex} C${String(cutNum).padStart(2, '0')}: 動画生成スキップ: ${formatErrorMessage(vidErr)}`, 'warning');
+            }
+            // 連続動画生成時のレート制限待機（夜間安全30秒、日中8秒）
+            const vidWaitMs = isNightProfile ? 30000 : 8000;
+            if (cIdx < cutsCount - 1) {
+              await sleepWithAbortCheck(vidWaitMs, () => isAbortedRef.current);
+            }
+          }
+          // カットの更新
+          setEpisodes((prev: Episode[]) => prev.map(e => {
+            if (e.id !== epIndex) return e;
+            const newCuts = [...e.cuts];
+            newCuts[cIdx] = { ...newCuts[cIdx], ...updatedCut };
+            return { ...e, cuts: newCuts };
+          }));
+          episodesRef.current = episodesRef.current.map((e: Episode) => {
+            if (e.id !== epIndex) return e;
+            const newCuts = [...e.cuts];
+            newCuts[cIdx] = { ...newCuts[cIdx], ...updatedCut };
+            return { ...e, cuts: newCuts };
+          });
+        }
+      }
+    } else {
+      // 従来の複数背景個別描画フロー (unified または mix)
+      await runTasks(buildCutTasks(newEpisode, newEpisode.cuts.slice(0, targetCutCount)));
+    }
     if (isAbortedRef.current) {
       updateEpisode(epIndex, { isGenerating: false });
       break;

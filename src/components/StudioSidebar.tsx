@@ -226,60 +226,303 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   return (
     <div className="w-[320px] bg-white border-r border-slate-200 flex flex-col h-full shrink-0 shadow-sm z-30 select-none">
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0">
-        {/* 1. 主人公キャラクター選択 */}
-        <div className="flex flex-col gap-1.5 shrink-0">
-          <SectionLabel>🎙️ 主人公キャラクター (VOICEVOX / 東北)</SectionLabel>
-          
-          {/* 🎲 ランダム（おまかせ）全幅ボタン */}
-          <button
-            type="button"
-            onClick={() => applySettingsUpdate(s => ({ ...s, characterId: 'random' }))}
-            className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
-              isRandomChar
-                ? 'border-indigo-500 bg-indigo-50/90 shadow-xs ring-1 ring-indigo-500 text-indigo-950'
-                : 'border-slate-200 hover:border-slate-300 bg-white text-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-xl shrink-0">🎲</span>
-              <div className="flex flex-col min-w-0">
-                <span className={`text-xs font-bold truncate ${isRandomChar ? 'text-indigo-900' : 'text-slate-800'}`}>
-                  ランダム（おまかせ）
-                </span>
-                <span className="text-[9.5px] text-slate-500 truncate">制作開始時に7人から自動選出</span>
+        {/* 1. キャラクター or 音楽MV専用設定パネル */}
+        {settings.productionMode === 'mv' ? (
+          <div className="flex flex-col gap-3 shrink-0 p-3 bg-gradient-to-b from-purple-50/80 to-indigo-50/40 border border-purple-200 rounded-2xl shadow-xs">
+            <div className="flex items-center justify-between border-b border-purple-200/60 pb-2">
+              <div className="flex items-center gap-1.5 text-purple-900">
+                <span className="text-base">🎵</span>
+                <span className="text-xs font-black tracking-tight">音楽MV (12Cut×AIエモ切り抜き)</span>
               </div>
+              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-600 text-white">
+                Lo-Fi日常
+              </span>
             </div>
-            {isRandomChar && (
-              <span className="material-symbols-outlined text-[18px] text-indigo-600 shrink-0">check_circle</span>
-            )}
-          </button>
-          {/* 全7キャラクターのグリッド */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {SAFE_CHARACTERS.map(char => {
-              const isSelected = settings.characterId === char.id;
-              return (
+            {/* 1) 曲のバイブス (mvVibe) */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-slate-700">🌈 曲のバイブス (世界観・色彩)</span>
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-white border border-slate-200 rounded-xl">
                 <button
-                  key={char.id}
                   type="button"
-                  onClick={() => applySettingsUpdate(s => ({ ...s, characterId: char.id }))}
-                  className={`p-2 rounded-xl border text-left transition-all flex items-center gap-2 cursor-pointer ${
-                    isSelected
-                      ? 'border-indigo-500 bg-indigo-50/80 shadow-xs ring-1 ring-indigo-500'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  onClick={() => applySettingsUpdate(s => ({ ...s, mvVibe: 'pop' }))}
+                  className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                    (settings.mvVibe || 'pop') === 'pop'
+                      ? 'bg-amber-500 text-white shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <span className="text-xl shrink-0">{char.icon}</span>
-                  <div className="flex flex-col min-w-0">
-                    <span className={`text-xs font-bold truncate ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
-                      {char.nameJa}
-                    </span>
-                    <span className="text-[9px] text-slate-500 truncate">公式DNA保持</span>
-                  </div>
+                  <span>✨ ポップ・青春</span>
                 </button>
-              );
-            })}
+                <button
+                  type="button"
+                  onClick={() => applySettingsUpdate(s => ({ ...s, mvVibe: 'chill' }))}
+                  className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                    settings.mvVibe === 'chill'
+                      ? 'bg-indigo-600 text-white shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span>🌙 チル・夜更かし</span>
+                </button>
+              </div>
+            </div>
+            {/* 2) 12Cutの構成・画風スタイル (mvStyleMode) */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-700">🎬 12Cutの構成・画風スタイル</span>
+                <span className="text-[8.5px] text-purple-700 font-semibold">
+                  {(!settings.mvStyleMode || settings.mvStyleMode === 'lofi_loop') ? '無傷1枚絵・破綻ゼロ' : '12枚個別描画'}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-1 p-1 bg-white border border-slate-200 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => applySettingsUpdate(s => ({ ...s, mvStyleMode: 'lofi_loop' }))}
+                  className={`py-1.5 px-2 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center justify-between text-left ${
+                    (!settings.mvStyleMode || settings.mvStyleMode === 'lofi_loop')
+                      ? 'bg-purple-600 text-white shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span>🔁</span>
+                    <span>1枚絵固定・12種微動 (推奨・破綻ゼロ)</span>
+                  </span>
+                  {(!settings.mvStyleMode || settings.mvStyleMode === 'lofi_loop') && (
+                    <span className="material-symbols-outlined text-[14px]">check</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applySettingsUpdate(s => ({ ...s, mvStyleMode: 'unified' }))}
+                  className={`py-1.5 px-2 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center justify-between text-left ${
+                    settings.mvStyleMode === 'unified'
+                      ? 'bg-purple-600 text-white shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span>🎯</span>
+                    <span>12シーン・1画風統一 (個別描画)</span>
+                  </span>
+                  {settings.mvStyleMode === 'unified' && (
+                    <span className="material-symbols-outlined text-[14px]">check</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applySettingsUpdate(s => ({ ...s, mvStyleMode: 'mix' }))}
+                  className={`py-1.5 px-2 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center justify-between text-left ${
+                    settings.mvStyleMode === 'mix'
+                      ? 'bg-purple-600 text-white shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span>🎨</span>
+                    <span>12シーン・12Cut合作 (12画風リレー)</span>
+                  </span>
+                  {settings.mvStyleMode === 'mix' && (
+                    <span className="material-symbols-outlined text-[14px]">check</span>
+                  )}
+                </button>
+              </div>
+              <p className="text-[8.5px] text-slate-500 font-mono px-1">
+                {(!settings.mvStyleMode || settings.mvStyleMode === 'lofi_loop')
+                  ? 'Cut 1の同じ無傷の1枚絵（トリミングなし）を全カットに配置し、8秒ごとに異なる微動（髪・服・湯気・タップ等）で破綻なく動画化'
+                  : settings.mvStyleMode === 'unified'
+                    ? '選択した1つの画風で、全12カットそれぞれ別々のシーン背景を描画'
+                    : '12人の絵師がリレー描画するように全12カットで画風が多彩に変化'}
+              </p>
+            </div>
+            {/* 曲タイトル (巨大立体文字用) */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-700">🔤 曲タイトル / 巨大文字英単語</span>
+                <span className="text-[8.5px] text-purple-700 font-semibold">背景に巨大立体文字で出現</span>
+              </div>
+              <input
+                type="text"
+                value={settings.songTitle || ''}
+                onChange={e => applySettingsUpdate(s => ({ ...s, songTitle: e.target.value }))}
+                placeholder="例: KIMI & BOKU, MIDNIGHT STEP..."
+                className="w-full bg-white border border-purple-300 focus:border-purple-600 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none shadow-2xs font-mono font-bold"
+              />
+            </div>
+            {/* 歌詞テキスト / 情景メモ */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-700">✍️ 歌詞テキスト / 情景メモ (複数行)</span>
+                <span className="text-[8.5px] text-slate-500 font-semibold">12Cutへ自動割り当て</span>
+              </div>
+              <textarea
+                value={settings.lyricsMemo || ''}
+                onChange={e => applySettingsUpdate(s => ({ ...s, lyricsMemo: e.target.value }))}
+                placeholder="夕暮れの教室、伸びるふたつの影&#10;交差点の赤信号、ヘッドホンのビート&#10;雨上がりの水たまりに映るネオン..."
+                rows={3}
+                className="w-full bg-white border border-purple-300 focus:border-purple-600 rounded-xl p-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none resize-none shadow-2xs leading-relaxed"
+              />
+            </div>
+            {/* 基準キャラ・画風リファレンス画像（任意アップロード枠） */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-700">🖼️ キャラ・画風リファレンス画像</span>
+                {settings.refCharacterImageBase64 && (
+                  <button
+                    type="button"
+                    onClick={() => applySettingsUpdate(s => ({ ...s, refCharacterImageBase64: undefined, refCharacterImageMediaId: undefined }))}
+                    className="text-[9px] text-red-600 hover:underline cursor-pointer"
+                  >
+                    解除
+                  </button>
+                )}
+              </div>
+              <label className="border border-dashed border-purple-300 hover:border-purple-500 rounded-xl p-2 bg-white/80 flex items-center gap-2 cursor-pointer transition-colors shadow-2xs">
+                {settings.refCharacterImageBase64 ? (
+                  <img
+                    src={`data:image/png;base64,${settings.refCharacterImageBase64.replace(/^data:image\/\w+;base64,/, '')}`}
+                    alt="Ref"
+                    className="w-8 h-8 rounded-lg object-cover border border-purple-200 shrink-0"
+                  />
+                ) : (
+                  <span className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center material-symbols-outlined text-sm shrink-0">
+                    add_photo_alternate
+                  </span>
+                )}
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-[10.5px] font-bold text-slate-800 truncate">
+                    {settings.refCharacterImageBase64 ? '参照画像をセット済' : '手持ちイラストをセット (任意)'}
+                  </span>
+                  <span className="text-[8.5px] text-slate-500 truncate">未セット時はLo-Fi少女を自動生成</span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        const b64 = (reader.result as string).split(',')[1];
+                        applySettingsUpdate(s => ({ ...s, refCharacterImageBase64: b64 }));
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            {/* 楽曲音声ファイル（MP3 / WAV / OGG）アップロード枠 */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-700">🎵 楽曲音声ファイル (音ハメ・動画用)</span>
+                {settings.songAudioBase64 && (
+                  <button
+                    type="button"
+                    onClick={() => applySettingsUpdate(s => ({
+                      ...s,
+                      songAudioBase64: undefined,
+                      songAudioMimeType: undefined,
+                      songAudioFilename: undefined
+                    }))}
+                    className="text-[9px] text-red-600 hover:underline cursor-pointer"
+                  >
+                    解除
+                  </button>
+                )}
+              </div>
+              <label className="border border-dashed border-indigo-300 hover:border-indigo-500 rounded-xl p-2 bg-white/80 flex items-center gap-2 cursor-pointer transition-colors shadow-2xs">
+                <span className={`w-8 h-8 rounded-lg flex items-center justify-center material-symbols-outlined text-sm shrink-0 ${
+                  settings.songAudioBase64 ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-600'
+                }`}>
+                  {settings.songAudioBase64 ? 'audiotrack' : 'upload_file'}
+                </span>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-[10.5px] font-bold text-slate-800 truncate">
+                    {settings.songAudioFilename || '楽曲ファイルを選択 (MP3/WAV/OGG)'}
+                  </span>
+                  <span className="text-[8.5px] text-slate-500 truncate">低音キック解析＆60fps書き出し対応</span>
+                </div>
+                <input
+                  type="file"
+                  accept="audio/mp3,audio/wav,audio/ogg,audio/mpeg"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        const b64 = (reader.result as string).split(',')[1];
+                        applySettingsUpdate(s => ({
+                          ...s,
+                          songAudioBase64: b64,
+                          songAudioMimeType: file.type || 'audio/mp3',
+                          songAudioFilename: file.name
+                        }));
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col gap-1.5 shrink-0">
+            <SectionLabel>🎙️ 主人公キャラクター (VOICEVOX / 東北)</SectionLabel>
+            
+            {/* 🎲 ランダム（おまかせ）全幅ボタン */}
+            <button
+              type="button"
+              onClick={() => applySettingsUpdate(s => ({ ...s, characterId: 'random' }))}
+              className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                isRandomChar
+                  ? 'border-indigo-500 bg-indigo-50/90 shadow-xs ring-1 ring-indigo-500 text-indigo-950'
+                  : 'border-slate-200 hover:border-slate-300 bg-white text-slate-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-xl shrink-0">🎲</span>
+                <div className="flex flex-col min-w-0">
+                  <span className={`text-xs font-bold truncate ${isRandomChar ? 'text-indigo-900' : 'text-slate-800'}`}>
+                    ランダム（おまかせ）
+                  </span>
+                  <span className="text-[9.5px] text-slate-500 truncate">制作開始時に7人から自動選出</span>
+                </div>
+              </div>
+              {isRandomChar && (
+                <span className="material-symbols-outlined text-[18px] text-indigo-600 shrink-0">check_circle</span>
+              )}
+            </button>
+            {/* 全7キャラクターのグリッド */}
+            <div className="grid grid-cols-2 gap-1.5">
+              {SAFE_CHARACTERS.map(char => {
+                const isSelected = settings.characterId === char.id;
+                return (
+                  <button
+                    key={char.id}
+                    type="button"
+                    onClick={() => applySettingsUpdate(s => ({ ...s, characterId: char.id }))}
+                    className={`p-2 rounded-xl border text-left transition-all flex items-center gap-2 cursor-pointer ${
+                      isSelected
+                        ? 'border-indigo-500 bg-indigo-50/80 shadow-xs ring-1 ring-indigo-500'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <span className="text-xl shrink-0">{char.icon}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className={`text-xs font-bold truncate ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
+                        {char.nameJa}
+                      </span>
+                      <span className="text-[9px] text-slate-500 truncate">公式DNA保持</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {/* 2. 先行カット生成数 */}
         <div className="flex flex-col gap-1.5 shrink-0">
           <div className="flex items-center justify-between">
@@ -366,6 +609,84 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               </span>
             </button>
           </div>
+        </div>
+        {/* 🎬 全モード共通: Veo 3.1 Lite 自動動画化 (シネマグラフ方式) */}
+        <div className="flex flex-col gap-2 shrink-0 p-2.5 rounded-xl border border-purple-200 bg-purple-50/40">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🎬</span>
+              <span className="text-[11px] font-black text-slate-800">Veo 3.1 Lite 自動動画化</span>
+            </div>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${settings.videoRatio !== 'none' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'}`}>
+              {settings.videoRatio !== 'none' ? `動画化: ${settings.videoRatio}` : 'OFF'}
+            </span>
+          </div>
+          {/* 動画化割合ボタン群 */}
+          <div className="flex flex-col gap-1">
+            <div className="grid grid-cols-5 gap-1 p-1 bg-white border border-slate-200 rounded-xl shadow-2xs">
+              {[
+                { label: 'OFF', value: 'none', sub: '0%' },
+                { label: '1枚だけ', value: 'cut1', sub: 'C01' },
+                { label: '30%', value: '30%', sub: '約1/3' },
+                { label: '50%', value: '50%', sub: '交互' },
+                { label: '100%', value: '100%', sub: '全Cut' }
+              ].map(item => {
+                const isSelected = (settings.videoRatio || 'none') === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => applySettingsUpdate(s => ({
+                      ...s,
+                      videoRatio: item.value as any,
+                      autoVideo: item.value !== 'none'
+                    }))}
+                    className={`py-1.5 px-0.5 rounded-lg text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                      isSelected
+                        ? 'bg-purple-600 text-white font-black shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-[10px] font-bold leading-tight">{item.label}</span>
+                    <span className={`text-[8px] leading-tight ${isSelected ? 'text-purple-200' : 'text-slate-400'}`}>
+                      {item.sub}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[8.5px] text-slate-500 font-mono px-1">
+              {settings.videoRatio === 'none' && '静止画のみ生成（動画クレジット消費なし）'}
+              {settings.videoRatio === 'cut1' && 'Cut 01のみVeo 3.1 Liteで動画化'}
+              {settings.videoRatio === '30%' && '約3カットに1回動画化（C01, C04, C07, C10...）'}
+              {settings.videoRatio === '50%' && '奇数カットを半分動画化（C01, C03, C05, C07...）'}
+              {settings.videoRatio === '100%' && '生成した全カットをVeo 3.1 Liteで動画化'}
+            </p>
+          </div>
+          {settings.videoRatio !== 'none' && (
+            <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-purple-200/60">
+              <span className="text-[9.5px] font-bold text-slate-700">生成秒数:</span>
+              <div className="flex items-center gap-1">
+                {[8, 6, 4].map(sec => {
+                  const isSecSelected = (settings.videoDuration || 8) === sec;
+                  return (
+                    <button
+                      key={sec}
+                      type="button"
+                      onClick={() => applySettingsUpdate(s => ({ ...s, videoDuration: sec }))}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                        isSecSelected
+                          ? 'bg-purple-600 text-white font-black shadow-2xs'
+                          : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                      }`}
+                    >
+                      {sec}秒{sec === 8 ? ' (推奨)' : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
         {/* 4. 制作中停止 / 制作データ消去コントロール */}
         {(isProducing || (episodes.length > 0 && onClearEpisodes)) && (

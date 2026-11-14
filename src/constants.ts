@@ -565,6 +565,7 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
   parallelCount: 1,
   executionProfile: 'night_safe',
   autoVideo: false,
+  videoDuration: 8,
   autoDownload: true,
   superBackoff: true,
   isMvMode: false,
@@ -573,7 +574,9 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
   enableTurnaroundSheet: true,
   autoApproveTurnaround: true,
   enableObjectCut: true,
-  enableEndFrames: false
+  enableEndFrames: false,
+  mvVibe: 'pop',
+  mvStyleMode: 'lofi_loop'
 };
 export const DEFAULT_IMAGE_MODEL = IMAGE_MODELS_REGISTRY[1]?.label || '🍌 Nano Banana 2.1';
 export const PRODUCTION_MODE_OPTIONS = PRODUCTION_MODES_LIST;

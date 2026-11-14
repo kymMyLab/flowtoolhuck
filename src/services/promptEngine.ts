@@ -248,12 +248,73 @@ export function getStoryboardPreset(
   isMangaMode?: boolean
 ): { scale: string; angle: string; tag: string } {
   if (isMvMode) {
-    const cycleIdx = Math.max(0, cutId - 1) % UNIVERSAL_CINE_CYCLE.length;
-    const rule = UNIVERSAL_CINE_CYCLE[cycleIdx];
+    const mvCompositions = [
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot at twilight footbridge: letters of giant word monument scattered along the railing, cool anime girl seated inside the hollow "O" dangling high-top sneakers, steaming coffee cup on letter ledge, wet ground reflections and tangled sunset powerlines in background', 
+        tag: '駅前歩道橋・夕暮れ (4ゾーン全景)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot in rain-slicked midnight alley: multi-letter 3D word sculpture with pink and cyan neon glow reflecting on puddle ripples, cool anime girl lying flat on the wide curve of "U" gazing up, clear umbrella and soda bottle on curb, cozy cafe lamp in background', 
+        tag: '雨上がり夜路地 (ネオン反射)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot on school rooftop: cobalt blue summer sky and towering thunderhead clouds, chain-link wire fence, pastel 3D letters scattered along tiled rooftop, cool anime girl perched on "H"/"A" crossbar holding headphones, open sketchbook nearby', 
+        tag: '屋上・青空と入道雲 (パステル文字)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot outside retro kissaten cafe: cobblestone street pavement, warm amber light spilling through textured glass, weathered brick 3D letters, cool anime girl leaning on "L"/"E" step holding smartphone, steaming cup and potted plant in foreground', 
+        tag: 'レトロ純喫茶前 (石畳と珈琲)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot outside late-night laundromat: cyan fluorescent interior glow through big glass window, glowing vending machine, neon 3D letters scattered on sidewalk, cool anime girl peeking playfully between two letters, beverage can on concrete curb', 
+        tag: '深夜コインランドリー (自販機と光)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot at coastal railroad crossing: sparkling blue ocean horizon, yellow crossing barrier, bright sunny sky with white clouds, massive letters lining the seaside road, cool anime girl sitting in cool letter shadow, asphalt road markings', 
+        tag: '海沿いの踏切 (煌めく水面)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot under elevated railway: urban graffiti brick wall, iron bridge girders, concrete 3D letters staggered on pavement, cool anime girl walking atop connected letters like a balance beam, bicycle and spray cans in foreground', 
+        tag: '高架下ストリートアート (バランス歩行)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot at grassy riverbank embankment: magic hour violet and golden sunset sky, wide concrete steps, illuminated 3D word letters glowing warmly, cool anime girl standing dynamically stepping in rhythm as wind whips hoodie, river reflection', 
+        tag: '夕暮れ河川敷の階段 (サビ・躍動)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot on metropolitan highway overpass: distant car light trails, midnight breeze, steel truss structure, giant 3D letters resting on observation deck, cool anime girl resting sneaker foot on first letter pedestal tying shoelace', 
+        tag: '首都高陸橋 (車の光跡と靴紐)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot in quiet early morning cafe street: soft dawn light, morning mist on pavement, shuttered shops, oversized 3D letters along street trees, cool anime girl leaning arms on rounded letter back, chin on hands, paper bakery bag beside her', 
+        tag: '早朝カフェ通り (朝靄と物思い)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide shot beside glowing arcade game center: dazzling neon marquee signs reflected on wet street, clear vinyl umbrella, backlit silhouette of cool anime girl walking beside the glowing 3D word monument, colorful prize machine glow', 
+        tag: 'ネオン街ゲーセン横 (ビニール傘)' 
+      },
+      { 
+        scale: '4-Zone High-Density Wide Shot', 
+        directive: '4-zone high-density wide finale shot on skyscraper rooftop: brilliant golden sunrise breaking over vast city skyline, fresh morning wind, monumental 3D letters spanning the helipad, cool anime girl sitting atop final letter smiling softly at the new dawn', 
+        tag: '摩天楼屋上 (夜明けの結末)' 
+      }
+    ];
+    const cycleIdx = Math.max(0, cutId - 1) % mvCompositions.length;
     return {
-      scale: rule.scale,
-      angle: rule.directive,
-      tag: rule.tag
+      scale: mvCompositions[cycleIdx].scale,
+      angle: mvCompositions[cycleIdx].directive,
+      tag: mvCompositions[cycleIdx].tag
     };
   }
   const index = Math.max(0, cutId - 1) % TWELVE_CUT_STORYBOARD_PRESETS.length;
@@ -501,12 +562,19 @@ export function buildFinalCinematicPromptAndNegative(
   const contrastDirective = positiveContrastMandate ? `${positiveContrastMandate}. ` : '';
   const effectiveAttire = isObjectCut ? '' : dynamicAttire;
   const attirePromptPart = effectiveAttire ? ` ${effectiveAttire}.` : '';
+  const targetAspectRatio = settings.aspectRatio || '16:9';
+  const dynamicRatioSuffix = targetAspectRatio === '16:9'
+    ? ' seamless full-bleed widescreen 16:9 cinematic artwork. Grounded immersive horizontal cinematic framing.'
+    : targetAspectRatio === '9:16'
+      ? ' seamless full-bleed vertical 9:16 mobile canvas. Grounded immersive vertical framing.'
+      : ' seamless full-bleed square 1:1 artwork. Grounded immersive cinematic framing.';
+  const dynamicSuffix = `${dynamicRatioSuffix} Absolutely NO drone shots, NO modern aerial drones, NO borders, NO margins, NO text, NO subtitles, NO caption banner, NO speech bubbles, clean edge-to-edge artwork.`;
   if (activeReference && !isObjectCut) {
     const { styleDna, antiPoseNegative, eraNegative } = activeReference;
     if (antiPoseNegative) sanitizedNegativeLayers.push(antiPoseNegative);
     if (eraNegative) sanitizedNegativeLayers.push(eraNegative);
     const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
-    const rawFinalPrompt = `${leadingDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}].${attirePromptPart} ${masterStylePrompt}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
+    const rawFinalPrompt = `${leadingDirective}${characterPromptLayer}[ACTION: ${remainingAction}, ${cameraContext}].${attirePromptPart} ${masterStylePrompt}. [REFERENCE MEDIUM: ${styleDna || ''}]. ${modePromptSuffix}.${dynamicSuffix}${contrastDirective ? ` ${contrastDirective}` : ''}`;
     return {
       finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
       finalNegative,
@@ -514,7 +582,7 @@ export function buildFinalCinematicPromptAndNegative(
     };
   }
   const finalNegative = sanitizedNegativeLayers.filter(Boolean).join(', ');
-  const rawFinalPrompt = `${leadingDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}.${attirePromptPart} ${masterStylePrompt}. ${modePromptSuffix}.${STRICT_STYLE_SUFFIX}${contrastDirective ? ` ${contrastDirective}` : ''}`;
+  const rawFinalPrompt = `${leadingDirective}${characterPromptLayer}${cameraContext}. ${remainingAction}.${attirePromptPart} ${masterStylePrompt}. ${modePromptSuffix}.${dynamicSuffix}${contrastDirective ? ` ${contrastDirective}` : ''}`;
   return {
     finalPrompt: sanitizePromptForGoogleSafety(rawFinalPrompt),
     finalNegative,
